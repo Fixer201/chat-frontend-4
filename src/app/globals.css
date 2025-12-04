@@ -1,10 +1,17 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+/* @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *)); */
 
 body {
   padding: 0;
   margin: 0;
     /* border: 1px solid grey; */
+}
+
+.custom-scroll {
+  overflow: hidden;
+}
+.custom-scroll:hover {
+  overflow: auto;
 }
