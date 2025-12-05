@@ -1,3 +1,9 @@
+
+'use client';
 export default function ChatsList() {
-  return <div>Chats List</div>;
+  return <>
+  
+ 
+
+  </>;
 }
