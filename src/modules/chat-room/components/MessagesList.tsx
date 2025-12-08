@@ -3,7 +3,7 @@ import Image from 'next/image'
 export default function MessagesList() {
     // TODO: заменить на реальные данные
     // создать тип для сообщений, не использовать any
-    const messages:any[] = [];
+    const messages: any[] = [];
 
     return (
         <section
@@ -16,7 +16,7 @@ export default function MessagesList() {
                 // Empty state
                 <div
                     className="flex h-full flex-col items-center justify-center
-  text-muted-foreground"
+  text-text-gray"
                     role="status"
                     aria-label="Пустой чат"
                 >

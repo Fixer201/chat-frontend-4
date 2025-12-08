@@ -4,7 +4,7 @@ import MessageComposer from '@modules/message-composer/components/MessageCompose
 
 export default function ChatRoom() {
   return (
-    <div className="flex h-full flex-col rounded-md bg-primary-foreground">
+    <div className="flex h-full flex-col rounded-md bg-gray-light">
       <ChatHeader />
       <div className="flex-1 overflow-y-auto">
         <MessagesList />
