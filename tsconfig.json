@@ -23,6 +23,7 @@
       "@app/*": ["app/*"],
       "@modules/*": ["modules/*"],
       "@shared/*": ["shared/*"],
+      "@shared/ui/*": ["shared/ui/*"],
       "@redux/*": ["redux/*"],
       "@lib/*": ["lib/*"]
     }

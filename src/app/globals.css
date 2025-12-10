@@ -70,10 +70,10 @@ body {
     --app-text-gray: hsla(0, 0%, 45%, 1);                 /* Text/Gray */
 
     /* Accent Colors */
-    --app-accent-violet-primary: hsla(247, 67%, 65%, 1);  /* Accent/Violet primary */
-    --app-accent-violet-white: hsla(246, 100%, 89%, 1);   /* Accent/violet white */
-    --app-accent-violet-light: hsla(247, 67%, 89%, 1);    /* Accent/Light Violet */
-    --app-accent-violet-dark: hsla(246, 29%, 49%, 0.6);   /* Accent/violet dark (60%) */
+    --app-accent-violet-primary: #7769E1;                 /* Accent/Violet primary */
+    --app-accent-violet-white: #CEC8FF;                   /* Accent/violet white */
+    --app-accent-violet-light: #E2DDFF;                   /* Accent/Light Violet */
+    --app-accent-violet-dark: #615AA3;                    /* Accent/violet dark */
 
     /* User Message Color */
     --app-teal-secondary: hsla(170, 59%, 90%, 1);         /* Complementary/Teal Secondary */
@@ -115,10 +115,10 @@ body {
     --app-text-gray: hsla(0, 0%, 45%, 1);                 /* Text/Gray */
 
     /* Accent Colors */
-    --app-accent-violet-primary: hsla(247, 67%, 65%, 1);  /* Accent/Violet primary */
-    --app-accent-violet-white: hsla(246, 100%, 89%, 1);   /* Accent/violet white */
-    --app-accent-violet-light: hsla(247, 67%, 89%, 1);    /* Accent/Light Violet */
-    --app-accent-violet-dark: hsla(246, 29%, 49%, 0.6);   /* Accent/violet dark (60%) */
+    --app-accent-violet-primary: #7769E1;                 /* Accent/Violet primary */
+    --app-accent-violet-white: #CEC8FF;                   /* Accent/violet white */
+    --app-accent-violet-light: #E2DDFF;                   /* Accent/Light Violet */
+    --app-accent-violet-dark: #615AA3;                    /* Accent/violet dark */
 
     /* User Message Color */
     --app-teal-secondary: hsla(170, 59%, 90%, 1);         /* Complementary/Teal Secondary */
