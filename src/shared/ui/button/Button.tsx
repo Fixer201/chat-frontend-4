@@ -12,9 +12,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const baseClasses = "inline-flex items-center justify-center transition-colors duration-200 focus:outline-none disabled:opacity-60 select-none cursor-pointer";
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary: "bg-[#7769E1] text-white hover:bg-[#53499e]",
-  secondary: "bg-white text-[#7769E1] border border-[#7769E1] hover:bg-[#7769E1] hover:text-white",
-  danger: "bg-[#FF383C] text-white hover:bg-[#d32f2f]",
+  primary: "bg-[var(--color-accent-violet-primary)] text-white hover:bg-[var(--color-accent-violet-white)] hover:text-[var(--color-accent-violet-primary)] active:bg-[var(--color-accent-violet-dark)] active:text-white",
+  secondary: "bg-white text-[var(--color-accent-violet-primary)] border border-[var(--color-accent-violet-primary)] hover:bg-[var(--color-accent-violet-primary)] hover:text-white active:bg-[var(--color-accent-violet-dark)] active:text-white",
+  danger: "bg-[var(--color-system-red)] text-white hover:bg-[color-mix(in srgb, var(--color-system-red) 90%, white)] active:bg-[color-mix(in srgb, var(--color-system-red) 90%, black)]",
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {

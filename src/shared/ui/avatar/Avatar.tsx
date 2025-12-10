@@ -21,12 +21,12 @@ export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
   className?: string;
 }
 
-const rowBaseClasses = "flex items-center gap-3 px-3 py-2 rounded-xl transition-colors duration-200 select-none cursor-pointer";
+const rowBaseClasses = "flex gap-3 px-3 py-2 rounded-xl transition-colors duration-200 select-none cursor-pointer";
 
 const modeClasses: Record<AvatarMode, string> = {
-  contact: "bg-white hover:bg-[#f6f2ff]",
+  contact: "bg-white hover:bg-[#EFEEF7]",
   "select-contact": "bg-white",
-  chat: "bg-white hover:bg-[#f6f2ff]",
+  chat: "bg-white hover:bg-[#EFEEF7]",
 };
 
 export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
@@ -65,14 +65,25 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         )}
         {...props}
       >
-        <div className="relative flex-shrink-0 w-12 h-12 rounded-full overflow-hidden bg-gray-200">
-          <Image src={src} alt={alt ?? name} fill sizes="48px" className="object-cover" />
+        <div
+          className={cn(
+            "relative flex-shrink-0 rounded-full overflow-hidden bg-gray-200",
+            mode === "contact" ? "w-10 h-10" : "w-[60px] h-[60px]"
+          )}
+        >
+          <Image
+            src={src}
+            alt={alt ?? name}
+            fill
+            sizes={mode === "contact" ? "40px" : "60px"}
+            className="object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="min-w-0 flex flex-col gap-0.5">
+          <div className="min-w-0 flex flex-col ">
             <p
               className={cn(
-                "text-sm font-semibold truncate",
+                "text-base font-medium truncate",
                 mode === "select-contact" && selected ? "text-white" : "text-[#1C1C1E]"
               )}
             >
@@ -81,7 +92,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
             {secondaryText && (
               <p
                 className={cn(
-                  "text-xs truncate",
+                  "text-sm truncate",
                   mode === "chat"
                     ? "text-[#6B7280]"
                     : mode === "select-contact" && selected
