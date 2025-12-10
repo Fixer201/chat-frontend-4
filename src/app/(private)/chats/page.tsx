@@ -1,12 +1,14 @@
-import ChatsList from '@modules/chats-list/components/ChatsList';
-import EmptyChatState from '@modules/chat-room/components/EmptyChatState';
 import ChatRoom from "@modules/chat-room/components/ChatRoom";
+import ChatsList from "@modules/chats-list/components/ChatsList";
+
+
 
 export default function ChatsPage() {
-  return (
-    <div className="flex h-screen gap-6">
+  return <>
+
+  <div className="flex h-screen gap-6 max-w-full">
       {/* Левая колонка - список чатов */}
-      <div className="w-full h-11/12 bg-primary-foreground rounded-md md:w-80 lg:w-96">
+      <div className="w-full h-11/12 bg-primary-foreground rounded-md md:w-80 lg:w-96 bg-gray-main">
         <ChatsList />
       </div>
 
@@ -16,5 +18,7 @@ export default function ChatsPage() {
             <ChatRoom></ChatRoom>
       </div>
     </div>
-  );
+   
+
+  </>;
 }

@@ -1,7 +1,9 @@
+'use client';
+
 export default function EmptyContactsState() {
    return <>
-    <div className="w-[744px] h-[936px] left-[576px] top-[84px] flex flex-row pr-4 pl-4 rounded-lg border border-[#EEEEEE] bg-[#F5F6F8] opacity-50 m-4">
-
+    <div className="flex h-full items-center justify-center">
+      <p className="text-muted-foreground">Выберите контакт для начала общения</p>
     </div>
   </>;
 }
