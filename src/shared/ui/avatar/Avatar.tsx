@@ -67,7 +67,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       >
         <div
           className={cn(
-            "relative flex-shrink-0 rounded-full overflow-hidden bg-gray-200",
+            "relative shrink-0 rounded-full overflow-hidden bg-gray-200",
             mode === "contact" ? "w-10 h-10" : "w-[60px] h-[60px]"
           )}
         >
