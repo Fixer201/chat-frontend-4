@@ -3,48 +3,8 @@
 //  * @param count - количество элементов для генерации
 //  * @returns Promise<ChatItem[]> - массив объектов ChatItem
 
-import { ChatItem } from "@shared/types/chat-from-api";
-interface RandomUserName {
-  title: string;
-  first: string;
-  last: string;
-}
+import { ChatItem } from "@shared/types/chat";
 
-interface RandomUserLogin {
-  uuid: string;
-  username: string;
-  password: string;
-  salt: string;
-  md5: string;
-  sha1: string;
-  sha256: string;
-}
-
-// interface RandomUser {
-//   gender: string;
-//   name: RandomUserName;
-//   email: string;
-//   login: RandomUserLogin;
-//   phone: string;
-//   cell: string;
-//   picture: {
-//     large: string;
-//     medium: string;
-//     thumbnail: string;
-//   };
-//   nat: string;
-// }
-
-// interface RandomUserApiResponse {
-//   results: RandomUser[];
-//   info: {
-//     seed: string;
-//     results: number;
-//     page: number;
-//     version: string;
-//   };
-// }
-//  */
 export function generateLocalMockChatItems(count: number): ChatItem[] {
   const firstNames = ['Алексей', 'Мария', 'Сергей', 'Екатерина', 'Дмитрий', 'Ольга', 'Иван', 'Анна', 'Михаил', 'Наталья', 'Андрей', 'Татьяна', 'Павел', 'Елена', 'Владимир'];
   const lastNames = ['Петров', 'Иванова', 'Смирнов', 'Кузнецова', 'Федоров', 'Николаева', 'Воробьев', 'Павлова', 'Козлов', 'Орлова', 'Соколов', 'Морозова', 'Волков', 'Зайцева', 'Попов'];

@@ -1,7 +1,7 @@
 'use client'
 
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
-import { ChatItem } from '@shared/types/chat-from-api'
+import { ChatItem } from '@shared/types/chat'
 import { useEffect, useState } from 'react'
 import { Avatar } from '@shared/ui/avatar/Avatar'
 
