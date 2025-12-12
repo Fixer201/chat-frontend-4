@@ -3,9 +3,9 @@
 //  * @param count - количество элементов для генерации
 //  * @returns Promise<ChatItem[]> - массив объектов ChatItem
 
-import { ChatItem } from "@shared/types/chat";
+import { ApiChatItem } from "@shared/types/chat";
 
-export function generateLocalMockChatItems(count: number): ChatItem[] {
+export function generateLocalMockChatItems(count: number): ApiChatItem[] {
   const firstNames = ['Алексей', 'Мария', 'Сергей', 'Екатерина', 'Дмитрий', 'Ольга', 'Иван', 'Анна', 'Михаил', 'Наталья', 'Андрей', 'Татьяна', 'Павел', 'Елена', 'Владимир'];
   const lastNames = ['Петров', 'Иванова', 'Смирнов', 'Кузнецова', 'Федоров', 'Николаева', 'Воробьев', 'Павлова', 'Козлов', 'Орлова', 'Соколов', 'Морозова', 'Волков', 'Зайцева', 'Попов'];
   const nicknames = ['Alex', 'Maria', 'Sergey', 'Kate', 'Dima', 'Olga', 'Ivan', 'Anna', 'Misha', 'Natasha', 'Andrey', 'Tanya', 'Pavel', 'Lena', 'Vlad'];
@@ -29,7 +29,7 @@ export function generateLocalMockChatItems(count: number): ChatItem[] {
 
     const baseId = (index + 1) * 100;
 
-    const chatItem: ChatItem = {
+    const chatItem: ApiChatItem = {
       id: baseId,
       chat: {
         uid: `uuid-${index}-${Math.random().toString(36).substring(2, 10)}`,
