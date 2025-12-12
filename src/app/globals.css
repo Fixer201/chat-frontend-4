@@ -152,14 +152,18 @@ body {
         @apply bg-white-bg text-text-black;
     }
 }
-/* .custom-scroll:hover {
+
+.custom-scroll:hover {
   overflow: auto;
-} */
+  scrollbar-width: auto; /* Firefox: восстанавливает скролл */
+  -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
+}
+
 
 .custom-scroll {
-  /* Скрыт по умолчанию */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
 }
 .custom-scroll::-webkit-scrollbar {
   display: none; 
@@ -174,7 +178,8 @@ body {
   /* height: auto;  */
   height: 120px;
 }
-/* Показать скрол при наведении */
+
 .custom-scroll:hover::-webkit-scrollbar {
   display: block; 
 }
+

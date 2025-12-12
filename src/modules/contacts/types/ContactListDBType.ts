@@ -14,5 +14,5 @@ export interface ContactListDBType {
     birthday: Date,
     chat_id: number,
     is_online: boolean,
-    was_online_at: Date
+    was_online_at: number
 }
