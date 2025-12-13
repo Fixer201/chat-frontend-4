@@ -1,16 +1,45 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Avatar } from '@shared/ui/avatar/Avatar'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
 import Image from 'next/image'
+import { ChatItem } from '@shared/types/chat'
 export default function ChatsList() {
+    const [searchValue, setSearchValue] = useState('')
     const { chats, loadChats } = useChats()
     useEffect(() => {
         loadChats(15)
     }, [loadChats])
-    const [searchValue, setSearchValue] = useState('')
+    
+    const clearSearchInput = ()=>{
+        setSearchValue('')
+    }
+    
+    const filteredValue = useMemo(():ChatItem[]|undefined=>{
+        if(!searchValue.trim()){
+            return chats
+        }
+        const query = searchValue.toLowerCase().trim()
+        return chats.filter(chat=>{
+            const fullName = `${chat.chat.firstName} ${chat.chat.lastName}`.toLowerCase()
+            if (chat.chat.firstName.toLowerCase().includes(query)) {
+                return true;
+            }
+            if (chat.chat.lastName.toLowerCase().includes(query)) {
+                return true;
+            }
+            if (fullName.includes(query)) {
+                return true;
+            }
+            if (chat.lastMessage.content.toLowerCase().includes(query)) {
+                return true;
+            }
+            return false
+        })
+        
+    },[chats,searchValue])
     return (
         <div className="flex flex-col h-full">
             <div className="h-1/12 min-h-[60px] bg-[#F5F6F8] flex items-center px-4">
@@ -50,9 +79,7 @@ export default function ChatsList() {
                     {searchValue && (
                         <button
                             type="button"
-                            onClick={() =>
-                                setSearchValue('')
-                            }
+                            onClick={clearSearchInput}
                             className="absolute right-3 top-1/2 transform -translate-y-1/2 
                             p-1 hover:bg-gray-100 rounded-full transition-all duration-200"
                             aria-label="Очистить поиск"
@@ -70,7 +97,7 @@ export default function ChatsList() {
             </div>
             <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8]">
                 <div className="flex flex-col">
-                    {chats.map((chat) => (
+                    {filteredValue?.map((chat) => (
                         <Avatar
                             src="/images/chatHeader/userAvatar.svg"
                             name={`${chat.chat.firstName} ${chat.chat.lastName}`}
