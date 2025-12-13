@@ -61,13 +61,18 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
           rowBaseClasses,
           modeClasses[mode],
           mode === "select-contact" && selected && "bg-[rgba(97,90,163,0.6)]",
+          mode === "chat" && "rounded-none",
+          mode === "chat" && "relative",
           className
         )}
         {...props}
       >
+        {mode === "chat" && (
+          <div className="absolute bottom-0 left-[calc(60px+12px)] right-4 h-px bg-[#E4E4E4]"></div>
+        )}
         <div
           className={cn(
-            "relative flex-shrink-0 rounded-full overflow-hidden bg-gray-200",
+            "relative shrink-0 rounded-full overflow-hidden bg-gray-200",
             mode === "contact" ? "w-10 h-10" : "w-[60px] h-[60px]"
           )}
         >

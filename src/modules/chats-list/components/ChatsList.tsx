@@ -31,7 +31,7 @@ export default function ChatsList() {
                             16L12.5 11ZM6.5 11C4.01 11 2 8.99 2 6.5C2 4.01 4.01 2 6.5 2C8.99 
                             2 11 4.01 11 6.5C11 8.99 8.99 11 6.5 11Z"
                                 fill={'#747474'}
-                                fill-rule="nonzero"
+                                fillRule="nonzero"
                             />
                         </svg>
                     </div>
@@ -85,7 +85,7 @@ export default function ChatsList() {
                                 chat.newMessageCount
                             }
                             key={chat.id}
-                            className="border-b border-[#E4E4E4] bg-[#F5F6F8]"
+                            className="bg-[#F5F6F8] hover:bg-gray-100 transition-colors" 
                         />
                     ))}
                 </div>
