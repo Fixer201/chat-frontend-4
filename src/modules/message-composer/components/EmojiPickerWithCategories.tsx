@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { EmojiCategoryTabs } from './EmojiCategoryTabs'
+import { EMOJI_CATEGORIES, EmojiCategoryTabs } from './EmojiCategoryTabs'
 import emojiData from 'unicode-emoji-json/data-by-group.json'
 import { cn } from '@lib/utils'
 import { EmojiGroup, EmojiPickerWithCategoriesProps } from '@shared/types/Emoji'
@@ -14,40 +14,32 @@ export function EmojiPickerWithCategories({
                                           }: Readonly<EmojiPickerWithCategoriesProps>) {
 
     const [selectedCategory, setSelectedCategory] = useState('smileys_emotion')
-    const [searchQuery, setSearchQuery] = useState('')
 
     const typedEmojiData: EmojiGroup[] = emojiData
 
-    // Фильтрация эмодзи по категории и поисковому запросу
+    // Filter emojis by categories
     const filteredEmojis = useMemo(() => {
         const categoryData = typedEmojiData.find(group => group.slug === selectedCategory)
         if (!categoryData) return []
 
-        let emojis = categoryData.emojis
+        return categoryData.emojis
+    }, [selectedCategory, typedEmojiData])
 
-        // Фильтрация по поисковому запросу
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase()
-            emojis = emojis.filter(emoji =>
-                emoji.name.toLowerCase().includes(query) ||
-                emoji.slug.toLowerCase().includes(query),
-            )
-        }
-
-        return emojis
-    }, [selectedCategory, searchQuery, typedEmojiData])
+    // get category name for display it in header
+    const currentCategoryName = EMOJI_CATEGORIES.find(value => value.slug === selectedCategory)?.name
 
     return (
         <div className={cn('flex flex-col items-start', className)}>
-            {/* Сетка эмодзи */}
-            <p className="text-text-gray text-lg px-5 py-4">Недавние</p>
-            <p className="text-text-gray text-lg px-5 py-4">Эмоции</p>
+            {/* Emojis category title */}
+            <p className="text-text-gray text-lg px-5 py-4">{currentCategoryName || '500: Категория не найдена'}</p>
+            {/* Emojis grid */}
             <div
                 className="h-72 grid gap-1 justify-center px-4 overflow-y-auto"
                 style={{
                     gridTemplateColumns: `repeat(${emojisPerRow}, ${emojiSize}px)`,
                 }}
             >
+                {/* In case if emoji category empty return "Эмодзи не найдены" for better UX */}
                 {filteredEmojis.length > 0 ? (
                     filteredEmojis.map((emoji) => (
                         <button

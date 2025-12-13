@@ -1,35 +1,40 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
 
 export default function MessageComposer() {
     const handleEmojiSelect = (emoji: string) => {
-        console.log('Selected emoji:', emoji)
-        // Здесь будет логика вставки эмодзи в input
+        setInputValue(inputValue + emoji)
     }
 
-    // создать стейт наведения на иконку
+
+    const [inputValue, setInputValue] = useState<string>('')
+
+    useEffect(() => {
+        console.log('inputValue', inputValue)
+
+    }, [inputValue])
+
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+
+    // Store timer ref to allow cancellation when user re-hovers before delay expires
     const timerRef = useRef<NodeJS.Timeout | null>(null)
 
     const handleEmojiPickerOpen = () => {
-        // если пикер уже открыт и есть запланированное закрытие, отменить его
+        // Cancel pending close if user re-hovers before delay
         if (timerRef.current) {
             clearTimeout(timerRef.current)
             timerRef.current = null
         }
-        // открываем пикер
         setIsEmojiPickerOpen(true)
     }
 
-    // закрываем пикер с задержкой
     const handleEmojiPickerClose = () => {
-        // создаём новый интервал
+        // Delay closing to allow moving mouse to the picker itself
         timerRef.current = setTimeout(() => {
             setIsEmojiPickerOpen(false)
-            // при закрытии пикера сбрасываем интервал
             timerRef.current = null
         }, 500)
     }
@@ -43,19 +48,23 @@ export default function MessageComposer() {
                 height="20"
                 src="/images/messageComposer/Paperclip.svg"
                 alt="paperclip icon"
+                className="cursor-pointer"
+                role="button"
             />
 
-            {/* Input field */}
+            {/* Message input field */}
             <div className="w-full flex items-center rounded-3xl px-4 py-2 mx-2 bg-white  justify-between ">
-                {/* Input */}
                 <input
                     placeholder="Сообщение"
+                    value={inputValue}
                     className="w-full focus:outline-0 placeholder:text-muted-foreground"
                     type="text"
+                    onChange={(event) => setInputValue(
+                        event.target.value,
+                    )}
                 />
 
-
-                {/* Emoji Icon */}
+                {/* Emoji picker trigger */}
                 <div
                     className="relative h-full"
                     onMouseEnter={handleEmojiPickerOpen}
@@ -84,12 +93,16 @@ export default function MessageComposer() {
             </div>
 
             {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
-            <Image
-                width="20"
-                height="20"
-                src="/images/messageComposer/Microphone.svg"
-                alt="microphone icon for send voice message"
-            />
+            <button>
+                <Image
+                    width="20"
+                    height="20"
+                    src="/images/messageComposer/Microphone.svg"
+                    alt="microphone icon for send voice message"
+                    className="cursor-pointer"
+                />
+            </button>
+
         </div>
     )
 }

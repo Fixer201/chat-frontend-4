@@ -13,39 +13,39 @@ import { Category } from '@shared/types/Emoji'
 
 const EMOJI_CATEGORIES: Category[] = [
     {
-        name: 'Recent', slug: 'recent',
+        name: 'Недавние', slug: 'recent',
         emoji: TimeIcon,
     },
     {
-        name: 'Emotions', slug: 'smileys_emotion',
+        name: 'Эмоции', slug: 'smileys_emotion',
         emoji: EmotionIcon,
     },
     {
-        name: 'Peoples', slug: 'people_body',
+        name: 'Люди', slug: 'people_body',
         emoji: PeoplesIcon,
     },
     {
-        name: 'Animals', slug: 'animals_nature'
+        name: 'Животные', slug: 'animals_nature'
         , emoji: CatIcon,
     },
     {
-        name: 'Foods & Drinks', slug: 'food_drink',
+        name: 'Еда и напитки', slug: 'food_drink',
         emoji: FoodDrinkIcon,
     },
     {
-        name: 'Travel', slug: 'travel_places',
+        name: 'Путешествие', slug: 'travel_places',
         emoji: TravelIcon,
     },
     {
-        name: 'Objects', slug: 'objects',
+        name: 'Объекты', slug: 'objects',
         emoji: ObjectsIcon,
     },
     {
-        name: 'Symbols', slug: 'symbols',
+        name: 'Символы', slug: 'symbols',
         emoji: SymbolsIcon,
     },
     {
-        name: 'Flags', slug: 'flags',
+        name: 'Флаги стран', slug: 'flags',
         emoji: FlagIcon,
     },
 ]
