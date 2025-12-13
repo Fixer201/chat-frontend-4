@@ -33,6 +33,12 @@ export default function ContactHeader() {
                     </div>
                 </div>
                 <div className="flex gap-2">
+
+
+
+
+
+                    
                     {/* Кнопки поиска, звонка и т.д. */}
                     <div className="flex gap-4 text-muted-foreground">
                         <Image
