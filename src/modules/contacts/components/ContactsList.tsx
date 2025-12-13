@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Avatar } from '../../../shared/ui/avatar/Avatar'
 import ContactsSearch from './ContactsSearch'
@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux'
 //import { CardItem } from "./cardItem";
 import { ContactsListDB } from './ContactsDB'
 import Image from 'next/image'
+import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 
 
 type ListProps = {
@@ -20,7 +21,7 @@ type ListProps = {
 
 export default function ContactsList() {
   
-
+ const dispatch = useDispatch();
   
   //функция вычисления времени в сети
   function ContactStatusWeb(is_online: boolean, was_online_at: number): string {
@@ -63,17 +64,17 @@ export default function ContactsList() {
       <ContactsSearch />
       {/* <div className="w-full custom-scroll overflow-hidden hover:overflow-auto"> */}
 
-      <div className="w-full h-9 flex justify-between gap-1  bg-[#EFEEF7]">
+      <div className="w-full h-9 flex justify-between gap-1  bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
         {' '}
-        <span className="pl-4 pt-2.5 pr-4 pb-2.5">
+        <p>
           Контакты пользователей А-чата
-        </span>
+        </p>
         <Image
           src="/images/contacts/MainIconsWeb.svg"
           alt="MainIconsWeb"
           width={24}
           height={24}
-          style={{ width: 'auto', height: 'auto' }}
+          style={{ width: '24px', height: '24px' }}
         />
       </div>
 
@@ -91,9 +92,9 @@ export default function ContactsList() {
               ' ' +
               elem.last_name
             }
-            mode="select-contact"
+            mode="contact"
             isOnline={elem.is_online}
-            statusText={ContactStatusWeb(elem.is_online, elem.was_online_at)}
+            statusText={ContactStatusWeb(elem.is_online, elem.was_online_at)} onClick={() => dispatch(setSelectedContact(elem.uid))}
           />
         ))}
       </div>

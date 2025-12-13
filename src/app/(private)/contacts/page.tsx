@@ -1,3 +1,4 @@
+import EmptyChatState from "@modules/chat-room/components/EmptyChatState";
 import ContactRoom from "@modules/contacts/components/ContactRoom";
 import ContactsList from "@modules/contacts/components/ContactsList";
 
@@ -17,7 +18,7 @@ export default function ContactsPage() {
       {/* Правая колонка - пустой state (скрыт на mobile) */}
       <div className="hidden h-11/12 flex-1 md:block ">
           {/* <EmptyChatState /> по умолчанию когда чат не выбран. ContactRoom отображается при передаче uid контакта */}
-            <ContactRoom uid={null}/>
+            <ContactRoom />
       </div>
     </div>
 

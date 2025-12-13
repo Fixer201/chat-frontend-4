@@ -1,6 +1,13 @@
-import Image from 'next/image'
+import Image from 'next/image';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../redux/store';
 
 export default function ContactHeader() {
+
+  const uid = useSelector(
+        (state: RootState) => state.SelectedContact.uid,
+    );
+
     return (
         <section className="border-b px-4 py-2 bg-primary-background rounded-t-md border-border">
             <div className="flex items-center justify-between">

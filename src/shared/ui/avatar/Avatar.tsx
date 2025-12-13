@@ -24,7 +24,7 @@ export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
 const rowBaseClasses = "flex gap-3 px-3 py-2 rounded-xl transition-colors duration-200 select-none cursor-pointer";
 
 const modeClasses: Record<AvatarMode, string> = {
-  contact: "bg-white hover:bg-[#EFEEF7]",
+  contact: "bg-gray-light hover:bg-[#EFEEF7] active:bg-[#615AA3]/60",
   "select-contact": "bg-white",
   chat: "bg-white hover:bg-[#EFEEF7]",
 };
@@ -79,7 +79,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
             className="object-cover"
           />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <div className="min-w-0 flex flex-col ">
             <p
               className={cn(
