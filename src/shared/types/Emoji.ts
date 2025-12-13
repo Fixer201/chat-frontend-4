@@ -25,3 +25,10 @@ export interface Category {
     slug: string;
     emoji: ComponentType<SVGProps<SVGSVGElement>>;
 }
+
+// Memoized emoji row component
+export interface EmojiRowProps {
+    emojis: string[]
+    gridStyle: React.CSSProperties
+    buttonStyle: React.CSSProperties
+}
