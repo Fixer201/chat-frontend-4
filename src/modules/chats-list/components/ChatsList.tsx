@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect,  useState } from 'react'
 import { Avatar } from '@shared/ui/avatar/Avatar'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
 import Image from 'next/image'
-import { ChatItem } from '@shared/types/chat'
+
+import { useSearch } from '@shared/hooks/useSearch'
+
 export default function ChatsList() {
     const [searchValue, setSearchValue] = useState('')
     const { chats, loadChats } = useChats()
@@ -13,33 +15,17 @@ export default function ChatsList() {
         loadChats(15)
     }, [loadChats])
     
-    const clearSearchInput = ()=>{
-        setSearchValue('')
-    }
+const { filteredValue } = useSearch(chats, searchValue, [
+    'chat.firstName',           
+    'chat.lastName',           
+    (chat) => `${chat.chat.firstName} ${chat.chat.lastName}`, 
+    'lastMessage.content'  
+])
+ const clearSearchInput =()=>{
+    setSearchValue('')
+ }
     
-    const filteredValue = useMemo(():ChatItem[]|undefined=>{
-        if(!searchValue.trim()){
-            return chats
-        }
-        const query = searchValue.toLowerCase().trim()
-        return chats.filter(chat=>{
-            const fullName = `${chat.chat.firstName} ${chat.chat.lastName}`.toLowerCase()
-            if (chat.chat.firstName.toLowerCase().includes(query)) {
-                return true;
-            }
-            if (chat.chat.lastName.toLowerCase().includes(query)) {
-                return true;
-            }
-            if (fullName.includes(query)) {
-                return true;
-            }
-            if (chat.lastMessage.content.toLowerCase().includes(query)) {
-                return true;
-            }
-            return false
-        })
-        
-    },[chats,searchValue])
+ 
     return (
         <div className="flex flex-col h-full">
             <div className="h-1/12 min-h-[60px] bg-[#F5F6F8] flex items-center px-4">
