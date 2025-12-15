@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { Badge } from '@shared/ui/badge/Badge';
 import { Button } from '@shared/ui/button/Button';
 import { Avatar } from '@shared/ui/avatar/Avatar';
-import Modal from '@shared/ui/Modal';
+import Dropdown from '@shared/ui/dropdown/Dropdown';
+import Modal from '@shared/ui/modal/Modal';
 import { Spinner } from '@shared/ui/Spinner';
 
 
@@ -15,6 +16,7 @@ export default function TestComponentsPage() {
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
   const [isContactModalOpen, setContactModalOpen] = useState(false);
   const [isBlockModalOpen, setBlockModalOpen] = useState(false);
+  const [menuSelection, setMenuSelection] = useState<string | null>(null);
 
   return (
     <>
@@ -81,6 +83,29 @@ export default function TestComponentsPage() {
             timestamp="ПН"
             unreadCount={5}
           />
+        </div>
+
+        <div>
+          <h2 className="mb-2 font-semibold">Dropdown</h2>
+          <Dropdown>
+            <Dropdown.Trigger>
+              <Button variant="primary" size="sm">
+                Открыть меню
+              </Button>
+            </Dropdown.Trigger>
+            <Dropdown.Content>
+              <Dropdown.Item label="Ответить"  onSelect={() => setMenuSelection("Ответить")} />
+              <Dropdown.Item label="Переслать"  onSelect={() => setMenuSelection("Переслать")} />
+              <Dropdown.Item label="Скопировать"  onSelect={() => setMenuSelection("Скопировать")} />
+              <Dropdown.Item label="Выбрать"  onSelect={() => setMenuSelection("Выбрать")} />
+              <Dropdown.Item
+                label="Удалить"
+                danger
+                onSelect={() => setMenuSelection("Удалить")}
+              />
+            </Dropdown.Content>
+          </Dropdown>
+          {menuSelection && <p className="mt-2 text-sm text-gray-500">Выбрано: {menuSelection}</p>}
         </div>
 
         <div>
