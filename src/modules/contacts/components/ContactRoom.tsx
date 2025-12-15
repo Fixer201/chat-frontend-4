@@ -10,7 +10,7 @@ import { RootState } from '../../../redux/store'
 
 export default function ContactRoom() {
     const uid = useSelector(
-        (state: RootState) => state.SelectedContact.uid,
+        (state: RootState) => state.SelectedContact.uid || null,
     )
 
     return uid ? (
