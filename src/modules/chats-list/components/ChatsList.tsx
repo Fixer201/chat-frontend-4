@@ -1,32 +1,35 @@
+'use client'
 
-'use client';
-
-import { error } from 'console';
-import { useEffect, useState } from 'react';
-
-interface Chat {
-    uid: string,
-    username: string,
-    nickname: string,
-    first_name: string,
-    last_name: string,
-    avatar: string,
-    avatar_url: string,
-    avatar_webp: string,
-    avatar_webp_url: string,
-    is_blocked: boolean,
-    is_online: boolean
-    was_online_at: number,
-    is_in_contacts: boolean
-}
+import { useEffect } from 'react'
+import { Avatar } from '@shared/ui/avatar/Avatar'
+import { useChats } from '@shared/hooks/useChats'
+import { formatLastSeen } from '@shared/lib/formatLastSeen';
 
 export default function ChatsList() {
-  
-  
-    return (
-        <div>список чатов</div>
-    );
- 
+    const {
+        chats,
+        loadChats,
+  } = useChats();
 
-  
+  useEffect(() => {
+    loadChats(15);
+  }, [loadChats]);
+    return (
+        <div className='overflow-y-scroll grow h-10/12 bg-[#F5F6F8]'>
+            <div className="grid grid-cols-1">
+            {chats.map((chat) => (
+                <Avatar
+                    src="/images/chatHeader/userAvatar.svg"
+                    name={`${chat.chat.firstName} ${chat.chat.lastName}`}
+                    mode="chat"
+                    messagePreview={chat.lastMessage.content}
+                    timestamp={formatLastSeen(chat.lastActivityAt*1000)}
+                    unreadCount={chat.newMessageCount}
+                    key={chat.id}
+                    className='border-b border-[#E4E4E4] bg-[#F5F6F8]'
+                />
+            ))}
+            </div>
+        </div>
+    )
 }
