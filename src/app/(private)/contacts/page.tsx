@@ -16,7 +16,7 @@ export default function ContactsPage() {
       {/* Правая колонка - пустой state (скрыт на mobile) */}
       <div className="hidden h-11/12 flex-1 md:block">
           {/* <EmptyChatState /> по умолчанию когда чат не выбран. Сейчас временно будет сразу отображаться чат */}
-            <ContactRoom/>
+            <ContactRoom idContact={null} />
       </div>
     </div>
 
