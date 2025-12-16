@@ -6,7 +6,7 @@ import MessagesList from '@modules/chat-room/components/MessagesList'
 import EmptyContactsState from './EmptyContactsState'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../../redux/store'
-// import ChatHeader from '@modules/chat-room/components/ChatHeader';
+
 
 export default function ContactRoom() {
     const uid = useSelector(
@@ -25,3 +25,4 @@ export default function ContactRoom() {
         <EmptyContactsState />
     )
 }
+

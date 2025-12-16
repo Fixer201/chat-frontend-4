@@ -1,41 +1,42 @@
 'use client'
-import { Avatar } from '../../../shared/ui/avatar/Avatar'
+import { Avatar } from '@shared/ui/avatar/Avatar'
 import ContactsSearch from './ContactsSearch'
 import { useDispatch, useSelector } from 'react-redux'
-//import { CardItem } from "./cardItem";
 import {
     ContactsListDB,
     STATUS_TEXTS,
 } from '@shared/config/constants'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
-import { RootState } from '../../../redux/store'
+import { RootState } from '@redux/store'
+import { useState } from 'react'
+import { useSearch } from '@shared/hooks/useSearch'
 
 //функция вычисления времени в сети
 function ContactStatusWeb(
-    is_online: boolean,
-    was_online_at: number,
+    isOnline: boolean,
+    wasOnlineAt: number,
 ): string {
     const today = new Date()
-    const milliseconds = was_online_at * 60 * 1000
+    const milliseconds = wasOnlineAt * 60 * 1000
     const lastOnlineDate = new Date(
         today.getTime() - milliseconds,
     )
-    if (is_online) {
+    if (isOnline) {
         return STATUS_TEXTS.online
     }
-    if (was_online_at < 1) {
+    if (wasOnlineAt < 1) {
         return STATUS_TEXTS.justNow
     }
-    if (was_online_at >= 1 && was_online_at < 60) {
-        const minutes = Math.floor(was_online_at)
+    if (wasOnlineAt >= 1 && wasOnlineAt < 60) {
+        const minutes = Math.floor(wasOnlineAt)
         return STATUS_TEXTS.minutesAgo(minutes)
     }
-    if (was_online_at >= 60 && was_online_at < 1440) {
-        const hours = Math.floor(was_online_at / 60)
+    if (wasOnlineAt >= 60 && wasOnlineAt < 1440) {
+        const hours = Math.floor(wasOnlineAt / 60)
         return STATUS_TEXTS.hoursAgo(hours)
     }
-    if (was_online_at >= 1440 && was_online_at < 2880) {
+    if (wasOnlineAt >= 1440 && wasOnlineAt < 2880) {
         const hours = lastOnlineDate
             .getHours()
             .toString()
@@ -52,14 +53,28 @@ function ContactStatusWeb(
 }
 
 export default function ContactsList() {
+    const [searchValue, setSearchValue] = useState('')
     const dispatch = useDispatch()
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
+
+    const { filteredValue: filteredContacts } = useSearch(
+        ContactsListDB,
+        searchValue,
+        [
+            (contact) =>
+                `${contact.firstName} ${contact.lastName}`.toLowerCase(),
+            (contact) => `${contact.phone}`,
+            (contact) => `${contact.nickname}`,
+        ],
+    )
     return (
         <>
-            <ContactsSearch />
-            {/* <div className="w-full custom-scroll overflow-hidden hover:overflow-auto"> */}
+            <ContactsSearch
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+            />
 
             <div className="w-full h-9 flex justify-between gap-1  bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
                 {' '}
@@ -77,36 +92,60 @@ export default function ContactsList() {
             </div>
 
             <div className="w-full h-11/12 flex-0 custom-scroll overflow-hidden hover:overflow-auto gap-4 flex flex-col ">
-                {ContactsListDB?.map((contact) => (
-                    <Avatar
-                        key={contact.uid}
-                        src={
-                            '/images/contacts/' +
-                            contact?.avatar_url
-                        }
-                        name={
-                            contact.first_name +
-                            ' ' +
-                            contact.last_name
-                        }
-                        mode="contact"
-                        isOnline={contact.is_online}
-                        statusText={ContactStatusWeb(
-                            contact.is_online,
-                            contact.was_online_at,
-                        )}
-                        onClick={() =>
-                            dispatch(
-                                setSelectedContact(
-                                    contact.uid,
-                                ),
-                            )
-                        }
-                        selected={
-                            contact.uid === selectedUid
-                        }
-                    />
-                ))}
+                {filteredContacts &&
+                filteredContacts.length > 0 ? (
+                    filteredContacts?.map((contact) => (
+                        <Avatar
+                            key={contact.uid}
+                            src={
+                                '/images/contacts/' +
+                                contact?.avatarUrl
+                            }
+                            name={
+                                contact.firstName +
+                                ' ' +
+                                contact.lastName
+                            }
+                            mode="contact"
+                            isOnline={contact.isOnline}
+                            statusText={ContactStatusWeb(
+                                contact.isOnline,
+                                contact.wasOnlineAt,
+                            )}
+                            onClick={() =>
+                                dispatch(
+                                    setSelectedContact(
+                                        contact.uid,
+                                    ),
+                                )
+                            }
+                            selected={
+                                contact.uid === selectedUid
+                            }
+                        />
+                    ))
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <Image
+                            src="/images/search/imgSearchWeb.svg"
+                            alt="iconsSearch"
+                            width={200}
+                            height={200}
+                            style={{
+                                width: '200px',
+                                height: '200px',
+                            }}
+                        />
+                        <p className="mt-2 text-text-gray">
+                            Поиск не дал результатов
+                        </p>
+                        <p className="text-sm text-text-gray">
+                            По вашему запросу ничего не
+                            найдено. <br /> Измените запрос
+                            и попробуйте снова
+                        </p>
+                    </div>
+                )}
             </div>
         </>
     )
