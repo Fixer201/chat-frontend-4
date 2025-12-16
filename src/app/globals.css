@@ -42,6 +42,9 @@ body {
 
     /* Custom App Colors - System */
     --color-system-red: var(--app-system-red);
+    --color-system-red-soft: var(--app-system-red-soft);
+    --color-system-red-surface: var(--app-system-red-surface);
+    --color-system-red-dark: var(--app-system-red-dark);
     --color-system-blue: var(--app-system-blue);
     --color-system-green: var(--app-system-green);
 
@@ -80,9 +83,12 @@ body {
     --app-teal-secondary: hsla(170, 59%, 90%, 1); /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: hsla(0, 100%, 50%, 1); /* System/Red */
-    --app-system-blue: hsla(211, 100%, 50%, 1); /* System/Blue */
-    --app-system-green: hsla(129, 67%, 47%, 1); /* Miscellaneous/Window Controls/Maximize */
+    --app-system-red: #FF0000;                            /* System/Red */
+    --app-system-red-soft: rgba(255, 0, 0, 0.6);          /* System/Red 60% */
+    --app-system-red-surface: rgba(255, 0, 0, 0.12);      /* System/Red Surface */
+    --app-system-red-dark: #CC0000;                       /* System/Red Dark */
+    --app-system-blue: hsla(211, 100%, 50%, 1);           /* System/Blue */
+    --app-system-green: hsla(129, 67%, 47%, 1);           /* Miscellaneous/Window Controls/Maximize */
 
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
@@ -125,9 +131,12 @@ body {
     --app-teal-secondary: hsla(170, 59%, 90%, 1); /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: hsla(0, 100%, 50%, 1); /* System/Red */
-    --app-system-blue: hsla(211, 100%, 50%, 1); /* System/Blue */
-    --app-system-green: hsla(129, 67%, 47%, 1); /* Miscellaneous/Window Controls/Maximize */
+    --app-system-red: #FF0000;                            /* System/Red */
+    --app-system-red-soft: rgba(255, 0, 0, 0.6);          /* System/Red 60% */
+    --app-system-red-surface: rgba(255, 0, 0, 0.12);      /* System/Red Surface */
+    --app-system-red-dark: #CC0000;                       /* System/Red Dark */
+    --app-system-blue: hsla(211, 100%, 50%, 1);           /* System/Blue */
+    --app-system-green: hsla(129, 67%, 47%, 1);           /* Miscellaneous/Window Controls/Maximize */
 
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
