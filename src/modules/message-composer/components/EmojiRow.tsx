@@ -1,8 +1,12 @@
 import React from 'react'
 import { EmojiRowProps } from '@shared/types/Emoji'
+import { Emoji } from '@shared/ui/emoji/Emoji'
 
-
-function EmojiRow({ emojis, gridStyle, buttonStyle }: Readonly<EmojiRowProps>) {
+function EmojiRow({
+    emojis,
+    gridStyle,
+    buttonStyle,
+}: Readonly<EmojiRowProps>) {
     return (
         <div style={gridStyle} className="justify-center">
             {emojis.map((emoji) => (
@@ -13,7 +17,7 @@ function EmojiRow({ emojis, gridStyle, buttonStyle }: Readonly<EmojiRowProps>) {
                     style={buttonStyle}
                     type="button"
                 >
-                    {emoji}
+                    <Emoji emoji={emoji} size={32} />
                 </button>
             ))}
         </div>
@@ -21,4 +25,3 @@ function EmojiRow({ emojis, gridStyle, buttonStyle }: Readonly<EmojiRowProps>) {
 }
 
 export default EmojiRow
-
