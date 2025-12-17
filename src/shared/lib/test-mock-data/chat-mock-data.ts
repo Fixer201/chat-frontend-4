@@ -78,7 +78,7 @@ export function generateLocalMockChatItems(count: number): ApiChatItem[] {
         is_in_contacts: index % 4 !== 0
       },
       is_favorite: index % 6 === 0,
-      notifications: true,
+      notifications: Math.random() > 0.5,
       new_message_count: Math.floor(Math.random() * 10), // случайное число от 0 до 9
       new_file_count: Math.floor(Math.random() * 5),    // случайное число от 0 до 4
       name: `${firstName} ${lastName}`,

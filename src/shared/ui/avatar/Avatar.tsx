@@ -24,6 +24,7 @@ export interface AvatarProps
     selected?: boolean
     rightElement?: ReactNode
     className?: string
+    notificationsEnabled?: boolean 
 }
 
 const rowBaseClasses =
@@ -54,6 +55,7 @@ export const Avatar = forwardRef<
             selected,
             rightElement,
             className,
+            notificationsEnabled,
             ...props
         },
         ref,
@@ -114,6 +116,7 @@ export const Avatar = forwardRef<
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="min-w-0 flex flex-col ">
+                        <div className="flex items-center gap-2">
                         <p
                             className={cn(
                                 'text-base font-medium truncate',
@@ -128,6 +131,19 @@ export const Avatar = forwardRef<
                         >
                             {name}
                         </p>
+                        {mode === 'chat' && notificationsEnabled === false && (
+                            <Image
+                                src="/images/chatList/notificationsDisabled.svg"
+                                alt="Уведомления выключены"
+                                width={16}
+                                height={16}
+                                className={cn(
+                                    selected ? "opacity-80" : "opacity-60"
+                                )}
+                            />
+                        )}
+                        </div>
+                        
                         {secondaryText && (
                             <p
                                 className={cn(
@@ -154,6 +170,9 @@ export const Avatar = forwardRef<
                 {showRightSection && (
                     <div
                         className={cn(
+                             'flex gap-2',
+                            mode === 'chat' && 'ml-auto items-end', 
+                            mode !== 'chat' && 'ml-3',
                             'ml-3 flex gap-2',
                             showChatMeta
                                 ? 'items-start'
@@ -161,7 +180,10 @@ export const Avatar = forwardRef<
                         )}
                     >
                         {showChatMeta && (
-                            <div className="flex flex-col items-center gap-1">
+                            <div className={cn(
+                                "flex flex-col gap-1",
+                                 mode === 'chat' ? "items-end" : "items-center"
+                            )}>
                                 {timestamp && (
                                     <span
                                         className={cn(

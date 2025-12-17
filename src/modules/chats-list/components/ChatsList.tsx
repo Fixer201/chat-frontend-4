@@ -1,7 +1,6 @@
 'use client'
 
 import {  useEffect,  useState } from 'react'
-import { Avatar } from '@shared/ui/avatar/Avatar'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
 import Image from 'next/image'
@@ -105,6 +104,7 @@ const toSelectChat = (id:number|string):void=>{
                             key={chat.id}
                             selected={chat.id === selectedChatId}
                             onClick={() => toSelectChat(chat.id)}
+                            notificationsEnabled={chat.notifications}
                         />
                     ))}
                 </div>
