@@ -6,6 +6,7 @@ import { cn } from '@shared/lib/utils';
 
 export interface ChatListItemProps extends Omit<AvatarProps, 'mode' | 'className'> {
   selected?: boolean;
+  messageStatus?: 'sent' | 'delivered' | 'read' | null
 }
 
 export const ChatListItem = forwardRef<HTMLDivElement, ChatListItemProps>(
@@ -30,6 +31,7 @@ export const ChatListItem = forwardRef<HTMLDivElement, ChatListItemProps>(
           {...avatarProps}
           mode="chat"
           selected={selected}
+          messageStatus={avatarProps.messageStatus}
           className={cn(
             'bg-transparent hover:bg-transparent', // Базовые стили
             selected 

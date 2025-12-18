@@ -24,7 +24,8 @@ export interface AvatarProps
     selected?: boolean
     rightElement?: ReactNode
     className?: string
-    notificationsEnabled?: boolean 
+    notificationsEnabled?: boolean
+    messageStatus?: 'sent' | 'delivered' | 'read' | null
 }
 
 const rowBaseClasses =
@@ -56,6 +57,7 @@ export const Avatar = forwardRef<
             rightElement,
             className,
             notificationsEnabled,
+            messageStatus,
             ...props
         },
         ref,
@@ -93,7 +95,6 @@ export const Avatar = forwardRef<
                 )}
                 {...props}
             >
-                
                 <div
                     className={cn(
                         'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4',
@@ -117,33 +118,39 @@ export const Avatar = forwardRef<
                 <div className="flex-1 min-w-0">
                     <div className="min-w-0 flex flex-col ">
                         <div className="flex items-center gap-2">
-                        <p
-                            className={cn(
-                                'text-base font-medium truncate',
-                                mode === 'select-contact' &&
-                                    selected
-                                    ? 'text-(--color-white-bg)'
-                                    : 'text-(--color-text-black)',
-                                mode === 'chat' &&
-                                    selected ? 'text-(--color-white-bg)'
-                                    : 'text-(--color-text-black)',
-                            )}
-                        >
-                            {name}
-                        </p>
-                        {mode === 'chat' && notificationsEnabled === false && (
-                            <Image
-                                src="/images/chatList/notificationsDisabled.svg"
-                                alt="Уведомления выключены"
-                                width={16}
-                                height={16}
+                            <p
                                 className={cn(
-                                    selected ? "opacity-80" : "opacity-60"
+                                    'text-base font-medium truncate',
+                                    mode ===
+                                        'select-contact' &&
+                                        selected
+                                        ? 'text-(--color-white-bg)'
+                                        : 'text-(--color-text-black)',
+                                    mode === 'chat' &&
+                                        selected
+                                        ? 'text-(--color-white-bg)'
+                                        : 'text-(--color-text-black)',
                                 )}
-                            />
-                        )}
+                            >
+                                {name}
+                            </p>
+                            {mode === 'chat' &&
+                                notificationsEnabled ===
+                                    false && (
+                                    <Image
+                                        src="/images/chatList/notificationsDisabled.svg"
+                                        alt="Уведомления выключены"
+                                        width={16}
+                                        height={16}
+                                        className={cn(
+                                            selected
+                                                ? 'opacity-80'
+                                                : 'opacity-60',
+                                        )}
+                                    />
+                                )}
                         </div>
-                        
+
                         {secondaryText && (
                             <p
                                 className={cn(
@@ -170,8 +177,9 @@ export const Avatar = forwardRef<
                 {showRightSection && (
                     <div
                         className={cn(
-                             'flex gap-2',
-                            mode === 'chat' && 'ml-auto items-end', 
+                            'flex gap-2',
+                            mode === 'chat' &&
+                                'ml-auto items-end',
                             mode !== 'chat' && 'ml-3',
                             'ml-3 flex gap-2',
                             showChatMeta
@@ -180,10 +188,85 @@ export const Avatar = forwardRef<
                         )}
                     >
                         {showChatMeta && (
-                            <div className={cn(
-                                "flex flex-col gap-1",
-                                 mode === 'chat' ? "items-end" : "items-center"
-                            )}>
+                            <div
+                                className={cn(
+                                    'flex flex-col gap-1',
+                                    mode === 'chat'
+                                        ? 'items-end'
+                                        : 'items-center',
+                                )}
+                            >
+                                <div className="flex items-center gap-1">
+                                {mode === 'chat' &&
+                                    messageStatus && messageStatus !== null &&(
+                                        <div
+                                            className={cn(
+                                                'w-4 h-4 flex items-center justify-center',
+                                                selected &&
+                                                    'opacity-80',
+                                            )}
+                                        >
+                                            
+                                                {messageStatus ===
+                                                'sent' && (
+                                                <Image
+                                                    src="/images/messageStatus/sent.svg"
+                                                    alt="Отправлено"
+                                                    width={
+                                                        14
+                                                    }
+                                                    height={
+                                                        14
+                                                    }
+                                                    className={cn(
+                                                        selected
+                                                            ? 'brightness-0 invert'
+                                                            : 'opacity-70',
+                                                    )}
+                                                />
+                                            )}
+                                            {messageStatus ===
+                                                'delivered' && (
+                                                <Image
+                                                    src="/images/messageStatus/delivered.svg"
+                                                    alt="Доставлено"
+                                                    width={
+                                                        14
+                                                    }
+                                                    height={
+                                                        14
+                                                    }
+                                                    className={cn(
+                                                        selected
+                                                            ? 'brightness-0 invert'
+                                                            : 'opacity-70',
+                                                    )}
+                                                />
+                                            )}
+                                            {messageStatus ===
+                                                'read' && (
+                                                <Image
+                                                    src="/images/messageStatus/read.svg"
+                                                    alt="Прочитано"
+                                                    width={
+                                                        16
+                                                    }
+                                                    height={
+                                                        16
+                                                    }
+                                                    className={cn(
+                                                        selected
+                                                            ? 'brightness-0 invert'
+                                                            : 'opacity-70',
+                                                    )}
+                                                />
+                                            )}
+                                            
+                                            
+                                            
+                                            
+                                        </div>
+                                    )}
                                 {timestamp && (
                                     <span
                                         className={cn(
@@ -198,6 +281,7 @@ export const Avatar = forwardRef<
                                         {timestamp}
                                     </span>
                                 )}
+                                </div>
                                 {showUnread && (
                                     <Badge
                                         variant="counter"

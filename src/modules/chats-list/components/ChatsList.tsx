@@ -15,7 +15,7 @@ export default function ChatsList() {
     useEffect(() => {
         loadChats(15)
     }, [loadChats])
-    
+    const messageStatuses: ('sent' | 'delivered' | 'read' | null)[] = ['sent', 'delivered', 'read', null];
 const { filteredValue } = useSearch(chats, searchValue, [
     'chat.firstName',           
     'chat.lastName',           
@@ -94,7 +94,7 @@ const toSelectChat = (id:number|string):void=>{
             </div>
             <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8]">
                 <div className="flex flex-col">
-                    {filteredValue?.map((chat) => (
+                    {filteredValue?.map((chat,index) => (
                         <ChatListItem
                             src="/images/chatHeader/userAvatar.svg"
                             name={`${chat.chat.firstName} ${chat.chat.lastName}`}
@@ -105,6 +105,7 @@ const toSelectChat = (id:number|string):void=>{
                             selected={chat.id === selectedChatId}
                             onClick={() => toSelectChat(chat.id)}
                             notificationsEnabled={chat.notifications}
+                            messageStatus={messageStatuses[index % messageStatuses.length]}
                         />
                     ))}
                 </div>
