@@ -1,31 +1,29 @@
 import Image from 'next/image'
 import { ChatItem } from '@shared/types/chat'
-import { useEffect } from 'react'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
+import getAvatarSrc from '@shared/lib/getAvatarSrc'
 
 export default function ChatHeader({
     chat,
 }: Readonly<{
     chat: ChatItem
 }>) {
-    useEffect(() => {
-        console.log(chat)
-    }, [chat])
     return (
         <section className="border-b px-4 py-2 bg-primary-background rounded-t-md border-border">
             <div className="flex items-center justify-between">
                 <div className="flex gap-4 flex-row items-center">
                     {/* User Icon */}
                     <Image
-                        src="/images/chatHeader/userAvatar.svg" // TODO: заменить на реальное изображение пользователя, если его нет placeholder
-                        width="40"
-                        height="40"
+                        src={getAvatarSrc(chat.chat)}
+                        width={40}
+                        height={40}
                         alt={
                             chat.chat.firstName +
                             ' ' +
                             chat.chat.lastName
                         }
                         className="rounded-full"
+                        unoptimized
                     />
 
                     <div className="flex flex-col">
@@ -44,7 +42,10 @@ export default function ChatHeader({
                 <div className="flex gap-2">
                     {/* Кнопки поиска, звонка и т.д. */}
                     <div className="flex gap-4 text-muted-foreground">
-                        <button className="cursor-pointer">
+                        <button
+                            className="cursor-pointer"
+                            type="button"
+                        >
                             <Image
                                 src="/images/chatHeader/Search.svg"
                                 height="20"
@@ -52,7 +53,10 @@ export default function ChatHeader({
                                 alt="search in chat button"
                             />
                         </button>
-                        <button className="cursor-pointer">
+                        <button
+                            className="cursor-pointer"
+                            type="button"
+                        >
                             <Image
                                 src="/images/chatHeader/Phone.svg"
                                 height="20"
