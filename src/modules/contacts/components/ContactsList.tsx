@@ -86,7 +86,7 @@ export default function ContactsList() {
                     />
                 )}
 
-            <div className="w-full h-11/12 flex-0 custom-scroll overflow-hidden hover:overflow-auto gap-4 flex flex-col">
+            <div className="w-full h-11/12 flex-0 gap-4 flex flex-col">
                 {filteredContacts &&
                 filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
