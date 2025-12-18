@@ -1,5 +1,4 @@
 'use client'
-import { Avatar } from '@shared/ui/avatar/Avatar'
 import ContactsSearch from './ContactsSearch'
 import { useDispatch, useSelector } from 'react-redux'
 import {
@@ -11,8 +10,10 @@ import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 import { RootState } from '@redux/store'
 import { useState } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
+import { Avatar } from '@shared/ui/avatar/Avatar'
+import ContactsDelete from './ContactsDelete'
 
-//функция вычисления времени в сети
+// Функция вычисления времени в сети
 function ContactStatusWeb(
     isOnline: boolean,
     wasOnlineAt: number,
@@ -54,11 +55,11 @@ function ContactStatusWeb(
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
+    const [deleteMode, setDeleteMode] = useState(false)
     const dispatch = useDispatch()
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
-
     const { filteredValue: filteredContacts } = useSearch(
         ContactsListDB,
         searchValue,
@@ -69,6 +70,7 @@ export default function ContactsList() {
             (contact) => `${contact.nickname}`,
         ],
     )
+
     return (
         <>
             <ContactsSearch
@@ -76,25 +78,18 @@ export default function ContactsList() {
                 onSearchChange={setSearchValue}
             />
 
-            <div className="w-full h-9 flex justify-between gap-1  bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
-                {' '}
-                <p>Контакты пользователей А-чата</p>
-                <Image
-                    src="/images/contacts/MainIconsWeb.svg"
-                    alt="MainIconsWeb"
-                    width={24}
-                    height={24}
-                    style={{
-                        width: '24px',
-                        height: '24px',
-                    }}
-                />
-            </div>
+            {filteredContacts &&
+                filteredContacts.length > 0 && (
+                    <ContactsDelete
+                        deleteMode={deleteMode}
+                        onToggleDeleteMode={setDeleteMode}
+                    />
+                )}
 
-            <div className="w-full h-11/12 flex-0 custom-scroll overflow-hidden hover:overflow-auto gap-4 flex flex-col ">
+            <div className="w-full h-11/12 flex-0 custom-scroll overflow-hidden hover:overflow-auto gap-4 flex flex-col">
                 {filteredContacts &&
                 filteredContacts.length > 0 ? (
-                    filteredContacts?.map((contact) => (
+                    filteredContacts.map((contact) => (
                         <Avatar
                             key={contact.uid}
                             src={
@@ -106,13 +101,18 @@ export default function ContactsList() {
                                 ' ' +
                                 contact.lastName
                             }
-                            mode="contact"
+                            mode={
+                                deleteMode
+                                    ? 'select-contact'
+                                    : 'contact'
+                            }
                             isOnline={contact.isOnline}
                             statusText={ContactStatusWeb(
                                 contact.isOnline,
                                 contact.wasOnlineAt,
                             )}
                             onClick={() =>
+                                !deleteMode &&
                                 dispatch(
                                     setSelectedContact(
                                         contact.uid,
@@ -124,7 +124,8 @@ export default function ContactsList() {
                             }
                         />
                     ))
-                ) : (
+                ) : searchValue.trim() ? (
+                    // Блок для пустого поиска
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
                         <Image
                             src="/images/search/imgSearchWeb.svg"
@@ -145,7 +146,42 @@ export default function ContactsList() {
                             и попробуйте снова
                         </p>
                     </div>
+                ) : (
+                    // Блок для пустого списка контактов
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        <Image
+                            src="/images/search/nullContacts.svg"
+                            alt="iconsSearch"
+                            width={200}
+                            height={200}
+                            style={{
+                                width: '200px',
+                                height: '200px',
+                            }}
+                        />
+                        <p className="mt-2 text-text-gray">
+                            Список контактов пока пуст
+                        </p>
+                    </div>
                 )}
+
+                {filteredContacts &&
+                    filteredContacts.length > 0 &&
+                    !deleteMode && (
+                        <div className="w-full h-9 flex justify-between gap-1 bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
+                            <p>Пользователи А-чата</p>
+                            <Image
+                                src="/images/contacts/basket.svg"
+                                alt="MainIconsWeb"
+                                width={24}
+                                height={24}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                }}
+                            />
+                        </div>
+                    )}
             </div>
         </>
     )
