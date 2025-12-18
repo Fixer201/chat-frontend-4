@@ -172,7 +172,7 @@ export default function ContactsList() {
                             <p>Пользователи А-чата</p>
                             <Image
                                 src="/images/contacts/basket.svg"
-                                alt="MainIconsWeb"
+                                alt="backet"
                                 width={24}
                                 height={24}
                                 style={{

@@ -123,7 +123,7 @@ export const Avatar = forwardRef<
                                     selected
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
-                                    mode === 'chat' &&
+                                    
                                         selected
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
@@ -152,7 +152,7 @@ export const Avatar = forwardRef<
                             <p
                                 className={cn(
                                     'text-sm truncate',
-                                    mode === 'chat' &&
+                                   
                                         selected
                                         ? 'text-white-bg/80'
                                         : mode === 'chat'
