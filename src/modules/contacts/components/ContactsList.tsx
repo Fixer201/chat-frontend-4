@@ -81,7 +81,7 @@ export default function ContactsList() {
             )}
 
             {/* контейнер контактов  */}
-            <div className="custom-scroll gap-4 flex flex-col flex-1">
+            <div className="custom-scroll gap-4 flex flex-col flex-0 ">
                 {filteredContacts && filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
                         <Avatar
