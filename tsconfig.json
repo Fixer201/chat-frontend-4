@@ -25,7 +25,8 @@
       "@shared/*": ["shared/*"],
       "@shared/ui/*": ["shared/ui/*"],
       "@redux/*": ["redux/*"],
-      "@lib/*": ["lib/*"]
+      "@lib/*": ["lib/*"],
+      "@public/*": ["../public/*"]
     }
   },
   "include": [
