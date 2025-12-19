@@ -6,6 +6,9 @@ export const ALLOWED_FILE_TYPES = [
     'image/gif',
 ]
 
+export const DEFAULT_AVATAR =
+    '/images/chatHeader/userAvatar.svg'
+
 export const ContactsListDB = [
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',

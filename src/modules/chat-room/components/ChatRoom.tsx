@@ -1,15 +1,20 @@
-import ChatHeader from './ChatHeader';
-import MessagesList from './MessagesList';
-import MessageComposer from '@modules/message-composer/components/MessageComposer';
+import ChatHeader from './ChatHeader'
+import MessagesList from './MessagesList'
+import MessageComposer from '@modules/message-composer/components/MessageComposer'
+import { ChatItem } from '@shared/types/chat'
 
-export default function ChatRoom() {
-  return (
-    <div className="flex h-full flex-col rounded-md bg-gray-light">
-      <ChatHeader />
-      <div className="flex-1 overflow-y-auto">
-        <MessagesList />
-      </div>
-      <MessageComposer />
-    </div>
-  );
+export default function ChatRoom({
+    chat,
+}: Readonly<{
+    chat: ChatItem
+}>) {
+    return (
+        <div className="flex h-full flex-col rounded-md bg-gray-light">
+            <ChatHeader chat={chat} />
+            <div className="flex-1 overflow-y-auto">
+                <MessagesList />
+            </div>
+            <MessageComposer />
+        </div>
+    )
 }
