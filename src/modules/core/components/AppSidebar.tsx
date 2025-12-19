@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { cn } from '@shared/lib/utils';
@@ -21,26 +20,17 @@ const navItems = [
 export default function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [activeItem, setActiveItem] = useState<string | null>(navItems[0]?.id ?? null);
-
-  useEffect(() => {
-    const matchedItem = navItems.find(({ path }) => path && pathname.startsWith(path));
-    if (matchedItem) {
-      setActiveItem(matchedItem.id);
-    }
-  }, [pathname]);
 
   return (
     <nav className="flex h-[228px] w-12 flex-col items-center justify-between gap-3 p-2">
       {navItems.map(({ id, label, Icon, path }) => {
-        const isActive = activeItem === id;
+  const isActive = Boolean(path && pathname.startsWith(path));
 
         return (
           <button
             key={id}
             type="button"
             onClick={() => {
-              setActiveItem(id);
               if (path) {
                 router.push(path);
               }
