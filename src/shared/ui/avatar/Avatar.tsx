@@ -26,6 +26,8 @@ export interface AvatarProps
     className?: string
     notificationsEnabled?: boolean
     wasOnlineAt?: number
+    isSelected?: boolean
+    onSelect?: () => void
 }
 
 const rowBaseClasses =
@@ -58,6 +60,9 @@ export const Avatar = forwardRef<
             rightElement,
             className,
             notificationsEnabled,
+            isSelected,
+            onSelect,
+
             ...props
         },
         ref,
@@ -87,6 +92,9 @@ export const Avatar = forwardRef<
                         mode === 'contact') &&
                         selected &&
                         'bg-accent-violet-dark/60',
+                    mode === 'select-contact' &&
+                        isSelected &&
+                        'bg-accent-violet-dark/60',
                     mode === 'chat' && 'rounded-none',
                     mode === 'chat' && 'relative',
                     className,
@@ -106,6 +114,7 @@ export const Avatar = forwardRef<
                         alt={alt ?? name}
                         fill
                         sizes={
+                            mode === 'select-contact' ||
                             mode === 'contact'
                                 ? '40px'
                                 : '60px'
@@ -120,11 +129,7 @@ export const Avatar = forwardRef<
                                 className={cn(
                                     'text-base font-medium truncate',
 
-                                    selected
-                                        ? 'text-(--color-white-bg)'
-                                        : 'text-(--color-text-black)',
-                                    
-                                        selected
+                                    (selected || (mode === 'select-contact' && isSelected))
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
                                 )}
@@ -152,8 +157,8 @@ export const Avatar = forwardRef<
                             <p
                                 className={cn(
                                     'text-sm truncate',
-                                   
-                                        selected
+
+                                    (selected || (mode === 'select-contact' && isSelected))
                                         ? 'text-white-bg/80'
                                         : mode === 'chat'
                                         ? 'text-(--color-text-gray)'
@@ -226,9 +231,13 @@ export const Avatar = forwardRef<
                                     selected
                                         ? 'bg-(--color-white-bg) border-(--color-white-bg)'
                                         : 'border-(--color-accent-violet-primary)',
+                                    isSelected
+                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
+                                        : 'border-(--color-accent-violet-primary)',
                                 )}
+                                onClick={onSelect}
                             >
-                                {selected && (
+                                {isSelected && (
                                     <Image
                                         src="/images/Check.svg"
                                         alt="selected"

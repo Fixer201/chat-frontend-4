@@ -163,17 +163,11 @@ body {
     }
 }
 
-.custom-scroll:hover {
-  overflow: auto;
-  scrollbar-width: auto; /* Firefox: восстанавливает скролл */
-  -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
-}
-
-
 .custom-scroll {
-  
+  overflow: scroll;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
+  min-height: calc(100% + 1px);
 }
 .custom-scroll::-webkit-scrollbar {
   display: none; 
@@ -193,3 +187,8 @@ body {
   display: block; 
 }
 
+.custom-scroll:hover {
+  overflow: scroll;  
+  scrollbar-width: auto; /* Firefox: восстанавливает скролл */
+  -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
+}
