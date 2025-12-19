@@ -7,6 +7,11 @@ const MAX_RECENT = 11 // 1 row
 
 type Subscriber = () => void
 
+// Helper to check if emoji is a ZWJ sequence (compound emoji)
+function isZWJSequence(emoji: string): boolean {
+    return emoji.includes('\u200D')
+}
+
 // Module-level store for sync across components
 let cachedEmojis: string[] | null = null
 const subscribers = new Set<Subscriber>()
@@ -38,7 +43,8 @@ function loadFromStorage(): string[] {
         if (!stored) return []
         const parsed = JSON.parse(stored)
         if (!Array.isArray(parsed)) return []
-        return parsed.slice(0, MAX_RECENT)
+        // Filter out ZWJ sequences to avoid rendering issues
+        return parsed.filter(e => !isZWJSequence(e)).slice(0, MAX_RECENT)
     } catch {
         return []
     }
@@ -61,6 +67,11 @@ export function useRecentEmojis() {
     )
 
     const addRecentEmoji = useCallback((emoji: string) => {
+        // Don't add ZWJ sequences (compound emojis) to avoid rendering issues
+        if (isZWJSequence(emoji)) {
+            return
+        }
+
         const current = getSnapshot()
 
         // Remove if already exists, then add to front
