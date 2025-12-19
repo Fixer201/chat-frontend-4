@@ -21,12 +21,12 @@
     ],
     "paths": {
       "@app/*": ["app/*"],
-  "@modules/*": ["modules/*"],
-  "@shared/*": ["shared/*"],
-  "@shared/ui/*": ["shared/ui/*"],
-  "@shared/ui/icons/*": ["shared/ui/icons/*"],
+      "@modules/*": ["modules/*"],
+      "@shared/*": ["shared/*"],
+      "@shared/ui/*": ["shared/ui/*"],
       "@redux/*": ["redux/*"],
-      "@lib/*": ["lib/*"]
+      "@lib/*": ["lib/*"],
+      "@public/*": ["../public/*"]
     }
   },
   "include": [
