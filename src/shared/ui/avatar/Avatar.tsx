@@ -106,7 +106,7 @@ export const Avatar = forwardRef<
             >
                 <div
                     className={cn(
-                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4 w-15 h-15',
+                        'relative shrink-0 rounded-full overflow-hidden bg-gray-light p-4 w-15 h-15',
                     )}
                 >
                     <Image
@@ -122,7 +122,7 @@ export const Avatar = forwardRef<
                         className="object-cover"
                     />
                 </div>
-                <div className="flex-1 min-w-0 border-b border-b-gray-200">
+                <div className="flex-1 min-w-0 border-b border-b-gray-light">
                     <div className="min-w-0 flex flex-col ">
                         <div className="flex items-center gap-2">
                             <p
