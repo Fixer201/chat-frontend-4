@@ -5,8 +5,8 @@ export function AppHeader() {
     return (
         <>
             <div
-                className="w-[1200px] h-[60px] flex items-center flex-row justify-between pr-4 pl-4 rotate-0 opacity-100 rounded-br-lg rounded-bl-lg border-r 
-  border-b border-l border-[#EEEEEE] bg-[#F5F6F8] mx-auto"
+                className="w-300 h-15 flex items-center flex-row justify-between pr-4 pl-4 rotate-0 opacity-100 rounded-br-lg rounded-bl-lg border-r 
+  border-b border-l border-gray-200 bg-gray-main mx-auto"
             >
                 <Image
                     src="/images/header/Logo.svg"

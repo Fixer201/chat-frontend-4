@@ -12,7 +12,7 @@ export default function ContactsDelete({ deleteMode, onToggleDeleteMode, selecte
     return (
         <>
             {deleteMode ? (
-                <div className="w-full h-9 flex justify-between gap-1 bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
+                <div className="w-full h-9 flex justify-between gap-1 bg-gray-light pl-4 pt-2.5 pr-4 pb-2.5">
                     <Image
                         src="/images/contacts/arrow.svg"
                         alt="back"
@@ -53,7 +53,7 @@ export default function ContactsDelete({ deleteMode, onToggleDeleteMode, selecte
                     )}
                 </div>
             ) : (
-                <div className="w-full h-9 flex justify-between gap-1 bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
+                <div className="w-full h-9 flex justify-between gap-1 bg-gray-light pl-4 pt-2.5 pr-4 pb-2.5">
                     <p>Контакты пользователей А-чата</p>
                     <Image
                         src="/images/contacts/basket.svg"

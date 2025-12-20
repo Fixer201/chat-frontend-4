@@ -38,7 +38,7 @@ const modeClasses: Record<AvatarMode, string> = {
         'bg-gray-light active:bg-(--color-accent-violet-dark)/60',
     'select-contact':
         'bg-gray-light active:bg-(--color-accent-violet-dark)/60',
-    chat: 'bg-white hover:bg-[#EFEEF7]',
+    chat: 'bg-white hover:bg-gray-main',
 }
 
 export const Avatar = forwardRef<
@@ -100,7 +100,7 @@ export const Avatar = forwardRef<
                     className,
                     mode === 'chat' &&
                         selected &&
-                        'bg-[#7769E1]',
+                        'bg-accent-violet-primary',
                 )}
                 {...props}
             >

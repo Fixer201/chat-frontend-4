@@ -194,10 +194,7 @@ export default function ContactsList() {
                                 alt="iconsSearch"
                                 width={200}
                                 height={200}
-                                style={{
-                                    width: '200px',
-                                    height: '200px',
-                                }}
+                                className="w-50 h-50"
                             />
                             <p className="mt-2 text-text-gray">
                                 Поиск не дал результатов
@@ -216,10 +213,7 @@ export default function ContactsList() {
                                 alt="iconsSearch"
                                 width={200}
                                 height={200}
-                                style={{
-                                    width: '200px',
-                                    height: '200px',
-                                }}
+                               className="w-50 h-50"
                             />
                             <p className="mt-2 text-text-gray">
                                 Список контактов пока пуст
@@ -231,7 +225,7 @@ export default function ContactsList() {
                     {deleteMode &&
                         selectedContacts.length > 0 && (
                             <div
-                                className="absolute bottom-0 left-0 right-0 z-10 w-full h-20 flex justify-center items-center bg-[#EFEEF7] cursor-pointer hover:bg-[#E0DEF0] transition-colors"
+                                className="absolute bottom-0 left-0 right-0 z-10 w-full h-20 flex justify-center items-center bg-gray-light cursor-pointer hover:bg-accent-violet-light transition-colors"
                                 onClick={handleOpenModal}
                                 role="button"
                                 aria-label={`Удалить ${
@@ -256,17 +250,14 @@ export default function ContactsList() {
                     {filteredContacts &&
                         filteredContacts.length > 0 &&
                         !deleteMode && (
-                            <div className="w-full h-9 flex justify-between gap-1 bg-[#EFEEF7] pl-4 pt-2.5 pr-4 pb-2.5">
+                            <div className="w-full h-9 flex justify-between gap-1 bg-gray-light pl-4 pt-2.5 pr-4 pb-2.5">
                                 <p>Пользователи А-чата</p>
                                 <Image
                                     src="/images/contacts/basket.svg"
                                     alt="MainIconsWeb"
                                     width={24}
                                     height={24}
-                                    style={{
-                                        width: '24px',
-                                        height: '24px',
-                                    }}
+                                   className="w-6 h-6"
                                 />
                             </div>
                         )}
