@@ -106,7 +106,7 @@ export const Avatar = forwardRef<
             >
                 <div
                     className={cn(
-                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4 w-[60px] h-[60px]',
+                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4 w-15 h-15',
                     )}
                 >
                     <Image
@@ -129,7 +129,10 @@ export const Avatar = forwardRef<
                                 className={cn(
                                     'text-base font-medium truncate',
 
-                                    (selected || (mode === 'select-contact' && isSelected))
+                                    selected ||
+                                        (mode ===
+                                            'select-contact' &&
+                                            isSelected)
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
                                 )}
@@ -157,8 +160,10 @@ export const Avatar = forwardRef<
                             <p
                                 className={cn(
                                     'text-sm truncate',
-
-                                    (selected || (mode === 'select-contact' && isSelected))
+                                    selected ||
+                                        (mode ===
+                                            'select-contact' &&
+                                            isSelected)
                                         ? 'text-white-bg/80'
                                         : mode === 'chat'
                                         ? 'text-(--color-text-gray)'
