@@ -167,7 +167,8 @@ body {
   overflow: scroll;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
-  min-height: calc(100% + 1px);
+  padding-right: 6px;
+  
 }
 .custom-scroll::-webkit-scrollbar {
   display: none; 
@@ -182,11 +183,9 @@ body {
   border: 1px solid #999;
   height: 120px;
 }
-
 .custom-scroll:hover::-webkit-scrollbar {
   display: block; 
 }
-
 .custom-scroll:hover {
   overflow: scroll;  
   scrollbar-width: auto; /* Firefox: восстанавливает скролл */

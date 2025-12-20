@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 import { RootState } from '@redux/store'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import { Avatar } from '@shared/ui/avatar/Avatar'
 import ContactsDelete from './ContactsDelete'
@@ -34,6 +34,13 @@ export default function ContactsList() {
             (contact) => `${contact.nickname}`
         ]
     )
+
+    // Сброс выделенного контакта при входе в режим удаления
+    useEffect(() => {
+        if (deleteMode) {
+            dispatch(setSelectedContact(null))
+        }
+    }, [deleteMode, dispatch])
 
     // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
@@ -66,6 +73,20 @@ export default function ContactsList() {
         }
     }
 
+// Функция для определения текста статуса в зависимости от поиска
+    const getStatusText = (contact: any, searchValue: string) => {
+        const lowerSearch = searchValue.toLowerCase()
+        if (lowerSearch && contact.phone.toLowerCase().includes(lowerSearch)) {
+            return contact.phone
+        } else if (lowerSearch && contact.nickname.toLowerCase().includes(lowerSearch)) {
+            return contact.nickname
+        } else {
+            return getContactWebStatus(contact.isOnline, contact.wasOnlineAt)
+        }
+    }
+
+
+
     return (
         <>
             <ContactsSearch searchValue={searchValue} onSearchChange={setSearchValue} />
@@ -81,7 +102,7 @@ export default function ContactsList() {
             )}
 
             {/* контейнер контактов  */}
-            <div className="custom-scroll gap-4 flex flex-col flex-0 ">
+            <div className="custom-scroll gap-4 flex flex-col flex-1 ">
                 {filteredContacts && filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
                         <Avatar
@@ -90,9 +111,7 @@ export default function ContactsList() {
                             name={contact.firstName + ' ' + contact.lastName}
                             mode={deleteMode ? 'select-contact' : 'contact'}
                             isOnline={contact.isOnline}
-                            statusText={
-                                getContactWebStatus(contact.isOnline, contact.wasOnlineAt)
-                            }
+                           statusText={getStatusText(contact, searchValue)}
                             onClick={() =>
                                 !deleteMode &&
                                 dispatch(setSelectedContact(contact.uid))
