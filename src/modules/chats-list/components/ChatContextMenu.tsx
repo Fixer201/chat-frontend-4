@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@shared/lib/utils'
 import Dropdown from '@shared/ui/dropdown/Dropdown';
 
 interface ChatContextMenuProps {
@@ -29,13 +30,8 @@ export default function ChatContextMenu({
       closeOnSelect={true}
     >
       <Dropdown.Content
-        style={{
-          position: 'fixed',
-          left: position.x,
-          top: position.y,
-          zIndex: 1000,
-        }}
-        width={200}
+        manualPosition={{ left: position.x, top: position.y }}
+        className={cn("w-[200px]")}
       >
         {onPin && (
           <Dropdown.Item onSelect={onPin}>

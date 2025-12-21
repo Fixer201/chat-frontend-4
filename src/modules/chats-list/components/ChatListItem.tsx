@@ -100,7 +100,7 @@ export const ChatListItem = forwardRef<
                 onClick={onClick}
                 onContextMenu={handleContextMenu}
             >
-                <div className="absolute bottom-0 left-[calc(60px+12px+8px)] right-4 h-px bg-gray-200" />
+                <div className="absolute bottom-0 left-[calc(60px+12px+8px)] right-4 h-px bg-(--color-black-alpha-20)" />
 
                 <Avatar
                     {...avatarProps}
@@ -113,8 +113,8 @@ export const ChatListItem = forwardRef<
                     className={cn(
                         'bg-transparent hover:bg-transparent', // Базовые стили
                         selected
-                            ? 'bg-[#7769E1] hover:bg-[#7769E1]'
-                            : 'hover:bg-[#EFEEF7]',
+                            ? 'bg-(--color-accent-violet-primary) hover:bg-(--color-accent-violet-primary)'
+                            : 'hover:bg-(--color-gray-main)',
                         'hover:rounded-lg',
                         selected && 'rounded-lg',
                     )}
@@ -140,7 +140,7 @@ export const ChatListItem = forwardRef<
                                         alt={notificationsEnabled ? "Отключить уведомления" : "Включить уведомления"} 
                                         width={16} 
                                         height={16}
-                                        className="opacity-70"
+                                        className="opacity-80"
                                     />
                             }
                                 onMouseEnter={() => setHoveredItem('mute')}
@@ -160,7 +160,7 @@ export const ChatListItem = forwardRef<
                                         alt={isPinned ? "Открепить" : "Закрепить"} 
                                         width={16} 
                                         height={16}
-                                        className="opacity-70"
+                                        className="opacity-80"
                                     />
                                 }
                                 onMouseEnter={() => setHoveredItem('pin')}
@@ -181,7 +181,7 @@ export const ChatListItem = forwardRef<
                                             alt="Пометить непрочитанным" 
                                             width={16} 
                                             height={16}
-                                            className="opacity-70"
+                                            className="opacity-80"
                                         />
                                     }
                                     onMouseEnter={() => setHoveredItem('unread')}
@@ -201,7 +201,7 @@ export const ChatListItem = forwardRef<
                                             alt="Пометить прочитанным" 
                                             width={16} 
                                             height={16}
-                                            className="opacity-70"
+                                            className="opacity-80"
                                         />
                                     }
                                     onMouseEnter={() => setHoveredItem('read')}
@@ -224,7 +224,7 @@ export const ChatListItem = forwardRef<
                                         alt="Удалить" 
                                         width={16} 
                                         height={16}
-                                        className="opacity-70"
+                                        className="opacity-80"
                                     />
                                 }
                                 onMouseEnter={() => setHoveredItem('delete')}

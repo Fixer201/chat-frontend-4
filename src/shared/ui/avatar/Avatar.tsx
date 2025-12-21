@@ -32,10 +32,9 @@ const rowBaseClasses =
     'flex gap-3 px-3 py-2 rounded-md transition-colors duration-200 select-none cursor-pointer'
 
 const modeClasses: Record<AvatarMode, string> = {
-    contact:
-        'bg-gray-light hover:bg-[#EFEEF7] active:bg-(--color-accent-violet-dark)/60',
-    'select-contact': 'bg-white',
-    chat: 'bg-white hover:bg-[#EFEEF7]',
+    contact: 'bg-(--color-gray-main) hover:bg-(--color-gray-light) active:bg-(--color-accent-violet-dark)/60',
+'select-contact': 'bg-(--color-white-bg)',
+    chat: 'bg-(--color-white-bg) hover:bg-(--color-gray-light)',
 }
 
 export const Avatar = forwardRef<
@@ -91,13 +90,13 @@ export const Avatar = forwardRef<
                     className,
                     mode === 'chat' &&
                         selected &&
-                        'bg-[#7769E1]',
+                        'bg-(--color-accent-violet-primary)',
                 )}
                 {...props}
             >
                 <div
                     className={cn(
-                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4',
+                        'relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) p-4',
                         mode === 'contact'
                             ? 'w-10 h-10'
                             : 'w-[60px] h-[60px]',
@@ -157,7 +156,7 @@ export const Avatar = forwardRef<
                                     'text-sm truncate',
                                     mode === 'chat' &&
                                         selected
-                                        ? 'text-white/80'
+                                        ? 'text-(--color-white-bg) opacity-80'
                                         : mode === 'chat'
                                         ? 'text-(--color-text-gray)'
                                         : mode ===
@@ -274,7 +273,7 @@ export const Avatar = forwardRef<
                                             mode ===
                                                 'chat' &&
                                                 selected
-                                                ? 'text-white/80'
+                                                ? 'text-(--color-white-bg) opacity-80'
                                                 : 'text-(--color-text-gray)',
                                         )}
                                     >
@@ -289,7 +288,7 @@ export const Avatar = forwardRef<
                                         size="md"
                                         className={
                                             selected
-                                                ? 'bg-white text-[#7769E1]'
+                                                ? 'bg-(--color-white-bg) text-(--color-accent-violet-primary)'
                                                 : ''
                                         }
                                     >

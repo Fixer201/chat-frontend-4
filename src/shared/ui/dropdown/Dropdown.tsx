@@ -292,7 +292,7 @@ useEffect(() => {
         role="menu"
         style={contentStyle}
         className={cn(
-          "absolute z-[60] max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-white shadow-[0px_12px_32px_rgba(19,22,31,0.12)]",
+          "absolute z-[60] max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-(--color-white-bg) shadow-(--color-context-shadow)",
           className
         )}
         {...props}
@@ -362,7 +362,7 @@ function DropdownItem({
   return (
     <>
     {hasDivider && (
-        <div className="border-t border-[#E5E7EB] my-1" />
+        <div className="border-t border-(--color-black-alpha-20) my-1" />
       )}
     <button
       type="button"
@@ -372,12 +372,12 @@ function DropdownItem({
        onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       className={cn(
-        "flex w-full items-center justify-between gap-4 px-4 py-[10px] text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-[#E5E7EB] last:border-b-0",
+        "flex w-full items-center justify-between gap-4 px-4 py-[10px] text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-(--color-black-alpha-20) last:border-b-0",
         disabled
           ? "cursor-not-allowed text-[#9CA3AF]"
           : danger
-            ? "cursor-pointer text-[var(--color-system-red)] hover:bg-[var(--color-system-red-surface)]"
-            : "cursor-pointer text-[#1C1C1E] hover:bg-[rgba(28,28,30,0.06)]",
+            ? "cursor-pointer text-(--color-system-red) hover:bg-(--color-system-red-surface)"
+            : "cursor-pointer text-(--color-text-black) hover:bg-(--color-gray-light)",
         className
       )}
       {...props}
@@ -388,7 +388,7 @@ function DropdownItem({
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* Иконка слева от текста (если нужна) */}
           {icon && (
-            <span className="text-[#6B7280] w-5 h-5 flex items-center justify-center">
+            <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">
               {icon}
             </span>
           )}
@@ -397,7 +397,7 @@ function DropdownItem({
         </div>
        {/* Иконка справа от текста */}
         {rightIcon && (
-          <span className="text-[#6B7280] w-5 h-5 flex items-center justify-center">
+          <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">
             {rightIcon}
           </span>
         )}
