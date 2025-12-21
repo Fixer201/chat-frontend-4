@@ -6,12 +6,11 @@ import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 import { RootState } from '@redux/store'
 import { useEffect, useState } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
-import { Avatar } from '@shared/ui/avatar/Avatar'
 import ContactsDelete from './ContactsDelete'
-import { getContactWebStatus } from '@shared/lib/getContactWebStatus'
 import Modal from '@shared/ui/modal/Modal'
 import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
+import { ContactAvatar } from './ContactAvatar'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -79,34 +78,6 @@ export default function ContactsList() {
         }
     }
 
-    // Функция для определения текста статуса в зависимости от поиска
-    const getStatusText = (
-        contact: any,
-        searchValue: string,
-    ) => {
-        const lowerSearch = searchValue.toLowerCase()
-        if (
-            lowerSearch &&
-            contact.phone
-                .toLowerCase()
-                .includes(lowerSearch)
-        ) {
-            return contact.phone
-        } else if (
-            lowerSearch &&
-            contact.nickname
-                .toLowerCase()
-                .includes(lowerSearch)
-        ) {
-            return contact.nickname
-        } else {
-            return getContactWebStatus(
-                contact.isOnline,
-                contact.wasOnlineAt,
-            )
-        }
-    }
-
     return (
         <>
             <ContactsSearch
@@ -136,53 +107,26 @@ export default function ContactsList() {
                     {filteredContacts &&
                     filteredContacts.length > 0 ? (
                         filteredContacts.map((contact) => (
-                            <Avatar
+                            <ContactAvatar
                                 key={contact.uid}
-                                src={
-                                    '/images/contacts/' +
-                                    contact?.avatarUrl
+                                contact={contact}
+                                deleteMode={deleteMode}
+                                selectedUid={selectedUid}
+                                selectedContacts={
+                                    selectedContacts
                                 }
-                                name={
-                                    contact.firstName +
-                                    ' ' +
-                                    contact.lastName
+                                searchValue={searchValue}
+                                onSelectContact={
+                                    handleSelectContact
                                 }
-                                mode={
-                                    deleteMode
-                                        ? 'select-contact'
-                                        : 'contact'
-                                }
-                                isOnline={contact.isOnline}
-                                statusText={getStatusText(
-                                    contact,
-                                    searchValue,
-                                )}
-                                onClick={() =>
-                                    !deleteMode &&
+                                onSetSelectedContact={(
+                                    uid,
+                                ) =>
                                     dispatch(
                                         setSelectedContact(
-                                            contact.uid,
+                                            uid,
                                         ),
                                     )
-                                }
-                                selected={
-                                    contact.uid ===
-                                    selectedUid
-                                }
-                                onSelect={
-                                    deleteMode
-                                        ? () =>
-                                              handleSelectContact(
-                                                  contact.uid,
-                                              )
-                                        : undefined
-                                }
-                                isSelected={
-                                    deleteMode
-                                        ? selectedContacts.includes(
-                                              contact.uid,
-                                          )
-                                        : false
                                 }
                             />
                         ))
@@ -213,7 +157,7 @@ export default function ContactsList() {
                                 alt="iconsSearch"
                                 width={200}
                                 height={200}
-                               className="w-50 h-50"
+                                className="w-50 h-50"
                             />
                             <p className="mt-2 text-text-gray">
                                 Список контактов пока пуст
@@ -257,7 +201,7 @@ export default function ContactsList() {
                                     alt="MainIconsWeb"
                                     width={24}
                                     height={24}
-                                   className="w-6 h-6"
+                                    className="w-6 h-6"
                                 />
                             </div>
                         )}

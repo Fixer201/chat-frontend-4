@@ -1,3 +1,5 @@
+import { Contact } from "@shared/types/contact"
+
 export const APP_NAME = 'Chat App'
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 export const ALLOWED_FILE_TYPES = [
@@ -9,7 +11,10 @@ export const ALLOWED_FILE_TYPES = [
 export const DEFAULT_AVATAR =
     '/images/chatHeader/userAvatar.svg'
 
-export const ContactsListDB = [
+
+
+
+export const ContactsListDB: Contact[] = [
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         username: 'string',
