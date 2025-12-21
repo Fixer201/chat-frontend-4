@@ -49,7 +49,7 @@ export default function AppSidebar() {
             />
             <span className="sr-only">{label}</span>
           </button>
-        );
+        )
       })}
     </nav>
   );
