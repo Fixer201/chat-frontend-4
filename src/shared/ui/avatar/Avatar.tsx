@@ -114,8 +114,8 @@ export const Avatar = forwardRef<
                         alt={alt ?? name}
                         fill
                         sizes={
-                            mode === 'select-contact' ||
-                            mode === 'contact'
+                           ( mode === 'select-contact' ||
+                            mode === 'contact')
                                 ? '40px'
                                 : '60px'
                         }
