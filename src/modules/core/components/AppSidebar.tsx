@@ -1,5 +1,4 @@
 'use client';
-
 import { usePathname, useRouter } from 'next/navigation';
 
 import { cn } from '@shared/lib/utils';
@@ -22,7 +21,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex h-[228px] w-12 flex-col items-center justify-between gap-3 p-2">
+    <nav className="flex h-57 w-12 flex-col items-center justify-between gap-3 p-2">
       {navItems.map(({ id, label, Icon, path }) => {
   const isActive = Boolean(path && pathname.startsWith(path));
 
@@ -49,9 +48,10 @@ export default function AppSidebar() {
             />
             <span className="sr-only">{label}</span>
           </button>
-        );
+        )
       })}
     </nav>
   );
+
 }
 

@@ -24,7 +24,10 @@ export interface AvatarProps
     selected?: boolean
     rightElement?: ReactNode
     className?: string
-    notificationsEnabled?: boolean 
+    notificationsEnabled?: boolean
+    wasOnlineAt?: number
+    isSelected?: boolean
+    onSelect?: () => void
 }
 
 const rowBaseClasses =
@@ -32,9 +35,10 @@ const rowBaseClasses =
 
 const modeClasses: Record<AvatarMode, string> = {
     contact:
-        'bg-gray-light hover:bg-[#EFEEF7] active:bg-(--color-accent-violet-dark)/60',
-    'select-contact': 'bg-white',
-    chat: 'bg-white hover:bg-[#EFEEF7]',
+        'bg-gray-light active:bg-(--color-accent-violet-dark)/60',
+    'select-contact':
+        'bg-gray-light active:bg-(--color-accent-violet-dark)/60',
+    chat: 'bg-white hover:bg-gray-main',
 }
 
 export const Avatar = forwardRef<
@@ -56,6 +60,9 @@ export const Avatar = forwardRef<
             rightElement,
             className,
             notificationsEnabled,
+            isSelected,
+            onSelect,
+
             ...props
         },
         ref,
@@ -81,25 +88,25 @@ export const Avatar = forwardRef<
                 className={cn(
                     rowBaseClasses,
                     modeClasses[mode],
-                    mode === 'select-contact' &&
+                    (mode === 'select-contact' ||
+                        mode === 'contact') &&
                         selected &&
-                        'bg-(--color-accent-violet-dark)',
+                        'bg-accent-violet-dark/60',
+                    mode === 'select-contact' &&
+                        isSelected &&
+                        'bg-accent-violet-dark/60',
                     mode === 'chat' && 'rounded-none',
                     mode === 'chat' && 'relative',
                     className,
                     mode === 'chat' &&
                         selected &&
-                        'bg-[#7769E1]',
+                        'bg-accent-violet-primary',
                 )}
                 {...props}
             >
-                
                 <div
                     className={cn(
-                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4',
-                        mode === 'contact'
-                            ? 'w-10 h-10'
-                            : 'w-[60px] h-[60px]',
+                        'relative shrink-0 rounded-full overflow-hidden bg-gray-light p-4 w-15 h-15',
                     )}
                 >
                     <Image
@@ -107,59 +114,62 @@ export const Avatar = forwardRef<
                         alt={alt ?? name}
                         fill
                         sizes={
-                            mode === 'contact'
+                           ( mode === 'select-contact' ||
+                            mode === 'contact')
                                 ? '40px'
                                 : '60px'
                         }
                         className="object-cover"
                     />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 border-b border-b-gray-light">
                     <div className="min-w-0 flex flex-col ">
                         <div className="flex items-center gap-2">
-                        <p
-                            className={cn(
-                                'text-base font-medium truncate',
-                                mode === 'select-contact' &&
-                                    selected
-                                    ? 'text-(--color-white-bg)'
-                                    : 'text-(--color-text-black)',
-                                mode === 'chat' &&
-                                    selected ? 'text-(--color-white-bg)'
-                                    : 'text-(--color-text-black)',
-                            )}
-                        >
-                            {name}
-                        </p>
-                        {mode === 'chat' && notificationsEnabled === false && (
-                            <Image
-                                src="/images/chatList/notificationsDisabled.svg"
-                                alt="Уведомления выключены"
-                                width={16}
-                                height={16}
+                            <p
                                 className={cn(
-                                    selected ? "opacity-80" : "opacity-60"
+                                    'text-base font-medium truncate',
+
+                                    selected ||
+                                        (mode ===
+                                            'select-contact' &&
+                                            isSelected)
+                                        ? 'text-(--color-white-bg)'
+                                        : 'text-(--color-text-black)',
                                 )}
-                            />
-                        )}
+                            >
+                                {name}
+                            </p>
+                            {mode === 'chat' &&
+                                notificationsEnabled ===
+                                    false && (
+                                    <Image
+                                        src="/images/chatList/notificationsDisabled.svg"
+                                        alt="Уведомления выключены"
+                                        width={16}
+                                        height={16}
+                                        className={cn(
+                                            selected
+                                                ? 'opacity-80'
+                                                : 'opacity-60',
+                                        )}
+                                    />
+                                )}
                         </div>
-                        
+
                         {secondaryText && (
                             <p
                                 className={cn(
                                     'text-sm truncate',
-                                    mode === 'chat' &&
-                                        selected
-                                        ? 'text-white/80'
+                                    selected ||
+                                        (mode ===
+                                            'select-contact' &&
+                                            isSelected)
+                                        ? 'text-white-bg/80'
                                         : mode === 'chat'
                                         ? 'text-(--color-text-gray)'
-                                        : mode ===
-                                              'select-contact' &&
-                                          selected
-                                        ? 'text-white-bg/80'
                                         : isOnline
                                         ? 'text-(--color-accent-violet-primary)'
-                                        : 'text-(--color-text-gray)',
+                                        : 'text-text-gray',
                                 )}
                             >
                                 {secondaryText}
@@ -170,8 +180,9 @@ export const Avatar = forwardRef<
                 {showRightSection && (
                     <div
                         className={cn(
-                             'flex gap-2',
-                            mode === 'chat' && 'ml-auto items-end', 
+                            'flex gap-2',
+                            mode === 'chat' &&
+                                'ml-auto items-end',
                             mode !== 'chat' && 'ml-3',
                             'ml-3 flex gap-2',
                             showChatMeta
@@ -180,19 +191,23 @@ export const Avatar = forwardRef<
                         )}
                     >
                         {showChatMeta && (
-                            <div className={cn(
-                                "flex flex-col gap-1",
-                                 mode === 'chat' ? "items-end" : "items-center"
-                            )}>
+                            <div
+                                className={cn(
+                                    'flex flex-col gap-1',
+                                    mode === 'chat'
+                                        ? 'items-end'
+                                        : 'items-center',
+                                )}
+                            >
                                 {timestamp && (
                                     <span
                                         className={cn(
-                                            'text-xs text-(--color-text-gray) whitespace-nowrap',
+                                            'text-xs text-text-gray whitespace-nowrap',
                                             mode ===
                                                 'chat' &&
                                                 selected
                                                 ? 'text-white/80'
-                                                : 'text-(--color-text-gray)',
+                                                : 'text-text-gray',
                                         )}
                                     >
                                         {timestamp}
@@ -221,9 +236,13 @@ export const Avatar = forwardRef<
                                     selected
                                         ? 'bg-(--color-white-bg) border-(--color-white-bg)'
                                         : 'border-(--color-accent-violet-primary)',
+                                    isSelected
+                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
+                                        : 'border-(--color-accent-violet-primary)',
                                 )}
+                                onClick={onSelect}
                             >
-                                {selected && (
+                                {isSelected && (
                                     <Image
                                         src="/images/Check.svg"
                                         alt="selected"

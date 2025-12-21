@@ -163,17 +163,12 @@ body {
     }
 }
 
-.custom-scroll:hover {
-  overflow: auto;
-  scrollbar-width: auto; /* Firefox: восстанавливает скролл */
-  -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
-}
-
-
 .custom-scroll {
-  
+  overflow: scroll;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
+  padding-right: 6px;
+  
 }
 .custom-scroll::-webkit-scrollbar {
   display: none; 
@@ -183,13 +178,16 @@ body {
   background: transparent; 
 }
 .custom-scroll::-webkit-scrollbar-thumb {
-  background: #C5C5C5; 
+  background: var(--app-text-gray); 
   border-radius: 4px; 
-  /* height: auto;  */
+ border: 1px solid var(--app-black-alpha-70);
   height: 120px;
 }
-
 .custom-scroll:hover::-webkit-scrollbar {
   display: block; 
 }
-
+.custom-scroll:hover {
+  overflow: scroll;  
+  scrollbar-width: auto; /* Firefox: восстанавливает скролл */
+  -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
+}
