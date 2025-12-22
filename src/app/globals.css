@@ -61,7 +61,7 @@ body {
 
 :root {
     --radius: 0.625rem; /* 10px */
-
+    --chat-list-divider-left: calc(60px + 12px + 8px);
     /* Primary Colors */ /* !Name in Figma Design! */
     --app-white-bg: hsla(0, 0%, 100%, 1); /* White tone/White bg */
     --app-gray-main: hsla(220, 18%, 97%, 1); /* Gray tone/Gray */
@@ -193,3 +193,8 @@ body {
   display: block; 
 }
 
+@media (max-width: 768px) {
+  :root {
+    --chat-list-divider-left: calc(50px + 8px + 4px);
+  }
+}

@@ -1,7 +1,7 @@
 'use client'
 import { ContactAvatar, ContactAvatarProps } from './components/ContactAvatar'
 import { SelectContactAvatar, SelectContactAvatarProps } from './components/SelectContactAvatar'
-import { ChatAvatar, ChatAvatarProps } from './components/ChatAvatar'
+import { ChatAvatar, ChatAvatarProps } from './components/chatAvatar/ChatAvatar'
 import { forwardRef } from 'react'
 import type { HTMLAttributes } from 'react'
 
