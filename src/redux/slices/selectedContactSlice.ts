@@ -3,7 +3,7 @@ interface SelectedContactState {
   uid: string | null;
 }
 const initialState: SelectedContactState = {
-  uid: null,
+  uid: null ,
 };
 const selectedContactSlice = createSlice({
   name: 'selectedContact',
@@ -12,6 +12,7 @@ const selectedContactSlice = createSlice({
     setSelectedContact: (state, action: PayloadAction<string | null>) => {
       state.uid = action.payload;
     },
+   
   },
 });
 export const { setSelectedContact } = selectedContactSlice.actions;

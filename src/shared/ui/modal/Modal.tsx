@@ -89,7 +89,7 @@ export default function Modal({
           {(icon || iconSrc) && (
             <div
               className={cn(
-                "flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-accent-violet-white)]",
+                "flex h-16 w-16 items-center justify-center rounded-full bg-(--color-accent-violet-white)",
                 iconAlignClass
               )}
             >
