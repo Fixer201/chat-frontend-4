@@ -26,6 +26,9 @@ export interface AvatarProps
     className?: string
     notificationsEnabled?: boolean
     messageStatus?: 'sent' | 'delivered' | 'read' | null
+    wasOnlineAt?: number
+    isSelected?: boolean
+    onSelect?: () => void
 }
 
 const rowBaseClasses =
@@ -57,6 +60,9 @@ export const Avatar = forwardRef<
             className,
             notificationsEnabled,
             messageStatus,
+            isSelected,
+            onSelect,
+
             ...props
         },
         ref,
@@ -82,9 +88,13 @@ export const Avatar = forwardRef<
                 className={cn(
                     rowBaseClasses,
                     modeClasses[mode],
-                    mode === 'select-contact' &&
+                    (mode === 'select-contact' ||
+                        mode === 'contact') &&
                         selected &&
-                        'bg-(--color-accent-violet-dark)',
+                        'bg-accent-violet-dark/60',
+                    mode === 'select-contact' &&
+                        isSelected &&
+                        'bg-accent-violet-dark/60',
                     mode === 'chat' && 'rounded-none',
                     mode === 'chat' && 'relative',
                     className,
@@ -107,14 +117,15 @@ export const Avatar = forwardRef<
                         alt={alt ?? name}
                         fill
                         sizes={
-                            mode === 'contact'
+                           ( mode === 'select-contact' ||
+                            mode === 'contact')
                                 ? '40px'
                                 : '60px'
                         }
                         className="object-cover"
                     />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 border-b border-b-gray-light">
                     <div className="min-w-0 flex flex-col ">
                         <div className="flex items-center gap-2">
                             <p
@@ -159,13 +170,9 @@ export const Avatar = forwardRef<
                                         ? 'text-(--color-white-bg) opacity-80'
                                         : mode === 'chat'
                                         ? 'text-(--color-text-gray)'
-                                        : mode ===
-                                              'select-contact' &&
-                                          selected
-                                        ? 'text-white-bg/80'
                                         : isOnline
                                         ? 'text-(--color-accent-violet-primary)'
-                                        : 'text-(--color-text-gray)',
+                                        : 'text-text-gray',
                                 )}
                             >
                                 {secondaryText}
@@ -269,7 +276,7 @@ export const Avatar = forwardRef<
                                 {timestamp && (
                                     <span
                                         className={cn(
-                                            'text-xs text-(--color-text-gray) whitespace-nowrap',
+                                            'text-xs text-text-gray whitespace-nowrap',
                                             mode ===
                                                 'chat' &&
                                                 selected
@@ -304,9 +311,13 @@ export const Avatar = forwardRef<
                                     selected
                                         ? 'bg-(--color-white-bg) border-(--color-white-bg)'
                                         : 'border-(--color-accent-violet-primary)',
+                                    isSelected
+                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
+                                        : 'border-(--color-accent-violet-primary)',
                                 )}
+                                onClick={onSelect}
                             >
-                                {selected && (
+                                {isSelected && (
                                     <Image
                                         src="/images/Check.svg"
                                         alt="selected"
