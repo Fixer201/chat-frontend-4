@@ -35,8 +35,10 @@ const rowBaseClasses =
     'flex gap-3 px-3 py-2 rounded-md transition-colors duration-200 select-none cursor-pointer'
 
 const modeClasses: Record<AvatarMode, string> = {
-    contact: 'bg-(--color-gray-main) hover:bg-(--color-gray-light) active:bg-(--color-accent-violet-dark)/60',
-'select-contact': 'bg-(--color-white-bg)',
+    contact:
+        'bg-(--color-gray-main) hover:bg-(--color-gray-light) active:bg-(--color-accent-violet-dark)/60',
+    'select-contact':
+        'bg-(--color-gray-main) active:bg-(--color-accent-violet-dark)/6',
     chat: 'bg-(--color-white-bg) hover:bg-(--color-gray-light)',
 }
 
@@ -92,9 +94,6 @@ export const Avatar = forwardRef<
                         mode === 'contact') &&
                         selected &&
                         'bg-accent-violet-dark/60',
-                    mode === 'select-contact' &&
-                        isSelected &&
-                        'bg-accent-violet-dark/60',
                     mode === 'chat' && 'rounded-none',
                     mode === 'chat' && 'relative',
                     className,
@@ -107,9 +106,10 @@ export const Avatar = forwardRef<
                 <div
                     className={cn(
                         'relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) p-4',
-                        mode === 'contact'
+                        mode === 'select-contact' ||
+                            mode === 'contact'
                             ? 'w-10 h-10'
-                            : 'w-[60px] h-[60px]',
+                            : 'w-15 h-15',
                     )}
                 >
                     <Image
@@ -117,8 +117,8 @@ export const Avatar = forwardRef<
                         alt={alt ?? name}
                         fill
                         sizes={
-                           ( mode === 'select-contact' ||
-                            mode === 'contact')
+                            mode === 'select-contact' ||
+                            mode === 'contact'
                                 ? '40px'
                                 : '60px'
                         }
@@ -131,13 +131,7 @@ export const Avatar = forwardRef<
                             <p
                                 className={cn(
                                     'text-base font-medium truncate',
-                                    mode ===
-                                        'select-contact' &&
-                                        selected
-                                        ? 'text-(--color-white-bg)'
-                                        : 'text-(--color-text-black)',
-                                    mode === 'chat' &&
-                                        selected
+                                    selected
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
                                 )}
@@ -203,90 +197,87 @@ export const Avatar = forwardRef<
                                 )}
                             >
                                 <div className="flex items-center gap-1">
-                                {mode === 'chat' &&
-                                    messageStatus && messageStatus !== null &&(
-                                        <div
+                                    {mode === 'chat' &&
+                                        messageStatus &&
+                                        messageStatus !==
+                                            null && (
+                                            <div
+                                                className={cn(
+                                                    'w-4 h-4 flex items-center justify-center',
+                                                    selected &&
+                                                        'opacity-80',
+                                                )}
+                                            >
+                                                {messageStatus ===
+                                                    'sent' && (
+                                                    <Image
+                                                        src="/images/messageStatus/sent.svg"
+                                                        alt="Отправлено"
+                                                        width={
+                                                            14
+                                                        }
+                                                        height={
+                                                            14
+                                                        }
+                                                        className={cn(
+                                                            selected
+                                                                ? 'brightness-0 invert'
+                                                                : 'opacity-70',
+                                                        )}
+                                                    />
+                                                )}
+                                                {messageStatus ===
+                                                    'delivered' && (
+                                                    <Image
+                                                        src="/images/messageStatus/delivered.svg"
+                                                        alt="Доставлено"
+                                                        width={
+                                                            14
+                                                        }
+                                                        height={
+                                                            14
+                                                        }
+                                                        className={cn(
+                                                            selected
+                                                                ? 'brightness-0 invert'
+                                                                : 'opacity-70',
+                                                        )}
+                                                    />
+                                                )}
+                                                {messageStatus ===
+                                                    'read' && (
+                                                    <Image
+                                                        src="/images/messageStatus/read.svg"
+                                                        alt="Прочитано"
+                                                        width={
+                                                            16
+                                                        }
+                                                        height={
+                                                            16
+                                                        }
+                                                        className={cn(
+                                                            selected
+                                                                ? 'brightness-0 invert'
+                                                                : 'opacity-70',
+                                                        )}
+                                                    />
+                                                )}
+                                            </div>
+                                        )}
+                                    {timestamp && (
+                                        <span
                                             className={cn(
-                                                'w-4 h-4 flex items-center justify-center',
-                                                selected &&
-                                                    'opacity-80',
+                                                'text-xs text-text-gray whitespace-nowrap',
+                                                mode ===
+                                                    'chat' &&
+                                                    selected
+                                                    ? 'text-(--color-white-bg) opacity-80'
+                                                    : 'text-(--color-text-gray)',
                                             )}
                                         >
-                                            
-                                                {messageStatus ===
-                                                'sent' && (
-                                                <Image
-                                                    src="/images/messageStatus/sent.svg"
-                                                    alt="Отправлено"
-                                                    width={
-                                                        14
-                                                    }
-                                                    height={
-                                                        14
-                                                    }
-                                                    className={cn(
-                                                        selected
-                                                            ? 'brightness-0 invert'
-                                                            : 'opacity-70',
-                                                    )}
-                                                />
-                                            )}
-                                            {messageStatus ===
-                                                'delivered' && (
-                                                <Image
-                                                    src="/images/messageStatus/delivered.svg"
-                                                    alt="Доставлено"
-                                                    width={
-                                                        14
-                                                    }
-                                                    height={
-                                                        14
-                                                    }
-                                                    className={cn(
-                                                        selected
-                                                            ? 'brightness-0 invert'
-                                                            : 'opacity-70',
-                                                    )}
-                                                />
-                                            )}
-                                            {messageStatus ===
-                                                'read' && (
-                                                <Image
-                                                    src="/images/messageStatus/read.svg"
-                                                    alt="Прочитано"
-                                                    width={
-                                                        16
-                                                    }
-                                                    height={
-                                                        16
-                                                    }
-                                                    className={cn(
-                                                        selected
-                                                            ? 'brightness-0 invert'
-                                                            : 'opacity-70',
-                                                    )}
-                                                />
-                                            )}
-                                            
-                                            
-                                            
-                                            
-                                        </div>
+                                            {timestamp}
+                                        </span>
                                     )}
-                                {timestamp && (
-                                    <span
-                                        className={cn(
-                                            'text-xs text-text-gray whitespace-nowrap',
-                                            mode ===
-                                                'chat' &&
-                                                selected
-                                                ? 'text-(--color-white-bg) opacity-80'
-                                                : 'text-(--color-text-gray)',
-                                        )}
-                                    >
-                                        {timestamp}
-                                    </span>
-                                )}
                                 </div>
                                 {showUnread && (
                                     <Badge

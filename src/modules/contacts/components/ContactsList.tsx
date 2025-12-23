@@ -228,7 +228,7 @@ export default function ContactsList() {
                     {
                         label: 'Удалить',
                         variant: 'primary',
-                        color: 'danger',
+                        color: 'primary',
                         onClick: handleConfirmDelete,
                     },
                 ]}
