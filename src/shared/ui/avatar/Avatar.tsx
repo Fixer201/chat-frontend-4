@@ -38,7 +38,7 @@ const modeClasses: Record<AvatarMode, string> = {
     contact:
         'bg-(--color-gray-main) hover:bg-(--color-gray-light) active:bg-(--color-accent-violet-dark)/60',
     'select-contact':
-        'bg-(--color-gray-main) active:bg-(--color-accent-violet-dark)/6',
+        'bg-(--color-gray-main) active:bg-(--color-accent-violet-dark)/60',
     chat: 'bg-(--color-white-bg) hover:bg-(--color-gray-light)',
 }
 
@@ -106,8 +106,8 @@ export const Avatar = forwardRef<
                 <div
                     className={cn(
                         'relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) p-4',
-                        mode === 'select-contact' ||
-                            mode === 'contact'
+                       ( mode === 'select-contact' ||
+                            mode === 'contact')
                             ? 'w-10 h-10'
                             : 'w-15 h-15',
                     )}
@@ -117,8 +117,8 @@ export const Avatar = forwardRef<
                         alt={alt ?? name}
                         fill
                         sizes={
-                            mode === 'select-contact' ||
-                            mode === 'contact'
+                           ( mode === 'select-contact' ||
+                            mode === 'contact')
                                 ? '40px'
                                 : '60px'
                         }
@@ -159,9 +159,9 @@ export const Avatar = forwardRef<
                             <p
                                 className={cn(
                                     'text-sm truncate',
-                                    mode === 'chat' &&
+                                 
                                         selected
-                                        ? 'text-(--color-white-bg) opacity-80'
+                                        ? 'text-white/80'
                                         : mode === 'chat'
                                         ? 'text-(--color-text-gray)'
                                         : isOnline
