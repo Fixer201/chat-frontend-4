@@ -33,7 +33,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const containerBase = "w-full max-w-md rounded-[8px] bg-white shadow-[0_24px_80px_rgba(40,32,77,0.15)] p-6";
-const overlayBase = "fixed inset-0 z-50 flex items-center justify-center px-4 bg-[rgba(40,32,77,0.35)]";
+const overlayBase = "fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#9587F566]";
 
 export default function Modal({
   open,
