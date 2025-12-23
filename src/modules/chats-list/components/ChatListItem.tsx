@@ -90,6 +90,8 @@ export const ChatListItem = forwardRef<
                     messageStatus={
                         avatarProps.messageStatus
                     }
+                    isPinned={isPinned}
+                    isChatRead={isChatRead}
                     notificationsEnabled={notificationsEnabled}
                     className={cn(
                         'bg-transparent hover:bg-transparent', // Базовые стили

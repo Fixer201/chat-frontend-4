@@ -5,6 +5,7 @@ import { cn } from '@shared/lib/utils'
 
 import type { ReactNode } from 'react'
 import { MessageStatusIcon } from '@shared/ui/messageStatusIcon/MessageStatusIcon'
+import Image from 'next/image'
 
 interface ChatAvatarRightSectionProps {
     timestamp?: string
@@ -13,6 +14,8 @@ interface ChatAvatarRightSectionProps {
     messageStatus?: 'sent' | 'delivered' | 'read' | null
     rightElement?: ReactNode
     selected?: boolean
+    isPinned?:boolean
+    isChatRead?:boolean
 }
 
 export const ChatAvatarRightSection = ({
@@ -22,6 +25,8 @@ export const ChatAvatarRightSection = ({
     messageStatus,
     rightElement,
     selected,
+    isPinned,
+    isChatRead
 }: ChatAvatarRightSectionProps) => {
     return (
         <div className="ml-auto flex gap-2 items-start">
@@ -50,7 +55,19 @@ export const ChatAvatarRightSection = ({
                             </span>
                         )}
                     </div>
-                    {showUnread && (
+                    {isPinned
+                        ?( <Image
+                                    src='/images/chatList/pin.svg'
+                                    alt={'Закреплено'}
+                                    width={16}
+                                    height={16}
+                                    className={cn(
+                                        selected
+                                            ? 'brightness-0 invert'
+                                            : 'opacity-70'
+                                    )}
+                                />)
+                        :(showUnread && (
                         <Badge
                             variant="counter"
                             color="primary"
@@ -61,9 +78,10 @@ export const ChatAvatarRightSection = ({
                                     : ''
                             }
                         >
-                            {unreadCount}
+                            {!isChatRead?unreadCount:null}
                         </Badge>
-                    )}
+                    ))}
+                    
                 </div>
             )}
             {rightElement}

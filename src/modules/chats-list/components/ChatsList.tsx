@@ -55,7 +55,6 @@ const handleDeleteChat = (chatId: number | string) => {
 
 const handlePinChat = (chatId: number | string) => {
   console.log('Закрепить чат:', chatId);
-  // Здесь будет логика закрепления чата
 };
 
 const handleMuteChat = (chatId: number | string) => {

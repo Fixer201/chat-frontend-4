@@ -17,7 +17,9 @@ export interface ChatAvatarProps
     rightElement?: ReactNode
     className?: string
     notificationsEnabled?: boolean
-    messageStatus?: 'sent' | 'delivered' | 'read' | null
+    messageStatus?: 'sent' | 'delivered' | 'read' | null,
+    isPinned?:boolean
+    isChatRead?:boolean
 }
 
 export const ChatAvatar = forwardRef<
@@ -35,6 +37,8 @@ export const ChatAvatar = forwardRef<
     className,
     notificationsEnabled,
     messageStatus,
+    isPinned,
+    isChatRead,
     ...props
 }, ref) => {
     const showUnread = typeof unreadCount === 'number' && unreadCount > 0
@@ -105,6 +109,8 @@ export const ChatAvatar = forwardRef<
                     messageStatus={messageStatus}
                     rightElement={rightElement}
                     selected={selected}
+                    isPinned={isPinned}
+                    isChatRead={isChatRead}
                 />
             )}
         </div>
