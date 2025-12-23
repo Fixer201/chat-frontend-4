@@ -21,7 +21,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex h-57 w-12 flex-col items-center justify-between gap-3 p-2">
+    <nav className="flex h-[228px] w-12 flex-col items-center justify-between gap-3 ">
       {navItems.map(({ id, label, Icon, path }) => {
   const isActive = Boolean(path && pathname.startsWith(path));
 
@@ -36,10 +36,10 @@ export default function AppSidebar() {
             }}
             aria-pressed={isActive}
             className={cn(
-              'flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg border p-2 transition-colors',
+              'flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg  transition-colors',
               isActive
-                ? 'border-border-neutral bg-gray-main'
-                : 'border-transparent hover:border-border-neutral hover:bg-gray-main'
+                ? 'border border-gray-200 bg-gray-main'
+                : 'border border-transparent  hover:bg-gray-main'
             )}
           >
             <Icon
