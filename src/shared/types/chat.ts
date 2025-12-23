@@ -1,3 +1,5 @@
+
+import { AvatarProps } from '@shared/ui/avatar/Avatar'
 // варианты представления аватара пользователя
 export type ChatAvatar = {
     avatarWebpUrl?: string | null
@@ -114,6 +116,20 @@ export interface ApiChatItem {
         created_at: number
         updated_at: number
     }
+}
+
+export interface ChatListItemProps
+    extends Omit<AvatarProps, 'mode' | 'className'> {
+    selected?: boolean
+    messageStatus?: 'sent' | 'delivered' | 'read' | null
+    notificationsEnabled: boolean
+    onDeleteChat?: () => void
+    onPinChat?: () => void
+    onMuteChat?: () => void
+    onMarkAsRead?: () => void
+    onMarkAsUnread?: () => void
+    isPinned?: boolean
+    isChatRead?: boolean
 }
 
 // Тип для моковых данных (частичный)
