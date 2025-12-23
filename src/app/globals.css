@@ -184,7 +184,7 @@ body {
   height: 120px;
 }
 .custom-scroll:hover::-webkit-scrollbar {
-  display: block; 
+  display: block;
 }
 .custom-scroll:hover {
   overflow: scroll;  
