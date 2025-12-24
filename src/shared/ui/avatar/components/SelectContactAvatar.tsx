@@ -52,7 +52,7 @@ export const SelectContactAvatar = forwardRef<
                     src={src}
                     alt={alt ?? name}
                     fill
-                    sizes="60px"
+                    sizes="40px"
                     className="object-cover"
                 />
             </div>
@@ -86,6 +86,9 @@ export const SelectContactAvatar = forwardRef<
                 <span
                     className={cn(
                         'w-6 h-6 rounded-full border-2 flex items-center justify-center',
+                         selected
+                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
+                                        : 'border-(--color-accent-violet-primary)',
                         isSelected
                             ? 'bg-(--color-white-bg) border-(--color-white-bg)'
                             : 'border-(--color-accent-violet-primary)',

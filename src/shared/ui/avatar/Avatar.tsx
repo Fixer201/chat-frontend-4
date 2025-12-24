@@ -25,6 +25,9 @@ export interface AvatarProps
     rightElement?: React.ReactNode
     className?: string
     notificationsEnabled?: boolean
+    wasOnlineAt?: number
+    isSelected?: boolean
+    onSelect?: () => void
     messageStatus?: 'sent' | 'delivered' | 'read' | null
 }
 
