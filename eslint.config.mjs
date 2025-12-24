@@ -3,6 +3,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import eslintPluginBetterTailwindcss from "eslint-plugin-better-tailwindcss";
 import importX from "eslint-plugin-import-x";
+import eslintConfigPrettier from "eslint-config-prettier";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -74,6 +75,9 @@ const eslintConfig = defineConfig([
       "react/no-unescaped-entities": "error",
     },
   },
+
+  // Prettier integration - MUST be last to disable conflicting ESLint rules
+  eslintConfigPrettier,
 ]);
 
 export default eslintConfig;
