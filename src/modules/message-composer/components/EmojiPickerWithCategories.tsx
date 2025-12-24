@@ -1,15 +1,14 @@
 'use client'
 
-import React, { useCallback, useMemo, useRef, useState, } from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import React, { useCallback, useMemo, useState } from 'react'
 import { EmojiCategoryTabs } from './EmojiCategoryTabs'
 import { cn } from '@lib/utils'
-import { useRecentEmojis } from '@shared/hooks/useRecentEmojis'
-import { computeCategoryRowIndices, computeVirtualRows, emojiGroups, getCategoryName, } from '@shared/lib/emojiData'
-import { EmojiGroup, EmojiPickerWithCategoriesProps, } from '@shared/types/Emoji'
+import { getCategoryName } from '@shared/lib/emojiData'
+import { EmojiPickerWithCategoriesProps } from '@shared/types/Emoji'
 import EmojiRow from '@modules/message-composer/components/EmojiRow'
+import { useEmojiGroups } from '@modules/message-composer/hooks/useEmojiGroups'
+import { useEmojiVirtualization } from '@modules/message-composer/hooks/useEmojiVirtualization'
 
-const HEADER_HEIGHT = 44
 const ROW_GAP = 6
 const PADDING_X_AXIS = 20
 
@@ -22,104 +21,28 @@ export function EmojiPickerWithCategories({
     const [selectedCategory, setSelectedCategory] =
         useState('smileys_emotion')
 
-    const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-    const isScrollingToRef = useRef(false)
-
-    const { recentEmojis, addRecentEmoji } =
-        useRecentEmojis()
-
-    // Create recent group when we have recent emojis
-    const recentGroup: EmojiGroup | null = useMemo(() => {
-        if (recentEmojis.length === 0) return null
-        return {
-            name: 'Недавние',
-            slug: 'recent',
-            emojis: recentEmojis.map((emoji) => ({
-                emoji,
-                name: emoji,
-                slug: emoji,
-                skin_tone_support: false,
-            })),
-        }
-    }, [recentEmojis])
-
-    // Combine recent + all groups
-    const allGroups = useMemo(() => {
-        return recentGroup
-            ? [recentGroup, ...emojiGroups]
-            : emojiGroups
-    }, [recentGroup])
-
-    // Compute virtual rows (header + emoji rows)
-    const virtualRows = useMemo(
-        () => computeVirtualRows(allGroups, emojisPerRow),
-        [allGroups, emojisPerRow],
-    )
-
-    // Map category slug to row index for scroll-to
-    const categoryRowIndices = useMemo(
-        () => computeCategoryRowIndices(virtualRows),
-        [virtualRows],
-    )
+    // Get emoji groups data
+    const {
+        recentEmojis,
+        addRecentEmoji,
+        virtualRows,
+        categoryRowIndices,
+        rowToCategoryMap,
+    } = useEmojiGroups({ emojisPerRow })
 
     // Calculate row height
     const rowHeight = emojiSize + ROW_GAP
-    const getRowHeight = useCallback(
-        (index: number) => {
-            return virtualRows[index].type === 'header'
-                ? HEADER_HEIGHT
-                : rowHeight
-        },
-        [virtualRows, rowHeight],
-    )
 
-    // Virtualizer setup
-    const virtualizer = useVirtualizer({
-        count: virtualRows.length,
-        getScrollElement: () => scrollContainerRef.current,
-        estimateSize: getRowHeight,
-        overscan: 5,
-        onChange: (instance) => {
-            if (isScrollingToRef.current) return
-
-            // Find first visible header to determine active category
-            const visibleRange = instance.range
-            if (!visibleRange) return
-
-            for (
-                let i = visibleRange.startIndex;
-                i <= visibleRange.endIndex;
-                i++
-            ) {
-                const row = virtualRows[i]
-                if (row && row.slug !== selectedCategory) {
-                    // Find the category that contains the first visible row
-                    let categorySlug = row.slug
-
-                    // If we're past first rows, check what category we're in
-                    if (i > 0) {
-                        // Look backwards to find the header
-                        for (let j = i; j >= 0; j--) {
-                            if (
-                                virtualRows[j].type ===
-                                'header'
-                            ) {
-                                categorySlug =
-                                    virtualRows[j].slug
-                                break
-                            }
-                        }
-                    }
-
-                    if (categorySlug !== selectedCategory) {
-                        setSelectedCategory(categorySlug)
-                    }
-                    break
-                }
-            }
-        },
-    })
+    // Virtualization and scroll logic
+    const { scrollContainerRef, virtualizer, scrollToCategory } =
+        useEmojiVirtualization({
+            virtualRows,
+            rowHeight,
+            rowToCategoryMap,
+            categoryRowIndices,
+            selectedCategory,
+            setSelectedCategory,
+        })
 
     // Handle emoji click via event delegation
     const handleContainerClick = useCallback(
@@ -137,28 +60,6 @@ export function EmojiPickerWithCategories({
             }
         },
         [onEmojiSelect, addRecentEmoji],
-    )
-
-    // Scroll to category when tab is clicked
-    const scrollToCategory = useCallback(
-        (slug: string) => {
-            const rowIndex = categoryRowIndices.get(slug)
-            if (rowIndex === undefined) return
-
-            isScrollingToRef.current = true
-            setSelectedCategory(slug)
-
-            virtualizer.scrollToIndex(rowIndex, {
-                align: 'start',
-                behavior: 'smooth',
-            })
-
-            // Reset flag after scroll animation
-            setTimeout(() => {
-                isScrollingToRef.current = false
-            }, 300)
-        },
-        [categoryRowIndices, virtualizer],
     )
 
     // Pre-compute grid style
@@ -180,6 +81,23 @@ export function EmojiPickerWithCategories({
         [emojiSize],
     )
 
+    // Pre-compute container width
+    const containerWidth = useMemo(
+        () =>
+            emojiButtonStyle.width * emojisPerRow +
+            ROW_GAP * emojisPerRow +
+            PADDING_X_AXIS * 2,
+        [emojiButtonStyle.width, emojisPerRow],
+    )
+
+    // Pre-compute row width
+    const rowWidth = useMemo(
+        () =>
+            emojiButtonStyle.width * emojisPerRow +
+            ROW_GAP * emojisPerRow,
+        [emojiButtonStyle.width, emojisPerRow],
+    )
+
     return (
         <div
             className={cn(
@@ -190,14 +108,8 @@ export function EmojiPickerWithCategories({
             {/* Virtualized scroll container */}
             <div
                 ref={scrollContainerRef}
-                className="h-72 px-3 overflow-y-auto overflow-x-hidden scrollbar-thin"
-                style={{
-                    width:
-                        emojiButtonStyle.width *
-                            emojisPerRow +
-                        ROW_GAP * emojisPerRow +
-                        PADDING_X_AXIS * 2,
-                }}
+                className="h-full px-3 overflow-y-auto overflow-x-hidden scrollbar-thin"
+                style={{ width: containerWidth }}
                 onClick={handleContainerClick}
             >
                 <div
@@ -209,44 +121,27 @@ export function EmojiPickerWithCategories({
                     {virtualizer
                         .getVirtualItems()
                         .map((virtualRow) => {
-                            const row =
-                                virtualRows[
-                                    virtualRow.index
-                                ]
+                            const row = virtualRows[virtualRow.index]
 
                             return (
                                 <div
                                     key={virtualRow.key}
                                     style={{
-                                        position:
-                                            'absolute',
+                                        position: 'absolute',
                                         top: 0,
                                         left: 0,
-                                        width:
-                                            emojiButtonStyle.width *
-                                                emojisPerRow +
-                                            ROW_GAP *
-                                                emojisPerRow,
+                                        width: rowWidth,
                                         height: virtualRow.size,
                                         transform: `translateY(${virtualRow.start}px)`,
                                     }}
                                 >
-                                    {row.type ===
-                                    'header' ? (
-                                        <CategoryHeader
-                                            slug={row.slug}
-                                        />
+                                    {row.type === 'header' ? (
+                                        <CategoryHeader slug={row.slug} />
                                     ) : (
                                         <EmojiRow
-                                            emojis={
-                                                row.emojis!
-                                            }
-                                            gridStyle={
-                                                gridStyle
-                                            }
-                                            buttonStyle={
-                                                emojiButtonStyle
-                                            }
+                                            emojis={row.emojis!}
+                                            gridStyle={gridStyle}
+                                            buttonStyle={emojiButtonStyle}
                                         />
                                     )}
                                 </div>
