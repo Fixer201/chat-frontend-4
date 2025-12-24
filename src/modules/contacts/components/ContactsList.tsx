@@ -10,7 +10,10 @@ import ContactsDelete from './ContactsDelete'
 import Modal from '@shared/ui/modal/Modal'
 import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
-import { ContactAvatar } from './ContactAvatar'
+// import { ContactAvatar } from './ContactAvatar'
+import { Avatar } from '@shared/ui/avatar/Avatar'
+import { STATUS_TEXTS } from '@shared/config/constants' 
+
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -19,9 +22,7 @@ export default function ContactsList() {
         useState<string[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const dispatch = useDispatch()
-    const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContact.uid,
-    )
+    const selectedUid = useSelector((state: RootState) => state.SelectedContact.uid)
 
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
@@ -103,33 +104,38 @@ export default function ContactsList() {
                     )}
 
                 {/* контейнер контактов  */}
-                <div className="custom-scroll gap-4 flex flex-col flex-1 ">
-                    {filteredContacts &&
-                    filteredContacts.length > 0 ? (
-                        filteredContacts.map((contact) => (
-                            <ContactAvatar
-                                key={contact.uid}
-                                contact={contact}
-                                deleteMode={deleteMode}
-                                selectedUid={selectedUid}
-                                selectedContacts={
-                                    selectedContacts
-                                }
-                                searchValue={searchValue}
-                                onSelectContact={
-                                    handleSelectContact
-                                }
-                                onSetSelectedContact={(
-                                    uid,
-                                ) =>
-                                    dispatch(
-                                        setSelectedContact(
-                                            uid,
-                                        ),
-                                    )
-                                }
-                            />
-                        ))
+                <div className="custom-scroll gap-4 flex flex-col flex-1">
+                    {filteredContacts && filteredContacts.length > 0 ? (
+                        filteredContacts.map((contact) => {
+                            const name = `${contact.firstName} ${contact.lastName}`
+                            const src = contact.avatar || '/default-avatar.png'  // 
+                            const statusText = STATUS_TEXTS
+                            const isOnline = contact.isOnline
+                            const wasOnlineAt = contact.wasOnlineAt 
+                            const mode = deleteMode ? 'select-contact' : 'contact'
+                            const selected = !deleteMode && selectedUid === contact.uid
+                            const isSelected = deleteMode && selectedContacts.includes(contact.uid)
+                            const onSelect = deleteMode
+                                ? () => handleSelectContact(contact.uid)
+                                : () => dispatch(setSelectedContact(contact.uid))
+
+                            return (
+                                <Avatar
+                                    key={contact.uid}
+                                    mode={mode}
+                                    src={src}
+                                    alt={name}
+                                    name={name}
+                                   
+                                    isOnline={isOnline}
+                                    selected={selected}
+                                    wasOnlineAt={wasOnlineAt}
+                                    isSelected={isSelected}
+                                    onSelect={onSelect}
+                                    className="border-b border-b-gray-light"  // Добавлено для разделителя, как в оригинале
+                                />
+                            )
+                        })
                     ) : searchValue.trim() ? (
                         // блок для пустого поиска
                         <div className="flex flex-col items-center justify-center h-full text-center p-4">

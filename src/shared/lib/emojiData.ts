@@ -28,11 +28,19 @@ const CATEGORY_NAMES: Record<string, string> = {
     recent: 'Недавние',
 }
 
+// Helper function to check if emoji is a ZWJ sequence (compound emoji)
+function isZWJSequence(emoji: string): boolean {
+    // ZWJ sequences contain the Zero-Width Joiner character (U+200D)
+    return emoji.includes('\u200D')
+}
+
 // Pre-process emoji data once at import time
 function processEmojiData(): EmojiGroup[] {
     return (rawEmojiData as EmojiGroup[]).map(group => ({
         ...group,
         slug: SLUG_MAP[group.slug] ?? group.slug,
+        // Filter out ZWJ sequences (compound emojis) to avoid rendering issues
+        emojis: group.emojis.filter(e => !isZWJSequence(e.emoji)),
     }))
 }
 
