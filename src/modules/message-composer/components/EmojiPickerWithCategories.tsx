@@ -1,6 +1,10 @@
 'use client'
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, {
+    useCallback,
+    useMemo,
+    useState,
+} from 'react'
 import { EmojiCategoryTabs } from './EmojiCategoryTabs'
 import { cn } from '@lib/utils'
 import { getCategoryName } from '@shared/lib/emojiData'
@@ -34,15 +38,18 @@ export function EmojiPickerWithCategories({
     const rowHeight = emojiSize + ROW_GAP
 
     // Virtualization and scroll logic
-    const { scrollContainerRef, virtualizer, scrollToCategory } =
-        useEmojiVirtualization({
-            virtualRows,
-            rowHeight,
-            rowToCategoryMap,
-            categoryRowIndices,
-            selectedCategory,
-            setSelectedCategory,
-        })
+    const {
+        scrollContainerRef,
+        virtualizer,
+        scrollToCategory,
+    } = useEmojiVirtualization({
+        virtualRows,
+        rowHeight,
+        rowToCategoryMap,
+        categoryRowIndices,
+        selectedCategory,
+        setSelectedCategory,
+    })
 
     // Handle emoji click via event delegation
     const handleContainerClick = useCallback(
@@ -121,13 +128,17 @@ export function EmojiPickerWithCategories({
                     {virtualizer
                         .getVirtualItems()
                         .map((virtualRow) => {
-                            const row = virtualRows[virtualRow.index]
+                            const row =
+                                virtualRows[
+                                    virtualRow.index
+                                ]
 
                             return (
                                 <div
                                     key={virtualRow.key}
                                     style={{
-                                        position: 'absolute',
+                                        position:
+                                            'absolute',
                                         top: 0,
                                         left: 0,
                                         width: rowWidth,
@@ -135,13 +146,22 @@ export function EmojiPickerWithCategories({
                                         transform: `translateY(${virtualRow.start}px)`,
                                     }}
                                 >
-                                    {row.type === 'header' ? (
-                                        <CategoryHeader slug={row.slug} />
+                                    {row.type ===
+                                    'header' ? (
+                                        <CategoryHeader
+                                            slug={row.slug}
+                                        />
                                     ) : (
                                         <EmojiRow
-                                            emojis={row.emojis!}
-                                            gridStyle={gridStyle}
-                                            buttonStyle={emojiButtonStyle}
+                                            emojis={
+                                                row.emojis!
+                                            }
+                                            gridStyle={
+                                                gridStyle
+                                            }
+                                            buttonStyle={
+                                                emojiButtonStyle
+                                            }
                                         />
                                     )}
                                 </div>
@@ -165,7 +185,7 @@ function CategoryHeader({
     slug,
 }: Readonly<{ slug: string }>) {
     return (
-        <p className="text-text-gray text-lg py-2 px-1 sticky top-0 bg-white">
+        <p className="text-text-gray text-start text-lg py-2 px-1 sticky top-0 bg-white-bg">
             {getCategoryName(slug)}
         </p>
     )

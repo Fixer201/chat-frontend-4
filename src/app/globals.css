@@ -163,7 +163,7 @@ body {
     overflow: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding-right: 6px;
+    scrollbar-gutter: stable; /* Резервирует место под скролл */
 }
 
 .custom-scroll::-webkit-scrollbar {
