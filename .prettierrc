@@ -9,7 +9,8 @@
   "arrowParens": "always",
   "bracketSpacing": true,
   "bracketSameLine": false,
-  "endOfLine": "lf",
+  "endOfLine": "lf",     - Для запуска перед push в git
+
   "proseWrap": "preserve",
   "quoteProps": "as-needed",
   "embeddedLanguageFormatting": "auto",
