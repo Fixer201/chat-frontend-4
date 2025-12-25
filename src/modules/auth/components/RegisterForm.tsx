@@ -12,9 +12,9 @@ export default function RegisterForm() {
   };
 
   return <>
-    <div className="flex flex-col items-center justify-center w-122 h-[760px] rounded-2xl bg-[url(/images/login/StartPage.svg)] absolute drop-shadow-[-24px_-24px_80px_#695C7A26]">
-      <div className="flex flex-col items-center w-90 h-[608px] absolute gap-6 justify-between">
-        <div className="relative flex items-center w-90 h-[70px]">
+    <div className="flex flex-col items-center justify-center w-122 h-190 rounded-2xl bg-[url(/images/login/StartPage.svg)] absolute drop-shadow-[-24px_-24px_80px_#695C7A26]">
+      <div className="flex flex-col items-center w-90 h-152 absolute gap-6 justify-between">
+        <div className="relative flex items-center w-90 h-17">
           <Image
             src="/images/login/back.svg"
             alt="Back"
@@ -34,11 +34,11 @@ export default function RegisterForm() {
           />
         </div>
 
-        <div className="flex flex-col items-center w-90 h-[506px] gap-6 justify-between">
+        <div className="flex flex-col items-center w-90 h-126 gap-6 justify-between">
           <div className="flex items-center justify-center w-90">
             <p className="font-bold text-[32px] text-center">Вход/регистрация</p>
           </div>
-          <div className="flex flex-col items-center w-90 h-[450px] justify-between">
+          <div className="flex flex-col items-center w-90 h-112 justify-between">
             <Input label="Введите номер телефона" placeholder="+7 900 000 00 00" borderColor="gray" textColor="gray" inputSize="lg" />
             <Button variant="solid" size="md" className="w-full">Далее</Button>
           </div>

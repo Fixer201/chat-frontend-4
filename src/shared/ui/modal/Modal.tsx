@@ -130,7 +130,7 @@ export default function Modal({
                       onClick={onClick}
                       loading={loading}
                       disabled={disabled}
-                      className={cn("w-full sm:w-auto min-w-[90px]", buttonClass)}
+                      className={cn("w-full sm:w-auto min-w-22", buttonClass)}
                     >
                       {label}
                     </Button>

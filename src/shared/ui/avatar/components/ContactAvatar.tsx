@@ -1,91 +1,212 @@
 'use client'
+import { Badge } from '@shared/ui/badge/Badge'
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
 import { forwardRef } from 'react'
 import type { HTMLAttributes, ReactNode } from 'react'
 
-export interface ContactAvatarProps
+export type AvatarMode = 'contact' | 'select-contact'
+
+export interface AvatarProps
     extends HTMLAttributes<HTMLDivElement> {
     src: string
     alt?: string
     name: string
+    mode?: AvatarMode
     statusText?: string
+    messagePreview?: string
+    timestamp?: string
+    unreadCount?: number
     isOnline?: boolean
+    selected?: boolean
     rightElement?: ReactNode
     className?: string
-    selected?: boolean
-    wasOnlineAt?: number 
-    isSelected?: boolean 
-    onSelect?: () => void 
+    notificationsEnabled?: boolean
+    onSelect?: () => void
+    isSelected?: boolean
+}
+
+const rowBaseClasses =
+    'flex gap-3 px-3 py-2 rounded-md transition-colors duration-200 select-none cursor-pointer'
+
+const modeClasses: Record<AvatarMode, string> = {
+    contact:
+        'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
+    'select-contact': 'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
 }
 
 export const ContactAvatar = forwardRef<
     HTMLDivElement,
-    ContactAvatarProps
+    AvatarProps
 >(
     (
         {
             src,
             alt,
             name,
+            mode = 'contact',
             statusText,
+            timestamp,
+            unreadCount,
             isOnline,
+            selected,
             rightElement,
             className,
-            selected,
-            // wasOnlineAt,
-            // isSelected,
             onSelect,
+            isSelected,
             ...props
         },
         ref,
-    ) => (
-        <div
-            ref={ref}
-            className={cn(
-                'flex gap-3 px-3 py-2 rounded-md transition-colors duration-200 select-none cursor-pointer',
-                'bg-(--color-gray-main) hover:bg-(--color-gray-light) active:bg-(--color-accent-violet-dark)/60',
-                selected && 'bg-(--color-accent-violet-dark)/60',
-                className,
-            )}
-             onClick={onSelect}
-            {...props}
-        >
-            <div className="relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) w-10 h-10">
-                <Image
-                    src={src}
-                    alt={alt ?? name}
-                    fill
-                    sizes="40px"
-                    className="object-cover"
-                />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="min-w-0 flex flex-col">
-                    <p className="text-base font-medium truncate text-(--color-text-black)">
-                        {name}
-                    </p>
-                    {statusText && (
-                        <p
-                            className={cn(
-                                'text-sm truncate',
-                                isOnline
-                                    ? 'text-(--color-accent-violet-primary)'
-                                    : 'text-(--color-text-gray)',
-                            )}
-                        >
-                            {statusText}
-                        </p>
+    ) => {
+        const secondaryText = statusText
+        const showChatMeta = timestamp
+        const showSelectIndicator =
+            mode === 'select-contact'
+        const hasRightElement = Boolean(rightElement)
+        const showRightSection =
+            showChatMeta ||
+            showSelectIndicator ||
+            hasRightElement
+
+const isHighlighted = selected || (mode === 'select-contact' && isSelected)
+
+
+
+        return (
+            <div
+                ref={ref}
+                className={cn(
+                    rowBaseClasses,
+                    modeClasses[mode],
+                    
+isHighlighted && 'bg-(--color-accent-violet-dark)/60',
+                    className,
+
+                )}
+                {...props}
+            >
+                <div
+                    className={cn(
+                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4 w-15 h-15',
                     )}
+                >
+                    <Image
+                        src={src}
+                        alt={alt ?? name}
+                        fill
+                        sizes={'40px'}
+                        className="object-cover"
+                    />
                 </div>
+                <div className="flex-1 min-w-0 border-b border-b-gray-200">
+                    <div className="min-w-0 flex flex-col ">
+                        <div className="flex items-center gap-2">
+                            <p
+                                className={cn(
+                                    'text-base font-medium truncate',
+                                    isHighlighted
+                                        ? 'text-(--color-white-bg)'
+                                        : 'text-(--color-text-black)',
+                                )}
+                            >
+                                {name}
+                            </p>
+                        </div>
+
+                        {secondaryText && (
+                            <p
+                                className={cn(
+                                    'text-sm truncate',
+
+                                     isHighlighted
+                                        ? 'text-white/80'
+                                        : isOnline
+                                            ? 'text-(--color-accent-violet-primary)'
+                                            : 'text-(--color-text-gray)',
+                                )}
+                            >
+                                {secondaryText}
+                            </p>
+                        )}
+                    </div>
+                </div>
+                {showRightSection && (
+                    <div
+                        className={cn(
+                            'flex gap-2',
+
+                            'ml-3 flex gap-2',
+                            showChatMeta
+                                ? 'items-start'
+                                : 'items-center',
+                        )}
+                    >
+                        {showChatMeta && (
+                            <div
+                                className={cn(
+                                    'flex flex-col gap-1',
+                                    'items-center',
+                                )}
+                            >
+                                {timestamp && (
+                                    <span
+                                        className={cn(
+                                            'text-xs text-(--color-text-gray) whitespace-nowrap',
+
+                                           isHighlighted
+                                                ? 'text-white/80'
+                                                : 'text-(--color-text-gray)',
+                                        )}
+                                    >
+                                        {timestamp}
+                                    </span>
+                                )}
+                                {
+                                    <Badge
+                                        variant="counter"
+                                        color="primary"
+                                        size="md"
+                                        className={
+                                           isHighlighted
+                                                ? 'bg-white text-accent-violet-dark/60'
+                                                : ''
+                                        }   >
+                                        {unreadCount}
+                                    </Badge>
+                                }
+                            </div>
+                        )}
+                        {showSelectIndicator && (
+                            <span
+                                className={cn(
+                                    'w-6 h-6 rounded-full border-2 flex items-center justify-center',
+                                   isHighlighted
+                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
+                                        : 'border-(--color-accent-violet-primary)',
+                                    isSelected
+                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
+                                        : 'border-(--color-accent-violet-primary)',
+                                )}
+                                onClick={onSelect}
+                            >
+                                {isSelected && (
+                                    <Image
+                                        src="/images/Check.svg"
+                                        alt="selected"
+                                        width={20}
+                                        height={20}
+                                    />
+                                )}
+                            </span>
+                        )}
+                        {rightElement}
+                    </div>
+                )}
             </div>
-            {rightElement && (
-                <div className="ml-3 flex gap-2 items-center">
-                    {rightElement}
-                </div>
-            )}
-        </div>
-    ),
+        )
+    },
 )
 
 ContactAvatar.displayName = 'ContactAvatar'
+
+
