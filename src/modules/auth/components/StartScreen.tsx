@@ -2,6 +2,7 @@
 import { Button } from "@shared/ui/button/Button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import '@app/globals.css';
 
 
 export default function StartScreen() {
@@ -12,7 +13,7 @@ export default function StartScreen() {
   };
   return (
     <>
-      <div className="flex flex-col items-center justify-center w-122 h-190 rounded-2xl bg-[url(/images/login/StartPage.svg)] loading=eager absolute drop-shadow-[-24px_-24px_80px_#695C7A26]">
+      <div className="flex flex-col items-center justify-center w-122 h-190 rounded-2xl bg-[url(/images/login/StartPage.svg)] absolute" style={{ filter: 'var(--app-start-screen-shadow)' }}>
         <Image
           src="/images/login/Logo.svg"
           alt="Logo"
