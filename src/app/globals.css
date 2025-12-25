@@ -1,16 +1,11 @@
 @import "tailwindcss";
-@config "../../tailwind.config.ts";
 
-/* @import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *)); */
+@custom-variant dark (&:is(.dark *));
 
 body {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
-
-    /* border: 1px solid grey; */
 }
 
 @theme inline {
@@ -83,12 +78,12 @@ body {
     --app-teal-secondary: hsla(170, 59%, 90%, 1); /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: #FF0000;                            /* System/Red */
-    --app-system-red-soft: rgba(255, 0, 0, 0.6);          /* System/Red 60% */
-    --app-system-red-surface: rgba(255, 0, 0, 0.12);      /* System/Red Surface */
-    --app-system-red-dark: #CC0000;                       /* System/Red Dark */
-    --app-system-blue: hsla(211, 100%, 50%, 1);           /* System/Blue */
-    --app-system-green: hsla(129, 67%, 47%, 1);           /* Miscellaneous/Window Controls/Maximize */
+    --app-system-red: #FF0000; /* System/Red */
+    --app-system-red-soft: rgba(255, 0, 0, 0.6); /* System/Red 60% */
+    --app-system-red-surface: rgba(255, 0, 0, 0.12); /* System/Red Surface */
+    --app-system-red-dark: #CC0000; /* System/Red Dark */
+    --app-system-blue: hsla(211, 100%, 50%, 1); /* System/Blue */
+    --app-system-green: hsla(129, 67%, 47%, 1); /* Miscellaneous/Window Controls/Maximize */
 
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
@@ -131,12 +126,12 @@ body {
     --app-teal-secondary: hsla(170, 59%, 90%, 1); /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: #FF0000;                            /* System/Red */
-    --app-system-red-soft: rgba(255, 0, 0, 0.6);          /* System/Red 60% */
-    --app-system-red-surface: rgba(255, 0, 0, 0.12);      /* System/Red Surface */
-    --app-system-red-dark: #CC0000;                       /* System/Red Dark */
-    --app-system-blue: hsla(211, 100%, 50%, 1);           /* System/Blue */
-    --app-system-green: hsla(129, 67%, 47%, 1);           /* Miscellaneous/Window Controls/Maximize */
+    --app-system-red: #FF0000; /* System/Red */
+    --app-system-red-soft: rgba(255, 0, 0, 0.6); /* System/Red 60% */
+    --app-system-red-surface: rgba(255, 0, 0, 0.12); /* System/Red Surface */
+    --app-system-red-dark: #CC0000; /* System/Red Dark */
+    --app-system-blue: hsla(211, 100%, 50%, 1); /* System/Blue */
+    --app-system-green: hsla(129, 67%, 47%, 1); /* Miscellaneous/Window Controls/Maximize */
 
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
@@ -163,37 +158,42 @@ body {
     }
 }
 
+
 .custom-scroll {
-  overflow: scroll;
-  scrollbar-width: none; 
-  -ms-overflow-style: none; 
-  padding-right: 6px;
-  
+    overflow: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scrollbar-gutter: stable; /* Резервирует место под скролл */
 }
+
 .custom-scroll::-webkit-scrollbar {
-  display: none; 
-  width: 6px; 
+    display: none;
+    width: 6px;
 }
+
 .custom-scroll::-webkit-scrollbar-track {
-  background: transparent; 
+    background: transparent;
 }
+
 .custom-scroll::-webkit-scrollbar-thumb {
-  background: var(--app-text-gray); 
-  border-radius: 4px; 
- border: 1px solid var(--app-black-alpha-70);
-  height: 120px;
+    background: var(--app-text-gray);
+    border-radius: 4px;
+    border: 1px solid var(--app-black-alpha-70);
+    height: 120px;
 }
+
 .custom-scroll:hover::-webkit-scrollbar {
-  display: block;
+    display: block;
 }
 
 @media (max-width: 768px) {
-  :root {
-    --chat-list-divider-left: calc(50px + 8px + 4px);
-  }
+    :root {
+        --chat-list-divider-left: calc(50px + 8px + 4px);
+    }
 }
+
 .custom-scroll:hover {
-  overflow: scroll;  
-  scrollbar-width: auto; /* Firefox: восстанавливает скролл */
-  -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
+    overflow: scroll;
+    scrollbar-width: auto; /* Firefox: восстанавливает скролл */
+    -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
 }

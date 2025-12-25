@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { EmojiRowProps } from '@shared/types/Emoji'
 import { Emoji } from '@shared/ui/emoji/Emoji'
 
-function EmojiRow({
+const EmojiRow = memo(function EmojiRow({
     emojis,
     gridStyle,
     buttonStyle,
@@ -22,6 +22,6 @@ function EmojiRow({
             ))}
         </div>
     )
-}
+})
 
 export default EmojiRow

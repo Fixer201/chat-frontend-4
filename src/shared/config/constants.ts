@@ -1,4 +1,14 @@
-import { Contact } from "@shared/types/contact"
+import { Contact } from '@shared/types/contact'
+import { Category } from '@shared/types/Emoji'
+import TimeIcon from '@public/icons/messageComposer/emojiCategories/time.svg'
+import EmotionIcon from '@public/icons/messageComposer/emojiCategories/smiley.svg'
+import PeoplesIcon from '@public/icons/messageComposer/emojiCategories/people.svg'
+import CatIcon from '@public/icons/messageComposer/emojiCategories/cat.svg'
+import FoodDrinkIcon from '@public/icons/messageComposer/emojiCategories/food&drink.svg'
+import TravelIcon from '@public/icons/messageComposer/emojiCategories/travel.svg'
+import ObjectsIcon from '@public/icons/messageComposer/emojiCategories/objects.svg'
+import SymbolsIcon from '@public/icons/messageComposer/emojiCategories/symbols.svg'
+import FlagIcon from '@public/icons/messageComposer/emojiCategories/flag.svg'
 
 export const APP_NAME = 'Chat App'
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -10,9 +20,6 @@ export const ALLOWED_FILE_TYPES = [
 
 export const DEFAULT_AVATAR =
     '/images/chatHeader/userAvatar.svg'
-
-
-
 
 export const ContactsListDB: Contact[] = [
     {
@@ -196,3 +203,43 @@ export const STATUS_TEXTS = {
         `был(а) вчера в ${hours}:${minutes}`,
     dateAgo: (date: string): string => `был(а) ${date}`,
 } as const
+
+export const EMOJI_CATEGORIES: Category[] = [
+    { name: 'Недавние', slug: 'recent', emoji: TimeIcon },
+    {
+        name: 'Эмоции',
+        slug: 'smileys_emotion',
+        emoji: EmotionIcon,
+    },
+    {
+        name: 'Люди',
+        slug: 'people_body',
+        emoji: PeoplesIcon,
+    },
+    {
+        name: 'Животные',
+        slug: 'animals_nature',
+        emoji: CatIcon,
+    },
+    {
+        name: 'Еда и напитки',
+        slug: 'food_drink',
+        emoji: FoodDrinkIcon,
+    },
+    {
+        name: 'Путешествие',
+        slug: 'travel_places',
+        emoji: TravelIcon,
+    },
+    {
+        name: 'Объекты',
+        slug: 'objects',
+        emoji: ObjectsIcon,
+    },
+    {
+        name: 'Символы',
+        slug: 'symbols',
+        emoji: SymbolsIcon,
+    },
+    { name: 'Флаги стран', slug: 'flags', emoji: FlagIcon },
+] as const
