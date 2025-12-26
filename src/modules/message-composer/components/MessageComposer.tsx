@@ -79,8 +79,8 @@ export default function MessageComposer() {
         }, 500)
     }
 
-    return (
-        <div className=" px-4 py-3 flex items-end justify-between h-fit max-h-125 rounded-b-md border-t border-border bg-primary-background">
+    return <>
+      
             {/* Attachment Icon */}
             <Image
                 width={25}
@@ -159,6 +159,6 @@ export default function MessageComposer() {
                     />
                 )}
             </button>
-        </div>
-    )
+
+    </>
 }
