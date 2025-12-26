@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -9,10 +9,10 @@ body {
 }
 
 @theme inline {
-    --radius-sm: calc(var(--radius) - 4px);  /* 6px */
-    --radius-md: calc(var(--radius) - 2px);  /* 8px */
-    --radius-lg: var(--radius);              /* 10px */
-    --radius-xl: calc(var(--radius) + 4px);  /* 14px */
+    --radius-sm: calc(var(--radius) - 4px); /* 6px */
+    --radius-md: calc(var(--radius) - 2px); /* 8px */
+    --radius-lg: var(--radius); /* 10px */
+    --radius-xl: calc(var(--radius) + 4px); /* 14px */
     --radius-3xl: calc(var(--radius) + 10px); /* 20px */
     /* UI Component Colors */
     /* Custom App Colors - Primary */
@@ -27,10 +27,21 @@ body {
     --color-text-gray: var(--app-text-gray);
 
     /* Custom App Colors - Accent */
-    --color-accent-violet-primary: var(--app-accent-violet-primary);
-    --color-accent-violet-white: var(--app-accent-violet-white);
-    --color-accent-violet-light: var(--app-accent-violet-light);
-    --color-accent-violet-dark: var(--app-accent-violet-dark);
+    --color-accent-violet-primary: var(
+        --app-accent-violet-primary
+    );
+    --color-accent-violet-white: var(
+        --app-accent-violet-white
+    );
+    --color-accent-violet-light: var(
+        --app-accent-violet-light
+    );
+    --color-accent-violet-ultra-light: var(
+        --app-accent-violet-ultra-light
+    );
+    --color-accent-violet-dark: var(
+        --app-accent-violet-dark
+    );
 
     /* Custom App Colors - User Message */
     --color-teal-secondary: var(--app-teal-secondary);
@@ -38,7 +49,9 @@ body {
     /* Custom App Colors - System */
     --color-system-red: var(--app-system-red);
     --color-system-red-soft: var(--app-system-red-soft);
-    --color-system-red-surface: var(--app-system-red-surface);
+    --color-system-red-surface: var(
+        --app-system-red-surface
+    );
     --color-system-red-dark: var(--app-system-red-dark);
     --color-system-blue: var(--app-system-blue);
     --color-system-green: var(--app-system-green);
@@ -50,105 +63,277 @@ body {
 
     /* Custom App Colors - Shadows */
     --color-context-shadow: var(--app-context-shadow);
-    --color-violet-shadow-light: var(--app-violet-shadow-light);
-    --color-violet-shadow-dark: var(--app-violet-shadow-dark);
+    --color-violet-shadow-light: var(
+        --app-violet-shadow-light
+    );
+    --color-violet-shadow-dark: var(
+        --app-violet-shadow-dark
+    );
 }
 
 :root {
     --radius: 0.625rem; /* 10px */
     --chat-list-divider-left: calc(60px + 12px + 8px);
     /* Primary Colors */ /* !Name in Figma Design! */
-    --app-white-bg: hsla(0, 0%, 100%, 1); /* White tone/White bg */
-    --app-gray-main: hsla(220, 18%, 97%, 1); /* Gray tone/Gray */
-    --app-gray-light: hsla(220, 18%, 97%, 0.5); /* Gray tone/Gray light (50%) */
-    --app-black-alpha-70: hsla(0, 0%, 0%, 0.7); /* Gray tone/black (70%) */
-    --app-black-alpha-20: hsla(0, 0%, 0%, 0.2); /* Gray tone/black (20%) */
+    --app-white-bg: hsla(
+        0,
+        0%,
+        100%,
+        1
+    ); /* White tone/White bg */
+    --app-gray-main: hsla(
+        220,
+        18%,
+        97%,
+        1
+    ); /* Gray tone/Gray */
+    --app-gray-light: hsla(
+        220,
+        18%,
+        97%,
+        0.5
+    ); /* Gray tone/Gray light (50%) */
+    --app-black-alpha-70: hsla(
+        0,
+        0%,
+        0%,
+        0.7
+    ); /* Gray tone/black (70%) */
+    --app-black-alpha-20: hsla(
+        0,
+        0%,
+        0%,
+        0.2
+    ); /* Gray tone/black (20%) */
 
     /* Text Colors */
-    --app-text-black: hsla(240, 3%, 11%, 1); /* Text/Black */
+    --app-text-black: hsla(
+        240,
+        3%,
+        11%,
+        1
+    ); /* Text/Black */
     --app-text-gray: hsla(0, 0%, 45%, 1); /* Text/Gray */
 
     /* Accent Colors */
-    --app-accent-violet-primary: #7769E1; /* Accent/Violet primary */
-    --app-accent-violet-white: #CEC8FF; /* Accent/violet white */
-    --app-accent-violet-light: #E2DDFF; /* Accent/Light Violet */
-    --app-accent-violet-dark: #615AA3; /* Accent/violet dark */
+    --app-accent-violet-primary: #7769e1; /* Accent/Violet primary */
+    --app-accent-violet-white: #cec8ff; /* Accent/violet white */
+    --app-accent-violet-light: #e2ddff; /* Accent/Light Violet */
+    --app-accent-violet-ultra-light: #f5f4ff; /* Accent/Violet ultra light */
+    --app-accent-violet-dark: #615aa3; /* Accent/violet dark */
 
     /* User Message Color */
-    --app-teal-secondary: hsla(170, 59%, 90%, 1); /* Complementary/Teal Secondary */
+    --app-teal-secondary: hsla(
+        170,
+        59%,
+        90%,
+        1
+    ); /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: #FF0000; /* System/Red */
-    --app-system-red-soft: rgba(255, 0, 0, 0.6); /* System/Red 60% */
-    --app-system-red-surface: rgba(255, 0, 0, 0.12); /* System/Red Surface */
-    --app-system-red-dark: #CC0000; /* System/Red Dark */
-    --app-system-blue: hsla(211, 100%, 50%, 1); /* System/Blue */
-    --app-system-green: hsla(129, 67%, 47%, 1); /* Miscellaneous/Window Controls/Maximize */
-
+    --app-system-red: #ff0000; /* System/Red */
+    --app-system-red-soft: rgba(
+        255,
+        0,
+        0,
+        0.6
+    ); /* System/Red 60% */
+    --app-system-red-surface: rgba(
+        255,
+        0,
+        0,
+        0.12
+    ); /* System/Red Surface */
+    --app-system-red-dark: #cc0000; /* System/Red Dark */
+    --app-system-blue: hsla(
+        211,
+        100%,
+        50%,
+        1
+    ); /* System/Blue */
+    --app-system-green: hsla(
+        129,
+        67%,
+        47%,
+        1
+    ); /* Miscellaneous/Window Controls/Maximize */
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
-    --app-call-modal-red: hsla(359, 100%, 61%, 1); /* Colors/Red */
-    --app-call-modal-green: hsla(135, 59%, 49%, 1); /* Colors/Green */
+    --app-call-modal-red: hsla(
+        359,
+        100%,
+        61%,
+        1
+    ); /* Colors/Red */
+    --app-call-modal-green: hsla(
+        135,
+        59%,
+        49%,
+        1
+    ); /* Colors/Green */
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
-    --app-call-timer-green: hsla(140, 100%, 37%, 1); /*  !Not Found! */
+    --app-call-timer-green: hsla(
+        140,
+        100%,
+        37%,
+        1
+    ); /*  !Not Found! */
 
     /* Shadows */
-    --app-context-shadow: hsla(0, 0%, 0%, 0.2); /* context menu shadow */
+    --app-context-shadow: hsla(
+        0,
+        0%,
+        0%,
+        0.2
+    ); /* context menu shadow */
 
     /* Not Found names in Figma design */
     /* Violet */
-    --app-violet-shadow-light: hsla(246, 90%, 96%, 1); /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
-    --app-violet-shadow-dark: hsla(248, 85%, 75%, 0.4); /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
+    --app-violet-shadow-light: hsla(
+        246,
+        90%,
+        96%,
+        1
+    ); /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
+    --app-violet-shadow-dark: hsla(
+        248,
+        85%,
+        75%,
+        0.4
+    ); /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
     /*========================================================================================================= */
 }
 
 .dark {
-
     /* Primary Colors */ /* !Name in Figma Design! */
-    --app-white-bg: hsla(0, 0%, 100%, 1); /* White tone/White bg */
-    --app-gray-main: hsla(220, 18%, 97%, 1); /* Gray tone/Gray */
-    --app-gray-light: hsla(220, 18%, 97%, 0.5); /* Gray tone/Gray light (50%) */
-    --app-black-alpha-70: hsla(0, 0%, 0%, 0.7); /* Gray tone/black (70%) */
-    --app-black-alpha-20: hsla(0, 0%, 0%, 0.2); /* Gray tone/black (20%) */
+    --app-white-bg: hsla(
+        0,
+        0%,
+        100%,
+        1
+    ); /* White tone/White bg */
+    --app-gray-main: hsla(
+        220,
+        18%,
+        97%,
+        1
+    ); /* Gray tone/Gray */
+    --app-gray-light: hsla(
+        220,
+        18%,
+        97%,
+        0.5
+    ); /* Gray tone/Gray light (50%) */
+    --app-black-alpha-70: hsla(
+        0,
+        0%,
+        0%,
+        0.7
+    ); /* Gray tone/black (70%) */
+    --app-black-alpha-20: hsla(
+        0,
+        0%,
+        0%,
+        0.2
+    ); /* Gray tone/black (20%) */
 
     /* Text Colors */
-    --app-text-black: hsla(240, 3%, 11%, 1); /* Text/Black */
+    --app-text-black: hsla(
+        240,
+        3%,
+        11%,
+        1
+    ); /* Text/Black */
     --app-text-gray: hsla(0, 0%, 45%, 1); /* Text/Gray */
 
     /* Accent Colors */
-    --app-accent-violet-primary: #7769E1; /* Accent/Violet primary */
-    --app-accent-violet-white: #CEC8FF; /* Accent/violet white */
-    --app-accent-violet-light: #E2DDFF; /* Accent/Light Violet */
-    --app-accent-violet-dark: #615AA3; /* Accent/violet dark */
+    --app-accent-violet-primary: #7769e1; /* Accent/Violet primary */
+    --app-accent-violet-white: #cec8ff; /* Accent/violet white */
+    --app-accent-violet-light: #e2ddff; /* Accent/Light Violet */
+    --app-accent-violet-dark: #615aa3; /* Accent/violet dark */
 
     /* User Message Color */
-    --app-teal-secondary: hsla(170, 59%, 90%, 1); /* Complementary/Teal Secondary */
+    --app-teal-secondary: hsla(
+        170,
+        59%,
+        90%,
+        1
+    ); /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: #FF0000; /* System/Red */
-    --app-system-red-soft: rgba(255, 0, 0, 0.6); /* System/Red 60% */
-    --app-system-red-surface: rgba(255, 0, 0, 0.12); /* System/Red Surface */
-    --app-system-red-dark: #CC0000; /* System/Red Dark */
-    --app-system-blue: hsla(211, 100%, 50%, 1); /* System/Blue */
-    --app-system-green: hsla(129, 67%, 47%, 1); /* Miscellaneous/Window Controls/Maximize */
-
+    --app-system-red: #ff0000; /* System/Red */
+    --app-system-red-soft: rgba(
+        255,
+        0,
+        0,
+        0.6
+    ); /* System/Red 60% */
+    --app-system-red-surface: rgba(
+        255,
+        0,
+        0,
+        0.12
+    ); /* System/Red Surface */
+    --app-system-red-dark: #cc0000; /* System/Red Dark */
+    --app-system-blue: hsla(
+        211,
+        100%,
+        50%,
+        1
+    ); /* System/Blue */
+    --app-system-green: hsla(
+        129,
+        67%,
+        47%,
+        1
+    ); /* Miscellaneous/Window Controls/Maximize */
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
-    --app-call-modal-red: hsla(359, 100%, 61%, 1); /* Colors/Red */
-    --app-call-modal-green: hsla(135, 59%, 49%, 1); /* Colors/Green */
+    --app-call-modal-red: hsla(
+        359,
+        100%,
+        61%,
+        1
+    ); /* Colors/Red */
+    --app-call-modal-green: hsla(
+        135,
+        59%,
+        49%,
+        1
+    ); /* Colors/Green */
 
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
-    --app-call-timer-green: hsla(140, 100%, 37%, 1); /*  !Not Found! */
+    --app-call-timer-green: hsla(
+        140,
+        100%,
+        37%,
+        1
+    ); /*  !Not Found! */
 
     /* Shadows */
-    --app-context-shadow: hsla(0, 0%, 0%, 0.2); /* context menu shadow */
+    --app-context-shadow: hsla(
+        0,
+        0%,
+        0%,
+        0.2
+    ); /* context menu shadow */
 
     /* Not Found names in Figma design */
     /* Violet */
-    --app-violet-shadow-light: hsla(246, 90%, 96%, 1); /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
-    --app-violet-shadow-dark: hsla(248, 85%, 75%, 0.4); /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
+    --app-violet-shadow-light: hsla(
+        246,
+        90%,
+        96%,
+        1
+    ); /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
+    --app-violet-shadow-dark: hsla(
+        248,
+        85%,
+        75%,
+        0.4
+    ); /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
     /*========================================================================================================= */
 }
 
@@ -157,7 +342,6 @@ body {
         @apply bg-white-bg text-text-black;
     }
 }
-
 
 .custom-scroll {
     overflow: scroll;
