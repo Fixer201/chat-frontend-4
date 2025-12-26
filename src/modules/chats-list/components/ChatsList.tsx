@@ -1,17 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
 
 import { useSearch } from '@shared/hooks/useSearch'
 import { ChatListItem } from './ChatListItem'
 import ChatListSearch from './ChatListSearch'
+import ChatDeleteModal from './ChatDeleteModal'
 interface IchatSettings {
     isPinned: boolean
     isChatRead: boolean
     notificationsEnabled: boolean
     isDeleted: boolean
+    isInContacts: boolean
 }
 type TchatSettings = Record<string | number, IchatSettings>
 export default function ChatsList() {
@@ -20,6 +22,12 @@ export default function ChatsList() {
     const [selectedChatId, setSelectedChatId] = useState<
         number | null | string
     >(null)
+     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+     const [isDeleting, setIsDeleting] = useState(false)
+    const [chatToDelete, setChatToDelete] = useState<{
+        id: number | string;
+        name: string;
+    } | null>(null)
     const [chatSettings, setChatSettings] =
         useState<TchatSettings>({})
 
@@ -35,6 +43,7 @@ export default function ChatsList() {
                     isChatRead: chat.newMessageCount === 0, // Если нет непрочитанных, считаем прочитанным
                     notificationsEnabled: true, // По умолчанию уведомления включены
                     isDeleted: false, // По умолчанию не удален
+                    isInContacts: chat.chat.isInContacts || false, 
                 }
             })
             setChatSettings(initialSettings)
@@ -97,27 +106,42 @@ export default function ChatsList() {
             setSelectedChatId(id)
         }
     }
+const handleDeleteClick = useCallback((chatId: number | string, chatName: string) => {
+        setChatToDelete({ id: chatId, name: chatName })
+        setDeleteModalOpen(true)
+    }, [])
 
-    const handleDeleteChat = (chatId: number | string) => {
-        // Сначала показываем подтверждение
-        if (
-            window.confirm(
-                'Вы уверены, что хотите удалить чат?',
-            )
-        ) {
-            // Добавляем анимацию или задержку перед удалением
-            setTimeout(() => {
-                setChatSettings((prev) => ({
-                    ...prev,
-                    [chatId]: {
-                        ...prev[chatId],
-                        isDeleted: true,
-                    },
-                }))
-            }, 300) // Задержка для анимации
-        }
+   const handleDeleteConfirm = useCallback(async () => {
+    if (!chatToDelete || isDeleting) return
+    
+    setIsDeleting(true)
+    
+    try {
+        // Имитация задержки сети
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        console.log('Удалить чат:', chatToDelete.id)
+        
+        setChatSettings(prev => ({
+            ...prev,
+            [chatToDelete.id]: {
+                ...prev[chatToDelete.id],
+                isDeleted: true,
+            },
+        }))
+        
+        setDeleteModalOpen(false)
+        setChatToDelete(null)
+    } catch (error) {
+        console.error('Ошибка при удалении:', error)
+    } finally {
+        setIsDeleting(false)
     }
-
+}, [chatToDelete, isDeleting])
+const handleDeleteCancel = useCallback(() => {
+        setDeleteModalOpen(false)
+        setChatToDelete(null)
+    }, [])
     const handlePinChat = (chatId: number | string) => {
         console.log('Закрепить чат:', chatId)
         setChatSettings((prev) => ({
@@ -171,6 +195,21 @@ export default function ChatsList() {
         }))
     }
 
+        const handleAddToContacts = (chatId: number | string, firstName: string, lastName: string) => {
+        // Показываем alert с подтверждением
+        alert(`Пользователь "${firstName} ${lastName}" успешно добавлен в список контактов!`);
+        
+        // Обновляем состояние контактов
+        setChatSettings(prev => ({
+            ...prev,
+            [chatId]: {
+            ...prev[chatId],
+            isInContacts: true,
+            },
+        }));
+        
+        };
+
     return (
         <div className="flex flex-col h-full">
             <ChatListSearch
@@ -190,6 +229,7 @@ export default function ChatsList() {
                                 chat.newMessageCount === 0,
                             notificationsEnabled: true,
                             isDeleted: false,
+                            isInContacts:chat.chat.isInContacts
                         }
                         // Пропускаем удаленные чаты
                         if (settings.isDeleted) return null
@@ -224,11 +264,7 @@ export default function ChatsList() {
                                             messageStatuses.length
                                     ]
                                 }
-                                onDeleteChat={() =>
-                                    handleDeleteChat(
-                                        chat.id,
-                                    )
-                                }
+                                onDeleteChat={() => handleDeleteClick(chat.id, `${chat.chat.firstName} ${chat.chat.lastName}`)} 
                                 onPinChat={() =>
                                     handlePinChat(chat.id)
                                 }
@@ -245,15 +281,23 @@ export default function ChatsList() {
                                         chat.id,
                                     )
                                 }
+                                onAddToContacts={() => handleAddToContacts(chat.id, chat.chat.firstName, chat.chat.lastName)}
                                 isPinned={settings.isPinned}
                                 isChatRead={
                                     settings.isChatRead
                                 }
+                                isInContacts={settings.isInContacts}
                             />
                         )
                     })}
                 </div>
             </div>
+             <ChatDeleteModal
+                open={deleteModalOpen}
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+                chatName={chatToDelete?.name || ''}
+            />
         </div>
     )
 }

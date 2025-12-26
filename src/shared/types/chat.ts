@@ -122,6 +122,8 @@ export interface ChatListItemProps
     onMarkAsUnread?: () => void
     isPinned?: boolean
     isChatRead?: boolean
+    onAddToContacts?: () => void
+    isInContacts?: boolean
 }
 
 // Тип для моковых данных (частичный)

@@ -26,11 +26,13 @@ export const ChatListItem = forwardRef<
             onDeleteChat,
             onPinChat,
             onMuteChat,
+            onAddToContacts,
             notificationsEnabled,
             isPinned = false,
             onMarkAsRead,
             onMarkAsUnread,
             isChatRead = true,
+            isInContacts=false,
             ...avatarProps
         },
         ref,
@@ -111,9 +113,11 @@ export const ChatListItem = forwardRef<
                     onMarkAsRead={onMarkAsRead}
                     onMarkAsUnread={onMarkAsUnread}
                     onDeleteChat={onDeleteChat}
+                    onAddToContacts={onAddToContacts}
                     notificationsEnabled={notificationsEnabled}
                     isPinned={isPinned}
                     isChatRead={isChatRead}
+                    isInContacts={isInContacts}
                     onMenuItemClick={handleMenuItemClick}
                     hoveredItem={hoveredItem}
                     setHoveredItem={setHoveredItem}
