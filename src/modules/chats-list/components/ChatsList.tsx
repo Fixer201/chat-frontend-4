@@ -8,6 +8,7 @@ import { useSearch } from '@shared/hooks/useSearch'
 import { ChatListItem } from './ChatListItem'
 import ChatListSearch from './ChatListSearch'
 import ChatDeleteModal from './ChatDeleteModal'
+import ChatSuccessToast from './ChatSuccessToast'
 interface IchatSettings {
     isPinned: boolean
     isChatRead: boolean
@@ -24,6 +25,8 @@ export default function ChatsList() {
     >(null)
      const [deleteModalOpen, setDeleteModalOpen] = useState(false)
      const [isDeleting, setIsDeleting] = useState(false)
+     const [successToastOpen, setSuccessToastOpen] = useState(false)
+    const [addedContactName, setAddedContactName] = useState('')
     const [chatToDelete, setChatToDelete] = useState<{
         id: number | string;
         name: string;
@@ -195,21 +198,31 @@ const handleDeleteCancel = useCallback(() => {
         }))
     }
 
-        const handleAddToContacts = (chatId: number | string, firstName: string, lastName: string) => {
-        // Показываем alert с подтверждением
-        alert(`Пользователь "${firstName} ${lastName}" успешно добавлен в список контактов!`);
+       // Функция добавления в контакты с кастомным модальным окном
+    const handleAddToContacts = useCallback((chatId: number | string, firstName: string, lastName: string) => {
+        const fullName = `${firstName} ${lastName}`
+        
+        // Сохраняем имя для показа в модальном окне
+        setAddedContactName(fullName)
         
         // Обновляем состояние контактов
         setChatSettings(prev => ({
             ...prev,
             [chatId]: {
-            ...prev[chatId],
-            isInContacts: true,
+                ...prev[chatId],
+                isInContacts: true,
             },
-        }));
+        }))
         
-        };
+        // Показываем модальное окно успеха
+        setSuccessToastOpen(true)
+    }, [])
 
+    // Функция закрытия модального окна успеха
+    const handleSuccessToastClose = useCallback(() => {
+        setSuccessToastOpen(false)
+    }, [])
+    
     return (
         <div className="flex flex-col h-full">
             <ChatListSearch
@@ -229,7 +242,7 @@ const handleDeleteCancel = useCallback(() => {
                                 chat.newMessageCount === 0,
                             notificationsEnabled: true,
                             isDeleted: false,
-                            isInContacts:chat.chat.isInContacts
+                            isInContacts: chat.chat.isInContacts || false,
                         }
                         // Пропускаем удаленные чаты
                         if (settings.isDeleted) return null
@@ -297,6 +310,11 @@ const handleDeleteCancel = useCallback(() => {
                 onClose={handleDeleteCancel}
                 onConfirm={handleDeleteConfirm}
                 chatName={chatToDelete?.name || ''}
+            />
+            <ChatSuccessToast
+                open={successToastOpen}
+                onClose={handleSuccessToastClose}
+                userName={addedContactName}
             />
         </div>
     )

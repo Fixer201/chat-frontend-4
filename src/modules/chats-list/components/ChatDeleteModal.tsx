@@ -41,7 +41,7 @@ export default function ChatDeleteModal({
     {
       label: "Удалить",
       variant: "solid",
-      color: "danger",
+      color: "primary",
       onClick: handleConfirm,
       loading: isDeleting || loading,
       disabled: isDeleting || loading
@@ -53,8 +53,9 @@ export default function ChatDeleteModal({
       open={open}
       onClose={onClose}
       title="Удалить чат"
-      description={`Вы уверены, что хотите удалить чат с ${chatName}? Все сообщения будут удалены.`}
+      description={`Удалить чат с ${chatName} без возможности восстановления? `}
       descriptionColor="muted"
+      titleAlign ='left'
       iconAlt="Удалить чат"
       buttons={buttons}
       closeOnOverlayClick={!isDeleting && !loading}
