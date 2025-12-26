@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
 
@@ -9,6 +9,7 @@ import { ChatListItem } from './ChatListItem'
 import ChatListSearch from './ChatListSearch'
 import ChatDeleteModal from './ChatDeleteModal'
 import ChatSuccessToast from './ChatSuccessToast'
+import EmptySearchState from './EmptySearchState'
 interface IchatSettings {
     isPinned: boolean
     isChatRead: boolean
@@ -170,7 +171,11 @@ const handleDeleteCancel = useCallback(() => {
             },
         }))
     }
+const showEmptyState = useMemo(() => {
+        return searchValue.trim() !== '' && filteredValue && filteredValue.length === 0
+    }, [searchValue, filteredValue])
 
+    
     const handleMarkAsRead = (chatId: number | string) => {
         console.log('Пометить чат как прочитанный:', chatId)
         setChatSettings((prev) => ({
@@ -224,6 +229,8 @@ const handleDeleteCancel = useCallback(() => {
     }, [])
     
     return (
+        <>
+        
         <div className="flex flex-col h-full">
             <ChatListSearch
                 searchValue={searchValue}
@@ -231,9 +238,16 @@ const handleDeleteCancel = useCallback(() => {
                 clearSearchInput={clearSearchInput}
                 placeholder={'Поиск...'}
             />
-            <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8]">
+            <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8] custom-scroll">
                 <div className="flex flex-col">
-                    {sortedChats?.map((chat, index) => {
+                    {showEmptyState
+                    ?(
+                        <div className="flex-1 flex items-center justify-center p-4">
+                                <EmptySearchState />
+                            </div>
+                    )
+                    :(
+                         sortedChats?.map((chat, index) => {
                         const settings = chatSettings[
                             chat.id
                         ] || {
@@ -302,7 +316,9 @@ const handleDeleteCancel = useCallback(() => {
                                 isInContacts={settings.isInContacts}
                             />
                         )
-                    })}
+                    })
+                    )}
+                   
                 </div>
             </div>
              <ChatDeleteModal
@@ -317,5 +333,6 @@ const handleDeleteCancel = useCallback(() => {
                 userName={addedContactName}
             />
         </div>
+        </>
     )
 }
