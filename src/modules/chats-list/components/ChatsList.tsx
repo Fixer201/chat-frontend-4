@@ -177,7 +177,7 @@ export default function ChatsList() {
             ...prev[chatId],
             isChatRead: true,
             // Для пустого кружка: сохраняем оригинальный счетчик
-            originalUnreadCount: prev[chatId]?.originalUnreadCount ?? chat.newMessageCount,
+            originalUnreadCount: prev[chatId]?.originalUnreadCount ?? prev.newMessageCount,
         },
     }))
 }
