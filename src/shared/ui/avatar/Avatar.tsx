@@ -26,7 +26,7 @@ export interface AvatarProps
     className?: string
     notificationsEnabled?: boolean
     messageStatus?: 'sent' | 'delivered' | 'read' | null
-    isPinned?:boolean
+    isFavorite?:boolean
     isChatRead?:boolean
 }
 

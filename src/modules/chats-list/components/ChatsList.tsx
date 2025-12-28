@@ -12,7 +12,7 @@ import EmptySearchState from './EmptySearchState'
 import EmptyChatsState from './EmptyChatsState' // ДОБАВИЛ импорт
 
 interface IchatSettings {
-    isPinned: boolean
+    isFavorite: boolean
     isChatRead: boolean
     notificationsEnabled: boolean
     isDeleted: boolean
@@ -46,7 +46,7 @@ export default function ChatsList() {
             const initialSettings: TchatSettings = {}
             chats.forEach((chat) => {
                 initialSettings[chat.id] = {
-                    isPinned: false,
+                    isFavorite: chat.isFavorite||false,
                     isChatRead: chat.newMessageCount === 0,
                     notificationsEnabled: true,
                     isDeleted: false,
@@ -79,11 +79,11 @@ export default function ChatsList() {
     )
 
     const sortedChats = [...filteredValue].sort((a, b) => {
-        const aPinned = chatSettings[a.id]?.isPinned || false
-        const bPinned = chatSettings[b.id]?.isPinned || false
+        const aIsFavorite = chatSettings[a.id]?.isFavorite || false
+        const bIsFavorite = chatSettings[b.id]?.isFavorite || false
 
-        if (aPinned && !bPinned) return -1
-        if (!aPinned && bPinned) return 1
+        if (aIsFavorite && !bIsFavorite) return -1
+        if (!aIsFavorite && bIsFavorite) return 1
         return 0
     })
 
@@ -137,13 +137,13 @@ export default function ChatsList() {
         setChatToDelete(null)
     }, [])
 
-    const handlePinChat = (chatId: number | string) => {
+    const handleFavoriteChat = (chatId: number | string) => {
         console.log('Закрепить чат:', chatId)
         setChatSettings((prev) => ({
             ...prev,
             [chatId]: {
                 ...prev[chatId],
-                isPinned: !prev[chatId]?.isPinned,
+                isFavorite: !prev[chatId]?.isFavorite,
             },
         }))
     }
@@ -241,7 +241,7 @@ export default function ChatsList() {
                         <div className="flex flex-col">
                             {sortedChats?.map((chat, index) => {
                                 const settings = chatSettings[chat.id] || {
-                                    isPinned: false,
+                                    isFavorite: false,
                                     isChatRead: chat.newMessageCount === 0,
                                     notificationsEnabled: true,
                                     isDeleted: false,
@@ -269,12 +269,12 @@ export default function ChatsList() {
                                         notificationsEnabled={settings.notificationsEnabled}
                                         messageStatus={messageStatuses[index % messageStatuses.length]}
                                         onDeleteChat={() => handleDeleteClick(chat.id, `${chat.chat.firstName} ${chat.chat.lastName}`)} 
-                                        onPinChat={() => handlePinChat(chat.id)}
+                                        onFavoriteChat={() => handleFavoriteChat(chat.id)}
                                         onMuteChat={() => handleMuteChat(chat.id)}
                                         onMarkAsRead={() => handleMarkAsRead(chat.id)}
                                         onMarkAsUnread={() => handleMarkAsUnread(chat.id)}
                                         onAddToContacts={() => handleAddToContacts(chat.id, chat.chat.firstName, chat.chat.lastName)}
-                                        isPinned={settings.isPinned}
+                                        isFavorite={settings.isFavorite}
                                         isChatRead={settings.isChatRead}
                                         isInContacts={settings.isInContacts}
                                     />

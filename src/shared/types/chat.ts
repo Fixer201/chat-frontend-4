@@ -116,11 +116,11 @@ export interface ChatListItemProps
     messageStatus?: 'sent' | 'delivered' | 'read' | null
     notificationsEnabled: boolean
     onDeleteChat?: () => void
-    onPinChat?: () => void
+    onFavoriteChat?: () => void
     onMuteChat?: () => void
     onMarkAsRead?: () => void
     onMarkAsUnread?: () => void
-    isPinned?: boolean
+    isFavorite?: boolean
     isChatRead?: boolean
     onAddToContacts?: () => void
     isInContacts?: boolean

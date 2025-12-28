@@ -24,11 +24,11 @@ export const ChatListItem = forwardRef<
             selected,
             onClick,
             onDeleteChat,
-            onPinChat,
+            onFavoriteChat,
             onMuteChat,
             onAddToContacts,
             notificationsEnabled,
-            isPinned = false,
+            isFavorite = false,
             onMarkAsRead,
             onMarkAsUnread,
             isChatRead = true,
@@ -92,7 +92,7 @@ export const ChatListItem = forwardRef<
                     messageStatus={
                         avatarProps.messageStatus
                     }
-                    isPinned={isPinned}
+                    isFavorite={isFavorite}
                     isChatRead={isChatRead}
                     notificationsEnabled={notificationsEnabled}
                     className={cn(
@@ -109,13 +109,13 @@ export const ChatListItem = forwardRef<
                     onOpenChange={setContextMenuOpen}
                     position={contextMenuPosition}
                     onMuteChat={onMuteChat}
-                    onPinChat={onPinChat}
+                    onFavoriteChat={onFavoriteChat}
                     onMarkAsRead={onMarkAsRead}
                     onMarkAsUnread={onMarkAsUnread}
                     onDeleteChat={onDeleteChat}
                     onAddToContacts={onAddToContacts}
                     notificationsEnabled={notificationsEnabled}
-                    isPinned={isPinned}
+                    isFavorite={isFavorite}
                     isChatRead={isChatRead}
                     isInContacts={isInContacts}
                     onMenuItemClick={handleMenuItemClick}

@@ -8,13 +8,13 @@ interface ChatListItemDropdownProps {
     onOpenChange: (open: boolean) => void
     position: { top: number; left: number }
     onMuteChat?: () => void
-    onPinChat?: () => void
+    onFavoriteChat?: () => void
     onMarkAsRead?: () => void
     onMarkAsUnread?: () => void
     onDeleteChat?: () => void
     onAddToContacts?: () => void
     notificationsEnabled: boolean
-    isPinned: boolean
+    isFavorite: boolean
     isChatRead: boolean
     isInContacts: boolean
     onMenuItemClick: (handler?: () => void) => void
@@ -27,13 +27,13 @@ export const ChatListItemDropdown = ({
     onOpenChange,
     position,
     onMuteChat,
-    onPinChat,
+    onFavoriteChat,
     onMarkAsRead,
     onMarkAsUnread,
     onDeleteChat,
     onAddToContacts,
     notificationsEnabled,
-    isPinned,
+    isFavorite,
     isChatRead,
     isInContacts,
     onMenuItemClick,
@@ -91,15 +91,15 @@ export const ChatListItemDropdown = ({
                     </Dropdown.Item>
                 )}
 
-                {onPinChat && (
+                {onFavoriteChat && (
                     <Dropdown.Item
-                        onSelect={() => onMenuItemClick(onPinChat)}
+                        onSelect={() => onMenuItemClick(onFavoriteChat)}
                         rightIcon={
                             <Image
-                                src={isPinned
+                                src={isFavorite
                                     ? "/images/chatList/unpin.svg"
                                     : "/images/chatList/pin.svg"}
-                                alt={isPinned ? "Открепить" : "Закрепить"}
+                                alt={isFavorite ? "Открепить" : "Закрепить"}
                                 width={16}
                                 height={16}
                                 className="opacity-80"
@@ -108,7 +108,7 @@ export const ChatListItemDropdown = ({
                         onMouseEnter={() => setHoveredItem('pin')}
                         onMouseLeave={() => setHoveredItem(null)}
                     >
-                        {isPinned ? 'Открепить чат' : 'Закрепить чат'}
+                        {isFavorite ? 'Открепить чат' : 'Закрепить чат'}
                     </Dropdown.Item>
                 )}
 

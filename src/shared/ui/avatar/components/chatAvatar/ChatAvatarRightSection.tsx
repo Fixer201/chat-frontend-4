@@ -14,7 +14,7 @@ interface ChatAvatarRightSectionProps {
     messageStatus?: 'sent' | 'delivered' | 'read' | null
     rightElement?: ReactNode
     selected?: boolean
-    isPinned?:boolean
+    isFavorite?:boolean
     isChatRead?:boolean
 }
 
@@ -25,7 +25,7 @@ export const ChatAvatarRightSection = ({
     messageStatus,
     rightElement,
     selected,
-    isPinned,
+    isFavorite,
     isChatRead
 }: ChatAvatarRightSectionProps) => {
     return (
@@ -55,7 +55,7 @@ export const ChatAvatarRightSection = ({
                             </span>
                         )}
                     </div>
-                    {isPinned
+                    {isFavorite
                         ?( <Image
                                     src='/images/chatList/pin.svg'
                                     alt={'Закреплено'}

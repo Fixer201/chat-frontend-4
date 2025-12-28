@@ -18,7 +18,7 @@ export interface ChatAvatarProps
     className?: string
     notificationsEnabled?: boolean
     messageStatus?: 'sent' | 'delivered' | 'read' | null,
-    isPinned?:boolean
+    isFavorite?:boolean
     isChatRead?:boolean
 }
 
@@ -37,7 +37,7 @@ export const ChatAvatar = forwardRef<
     className,
     notificationsEnabled,
     messageStatus,
-    isPinned,
+    isFavorite,
     isChatRead,
     ...props
 }, ref) => {
@@ -109,7 +109,7 @@ export const ChatAvatar = forwardRef<
                     messageStatus={messageStatus}
                     rightElement={rightElement}
                     selected={selected}
-                    isPinned={isPinned}
+                    isFavorite={isFavorite}
                     isChatRead={isChatRead}
                 />
             )}
