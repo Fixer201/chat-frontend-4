@@ -17,6 +17,7 @@ interface IchatSettings {
     notificationsEnabled: boolean
     isDeleted: boolean
     isInContacts: boolean
+    originalUnreadCount:number
 }
 type TchatSettings = Record<string | number, IchatSettings>
 
@@ -50,6 +51,7 @@ export default function ChatsList() {
                     notificationsEnabled: true,
                     isDeleted: false,
                     isInContacts: chat.chat.isInContacts || false, 
+                    originalUnreadCount:chat.newMessageCount
                 }
             })
             setChatSettings(initialSettings)
@@ -168,26 +170,30 @@ export default function ChatsList() {
     }, [isLoading, chats, searchValue])
 
     const handleMarkAsRead = (chatId: number | string) => {
-        console.log('Пометить чат как прочитанный:', chatId)
-        setChatSettings((prev) => ({
-            ...prev,
-            [chatId]: {
-                ...prev[chatId],
-                isChatRead: true,
-            },
-        }))
-    }
+    console.log('Пометить чат как прочитанный:', chatId)
+    setChatSettings((prev) => ({
+        ...prev,
+        [chatId]: {
+            ...prev[chatId],
+            isChatRead: true,
+            // Для пустого кружка: сохраняем оригинальный счетчик
+            originalUnreadCount: prev[chatId]?.originalUnreadCount ?? chat.newMessageCount,
+        },
+    }))
+}
 
     const handleMarkAsUnread = (chatId: number | string) => {
-        console.log('Пометить чат как непрочитанный:', chatId)
-        setChatSettings((prev) => ({
-            ...prev,
-            [chatId]: {
-                ...prev[chatId],
-                isChatRead: false,
-            },
-        }))
-    }
+    console.log('Пометить чат как непрочитанный:', chatId)
+    setChatSettings((prev) => ({
+        ...prev,
+        [chatId]: {
+            ...prev[chatId],
+            isChatRead: false,
+            // При повторной пометке как непрочитанного всегда показываем 0
+            originalUnreadCount: 0,
+        },
+    }))
+}
 
     const handleAddToContacts = useCallback((chatId: number | string, firstName: string, lastName: string) => {
         const fullName = `${firstName} ${lastName}`
@@ -242,13 +248,21 @@ export default function ChatsList() {
                                     isInContacts: chat.chat.isInContacts || false,
                                 }
                                 if (settings.isDeleted) return null
+                                let badgeCount: number | undefined = undefined
+                                    if (!settings.isChatRead) {
+                                        // Если есть сохраненный оригинальный счетчик и он > 0, используем его
+                                        // Иначе показываем 0 (пустой кружок)
+                                        badgeCount = (settings.originalUnreadCount && settings.originalUnreadCount > 0) 
+                                            ? settings.originalUnreadCount 
+                                            : 0
+                                    }
                                 return (
                                     <ChatListItem
                                         src="/images/chatHeader/userAvatar.svg"
                                         name={`${chat.chat.firstName} ${chat.chat.lastName}`}
                                         messagePreview={chat.lastMessage.content}
                                         timestamp={formatLastSeen(chat.lastActivityAt * 1000)}
-                                        unreadCount={chat.newMessageCount}
+                                        unreadCount={badgeCount}
                                         key={chat.id}
                                         selected={chat.id === selectedChatId}
                                         onClick={() => toSelectChat(chat.id)}

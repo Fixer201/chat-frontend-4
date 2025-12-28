@@ -10,7 +10,7 @@ import Image from 'next/image'
 interface ChatAvatarRightSectionProps {
     timestamp?: string
     showUnread: boolean
-    unreadCount?: number
+    unreadCount?: number |undefined
     messageStatus?: 'sent' | 'delivered' | 'read' | null
     rightElement?: ReactNode
     selected?: boolean
@@ -67,7 +67,21 @@ export const ChatAvatarRightSection = ({
                                             : 'opacity-70'
                                     )}
                                 />)
-                        :(showUnread && (
+                        :(!isChatRead && (
+                            showUnread?
+                            (<Badge
+                            variant="counter"
+                            color="primary"
+                            size="md"
+                            className={
+                                selected
+                                    ? 'bg-(--color-white-bg) text-(--color-accent-violet-primary)'
+                                    : ''
+                            }
+                        >
+                            {unreadCount}
+                        </Badge>
+                    ):(
                         <Badge
                             variant="counter"
                             color="primary"
@@ -78,9 +92,12 @@ export const ChatAvatarRightSection = ({
                                     : ''
                             }
                         >
-                            {!isChatRead?unreadCount:null}
+                            {null}
                         </Badge>
-                    ))}
+                    )
+                )
+                    
+                    )}
                     
                 </div>
             )}
