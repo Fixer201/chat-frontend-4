@@ -10,6 +10,7 @@ import ChatDeleteModal from './ChatDeleteModal'
 import ChatSuccessToast from './ChatSuccessToast'
 import EmptySearchState from './EmptySearchState'
 import EmptyChatsState from './EmptyChatsState' // ДОБАВИЛ импорт
+import {  CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
 interface IchatSettings {
     isFavorite: boolean
@@ -224,7 +225,8 @@ export default function ChatsList() {
                     clearSearchInput={clearSearchInput}
                     placeholder={'Поиск...'}
                 />
-                <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8] custom-scroll">
+                <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8] ">
+                <CustomScrollbar>
                     {isLoading ? ( // ДОБАВИЛ: состояние загрузки
                         <div className="flex items-center justify-center h-full">
                             <div className="text-text-gray">Загрузка...</div>
@@ -239,7 +241,8 @@ export default function ChatsList() {
                         </div>
                     ) : (
                         <div className="flex flex-col">
-                            {sortedChats?.map((chat, index) => {
+                            
+                                {sortedChats?.map((chat, index) => {
                                 const settings = chatSettings[chat.id] || {
                                     isFavorite: false,
                                     isChatRead: chat.newMessageCount === 0,
@@ -280,8 +283,11 @@ export default function ChatsList() {
                                     />
                                 )
                             })}
+                            
+                            
                         </div>
                     )}
+                    </CustomScrollbar>
                 </div>
             </div>
             <ChatDeleteModal
