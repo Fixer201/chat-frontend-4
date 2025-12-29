@@ -8,10 +8,10 @@ import { ChatListItem } from './ChatListItem'
 import ChatListSearch from './ChatListSearch'
 import ChatDeleteModal from './ChatDeleteModal'
 import ChatSuccessToast from './ChatSuccessToast'
-import EmptySearchState from './EmptySearchState'
-import EmptyChatsState from './EmptyChatsState' // ДОБАВИЛ импорт
-import {  CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
-
+import EmptySearchState from './emptySearchState/EmptySearchState'
+import EmptyChatsState from './emptyChatsState/EmptyChatsState' // ДОБАВИЛ импорт
+import {  CustomScrollbar } from '@shared/ui/customScrollbar/CustomScrollbar'
+import { useRouter } from 'next/navigation'
 interface IchatSettings {
     isFavorite: boolean
     isChatRead: boolean
@@ -23,6 +23,7 @@ interface IchatSettings {
 type TchatSettings = Record<string | number, IchatSettings>
 
 export default function ChatsList() {
+     const router = useRouter()
     const [searchValue, setSearchValue] = useState('')
     const { chats, loadChats } = useChats()
     const [selectedChatId, setSelectedChatId] = useState<number | null | string>(null)
@@ -38,7 +39,7 @@ export default function ChatsList() {
     const [isLoading, setIsLoading] = useState(true) // ДОБАВИЛ состояние загрузки
 
     useEffect(() => {
-        loadChats(15)
+        loadChats(0)
     }, [loadChats])
 
     useEffect(() => {
@@ -61,9 +62,7 @@ export default function ChatsList() {
 
     // ДОБАВИЛ функцию для кнопки "Начать чат"
     const handleStartChat = useCallback(() => {
-        console.log('Начать новый чат')
-        // В реальном приложении здесь будет переход к поиску контактов или созданию чата
-        alert('Функция начала нового чата будет реализована позже')
+       router.push('/contacts')
     }, [])
 
     const messageStatuses: ('sent' | 'delivered' | 'read' | null)[] = ['sent', 'delivered', 'read', null]

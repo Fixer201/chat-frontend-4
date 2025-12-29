@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { cn } from '@shared/lib/utils'
-
+import customStyles from '@modules/chats-list/components/emptySearchState/emptySearchState.module.css'
 interface EmptySearchStateProps {
   className?: string
 }
@@ -13,7 +13,7 @@ export default function EmptySearchState({ className }: EmptySearchStateProps) {
       "flex flex-col items-center justify-center min-h-[400px] w-full px-4",
       className
     )}>
-      <div className={cn("empty-search-container", className)}>
+      <div className={cn(`${customStyles['empty-search-container']}`, className)}>
         {/* Картинка */}
         <div className="relative w-[200px] h-[200px] flex-shrink-0">
           <Image
@@ -29,17 +29,17 @@ export default function EmptySearchState({ className }: EmptySearchStateProps) {
         <div className="flex flex-col items-center gap-6 w-full">
           {/* Заголовок */}
           <div className="w-full">
-            <h3 className="empty-search-title">
+            <h3 className={`${customStyles['empty-search-title']}`}>
               Поиск не дал результатов
             </h3>
           </div>
           
           {/* Описание */}
           <div className="flex flex-col gap-3 w-full">
-            <p className="empty-search-text">
+            <p className={`${customStyles['empty-search-text']}`}>
               По вашему запросу ничего не найдено.
             </p>
-            <p className="empty-search-text">
+            <p className={`${customStyles['empty-search-text']}`}>
               Измените запрос и попробуйте снова.
             </p>
           </div>

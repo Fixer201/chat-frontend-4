@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef,  useCallback } from 'react'
-import customStyle from '@shared/ui/CustomScrollbar/CustomScrollbar.module.css'
+import customStyle from '@shared/ui/customScrollbar/customScrollbar.module.css'
 export function CustomScrollbar({ children, className = '' }) {
   const contentRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
@@ -163,3 +163,7 @@ export function CustomScrollbar({ children, className = '' }) {
     </div>
   )
 }
+
+//Использование
+//<CustomScrollbar>Компонент со скроллом</CustomScrollbar>
+//<CustomScrollbar><ChatList>{код}</ChatList></CustomScrollbar>
