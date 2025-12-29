@@ -49,7 +49,9 @@ export const ChatListItemDropdown = ({
             <Dropdown.Content
                 manualPosition={position}
                 width="auto"
-                minWidth={180}
+                minWidth={200} // ИЗМЕНЕНИЕ: увеличил минимальную ширину
+                maxWidth={350} // ИЗМЕНЕНИЕ: добавил максимальную ширину
+                className="dropdown-no-wrap" // ИЗМЕНЕНИЕ: добавил класс
             >
                 {!isInContacts && onAddToContacts && (
                     <Dropdown.Item
