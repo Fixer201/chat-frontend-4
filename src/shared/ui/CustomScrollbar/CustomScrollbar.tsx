@@ -18,6 +18,7 @@ export function CustomScrollbar({ children, className = '' }:{children:React.Rea
 
     if (!content || !thumb || !container) return
 
+    
     const { scrollTop, scrollHeight, clientHeight } = content
     const containerHeight = container.clientHeight
     const thumbHeight = containerHeight * (clientHeight / scrollHeight)
@@ -36,7 +37,7 @@ export function CustomScrollbar({ children, className = '' }:{children:React.Rea
     thumb.style.top = `${thumbTop}px`
   }, [])
 
-  
+
   // Обработчик начала перетаскивания
   const handleThumbMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
