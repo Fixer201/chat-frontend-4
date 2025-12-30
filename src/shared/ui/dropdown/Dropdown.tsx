@@ -177,11 +177,13 @@ interface DropdownContentProps extends HTMLAttributes<HTMLDivElement> {
     left: number;
   }|null;
   minWidth?: number;
+  maxWidth?:number;
 }
 
 function DropdownContent({ 
-  width = 250, 
-  minWidth=120,
+  width = 'auto', 
+  minWidth=180,
+  maxWidth=400,
   className, 
   children, 
   items, 
@@ -192,9 +194,13 @@ function DropdownContent({
   const { isOpen, triggerRef, menuRef, placement, offset } = useDropdownContext();
   const [position, setPosition] = useState<CSSProperties>({ opacity: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
-  const [contentWidth, setContentWidth] = useState<number | string>(width);
-  const [isMeasuring, setIsMeasuring] = useState(false);
-  
+  const [contentWidth, setContentWidth] = useState<number | 'auto' | string>(
+    width === 'auto' ? 'auto' : typeof width === 'string' ? width : width
+  );
+  const [calculatedWidth, setCalculatedWidth] = useState<number>(minWidth);
+const [isMeasuring, setIsMeasuring] = useState(false);
+ // Реф для отслеживания, измерили ли мы уже ширину
+  const hasMeasuredRef = useRef(false);
   useLayoutEffect(() => {
     if (!isOpen || manualPosition) return;
 
@@ -234,42 +240,90 @@ function DropdownContent({
     };
   }, [isOpen, offset, placement, triggerRef, menuRef, manualPosition]);
 
-useEffect(() => {
-    if (!isOpen) return;
+// ИЗМЕНЕНИЕ 4: Новая функция для измерения текста
+  const measureTextWidth = useCallback((text: string, font: string = "16px 'Roboto', sans-serif"): number => {
+    if (typeof document === 'undefined') return 0;
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return 0;
+    
+    context.font = font;
+    const metrics = context.measureText(text);
+    return metrics.width;
+  }, []);
 
-    const measureWidth = () => {
-      // Проверяем, что width строго равен строке 'auto'
-      if (width === 'auto' && contentRef.current) {
-        const contentElement = contentRef.current;
-        const itemsElements = contentElement.querySelectorAll('.dropdown-item-content');
-        let maxWidth = minWidth;
-        
-        itemsElements.forEach(item => {
-          const itemWidth = item.scrollWidth;
-          if (itemWidth > maxWidth) {
-            maxWidth = itemWidth;
-          }
-        });
-        
-        // Используем requestAnimationFrame для асинхронного обновления состояния
-        requestAnimationFrame(() => {
-          setContentWidth(maxWidth + 48); // 24px padding с каждой стороны
-        });
-      } else {
-        // Если width не 'auto', используем его значение
-        setContentWidth(width);
+  // ИЗМЕНЕНИЕ 5: Улучшенная функция измерения ширины dropdown
+  const measureDropdownWidth = useCallback(() => {
+    if (!contentRef.current || width !== 'auto') return minWidth;
+
+    const itemElements = contentRef.current.querySelectorAll('.dropdown-item');
+    if (itemElements.length === 0) return minWidth;
+
+    let maxTextWidth = 0;
+    
+    // Измеряем текст каждого элемента
+    itemElements.forEach(item => {
+      const textElement = item.querySelector('.dropdown-item-text');
+      if (textElement) {
+        const text = textElement.textContent || '';
+        const textWidth = measureTextWidth(text);
+        maxTextWidth = Math.max(maxTextWidth, textWidth);
       }
+    });
+
+    // Добавляем отступы: 32px (padding 16px с каждой стороны) + 64px (для иконок)
+    const totalWidth = Math.ceil(maxTextWidth + 96);
+    
+    // Ограничиваем minWidth и maxWidth
+    let finalWidth = Math.max(minWidth, totalWidth);
+    if (maxWidth && finalWidth > maxWidth) {
+      finalWidth = maxWidth;
+    }
+    
+    return finalWidth;
+  }, [width, minWidth, maxWidth, measureTextWidth]);
+
+// ИЗМЕНЕНИЕ 6: Используем useLayoutEffect для измерения перед отрисовкой
+  useLayoutEffect(() => {
+    if (!isOpen || width !== 'auto' || hasMeasuredRef.current) return;
+
+    setIsMeasuring(true);
+    
+    const updateWidth = () => {
+      const newWidth = measureDropdownWidth();
+      setCalculatedWidth(newWidth);
+      setIsMeasuring(false);
+      hasMeasuredRef.current = true;
     };
 
-    measureWidth();
-  }, [width, isOpen, minWidth]);
+    // Даем время на рендер элементов
+    requestAnimationFrame(() => {
+      requestAnimationFrame(updateWidth);
+    });
+
+    return () => {
+      hasMeasuredRef.current = false;
+    };
+  }, [isOpen, width, measureDropdownWidth]);
+// ИЗМЕНЕНИЕ 7: Сбрасываем флаг измерения при закрытии
+  useEffect(() => {
+    if (!isOpen) {
+      hasMeasuredRef.current = false;
+    }
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
   }
+  // ИЗМЕНЕНИЕ 8: Определяем финальную ширину
+  const finalWidth = width === 'auto' 
+    ? (isMeasuring ? minWidth : calculatedWidth)
+    : width;
+
  const contentStyle: CSSProperties = manualPosition 
     ? { 
-        width: contentWidth === 'auto' ? 'auto' : contentWidth,
+        width: width === 'auto' ? calculatedWidth : width,
         minWidth: minWidth,
         position: 'fixed' as const, 
         top: manualPosition.top, 
@@ -279,7 +333,7 @@ useEffect(() => {
         ...(style as CSSProperties) 
       }
     : { 
-        width:contentWidth === 'auto' ? 'auto' : contentWidth,
+         width: width === 'auto' ? calculatedWidth : width,
         minWidth: minWidth,
          ...position,
           ...(style as CSSProperties)
@@ -291,8 +345,9 @@ useEffect(() => {
         ref={menuRef}
         role="menu"
         style={contentStyle}
-        className={cn(
+         className={cn(
           "absolute z-[60] max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-(--color-white-bg) shadow-(--color-context-shadow)",
+          "dropdown-width-auto", //  Добавил класс для автоматической ширины
           className
         )}
         {...props}
@@ -300,7 +355,7 @@ useEffect(() => {
         
           <div 
           ref={contentRef}
-          className="flex max-h-[inherit] flex-col overflow-auto"
+         className="flex max-h-[inherit] flex-col overflow-auto dropdown-no-wrap" //  Добавил dropdown-no-wrap
         >
           {items?.map((item, index) => (
             <DropdownItem key={`${item.label ?? index}-${index}`} {...item} />
@@ -372,7 +427,9 @@ function DropdownItem({
        onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       className={cn(
+        "dropdown-item", // Добавил класс для измерения ширины
         "flex w-full items-center justify-between gap-4 px-4 py-[10px] text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-(--color-black-alpha-20) last:border-b-0",
+        "dropdown-no-wrap", // Добавил запрет переноса текста
         disabled
           ? "cursor-not-allowed text-[#9CA3AF]"
           : danger
@@ -382,9 +439,9 @@ function DropdownItem({
       )}
       {...props}
     >
-      <span className="dropdown-item-content truncate flex-1">
-            {label ?? children}
-          </span>
+      <span className="dropdown-item-text dropdown-item-content truncate flex-1">
+        {label ?? children}
+      </span>
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* Иконка слева от текста (если нужна) */}
           {icon && (
