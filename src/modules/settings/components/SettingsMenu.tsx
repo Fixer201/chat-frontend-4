@@ -14,6 +14,7 @@ import DeleteIcon from '@public/icons/settings-sidebar/Delete.svg'
 import { cn } from '@shared/lib/utils'
 
 import EditProfileForm from './EditProfileForm'
+import SupportForm from './SupportForm'
 
 const menuItems = [
     {
@@ -49,19 +50,27 @@ export default function SettingsMenu() {
         )
     }
 
+    if (pathname?.startsWith('/settings/support')) {
+        return (
+            <aside className={asideClass}>
+                <SupportForm />
+            </aside>
+        )
+    }
+
     return (
         <aside className={asideClass}>
             <div className="flex h-full w-full flex-col rounded-md bg-gray-main">
                 <div
                     className={`
-                  mb-4 flex items-center justify-center rounded-t-md border-b
-                  border-gray-200 bg-gray-main p-4
-                `}
+                      mb-4 flex items-center justify-center rounded-t-md
+                      border-b border-gray-200 bg-gray-main p-4
+                    `}
                 >
                     <h1
                         className={`
-                      text-lg font-medium tracking-[0.01em] text-text-black
-                    `}
+                          text-lg font-medium tracking-[0.01em] text-text-black
+                        `}
                     >
                         Настройки
                     </h1>
@@ -70,10 +79,10 @@ export default function SettingsMenu() {
                     <div className="flex items-center gap-3">
                         <div
                             className={`
-                          flex h-20 w-20 items-center justify-center
-                          rounded-full bg-accent-violet-light
-                          text-accent-violet-primary
-                        `}
+                              flex h-20 w-20 items-center justify-center
+                              rounded-full bg-accent-violet-light
+                              text-accent-violet-primary
+                            `}
                         >
                             <Image
                                 src="/images/chatHeader/userAvatar.svg"
@@ -85,9 +94,9 @@ export default function SettingsMenu() {
                         <div className="flex flex-col">
                             <span
                                 className={`
-                              text-lg font-medium tracking-[0.01em]
-                              text-text-black
-                            `}
+                                  text-lg font-medium tracking-[0.01em]
+                                  text-text-black
+                                `}
                             >
                                 Сергей Иванов
                             </span>
@@ -102,8 +111,9 @@ export default function SettingsMenu() {
                 </div>
                 <div
                     className={`
-                  mx-4 mt-4 flex flex-col overflow-hidden rounded-md bg-white-bg
-                `}
+                      mx-4 mt-4 flex flex-col overflow-hidden rounded-md
+                      bg-white-bg
+                    `}
                 >
                     {menuItems.map(
                         ({ href, label, Icon }, index) => {
@@ -116,21 +126,20 @@ export default function SettingsMenu() {
                                     href={href}
                                     className={cn(
                                         `
-                                      flex w-full items-center gap-3 p-4
-                                      text-left text-base text-text-black
-                                      transition-colors
-                                      hover:bg-(--color-accent-violet-ultra-light)
-                                    `,
+                                          flex w-full items-center gap-3
+                                          border-b border-gray-200 p-4 text-left
+                                          text-base text-text-black
+                                          transition-colors
+                                          hover:bg-(--color-accent-violet-ultra-light)
+                                        `,
                                         index !==
                                             menuItems.length -
                                                 1 &&
-                                            `
-                                      border-b border-gray-200
-                                    `,
+                                            `border-b border-gray-200`,
                                         isActive &&
                                             `
-                                      bg-(--color-accent-violet-ultra-light)
-                                    `,
+                                              bg-(--color-accent-violet-ultra-light)
+                                            `,
                                     )}
                                     aria-current={
                                         isActive
@@ -141,9 +150,7 @@ export default function SettingsMenu() {
                                     <Icon className="text-accent-violet-primary" />
                                     {label}
                                     <ForwardIcon
-                                        className={`
-                                  mr-1 ml-auto text-text-gray
-                                `}
+                                        className={`mr-1 ml-auto text-text-gray`}
                                     />
                                 </Link>
                             )

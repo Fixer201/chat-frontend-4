@@ -37,28 +37,32 @@ export default function EditProfileForm() {
     return (
         <div
             className={`
-      flex h-full flex-col overflow-y-auto rounded-md bg-gray-main
-    `}
+              flex h-full flex-col overflow-y-auto rounded-md bg-gray-main
+            `}
         >
             <header
                 className={`
-        flex items-center justify-start gap-3 rounded-t-md border-b
-        border-gray-200 bg-gray-main px-6 py-4
-      `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-gray-200 bg-gray-main px-6 py-4
+                `}
             >
                 <button
                     type="button"
                     onClick={() => router.push('/settings')}
                     className={`
-            flex items-center justify-center rounded-full text-text-black
-            transition-colors
-            hover:bg-(--color-accent-violet-ultra-light)
-          `}
+                      flex items-center justify-center rounded-full
+                      text-text-black transition-colors
+                      hover:bg-(--color-accent-violet-ultra-light)
+                    `}
                     aria-label="Вернуться к настройкам"
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
                 </button>
-                <h2 className="text-lg font-medium tracking-[0.01em] text-text-black">
+                <h2
+                    className={`
+                  text-lg font-medium tracking-[0.01em] text-text-black
+                `}
+                >
                     Редактирование профиля
                 </h2>
             </header>
@@ -67,9 +71,10 @@ export default function EditProfileForm() {
                 <div className="flex flex-col items-center gap-2">
                     <div
                         className={`
-            flex h-50 w-50 items-center justify-center rounded-full
-            bg-accent-violet-light text-accent-violet-primary
-          `}
+                          flex h-50 w-50 items-center justify-center
+                          rounded-full bg-accent-violet-light
+                          text-accent-violet-primary
+                        `}
                     >
                         <Image
                             src="/images/chatHeader/userAvatar.svg"
@@ -81,9 +86,10 @@ export default function EditProfileForm() {
                     <button
                         type="button"
                         className={`
-            cursor-pointer text-sm text-accent-violet-primary transition-colors
-            hover:text-accent-violet-dark
-          `}
+                          cursor-pointer text-sm text-accent-violet-primary
+                          transition-colors
+                          hover:text-accent-violet-dark
+                        `}
                     >
                         Выбрать фотографию
                     </button>
@@ -92,56 +98,50 @@ export default function EditProfileForm() {
                 <form className="flex flex-1 flex-col gap-3">
                     <label
                         htmlFor="edit-profile-first-name"
-                        className={`
-            flex flex-col gap-2 text-sm text-text-gray
-          `}
+                        className={`flex flex-col gap-1 text-sm text-text-gray`}
                     >
                         <span>Изменить имя</span>
                         <Input
                             id="edit-profile-first-name"
                             defaultValue="Сергей"
                             className={`
-                rounded-md bg-white p-4 text-base text-text-black
-                transition-colors outline-none
-              `}
+                              rounded-md bg-white p-4 text-base text-text-black
+                              transition-colors outline-none
+                            `}
                         />
                     </label>
 
                     <label
                         htmlFor="edit-profile-last-name"
-                        className={`
-            flex flex-col text-sm text-text-gray
-          `}
+                        className={`flex flex-col gap-1 text-sm text-text-gray`}
                     >
                         <span>Изменить фамилию</span>
                         <Input
                             id="edit-profile-last-name"
                             defaultValue="Иванов"
                             className={`
-                rounded-md bg-white p-4 text-base text-text-black
-                transition-colors outline-none
-              `}
+                              rounded-md bg-white p-4 text-base text-text-black
+                              transition-colors outline-none
+                            `}
                         />
                     </label>
 
                     <label
                         htmlFor="edit-profile-username"
-                        className={`
-            flex flex-col text-sm text-text-gray
-          `}
+                        className={`flex flex-col gap-1 text-sm text-text-gray`}
                     >
                         <span>Изменить никнейм</span>
                         <Input
                             id="edit-profile-username"
                             defaultValue="bond777"
                             className={`
-                rounded-md bg-white p-4 text-base text-text-black
-                transition-colors outline-none
-              `}
+                              rounded-md bg-white p-4 text-base text-text-black
+                              transition-colors outline-none
+                            `}
                         />
                     </label>
 
-                    <div className="flex flex-col text-sm text-text-gray">
+                    <div className="flex flex-col gap-1 text-sm text-text-gray">
                         <span>
                             Введите дату своего рождения
                         </span>
@@ -150,11 +150,13 @@ export default function EditProfileForm() {
                                 <select
                                     defaultValue={1}
                                     className={`
-                    h-12 w-full cursor-pointer appearance-none rounded-md border
-                    border-transparent bg-white px-6 pr-10 text-center text-base
-                    text-text-gray transition-colors outline-none
-                    focus:border-accent-violet-primary
-                  `}
+                                      h-12 w-full cursor-pointer appearance-none
+                                      rounded-md border border-transparent
+                                      bg-white px-6 pr-10 text-center text-base
+                                      text-text-gray transition-colors
+                                      outline-none
+                                      focus:border-accent-violet-primary
+                                    `}
                                 >
                                     {DAYS.map((day) => (
                                         <option
@@ -167,20 +169,23 @@ export default function EditProfileForm() {
                                 </select>
                                 <ChevronDownIcon
                                     className={`
-                  pointer-events-none absolute top-1/2 right-3 h-4 w-4
-                  -translate-y-1/2 text-text-gray
-                `}
+                                      pointer-events-none absolute top-1/2
+                                      right-3 h-4 w-4 -translate-y-1/2
+                                      text-text-gray
+                                    `}
                                 />
                             </div>
                             <div className="relative flex-none basis-[42%]">
                                 <select
                                     defaultValue="Января"
                                     className={`
-                    h-12 w-full cursor-pointer appearance-none rounded-md border
-                    border-transparent bg-white px-6 pr-10 text-center text-base
-                    text-text-gray transition-colors outline-none
-                    focus:border-accent-violet-primary
-                  `}
+                                      h-12 w-full cursor-pointer appearance-none
+                                      rounded-md border border-transparent
+                                      bg-white px-6 pr-10 text-center text-base
+                                      text-text-gray transition-colors
+                                      outline-none
+                                      focus:border-accent-violet-primary
+                                    `}
                                 >
                                     {MONTHS.map((month) => (
                                         <option
@@ -193,20 +198,23 @@ export default function EditProfileForm() {
                                 </select>
                                 <ChevronDownIcon
                                     className={`
-                  pointer-events-none absolute top-1/2 right-3 h-4 w-4
-                  -translate-y-1/2 text-text-gray
-                `}
+                                      pointer-events-none absolute top-1/2
+                                      right-3 h-4 w-4 -translate-y-1/2
+                                      text-text-gray
+                                    `}
                                 />
                             </div>
                             <div className="relative flex-none basis-[33%]">
                                 <select
                                     defaultValue={2000}
                                     className={`
-                    h-12 w-full cursor-pointer appearance-none rounded-md border
-                    border-transparent bg-white px-6 pr-10 text-center text-base
-                    text-text-gray transition-colors outline-none
-                    focus:border-accent-violet-primary
-                  `}
+                                      h-12 w-full cursor-pointer appearance-none
+                                      rounded-md border border-transparent
+                                      bg-white px-6 pr-10 text-center text-base
+                                      text-text-gray transition-colors
+                                      outline-none
+                                      focus:border-accent-violet-primary
+                                    `}
                                 >
                                     {YEARS.map((year) => (
                                         <option
@@ -219,9 +227,10 @@ export default function EditProfileForm() {
                                 </select>
                                 <ChevronDownIcon
                                     className={`
-                  pointer-events-none absolute top-1/2 right-3 h-4 w-4
-                  -translate-y-1/2 text-text-gray
-                `}
+                                      pointer-events-none absolute top-1/2
+                                      right-3 h-4 w-4 -translate-y-1/2
+                                      text-text-gray
+                                    `}
                                 />
                             </div>
                         </div>
@@ -229,9 +238,7 @@ export default function EditProfileForm() {
 
                     <label
                         htmlFor="edit-profile-about"
-                        className={`
-            flex flex-col text-sm text-text-gray
-          `}
+                        className={`flex flex-col gap-1 text-sm text-text-gray`}
                     >
                         <span>
                             Напишите пару слов о себе
@@ -240,9 +247,9 @@ export default function EditProfileForm() {
                             id="edit-profile-about"
                             defaultValue="Иванов"
                             className={`
-                rounded-md bg-white p-4 text-base text-text-black
-                transition-colors outline-none
-              `}
+                              rounded-md bg-white p-4 text-base text-text-black
+                              transition-colors outline-none
+                            `}
                         />
                     </label>
 
@@ -250,9 +257,7 @@ export default function EditProfileForm() {
                         <Button
                             type="submit"
                             size="lg"
-                            className={`
-              w-full text-base font-semibold
-            `}
+                            className={`w-full text-base font-semibold`}
                         >
                             Сохранить
                         </Button>
