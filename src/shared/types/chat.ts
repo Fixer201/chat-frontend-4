@@ -1,5 +1,13 @@
 
 import { AvatarProps } from '@shared/ui/avatar/Avatar'
+//для хранения настроек чата в Redux
+export interface ChatSettings {
+  isFavorite: boolean
+  isChatRead: boolean
+  notificationsEnabled: boolean
+  isDeleted: boolean
+  originalUnreadCount: number
+}
 // Тип для UI - все поля camelCase, все вложено в один интерфейс
 export interface ChatItem {
   id: number;
@@ -49,6 +57,7 @@ export interface ChatItem {
     createdAt: number;
     updatedAt: number;
   };
+  settings?: ChatSettings;
 }
 
 // Тип для состояния Redux
@@ -57,6 +66,7 @@ export interface ChatsState {
   loading: boolean;
   error: string | null;
   selectedChatId: number | null;
+  chatSettings: Record<string, ChatSettings>;
 }
 
 // Тип для API данных (snake_case)
