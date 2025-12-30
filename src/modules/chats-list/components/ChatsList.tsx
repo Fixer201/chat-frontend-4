@@ -197,9 +197,12 @@ export default function ChatsList() {
                       ? settings.originalUnreadCount 
                       : 0
                   }
+                  const avatarSrc = chat.chat.avatarUrl?.trim() 
+                                    ? chat.chat.avatarUrl 
+                                    : "/images/chatHeader/userAvatar.svg";
                 return (
                   <ChatListItem
-                    src="/images/chatHeader/userAvatar.svg"
+                    src={avatarSrc} 
                     name={`${chat.chat.firstName} ${chat.chat.lastName}`}
                     messagePreview={chat.lastMessage.content}
                     timestamp={formatLastSeen(chat.lastActivityAt * 1000)}

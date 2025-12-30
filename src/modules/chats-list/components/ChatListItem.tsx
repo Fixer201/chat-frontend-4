@@ -37,7 +37,6 @@ export const ChatListItem = forwardRef<
         },
         ref,
     ) => {
-       
         const [contextMenuOpen, setContextMenuOpen] =
             useState(false)
         const [

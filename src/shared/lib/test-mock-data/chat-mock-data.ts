@@ -4,6 +4,9 @@
 //  * @returns Promise<ChatItem[]> - массив объектов ChatItem
 
 import { ApiChatItem } from "@shared/types/chat";
+import { generateAvatarUrl } from "./avatarGenerator";
+import {AVATAR_SOURCES} from "./avatarSources"
+
 
 export function generateLocalMockChatItems(count: number): ApiChatItem[] {
   const firstNames = ['Алексей', 'Мария', 'Сергей', 'Екатерина', 'Дмитрий', 'Ольга', 'Иван', 'Анна', 'Михаил', 'Наталья', 'Андрей', 'Татьяна', 'Павел', 'Елена', 'Владимир'];
@@ -24,7 +27,7 @@ export function generateLocalMockChatItems(count: number): ApiChatItem[] {
  const nowInSeconds = Math.floor(Date.now() / 1000);
  // Генерируем случайные времена в пределах последних 30 дней для каждого чата
   const thirtyDaysInSeconds = 30 * 24 * 60 * 60;
-
+const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER;
   return Array(count).fill(null).map((_, index) => {
     const firstName = firstNames[index % firstNames.length];
     const lastName = lastNames[index % lastNames.length];
@@ -32,12 +35,16 @@ export function generateLocalMockChatItems(count: number): ApiChatItem[] {
     const username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`;
     const message = messages[index % messages.length];
 
-    const avatarSeed = `${username}_${index}_${Date.now()}`; // Гарантированно уникальный seed
-    const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
-    const avatarUrlJpg = `https://api.dicebear.com/7.x/avataaars/jpg?seed=${avatarSeed}`;
-
     const baseId = (index + 1) * 100;
+    const avatarSeed = `avatar_${baseId}_${username}`;
+    const generators = ['picsum', 'unsplash', 'ui-faces', 'random-user', 'robohash'] as const;
+    const generatorIndex = index % generators.length;
+   // Генерируем аватарку с выбранным источником
+    const avatarUrl = generateAvatarUrl(avatarSeed, 300, 300, AVATAR_SOURCE);
     
+    // Для webp просто добавляем суффикс (если источник поддерживает)
+    const avatarWebpUrl = generateAvatarUrl(avatarSeed + '_webp', 300, 300, AVATAR_SOURCE);
+
     // Генерируем случайные времена для каждого чата
     // was_online_at - случайное время в пределах 30 дней
     const randomSecondsAgo = Math.floor(Math.random() * thirtyDaysInSeconds);
@@ -69,9 +76,9 @@ export function generateLocalMockChatItems(count: number): ApiChatItem[] {
         first_name: firstName,
         last_name: lastName,
         avatar: `avatar_${index}.jpg`,
-        avatar_url: avatarUrlJpg, // Уникальная аватарка для каждого
+        avatar_url: avatarUrl, // Уникальная аватарка для каждого
         avatar_webp: `avatar_${index}.webp`,
-        avatar_webp_url: avatarUrl,
+        avatar_webp_url: avatarWebpUrl,
         is_blocked: index % 10 === 0,
         is_online: index % 3 === 0,
         was_online_at: wasOnlineAt,
@@ -112,3 +119,4 @@ export function generateLocalMockChatItems(count: number): ApiChatItem[] {
     return chatItem;
   });
 }
+
