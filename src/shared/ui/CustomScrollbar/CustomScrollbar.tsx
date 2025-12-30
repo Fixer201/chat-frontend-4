@@ -2,7 +2,7 @@
 
 import { useEffect, useRef,  useCallback } from 'react'
 import customStyle from '@shared/ui/customScrollbar/customScrollbar.module.css'
-export function CustomScrollbar({ children, className = '' }) {
+export function CustomScrollbar({ children, className = '' }:{children:React.ReactNode,className?:string}) {
   const contentRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -36,6 +36,7 @@ export function CustomScrollbar({ children, className = '' }) {
     thumb.style.top = `${thumbTop}px`
   }, [])
 
+  
   // Обработчик начала перетаскивания
   const handleThumbMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
