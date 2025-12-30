@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useCallback } from 'react'
 
 import ForwardIcon from '@public/icons/settings-sidebar/Forward.svg'
 import BlackListIcon from '@public/icons/settings-sidebar/BlackList.svg'
@@ -12,6 +13,8 @@ import EditIcon from '@public/icons/settings-sidebar/Edite.svg'
 import DeleteIcon from '@public/icons/settings-sidebar/Delete.svg'
 
 import { cn } from '@shared/lib/utils'
+import { useDisclosure } from '@shared/hooks/useDisclosure'
+import Modal from '@shared/ui/modal/Modal'
 
 import EditProfileForm from './EditProfileForm'
 import SupportForm from './SupportForm'
@@ -36,6 +39,26 @@ const menuItems = [
 
 export default function SettingsMenu() {
     const pathname = usePathname()
+    const {
+        isOpen: isLogoutModalOpen,
+        onOpen: openLogoutModal,
+        onClose: closeLogoutModal,
+    } = useDisclosure()
+    const {
+        isOpen: isDeleteModalOpen,
+        onOpen: openDeleteModal,
+        onClose: closeDeleteModal,
+    } = useDisclosure()
+
+    const handleLogoutConfirm = useCallback(() => {
+        // TODO: integrate real logout flow once backend is ready
+        closeLogoutModal()
+    }, [closeLogoutModal])
+
+    const handleDeleteConfirm = useCallback(() => {
+        // TODO: integrate delete profile flow when backend is ready
+        closeDeleteModal()
+    }, [closeDeleteModal])
     const asideClass = cn(
         'h-11/12 w-full rounded-md border border-gray-200 bg-gray-main',
         'md:w-80',
@@ -163,6 +186,7 @@ export default function SettingsMenu() {
                           text-left text-base text-text-black transition-colors
                           hover:bg-(--color-accent-violet-ultra-light)
                         `}
+                        onClick={openLogoutModal}
                     >
                         <LogOutIcon className="text-accent-violet-primary" />
                         Выйти из аккаунта
@@ -176,11 +200,57 @@ export default function SettingsMenu() {
                       transition-colors
                       hover:text-system-red-soft
                     `}
+                    onClick={openDeleteModal}
                 >
                     <DeleteIcon className="text-current" />
                     Удалить профиль
                 </button>
             </div>
+            <Modal
+                open={isLogoutModalOpen}
+                onClose={closeLogoutModal}
+                title="Выход из аккаунта"
+                titleAlign="left"
+                description="Вы действительно хотите выйти из аккаунта?"
+                descriptionColor="muted"
+                blurBackground
+                buttons={[
+                    {
+                        label: 'Отмена',
+                        variant: 'ghost',
+                        onClick: closeLogoutModal,
+                    },
+                    {
+                        label: 'Выйти',
+                        variant: 'solid',
+                        color: 'primary',
+                        onClick: handleLogoutConfirm,
+                    },
+                ]}
+            />
+            <Modal
+                open={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                title="Удаление профиля"
+                titleAlign="left"
+                description="Это действие необратимо. Все данные будут удалены без возможности восстановления."
+                descriptionColor="muted"
+                blurBackground
+                buttons={[
+                    {
+                        label: 'Удалить',
+                        variant: 'ghost',
+                        color: 'danger',
+                        onClick: handleDeleteConfirm,
+                    },
+                    {
+                        label: 'Отмена',
+                        variant: 'solid',
+                        color: 'primary',
+                        onClick: closeDeleteModal,
+                    },
+                ]}
+            />
         </aside>
     )
 }

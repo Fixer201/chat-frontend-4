@@ -60,8 +60,8 @@ export default function EditProfileForm() {
                 </button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-[0.01em] text-text-black
-                `}
+                      text-lg font-medium tracking-[0.01em] text-text-black
+                    `}
                 >
                     Редактирование профиля
                 </h2>
@@ -104,10 +104,6 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-first-name"
                             defaultValue="Сергей"
-                            className={`
-                              rounded-md bg-white p-4 text-base text-text-black
-                              transition-colors outline-none
-                            `}
                         />
                     </label>
 
@@ -119,10 +115,6 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-last-name"
                             defaultValue="Иванов"
-                            className={`
-                              rounded-md bg-white p-4 text-base text-text-black
-                              transition-colors outline-none
-                            `}
                         />
                     </label>
 
@@ -134,10 +126,6 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-username"
                             defaultValue="bond777"
-                            className={`
-                              rounded-md bg-white p-4 text-base text-text-black
-                              transition-colors outline-none
-                            `}
                         />
                     </label>
 
@@ -246,10 +234,6 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-about"
                             defaultValue="Иванов"
-                            className={`
-                              rounded-md bg-white p-4 text-base text-text-black
-                              transition-colors outline-none
-                            `}
                         />
                     </label>
 

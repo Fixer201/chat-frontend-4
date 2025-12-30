@@ -50,27 +50,31 @@ export default function SupportForm() {
     return (
         <div
             className={`
-      flex h-full flex-col overflow-y-auto rounded-md bg-gray-main
-    `}
+              flex h-full flex-col overflow-y-auto rounded-md bg-gray-main
+            `}
         >
             <header
                 className={`
-        flex items-center justify-start gap-3 rounded-t-md border-b
-        border-gray-200 bg-gray-main px-6 py-4
-      `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-gray-200 bg-gray-main px-6 py-4
+                `}
             >
                 <button
                     type="button"
                     onClick={() => router.push('/settings')}
                     className={`
-            flex items-center justify-center rounded-full text-text-black
-            transition-colors
-          `}
+                      flex items-center justify-center rounded-full
+                      text-text-black transition-colors
+                    `}
                     aria-label="Вернуться к настройкам"
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
                 </button>
-                <h2 className="text-lg font-medium tracking-[0.01em] text-text-black">
+                <h2
+                    className={`
+                  text-lg font-medium tracking-[0.01em] text-text-black
+                `}
+                >
                     Обращение в поддержку
                 </h2>
             </header>
@@ -79,13 +83,15 @@ export default function SupportForm() {
                 {isSubmitted ? (
                     <div
                         className={`
-            flex flex-1 flex-col items-center justify-center gap-2 text-center
-          `}
+                          flex flex-1 flex-col items-center justify-center gap-2
+                          text-center
+                        `}
                     >
                         <span
                             className={`
-              flex h-24 w-24 items-center justify-center rounded-full
-            `}
+                              flex h-24 w-24 items-center justify-center
+                              rounded-full
+                            `}
                         >
                             <Image
                                 src="/images/Check.svg"
@@ -95,7 +101,11 @@ export default function SupportForm() {
                             />
                         </span>
                         <div className="flex flex-col gap-6">
-                            <h1 className="text-[24px] font-medium text-text-black">
+                            <h1
+                                className={`
+                              text-[24px] font-medium text-text-black
+                            `}
+                            >
                                 Обращение отправлено!
                             </h1>
                             <p className="px-4 text-lg text-text-black">
@@ -114,8 +124,8 @@ export default function SupportForm() {
                         <label
                             htmlFor="support-email"
                             className={`
-              flex flex-col gap-1 text-sm text-text-gray
-            `}
+                              flex flex-col gap-1 text-sm text-text-gray
+                            `}
                         >
                             <span
                                 className={
@@ -132,18 +142,7 @@ export default function SupportForm() {
                                 id="support-email"
                                 type="email"
                                 placeholder="e-mail"
-                                className={`
-                  rounded-md bg-white p-4 text-base text-text-black
-                  transition-colors outline-none
-                  ${
-                      showEmailError
-                          ? `
-                      border-2 border-[var(--color-system-red)]
-                      focus:border-[var(--color-system-red)] focus:shadow-none
-                    `
-                          : ''
-                  }
-                `}
+                                isInvalid={showEmailError}
                                 value={email}
                                 onChange={(event) =>
                                     setEmail(
@@ -157,8 +156,8 @@ export default function SupportForm() {
                         <label
                             htmlFor="support-message"
                             className={`
-              flex flex-col gap-1 text-sm text-text-gray
-            `}
+                              flex flex-col gap-1 text-sm text-text-gray
+                            `}
                         >
                             <span>
                                 Опишите Вашу проблему
@@ -167,10 +166,6 @@ export default function SupportForm() {
                                 id="support-message"
                                 placeholder=""
                                 rows={10}
-                                className={`
-                  rounded-md bg-white p-4 text-base text-text-black
-                  transition-colors outline-none
-                `}
                                 value={message}
                                 onChange={(event) =>
                                     setMessage(
@@ -185,9 +180,9 @@ export default function SupportForm() {
                             <Link
                                 href="#"
                                 className={`
-                text-accent-violet-primary
-                hover:text-accent-violet-dark
-              `}
+                                  text-accent-violet-primary
+                                  hover:text-accent-violet-dark
+                                `}
                             >
                                 списком известных проблем и
                                 их решениями.
@@ -199,9 +194,7 @@ export default function SupportForm() {
                                 type="submit"
                                 size="lg"
                                 disabled={isSubmitDisabled}
-                                className={`
-                w-full text-lg font-medium
-              `}
+                                className={`w-full text-lg font-medium`}
                             >
                                 Отправить
                             </Button>
