@@ -80,7 +80,7 @@ export default function MessageComposer() {
     }
 
     return (
-
+<div>
             {/* Attachment Icon */}
             <Image
                 width={25}
