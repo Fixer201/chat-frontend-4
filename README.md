@@ -1,29 +1,40 @@
-# Chat Frontend 4
+# A-Chat
 
 Веб-приложение мессенджера на Next.js с модульной архитектурой.
 
 ---
 
-## 🚀 Быстрый старт
+## Available README translations
 
-### Установка зависимостей
+[![RU](https://flagcdn.com/w20/ru.png) Russian](./README.ru.md)
+
+[![EN](https://flagcdn.com/w20/us.png) English](./README.md)
+
+## Quick Start
+
+### Installation
+
 ```bash
 npm install
 ```
 
-### Запуск в режиме разработки
+### Run development environment
+
 ```bash
 npm run dev
 ```
-Приложение будет доступно на http://localhost:3000
 
-### Сборка для production
+**navigate to `localhost:3000` and you ready**
+
+### Build for production
+
 ```bash
 npm run build
 npm start
 ```
 
-### Очистка кэша при проблемах
+### If you have troubleshoot try to clear next cache
+
 ```bash
 rm -rf .next
 npm run dev
@@ -31,63 +42,63 @@ npm run dev
 
 ---
 
-## 📦 Технологии
+## Using Tech
 
 - **Framework:** Next.js 16 (App Router)
-- **Язык:** TypeScript
-- **Стили:** Tailwind CSS
+- **Development language:** TypeScript
+- **Styling:** Tailwind CSS
 - **State Management:** Redux Toolkit
 - **UI Components:** shadcn/ui
-- **API:** tRPC (готов к подключению)
+- **API:** tRPC
 
 ---
 
-## 📁 Структура проекта
+## Project Structure
 
 ```
 chat-frontend-4/
-├── src/                          # Исходный код
-│   ├── app/                      # Next.js App Router (страницы)
-│   │   ├── (public)/             # Публичные страницы (БЕЗ Header/Sidebar)
+├── src/                          # Source code
+│   ├── app/                      # Next.js App Router (pages)
+│   │   ├── (public)/             # Public pages (WITHOUT Header/Sidebar)
 │   │   │   ├── auth/
-│   │   │   │   ├── login/        # Страница входа
-│   │   │   │   ├── register/     # Страница регистрации
-│   │   │   │   └── restore/      # Восстановление пароля
-│   │   │   └── support/          # Публичная поддержка
+│   │   │   │   ├── login/        # Login page
+│   │   │   │   ├── register/     # Registration page
+│   │   │   │   └── restore/      # Password recovery
+│   │   │   └── support/          # Public support page
 │   │   │
-│   │   ├── (private)/            # Приватные страницы (С Header/Sidebar)
-│   │   │   ├── layout.tsx        # Layout с Redux + tRPC + AppShell
-│   │   │   ├── chats/            # Список чатов (главная страница)
-│   │   │   │   ├── [chatId]/     # Отдельный чат
+│   │   ├── (private)/            # Private pages (WITH Header/Sidebar)
+│   │   │   ├── layout.tsx        # Layout with Redux + tRPC + AppShell
+│   │   │   ├── chats/            # Chats list (main page)
+│   │   │   │   ├── [chatId]/     # Individual chat
 │   │   │   │   └── create/
-│   │   │   │       ├── group/    # Создание группы
-│   │   │   │       └── channel/  # Создание канала
-│   │   │   ├── contacts/         # Контакты
-│   │   │   ├── settings/         # Настройки
-│   │   │   │   ├── profile/      # Настройки профиля
-│   │   │   │   ├── blacklist/    # Чёрный список
-│   │   │   │   └── support/      # Поддержка
-│   │   │   └── search/           # Глобальный поиск
+│   │   │   │       ├── group/    # Create group
+│   │   │   │       └── channel/  # Create channel
+│   │   │   ├── contacts/         # Contacts
+│   │   │   ├── settings/         # Settings
+│   │   │   │   ├── profile/      # Profile settings
+│   │   │   │   ├── blacklist/    # Blacklist
+│   │   │   │   └── support/      # Support
+│   │   │   └── search/           # Global search
 │   │   │
-│   │   ├── layout.tsx            # Корневой layout
-│   │   ├── page.tsx              # Редирект на /chats
-│   │   └── globals.css           # Глобальные стили
+│   │   ├── layout.tsx            # Root layout
+│   │   ├── page.tsx              # Redirect to /chats
+│   │   └── globals.css           # Global styles
 │   │
-│   ├── modules/                  # Модули функциональности
-│   │   ├── core/                 # Ядро приложения
+│   ├── modules/                  # Feature modules
+│   │   ├── core/                 # Application core
 │   │   │   └── components/
-│   │   │       ├── AppShell.tsx       # Обёртка с Header + Sidebar
-│   │   │       ├── AppHeader.tsx      # Шапка приложения
-│   │   │       └── AppSidebar.tsx     # Боковое меню
+│   │   │       ├── AppShell.tsx       # App wrapper with Header + Sidebar
+│   │   │       ├── AppHeader.tsx      # Application header
+│   │   │       └── AppSidebar.tsx     # Sidebar menu
 │   │   │
-│   │   ├── auth/                 # Модуль авторизации
+│   │   ├── auth/                 # Authentication module
 │   │   │   └── components/
 │   │   │       ├── StartScreen.tsx
 │   │   │       ├── LoginForm.tsx
 │   │   │       ├── RegisterForm.tsx
 │   │   │       └── CodeConfirmForm.tsx
 │   │   │
-│   │   ├── chats-list/           # Список чатов
+│   │   ├── chats-list/           # Chats list module
 │   │   │   └── components/
 │   │   │       ├── ChatsList.tsx
 │   │   │       ├── ChatListItem.tsx
@@ -97,7 +108,7 @@ chat-frontend-4/
 │   │   │       ├── ChatDeleteModal.tsx
 │   │   │       └── ChatSuccessToast.tsx
 │   │   │
-│   │   ├── chat-room/            # Комната чата
+│   │   ├── chat-room/            # Chat room module
 │   │   │   └── components/
 │   │   │       ├── MessagesList.tsx
 │   │   │       ├── MessageItem.tsx
@@ -105,130 +116,137 @@ chat-frontend-4/
 │   │   │       ├── TypingIndicator.tsx
 │   │   │       └── BlockedChatBanner.tsx
 │   │   │
-│   │   ├── message-composer/     # Ввод сообщений
+│   │   ├── message-composer/     # Message input module
 │   │   │   └── components/
 │   │   │       ├── MessageComposer.tsx
 │   │   │       ├── AttachmentsPreview.tsx
 │   │   │       ├── ReplyPreview.tsx
 │   │   │       └── EditModeBar.tsx
 │   │   │
-│   │   ├── contacts/             # Контакты
-│   │   ├── groups/               # Группы
-│   │   ├── channels/             # Каналы
-│   │   ├── user-profile/         # Профиль пользователя
-│   │   ├── settings/             # Настройки
-│   │   ├── search/               # Поиск
-│   │   ├── notifications/        # Уведомления
-│   │   └── support/              # Поддержка
+│   │   ├── contacts/             # Contacts
+│   │   ├── groups/               # Groups
+│   │   ├── channels/             # Channels
+│   │   ├── user-profile/         # User profile
+│   │   ├── settings/             # Settings
+│   │   ├── search/               # Search
+│   │   ├── notifications/        # Notifications
+│   │   └── support/              # Support
 │   │
-│   ├── shared/                   # Общие ресурсы
-│   │   ├── ui/                   # UI компоненты
+│   ├── shared/                   # Shared resources
+│   │   ├── ui/                   # UI components
 │   │   │   ├── Button.tsx
 │   │   │   ├── Input.tsx
 │   │   │   ├── Modal.tsx
 │   │   │   ├── Dropdown.tsx
 │   │   │   ├── Avatar.tsx
-│   │   │   └── ... (11 компонентов)
+│   │   │   └── ... (11 more components)
 │   │   │
-│   │   ├── api/                  # API клиенты
-│   │   │   ├── client.ts         # HTTP клиент
+│   │   ├── api/                  # API clients
+│   │   │   ├── client.ts         # HTTP client
 │   │   │   └── trpc/
-│   │   │       ├── client.ts     # tRPC клиент
+│   │   │       ├── client.ts     # tRPC client
 │   │   │       └── provider.tsx  # tRPC Provider
 │   │   │
-│   │   ├── hooks/                # React хуки
-│   │   │   ├── useAuth.ts        # Авторизация
-│   │   │   ├── useDebounce.ts    # Задержка (поиск)
-│   │   │   ├── useDisclosure.ts  # Открытие/закрытие
-│   │   │   ├── useMediaQuery.ts  # Адаптивность
-│   │   │   └── usePagination.ts  # Пагинация
+│   │   ├── hooks/                # React hooks
+│   │   │   ├── useAuth.ts        # Authentication
+│   │   │   ├── useDebounce.ts    # Debounce (search)
+│   │   │   ├── useDisclosure.ts  # Open/close state
+│   │   │   ├── useMediaQuery.ts  # Responsiveness
+│   │   │   └── usePagination.ts  # Pagination
 │   │   │
-│   │   ├── types/                # TypeScript типы
+│   │   ├── types/                # TypeScript types
 │   │   │   ├── user.ts
 │   │   │   ├── chat.ts
 │   │   │   ├── message.ts
 │   │   │   ├── group.ts
 │   │   │   └── channel.ts
 │   │   │
-│   │   ├── config/               # Конфигурация
-│   │   │   ├── routes.ts         # Маршруты приложения
-│   │   │   ├── env.ts            # Переменные окружения
-│   │   │   └── constants.ts      # Константы
+│   │   ├── config/               # Configuration
+│   │   │   ├── routes.ts         # Application routes
+│   │   │   ├── env.ts            # Environment variables
+│   │   │   └── constants.ts      # Constants
 │   │   │
-│   │   └── lib/                  # Утилиты
-│   │       ├── formatDate.ts     # Форматирование дат
-│   │       ├── formatFileSize.ts # Размер файлов
-│   │       └── mapApiError.ts    # Обработка ошибок
+│   │   └── lib/                  # Utilities
+│   │       ├── formatDate.ts     # Date formatting
+│   │       ├── formatFileSize.ts # File size formatting
+│   │       └── mapApiError.ts    # API error handling
 │   │
 │   ├── redux/                    # Redux store
-│   │   ├── store.ts              # Конфигурация store
-│   │   ├── ReduxProvider.tsx     # Provider для приложения
-│   │   └── slices/               # Слайсы состояния
-│   │       ├── userSlice.ts      # Пользователь
-│   │       ├── chatsSlice.ts     # Чаты
-│   │       ├── contactsSlice.ts  # Контакты
-│   │       └── uiSlice.ts        # UI состояние
+│   │   ├── store.ts              # Store configuration
+│   │   ├── ReduxProvider.tsx     # App provider
+│   │   └── slices/               # State slices
+│   │       ├── userSlice.ts      # User
+│   │       ├── chatsSlice.ts     # Chats
+│   │       ├── contactsSlice.ts  # Contacts
+│   │       └── uiSlice.ts        # UI state
 │   │
-│   └── lib/                      # Дополнительные утилиты
-│       └── utils.ts              # cn() для Tailwind
+│   └── lib/                      # Additional utilities
+│       └── utils.ts              # cn() for Tailwind
 │
-├── public/                       # Статические файлы
-├── .next/                        # Сборка Next.js (НЕ коммитить)
-├── node_modules/                 # Зависимости (НЕ коммитить)
+├── public/                       # Static files
+├── .next/                        # Next.js build output (DO NOT commit)
+├── node_modules/                 # Dependencies (DO NOT commit)
 │
-├── package.json                  # Зависимости проекта
-├── tsconfig.json                 # Конфиг TypeScript
-├── next.config.ts                # Конфиг Next.js
-├── tailwind.config.ts            # Конфиг Tailwind
-├── components.json               # Конфиг shadcn/ui
-└── README.md                     # Документация
+├── package.json                  # Project dependencies
+├── tsconfig.json                 # TypeScript config
+├── next.config.ts                # Next.js config
+├── tailwind.config.ts            # Tailwind config
+├── components.json               # shadcn/ui config
+└── README.md                     # Documentation
 ```
 
 ---
 
-## 🎯 Маршруты приложения
+## App routing
 
-### Публичные (без Header/Sidebar)
-- `/auth/login` - Вход
-- `/auth/register` - Регистрация
-- `/auth/restore` - Восстановление пароля
-- `/support` - Поддержка
+### Public (no authentication require)
 
-### Приватные (с Header/Sidebar)
-- `/` → редирект на `/chats`
-- `/chats` - **Главная страница** (список чатов)
-- `/chats/[chatId]` - Отдельный чат
-- `/chats/create/group` - Создать группу
-- `/chats/create/channel` - Создать канал
-- `/contacts` - Контакты
-- `/settings` - Настройки
-- `/settings/profile` - Профиль
-- `/settings/blacklist` - Чёрный список
-- `/settings/support` - Поддержка
-- `/search` - Глобальный поиск
+- `/auth/login` - Sign-in page for users who already have an account.
+- `/auth/register` - Registration page for creating a new account.
+- `/auth/restore` - Password recovery page for restoring access if credentials are lost.
+- `/support` - Support page for contact with the support team.
+
+### Private (authentication required)
+
+- `/` → Redirect to `/chats`
+- `/chats` - Main page (chat list)
+- `/chats/[chatId]` - Individual chat
+- `/chats/create/group` - Create a group
+- `/chats/create/channel` - Create a channel
+
+- `/contacts` - User contacts
+
+- `/settings` - User settings
+- `/settings/profile` - Profile settings
+- `/settings/blacklist` - Blacklist
+- `/settings/support` - Support page
+
+- `/search` - Global search (users by phone number, @tag, nickname; messages)
 
 ---
 
-## 🏗 Архитектура
+## Architecture
 
-### Feature-Sliced Design (модульная архитектура)
+### Feature-Sliced Design (module architecture)
 
-Проект разделён на слои:
+Project divided by slices
 
-1. **app/** - Роутинг (Next.js App Router)
-2. **modules/** - Бизнес-логика по фичам
-3. **shared/** - Переиспользуемые ресурсы
-4. **redux/** - Глобальное состояние
+1. **app/** - Routing (Next.js App Router)
+2. **modules/** - Business logic by features
+3. **shared/** - Reusable resources
+4. **redux/** - Global state
 
-### Импорты через алиасы
+### Imports from alias
+
 ```typescript
-import AppShell from '@modules/core/components/AppShell';
-import Button from '@shared/ui/Button';
-import { useAuth } from '@shared/hooks/useAuth';
-import { store } from '@redux/store';
+import AppShell from '@modules/core/components/AppShell'
+import Button from '@shared/ui/Button'
+import { useAuth } from '@shared/hooks/useAuth'
+import { store } from '@redux/store'
 ```
 
-Алиасы настроены в `tsconfig.json`:
+Alias configured in `tsconfig.json`:
+
 - `@app/*` → `src/app/*`
 - `@modules/*` → `src/modules/*`
 - `@shared/*` → `src/shared/*`
@@ -237,111 +255,101 @@ import { store } from '@redux/store';
 
 ---
 
-## 🔧 Основные файлы
+## Main Files
 
 ### `src/app/(private)/layout.tsx`
+
 Главный layout для приватных страниц. Оборачивает все страницы в:
-- Redux Provider (доступ к store)
-- tRPC Provider (API клиент)
+General layout for private page. Wraps all pages in:
+
+- Redux Provider (acces to store)
+- tRPC Provider (API client)
 - AppShell (Header + Sidebar)
 
 ### `src/modules/core/components/AppShell.tsx`
-Основная обёртка приложения. Содержит Header, Sidebar и контент.
+
+The main wrapper for the application. Contains the header, sidebar, and content.
 
 ### `src/redux/store.ts`
-Конфигурация Redux store со всеми слайсами.
+
+Redux store configuration with all slices.
 
 ### `src/shared/config/routes.ts`
-Централизованное управление маршрутами приложения.
+
+Centralized management of application routes.
 
 ---
 
-## 📝 Как работать с проектом
+## How to work with the project
 
 ### Добавить новую страницу
-1. Создай файл в `src/app/(private)/` или `src/app/(public)/`
-2. Экспортируй React компонент
-3. Страница автоматически станет доступна по URL
 
-Пример:
+1. Create a file in `src/app/(private)/` or `src/app/(public)/`
+2. Export the React component
+3. The page will automatically become available at the URL
+
+Example:
+
 ```tsx
 // src/app/(private)/profile/page.tsx
 export default function ProfilePage() {
-  return <div>Profile</div>;
+    return <div>Profile</div>
 }
 // Доступно на /profile
 ```
 
-### Добавить новый модуль
-1. Создай папку в `src/modules/`
-2. Добавь `components/` внутри
-3. Создай компоненты модуля
+### Add a new module
 
-### Добавить UI компонент
-1. Создай файл в `src/shared/ui/`
-2. Экспортируй компонент
-3. Используй через `@shared/ui/ComponentName`
+1. Create a folder in `src/modules/`
+2. Add `components/` inside
+3. Create module components
 
-### Добавить хук
-1. Создай файл в `src/shared/hooks/`
-2. Экспортируй хук
-3. Используй через `@shared/hooks/useHookName`
+### Add a UI component
 
-### Работа с Redux
+1. Create a file in `src/shared/ui/`
+2. Export the component
+3. Use via `@shared/ui/ComponentName`
+
+### Add a hook
+
+1. Create a file in `src/shared/hooks/`
+2. Export the hook
+3. Use via `@shared/hooks/useHookName`
+
+### Working with Redux
+
 ```tsx
 // Использование в компоненте
-import { useSelector, useDispatch } from 'react-redux';
-import { setUser } from '@redux/slices/userSlice';
+import { useSelector, useDispatch } from 'react-redux'
+import { setUser } from '@redux/slices/userSlice'
 
-const user = useSelector((state) => state.user.currentUser);
-const dispatch = useDispatch();
-dispatch(setUser(userData));
+const user = useSelector((state) => state.user.currentUser)
+const dispatch = useDispatch()
+dispatch(setUser(userData))
 ```
 
 ---
 
-## 🐛 Решение проблем
+## Useful commands
 
-### Проект не запускается
 ```bash
-rm -rf node_modules package-lock.json
-npm install
-npm run dev
-```
-
-### Ошибки компиляции
-```bash
-rm -rf .next
-npm run dev
-```
-
-### TypeScript ошибки
-```bash
-# Проверь tsconfig.json
-# Убедись что baseUrl: "src"
+npm run dev          # Run in development mode
+npm run build        # Production build
+npm run start        # Run production version
+npm run lint         # Code check
 ```
 
 ---
 
-## 📚 Полезные команды
+## Contribution
 
-```bash
-npm run dev          # Запуск в режиме разработки
-npm run build        # Production сборка
-npm run start        # Запуск production версии
-npm run lint         # Проверка кода
-```
-
----
-
-## 🤝 Разработка
-
-1. Создай новую ветку: `git checkout -b feature/название`
-2. Внеси изменения
-3. Коммит: `git commit -m "описание"`
-4. Push: `git push origin feature/название`
-5. Создай Pull Request
+1. Read [docs/GIT-FLOW.md](docs/GIT-FLOW.md)
+2. Fork the repository
+3. Make your changes
+4. Create a commit following the example in [docs/COMMIT-STRUCTURE.md](docs/COMMIT-STRUCTURE.md)
+5. Create a pull or issue request
+   5.1 Pull https://github.com/akatosphere/chat-frontend-4/pulls
+   5.2 Issue https://github.com/akatosphere/chat-frontend-4/issues
+6. Help promote the repository and give it a star (optional)
 
 ---
-
-
