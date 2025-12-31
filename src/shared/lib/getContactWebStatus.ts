@@ -26,7 +26,9 @@ export const getContactWebStatus = (
     }
 
     const now = new Date();
-    const lastOnlineDate = new Date(wasOnlineAt);
+ const lastOnlineDate = wasOnlineAt instanceof Date ? wasOnlineAt : new Date(wasOnlineAt);
+
+    
 
     if (isNaN(lastOnlineDate.getTime())) {
         return STATUS_TEXTS.justNow;
