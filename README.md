@@ -6,7 +6,7 @@
 
 ## Available README translations
 
-[![RU](https://flagcdn.com/w20/ru.png) Russian](./README.ru.md)
+[![RU](https://flagcdn.com/w20/ru.png) Russian](docs/readmeTranslations/README.ru.md)
 
 [![EN](https://flagcdn.com/w20/us.png) English](./README.md)
 
