@@ -17,7 +17,6 @@ export const generateAvatarUrl = (
   height: number = 300,
   source: string = DEFAULT_AVATAR_SOURCE
 ): string => {
-  // Если источник недоступен, сразу возвращаем заглушку
   if (source === 'недоступный_источник') {
     return '/images/chatHeader/userAvatar.svg';
   }
@@ -34,7 +33,6 @@ export const generateAvatarUrl = (
       return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedStr}&size=${width}`;
     
     case AVATAR_SOURCES.RANDOM_USER:
-      // Генерируем детерминированный индекс от 0 до 99 на основе seed
       let hash = 0;
       for (let i = 0; i < seedStr.length; i++) {
         hash = seedStr.charCodeAt(i) + ((hash << 5) - hash);

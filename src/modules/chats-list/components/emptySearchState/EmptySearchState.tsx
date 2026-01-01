@@ -10,12 +10,12 @@ interface EmptySearchStateProps {
 export default function EmptySearchState({ className }: EmptySearchStateProps) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center min-h-[400px] w-full px-4",
+      "flex flex-col items-center justify-center min-h-100 w-full px-4",
       className
     )}>
       <div className={cn(`${customStyles['empty-search-container']}`, className)}>
         {/* Картинка */}
-        <div className="relative w-[200px] h-[200px] flex-shrink-0">
+        <div className="relative w-50 h-50 shrink-0">
           <Image
             src="/images/search/imgSearchWeb.svg"
             alt="Поиск не дал результатов"

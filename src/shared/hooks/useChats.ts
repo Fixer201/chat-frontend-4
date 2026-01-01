@@ -4,7 +4,6 @@ import {
   fetchChats, 
   setSelectedChat, 
   updateChat,
-  //добавлены actions для работы с настройками
   updateChatSettings,
   toggleFavorite,
   toggleNotifications,
@@ -71,7 +70,6 @@ const updateChatSettingsData = useCallback((chatId: number, settings: Partial<Ch
     dispatch(resetChatSettings());
   }, [dispatch]);
 
-  // Вспомогательные геттеры
   const getChatSettings = useCallback((chatId: number): ChatSettings | undefined => {
     return chatSettings[chatId];
   }, [chatSettings]);
@@ -95,17 +93,14 @@ const updateChatSettingsData = useCallback((chatId: number, settings: Partial<Ch
   }, [items, chatSettings]);
 
   return {
-    // Данные
     chats: items,
     loading,
     error,
     selectedChatId,
      chatSettings,
-    // Методы для работы с чатами
     loadChats,
     selectChat,
     updateChat: updateChatData,
-    //МЕТОДЫ: для работы с настройками
     updateChatSettings: updateChatSettingsData,
     toggleFavorite: toggleFavoriteChat,
     toggleNotifications: toggleChatNotifications,
@@ -114,7 +109,6 @@ const updateChatSettingsData = useCallback((chatId: number, settings: Partial<Ch
     deleteChat,
     addToContacts: addChatToContacts,
     resetChatSettings: resetAllChatSettings,
-    // Геттеры
     getChatSettings,
     getChatWithSettings,
   };

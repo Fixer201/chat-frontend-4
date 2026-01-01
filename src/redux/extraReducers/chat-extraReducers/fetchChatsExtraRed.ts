@@ -6,17 +6,14 @@ import { ActionReducerMapBuilder } from '@reduxjs/toolkit'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
 import { transformChatListFromApi } from '@shared/lib/transformChatData'
 import { ChatItem, ChatsState } from '@shared/types/chat'
-// Async thunk для загрузки чатов
+
 export const fetchChats = createAsyncThunk(
     'chats/fetchChats',
     async (count: number = 15, { rejectWithValue }) => {
         try {
-            // Получаем моковые данные
             const mockData =
                 generateLocalMockChatItems(count)
 
-            // Преобразуем в camelCase для UI
-            // Фильтруем валидные данные
             const validData = mockData.filter(
                 (item): item is Required<typeof item> =>
                     item !== null &&
@@ -51,7 +48,6 @@ export const handleFetchChats = (
             (state, action: PayloadAction<ChatItem[]>) => {
                 state.loading = false
                 state.items = action.payload
-                // инициализация настроек для каждого загруженного чата
                 action.payload.forEach((chat) => {
                     if (!state.chatSettings[chat.id]) {
                         state.chatSettings[chat.id] = {

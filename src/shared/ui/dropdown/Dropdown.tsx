@@ -240,7 +240,6 @@ const [isMeasuring, setIsMeasuring] = useState(false);
     };
   }, [isOpen, offset, placement, triggerRef, menuRef, manualPosition]);
 
-// ИЗМЕНЕНИЕ 4: Новая функция для измерения текста
   const measureTextWidth = useCallback((text: string, font: string = "16px 'Roboto', sans-serif"): number => {
     if (typeof document === 'undefined') return 0;
     
@@ -253,7 +252,6 @@ const [isMeasuring, setIsMeasuring] = useState(false);
     return metrics.width;
   }, []);
 
-  // ИЗМЕНЕНИЕ 5: Улучшенная функция измерения ширины dropdown
   const measureDropdownWidth = useCallback(() => {
     if (!contentRef.current || width !== 'auto') return minWidth;
 
@@ -262,7 +260,6 @@ const [isMeasuring, setIsMeasuring] = useState(false);
 
     let maxTextWidth = 0;
     
-    // Измеряем текст каждого элемента
     itemElements.forEach(item => {
       const textElement = item.querySelector('.dropdown-item-text');
       if (textElement) {
@@ -272,10 +269,8 @@ const [isMeasuring, setIsMeasuring] = useState(false);
       }
     });
 
-    // Добавляем отступы: 32px (padding 16px с каждой стороны) + 64px (для иконок)
     const totalWidth = Math.ceil(maxTextWidth + 96);
     
-    // Ограничиваем minWidth и maxWidth
     let finalWidth = Math.max(minWidth, totalWidth);
     if (maxWidth && finalWidth > maxWidth) {
       finalWidth = maxWidth;
@@ -284,7 +279,6 @@ const [isMeasuring, setIsMeasuring] = useState(false);
     return finalWidth;
   }, [width, minWidth, maxWidth, measureTextWidth]);
 
-// ИЗМЕНЕНИЕ 6: Используем useLayoutEffect для измерения перед отрисовкой
   useLayoutEffect(() => {
     if (!isOpen || width !== 'auto' || hasMeasuredRef.current) return;
 
@@ -297,7 +291,6 @@ const [isMeasuring, setIsMeasuring] = useState(false);
       hasMeasuredRef.current = true;
     };
 
-    // Даем время на рендер элементов
     requestAnimationFrame(() => {
       requestAnimationFrame(updateWidth);
     });
@@ -306,7 +299,7 @@ const [isMeasuring, setIsMeasuring] = useState(false);
       hasMeasuredRef.current = false;
     };
   }, [isOpen, width, measureDropdownWidth]);
-// ИЗМЕНЕНИЕ 7: Сбрасываем флаг измерения при закрытии
+
   useEffect(() => {
     if (!isOpen) {
       hasMeasuredRef.current = false;
@@ -316,7 +309,7 @@ const [isMeasuring, setIsMeasuring] = useState(false);
   if (!isOpen) {
     return null;
   }
-  // ИЗМЕНЕНИЕ 8: Определяем финальную ширину
+
   const finalWidth = width === 'auto' 
     ? (isMeasuring ? minWidth : calculatedWidth)
     : width;
@@ -346,8 +339,8 @@ const [isMeasuring, setIsMeasuring] = useState(false);
         role="menu"
         style={contentStyle}
          className={cn(
-          "absolute z-[60] max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-(--color-white-bg) shadow-(--color-context-shadow)",
-          "dropdown-width-auto", //  Добавил класс для автоматической ширины
+          "absolute z-60 max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-(--color-white-bg) shadow-(--color-context-shadow)",
+          "dropdown-width-auto", 
           className
         )}
         {...props}
@@ -427,9 +420,9 @@ function DropdownItem({
        onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       className={cn(
-        "dropdown-item", // Добавил класс для измерения ширины
-        "flex w-full items-center justify-between gap-4 px-4 py-[10px] text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-(--color-black-alpha-20) last:border-b-0",
-        "dropdown-no-wrap", // Добавил запрет переноса текста
+        "dropdown-item", 
+        "flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-(--color-black-alpha-20) last:border-b-0",
+        "dropdown-no-wrap", 
         disabled
           ? "cursor-not-allowed text-[#9CA3AF]"
           : danger
@@ -442,7 +435,7 @@ function DropdownItem({
       <span className="dropdown-item-text dropdown-item-content truncate flex-1">
         {label ?? children}
       </span>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         {/* Иконка слева от текста (если нужна) */}
           {icon && (
             <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">

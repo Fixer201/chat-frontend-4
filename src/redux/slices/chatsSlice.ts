@@ -161,7 +161,6 @@ const chatsSlice = createSlice({
     },
   },
    extraReducers: (builder) => {
-    // передаем initialState в handleFetchChats
       handleFetchChats(builder, initialState)
   },
 });

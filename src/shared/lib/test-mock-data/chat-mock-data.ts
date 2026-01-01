@@ -25,7 +25,7 @@ export function generateLocalMockChatItems(count: number): ApiChatItem[] {
     "Жду твоего ответа"
   ];
  const nowInSeconds = Math.floor(Date.now() / 1000);
- // Генерируем случайные времена в пределах последних 30 дней для каждого чата
+
   const thirtyDaysInSeconds = 30 * 24 * 60 * 60;
 const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER;
   return Array(count).fill(null).map((_, index) => {
@@ -39,33 +39,28 @@ const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER;
     const avatarSeed = `avatar_${baseId}_${username}`;
     const generators = ['picsum', 'unsplash', 'ui-faces', 'random-user', 'robohash'] as const;
     const generatorIndex = index % generators.length;
-   // Генерируем аватарку с выбранным источником
+  
     const avatarUrl = generateAvatarUrl(avatarSeed, 300, 300, AVATAR_SOURCE);
     
-    // Для webp просто добавляем суффикс (если источник поддерживает)
     const avatarWebpUrl = generateAvatarUrl(avatarSeed + '_webp', 300, 300, AVATAR_SOURCE);
 
-    // Генерируем случайные времена для каждого чата
-    // was_online_at - случайное время в пределах 30 дней
     const randomSecondsAgo = Math.floor(Math.random() * thirtyDaysInSeconds);
     const wasOnlineAt = nowInSeconds - randomSecondsAgo;
     
-    // last_activity_at - более свежее время (в пределах 7 дней)
     const sevenDaysInSeconds = 7 * 24 * 60 * 60;
     const recentSecondsAgo = Math.floor(Math.random() * sevenDaysInSeconds);
     const lastActivityAt = nowInSeconds - recentSecondsAgo;
     
-    // created_at для сообщения - случайное время (в пределах 1 дня от last_activity_at)
+   
     const oneDayInSeconds = 24 * 60 * 60;
     const messageSecondsAgo = Math.floor(Math.random() * oneDayInSeconds);
     const messageCreatedAt = lastActivityAt - messageSecondsAgo;
     
-    // is_online - случайно определяем, но с учетом времени последнего онлайн
-    // Если был онлайн менее 5 минут назад, с большей вероятностью онлайн
+    
     const fiveMinutesAgo = nowInSeconds - 300;
     const isOnline = wasOnlineAt >= fiveMinutesAgo 
-      ? Math.random() > 0.3  // 70% шанс быть онлайн, если был онлайн недавно
-      : Math.random() > 0.8; // 20% шанс быть онлайн, если давно не был онлайн
+      ? Math.random() > 0.3  
+      : Math.random() > 0.8; 
 
     const chatItem: ApiChatItem = {
       id: baseId,
@@ -76,7 +71,7 @@ const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER;
         first_name: firstName,
         last_name: lastName,
         avatar: `avatar_${index}.jpg`,
-        avatar_url: avatarUrl, // Уникальная аватарка для каждого
+        avatar_url: avatarUrl, 
         avatar_webp: `avatar_${index}.webp`,
         avatar_webp_url: avatarWebpUrl,
         is_blocked: index % 10 === 0,
@@ -86,8 +81,8 @@ const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER;
       },
       is_favorite: index % 6 === 0,
       notifications: Math.random() > 0.5,
-      new_message_count: Math.floor(Math.random() * 10), // случайное число от 0 до 9
-      new_file_count: Math.floor(Math.random() * 5),    // случайное число от 0 до 4
+      new_message_count: Math.floor(Math.random() * 10), 
+      new_file_count: Math.floor(Math.random() * 5),    
       name: `${firstName} ${lastName}`,
       chat_type: ['private', 'group', 'channel'][index % 3] as 'private' | 'group' | 'channel',
       chat_key: `chat_key_${index}`,

@@ -55,7 +55,7 @@ export const ChatAvatar = forwardRef<
             )}
             {...props}
         >
-            <div className="relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) w-[60px] h-[60px]">
+            <div className="relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) w-15 h-15">
                 <Image
                     src={src}
                     alt={alt ?? name}

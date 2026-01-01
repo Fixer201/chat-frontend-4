@@ -12,7 +12,7 @@ export default function ChatListSearch({
   placeholder
 }:ChatListSearchProps) {
   return (
-     <div className="h-1/12 min-h-[60px] bg-[#F5F6F8] flex items-center px-4">
+     <div className="h-1/12 min-h-15 bg-[#F5F6F8] flex items-center px-4">
                 <div className="relative w-full">
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                         <svg
@@ -55,7 +55,7 @@ export default function ChatListSearch({
                             aria-label="Очистить поиск"
                         >
                             <Image
-                                src="/images/chatHeader/closeSearch.svg" // Укажите путь к вашей иконке крестика
+                                src="/images/chatHeader/closeSearch.svg" 
                                 alt="Clear search"
                                 width={14}
                                 height={14}

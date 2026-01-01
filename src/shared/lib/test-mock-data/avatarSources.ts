@@ -15,7 +15,7 @@ export const AVATAR_SOURCES = {
 
 export type AvatarSource = keyof typeof AVATAR_SOURCES;
 
-// Простое описание для каждого источника
+
 export const SOURCE_DESCRIPTIONS = {
   [AVATAR_SOURCES.PISSUM]: 'Picsum Photos - случайные фото',
   [AVATAR_SOURCES.UNSPLASH]: 'Unsplash - качественные стоковые фото',
@@ -26,5 +26,5 @@ export const SOURCE_DESCRIPTIONS = {
   [AVATAR_SOURCES.PLACEHOLDER]: 'Placeholder - цветные плейсхолдеры',
 };
 
-// Какой источник использовать по умолчанию
+
 export const DEFAULT_AVATAR_SOURCE = AVATAR_SOURCES.PISSUM;

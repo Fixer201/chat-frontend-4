@@ -17,7 +17,7 @@ export default function EmptyChatsState({
   
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center min-h-[400px] w-full px-4",
+      "flex flex-col items-center justify-center min-h-100 w-full px-4",
       className
     )}>
       <div className={cn(
@@ -26,7 +26,7 @@ export default function EmptyChatsState({
         className
       )}>
         {/* Картинка */}
-        <div className="relative w-[200px] h-[200px] flex-shrink-0">
+        <div className="relative w-50 h-50 shrink-0">
           <Image
             src="/images/search/imgSearchWeb.svg"
             alt="Нет чатов"
@@ -37,7 +37,7 @@ export default function EmptyChatsState({
         </div>
         
         {/* Текстовый блок */}
-        <div className="flex flex-col items-center gap-6 w-full max-w-[360px]">
+        <div className="flex flex-col items-center gap-6 w-full max-w-90">
           {/* Заголовок */}
           <div className="w-full">
             <h3 className={cn(

@@ -25,7 +25,6 @@ export default function ChatDeleteModal({
     setIsDeleting(true)
     try {
       await onConfirm()
-      // После успешного удаления модальное окно закроется через onClose в родительском компоненте
     } finally {
       setIsDeleting(false)
     }

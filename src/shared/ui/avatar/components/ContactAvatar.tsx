@@ -79,7 +79,7 @@ const isHighlighted = selected || (mode === 'select-contact' && isSelected)
                     rowBaseClasses,
                     modeClasses[mode],
                     
-isHighlighted && 'bg-(--color-accent-violet-dark)/60',
+isHighlighted && 'bg-accent-violet-dark/60',
                     className,
 
                 )}
