@@ -8,11 +8,11 @@ import { useRouter } from "next/navigation";
 export default function RegisterForm() {
   const router = useRouter();
   const handleStartClick = () => {
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   return <>
-    <div className="flex flex-col items-center justify-center w-122 h-190 rounded-2xl bg-[url(/images/login/StartPage.svg)] absolute drop-shadow-[-24px_-24px_80px_#695C7A26]">
+    <div className="flex flex-col items-center justify-center w-122 h-190 rounded-2xl bg-[url(/images/login/StartPage.svg)] absolute " style={{ filter: 'var(--app-start-screen-shadow)' }}>
       <div className="flex flex-col items-center w-90 h-152 absolute gap-6 justify-between">
         <div className="relative flex items-center w-90 h-17">
           <Image

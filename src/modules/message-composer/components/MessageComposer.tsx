@@ -79,8 +79,8 @@ export default function MessageComposer() {
         }, 500)
     }
 
-    return (
-
+    return <>
+      
             {/* Attachment Icon */}
             <Image
                 width={25}
@@ -159,6 +159,6 @@ export default function MessageComposer() {
                     />
                 )}
             </button>
-        </div>
-    )
+
+    </>
 }

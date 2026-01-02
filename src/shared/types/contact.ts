@@ -14,5 +14,5 @@ export interface Contact {
     birthday?: number 
     chatId?: number 
     isOnline: boolean 
-    wasOnlineAt: number
+    wasOnlineAt: number | string | Date
 }

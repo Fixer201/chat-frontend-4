@@ -1,9 +1,10 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { getStatusText } from '@shared/lib/getStatusText'
 import { Contact } from '@shared/types/contact'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
+import { getContactWebStatus } from '@shared/lib/getContactWebStatus'
 
 
 interface ContactItemProps {
@@ -27,7 +28,12 @@ export const ContactItem: React.FC<
     onSelectContact,
     onSetSelectedContact,
 }) => {
-        const statusText = getStatusText(contact, searchValue)
+        const [statusText, setStatusText] = useState('');
+ useEffect(() => {
+            //  статус только на клиенте после монтирования
+            const status = getContactWebStatus(contact.isOnline, contact.wasOnlineAt);
+            setStatusText(status);
+        }, [contact.isOnline, contact.wasOnlineAt]);  
 
         return (
             <ContactAvatar
