@@ -31,7 +31,7 @@ const rowBaseClasses =
 
 const modeClasses: Record<AvatarMode, string> = {
     contact:
-        'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
+        'bg-gray-light hover:bg-(--color-accent-violet-primary)',
     'select-contact': 'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
 }
 
@@ -79,7 +79,7 @@ const isHighlighted = selected || (mode === 'select-contact' && isSelected)
                     rowBaseClasses,
                     modeClasses[mode],
                     
-isHighlighted && 'bg-accent-violet-dark/60',
+isHighlighted && 'bg-(--color-accent-violet-primary)',
                     className,
 
                 )}

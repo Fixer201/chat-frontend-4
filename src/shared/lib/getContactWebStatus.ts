@@ -8,61 +8,70 @@
 // был(а) вчера в 21:15 = от 24 часов до 47 ч. 59 мин.
 // был(а) 02.04.24 = от 48 часов до бесконечности, отображается всегда
 
-import { STATUS_TEXTS } from '@shared/config/constants'
+import { STATUS_TEXTS } from '@shared/config/constants';
 
 export const getContactWebStatus = (
     isOnline: boolean,
-    // Поле из БД - время последнего онлайна в минутах (предположительно положительное число)
-    wasOnlineAt: number,
+   
+    wasOnlineAt: string | number | Date | null | undefined,
 ): string => {
-    // если онлайн, возвращаем статус "в сети"
+    // Если онлайн, статус "в сети"
     if (isOnline) {
-        return STATUS_TEXTS.online
+        return STATUS_TEXTS.online;
     }
 
-    // проверка wasOnlineAt - если не число или отрицательное, считаем "только что"
-    if (!Number.isFinite(wasOnlineAt) || wasOnlineAt < 0) {
-        return STATUS_TEXTS.justNow
+    // Если wasOnlineAt некорректен, считаем "только что"
+    if (!wasOnlineAt) {
+        return STATUS_TEXTS.justNow;
     }
 
-    const today = new Date()
-    const milliseconds = wasOnlineAt * 60 * 1000
-    const lastOnlineDate = new Date(
-        today.getTime() - milliseconds,
-    )
+    const now = new Date();
+ const lastOnlineDate = wasOnlineAt instanceof Date ? wasOnlineAt : new Date(wasOnlineAt);
 
-    if (wasOnlineAt < 1) {
-        return STATUS_TEXTS.justNow
-    }
-    if (wasOnlineAt >= 1 && wasOnlineAt < 60) {
-        const minutes = Math.floor(wasOnlineAt)
-        return STATUS_TEXTS.minutesAgo(minutes)
+    
+
+    if (isNaN(lastOnlineDate.getTime())) {
+        return STATUS_TEXTS.justNow;
     }
 
-    if (wasOnlineAt >= 60 && wasOnlineAt < 1440) {
-        const hours = Math.floor(wasOnlineAt / 60)
-        return STATUS_TEXTS.hoursAgo(hours)
+    const diffMs = now.getTime() - lastOnlineDate.getTime();
+    const diffMinutes = diffMs / (1000 * 60);
+
+    // Менее 1 минуты: "был(а) только что"
+    if (diffMinutes < 1) {
+        return STATUS_TEXTS.justNow;
     }
 
-    if (wasOnlineAt >= 1440 && wasOnlineAt < 2880) {
+    // От 1 до 59 минут: "был(а) X минут назад"
+    if (diffMinutes >= 1 && diffMinutes < 60) {
+        const minutes = Math.floor(diffMinutes);
+        return STATUS_TEXTS.minutesAgo(minutes);
+    }
+
+    // От 1 до 23 часов: "был(а) X часа назад"
+    if (diffMinutes >= 60 && diffMinutes < 1440) {
+        const hours = Math.floor(diffMinutes / 60);
+        return STATUS_TEXTS.hoursAgo(hours);
+    }
+
+    // От 24 до 47 часов 59 минут: "был(а) вчера в HH:MM"
+    if (diffMinutes >= 1440 && diffMinutes < 2880) {
         const hours = lastOnlineDate
             .getHours()
             .toString()
-            .padStart(2, '0')
+            .padStart(2, '0');
         const minutes = lastOnlineDate
             .getMinutes()
             .toString()
-            .padStart(2, '0')
-        return STATUS_TEXTS.yesterdayAt(hours, minutes)
+            .padStart(2, '0');
+        return STATUS_TEXTS.yesterdayAt(hours, minutes);
     }
 
-    const dateString = lastOnlineDate.toLocaleDateString(
-        'ru-RU',
-        {
-            day: '2-digit',
-            month: '2-digit',
-            year: '2-digit',
-        },
-    )
-    return STATUS_TEXTS.dateAgo(dateString)
-}
+    // От 48 часов и далее: "был(а) DD.MM.YY"
+    const dateString = lastOnlineDate.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+    });
+    return STATUS_TEXTS.dateAgo(dateString);
+};

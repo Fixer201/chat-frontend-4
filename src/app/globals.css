@@ -63,6 +63,10 @@ body {
     --app-gray-light: hsla(220, 18%, 97%, 0.5); /* Gray tone/Gray light (50%) */
     --app-black-alpha-70: hsla(0, 0%, 0%, 0.7); /* Gray tone/black (70%) */
     --app-black-alpha-20: hsla(0, 0%, 0%, 0.2); /* Gray tone/black (20%) */
+   --app-login-background: url(/images/login/Background.svg);
+    --app-login-width: 75rem;
+    --app-login-height: 64rem;
+    --app-start-screen-shadow: drop-shadow(-24px -24px 80px #695C7A26);
 
     /* Text Colors */
     --app-text-black: hsla(240, 3%, 11%, 1); /* Text/Black */
