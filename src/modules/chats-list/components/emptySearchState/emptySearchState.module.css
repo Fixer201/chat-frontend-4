@@ -1,0 +1,40 @@
+/* Стили для состояния пустого поиска */
+.empty-search-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 360px;
+  min-height: 292px;
+  margin: 0 auto;
+}
+
+.empty-search-title {
+  color: var(--app-text-gray);
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 130%;
+  letter-spacing: 0.01em;
+  text-align: center;
+  width: 100%;
+  max-width: 328px;
+  margin: 0;
+}
+
+.empty-search-text {
+  color: var(--app-text-gray);
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 120%;
+  letter-spacing: 0.01em;
+  text-align: center;
+  width: 100%;
+  max-width: 328px;
+  margin: 0;
+}

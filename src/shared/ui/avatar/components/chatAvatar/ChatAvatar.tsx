@@ -17,7 +17,9 @@ export interface ChatAvatarProps
     rightElement?: ReactNode
     className?: string
     notificationsEnabled?: boolean
-    messageStatus?: 'sent' | 'delivered' | 'read' | null
+    messageStatus?: 'sent' | 'delivered' | 'read' | null,
+    isFavorite?:boolean
+    isChatRead?:boolean
 }
 
 export const ChatAvatar = forwardRef<
@@ -35,6 +37,8 @@ export const ChatAvatar = forwardRef<
     className,
     notificationsEnabled,
     messageStatus,
+    isFavorite,
+    isChatRead,
     ...props
 }, ref) => {
     const showUnread = typeof unreadCount === 'number' && unreadCount > 0
@@ -51,7 +55,7 @@ export const ChatAvatar = forwardRef<
             )}
             {...props}
         >
-            <div className="relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) w-[60px] h-[60px]">
+            <div className="relative shrink-0 rounded-full overflow-hidden bg-(--color-gray-main) w-15 h-15">
                 <Image
                     src={src}
                     alt={alt ?? name}
@@ -105,6 +109,8 @@ export const ChatAvatar = forwardRef<
                     messageStatus={messageStatus}
                     rightElement={rightElement}
                     selected={selected}
+                    isFavorite={isFavorite}
+                    isChatRead={isChatRead}
                 />
             )}
         </div>

@@ -29,6 +29,8 @@ export interface AvatarProps
     isSelected?: boolean
     onSelect?: () => void
     messageStatus?: 'sent' | 'delivered' | 'read' | null
+    isFavorite?:boolean
+    isChatRead?:boolean
 }
 
 export const Avatar = forwardRef<
