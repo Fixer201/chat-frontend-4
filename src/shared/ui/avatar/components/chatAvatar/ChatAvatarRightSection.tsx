@@ -5,14 +5,17 @@ import { cn } from '@shared/lib/utils'
 
 import type { ReactNode } from 'react'
 import { MessageStatusIcon } from '@shared/ui/messageStatusIcon/MessageStatusIcon'
+import Image from 'next/image'
 
 interface ChatAvatarRightSectionProps {
     timestamp?: string
     showUnread: boolean
-    unreadCount?: number
+    unreadCount?: number |undefined
     messageStatus?: 'sent' | 'delivered' | 'read' | null
     rightElement?: ReactNode
     selected?: boolean
+    isFavorite?:boolean
+    isChatRead?:boolean
 }
 
 export const ChatAvatarRightSection = ({
@@ -22,6 +25,8 @@ export const ChatAvatarRightSection = ({
     messageStatus,
     rightElement,
     selected,
+    isFavorite,
+    isChatRead
 }: ChatAvatarRightSectionProps) => {
     return (
         <div className="ml-auto flex items-start gap-2">
@@ -58,8 +63,21 @@ export const ChatAvatarRightSection = ({
                             </span>
                         )}
                     </div>
-                    {showUnread && (
-                        <Badge
+                    {isFavorite
+                        ?( <Image
+                                    src='/images/chatList/pin.svg'
+                                    alt={'Закреплено'}
+                                    width={16}
+                                    height={16}
+                                    className={cn(
+                                        selected
+                                            ? 'brightness-0 invert'
+                                            : 'opacity-70'
+                                    )}
+                                />)
+                        :(!isChatRead && (
+                            showUnread?
+                            (<Badge
                             variant="counter"
                             color="primary"
                             size="md"
@@ -74,7 +92,24 @@ export const ChatAvatarRightSection = ({
                         >
                             {unreadCount}
                         </Badge>
+                    ):(
+                        <Badge
+                            variant="counter"
+                            color="primary"
+                            size="md"
+                            className={
+                                selected
+                                    ? 'bg-(--color-white-bg) text-(--color-accent-violet-primary)'
+                                    : ''
+                            }
+                        >
+                            {null}
+                        </Badge>
+                    )
+                )
+                    
                     )}
+                    
                 </div>
             )}
             {rightElement}

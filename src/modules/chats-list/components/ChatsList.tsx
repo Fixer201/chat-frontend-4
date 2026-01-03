@@ -1,213 +1,247 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
-import Image from 'next/image'
-
 import { useSearch } from '@shared/hooks/useSearch'
 import { ChatListItem } from './ChatListItem'
+import ChatListSearch from './ChatListSearch'
+import ChatDeleteModal from './ChatDeleteModal'
+import ChatSuccessToast from './ChatSuccessToast'
+import EmptySearchState from './emptySearchState/EmptySearchState'
+import EmptyChatsState from './emptyChatsState/EmptyChatsState'
+import { CustomScrollbar } from '@shared/ui/customScrollbar/CustomScrollbar'
+import { useRouter } from 'next/navigation'
 
 export default function ChatsList() {
-    const [searchValue, setSearchValue] = useState('')
-    const { chats, loadChats } = useChats()
-    const [selectedChatId, setSelectedChatId] = useState<
-        number | null | string
-    >(null)
-    useEffect(() => {
-        loadChats(15)
-    }, [loadChats])
-    const messageStatuses: (
-        | 'sent'
-        | 'delivered'
-        | 'read'
-        | null
-    )[] = ['sent', 'delivered', 'read', null]
-    const { filteredValue } = useSearch(
-        chats,
-        searchValue,
-        [
-            'chat.firstName',
-            'chat.lastName',
-            (chat) =>
-                `${chat.chat.firstName} ${chat.chat.lastName}`,
-            'lastMessage.content',
-        ],
-    )
-    const clearSearchInput = () => {
-        setSearchValue('')
-    }
-    const toSelectChat = (id: number | string): void => {
-        if (id === selectedChatId) {
-            console.log(id)
-            console.log(selectedChatId)
-            console.log(id === selectedChatId)
-            setSelectedChatId(null)
-        } else {
-            setSelectedChatId(id)
-        }
-    }
+  const router = useRouter()
+  const [searchValue, setSearchValue] = useState('')
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [successToastOpen, setSuccessToastOpen] = useState(false)
+  const [addedContactName, setAddedContactName] = useState('')
+  const [chatToDelete, setChatToDelete] = useState<{
+    id: number;
+    name: string;
+  } | null>(null)
+  
+  const {
+    chats,
+    loading,  
+    loadChats,
+    chatSettings,  
+    toggleFavorite,
+    toggleNotifications,
+    markAsRead,
+    markAsUnread,
+    deleteChat,     
+    addToContacts,
+    selectedChatId, 
+    selectChat,     
+  } = useChats()
 
-    const handleDeleteChat = (chatId: number | string) => {
-        console.log('Удалить чат:', chatId)
-        // Здесь будет логика удаления чата
+  useEffect(() => {
+    loadChats(15)
+  }, [loadChats])
+
+  
+  const handleStartChat = useCallback(() => {
+    router.push('/contacts')
+  }, [router])
+
+  const messageStatuses: ('sent' | 'delivered' | 'read' | null)[] = ['sent', 'delivered', 'read', null]
+
+  const { filteredValue } = useSearch(
+    chats?.filter((chat) => !chatSettings[chat.id]?.isDeleted) || [],
+    searchValue,
+    [
+      'chat.firstName',
+      'chat.lastName',
+      (chat) => `${chat.chat.firstName} ${chat.chat.lastName}`,
+      'lastMessage.content',
+    ],
+  )
+
+  const sortedChats = [...filteredValue].sort((a, b) => {
+    const aIsFavorite = chatSettings[a.id]?.isFavorite || false
+    const bIsFavorite = chatSettings[b.id]?.isFavorite || false
+
+    if (aIsFavorite && !bIsFavorite) return -1
+    if (!aIsFavorite && bIsFavorite) return 1
+    return 0
+  })
+
+  const clearSearchInput = () => {
+    setSearchValue('')
+  }
+
+  const toSelectChat = (id: number): void => {
+    if (id === selectedChatId) {
+      selectChat(null)
+    } else {
+      selectChat(id)
     }
+  }
 
-    const handlePinChat = (chatId: number | string) => {
-        console.log('Закрепить чат:', chatId)
-        // Здесь будет логика закрепления чата
+  const handleDeleteClick = useCallback((chatId: number, chatName: string) => {
+    setChatToDelete({ id: chatId, name: chatName })
+    setDeleteModalOpen(true)
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!chatToDelete || isDeleting) return
+    
+    setIsDeleting(true)
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      console.log('Удалить чат:', chatToDelete.id)
+      
+      deleteChat(chatToDelete.id)
+      
+      setDeleteModalOpen(false)
+      setChatToDelete(null)
+    } catch (error) {
+      console.error('Ошибка при удалении:', error)
+    } finally {
+      setIsDeleting(false)
     }
+  }, [chatToDelete, isDeleting, deleteChat]) 
 
-    const handleMuteChat = (chatId: number | string) => {
-        console.log(
-            'Отключить уведомления для чата:',
-            chatId,
-        )
-        // Здесь будет логика отключения уведомлений
-    }
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteModalOpen(false)
+    setChatToDelete(null)
+  }, [])
 
-    const handleMarkAsRead = (chatId: number | string) => {
-        console.log('Пометить чат как прочитанный:', chatId)
-        // Здесь будет логика пометки как прочитанного
-    }
+  const handleFavoriteChat = (chatId: number) => {
+    console.log('Закрепить чат:', chatId)
+    toggleFavorite(chatId)
+  }
 
-    const handleMarkAsUnread = (
-        chatId: number | string,
-    ) => {
-        console.log(
-            'Пометить чат как непрочитанный:',
-            chatId,
-        )
-        // Здесь будет логика пометки как непрочитанного
-    }
+  const handleMuteChat = (chatId: number) => {
+    console.log('Отключить уведомления для чата:', chatId)
+    toggleNotifications(chatId)
+  }
 
-    return (
-        <div className="flex h-full flex-col">
-            <div
-                className={`
-              flex h-1/12 min-h-[60px] items-center bg-[#F5F6F8] px-4
-            `}
-            >
-                <div className="relative w-full">
-                    <div
-                        className={`
-                      pointer-events-none absolute top-1/2 left-3
-                      -translate-y-1/2 transform
-                    `}
-                    >
-                        <svg
-                            viewBox="0 0 17.4883 17.4883"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="17.488281"
-                            height="17.488281"
-                            fill="none"
-                        >
-                            <path
-                                id="Vector"
-                                d="M12.5 11L11.71 11L11.43 10.73C12.41 9.59 13 8.11 13 6.5C13 
-                            2.91 10.09 0 6.5 0C2.91 0 0 2.91 0 6.5C0 10.09 2.91 13 6.5 
-                            13C8.11 13 9.59 12.41 10.73 11.43L11 11.71L11 12.5L16 17.49L17.49 
-                            16L12.5 11ZM6.5 11C4.01 11 2 8.99 2 6.5C2 4.01 4.01 2 6.5 2C8.99 
-                            2 11 4.01 11 6.5C11 8.99 8.99 11 6.5 11Z"
-                                fill={'#747474'}
-                                fillRule="nonzero"
-                            />
-                        </svg>
-                    </div>
+  const handleMarkAsRead = (chatId: number) => {
+    console.log('Пометить чат как прочитанный:', chatId)
+    markAsRead(chatId)
+  }
 
-                    <input
-                        type="text"
-                        placeholder="Поиск..."
-                        value={searchValue}
-                        onChange={(e) =>
-                            setSearchValue(e.target.value)
-                        }
-                        className={`
-                          box-border w-full rounded-lg border border-[#EEEEEE]
-                          bg-white py-2.5 pr-4 pl-10 text-sm transition-all
-                          duration-200
-                          placeholder:text-gray-400
-                          focus:border-[#EEEEEE] focus:ring-0 focus:outline-none
-                        `}
-                    />
-                    {searchValue && (
-                        <button
-                            type="button"
-                            onClick={clearSearchInput}
-                            className={`
-                              absolute top-1/2 right-3 -translate-y-1/2
-                              transform rounded-full p-1 transition-all
-                              duration-200
-                              hover:bg-gray-100
-                            `}
-                            aria-label="Очистить поиск"
-                        >
-                            <Image
-                                src="/images/chatHeader/closeSearch.svg" // Укажите путь к вашей иконке крестика
-                                alt="Clear search"
-                                width={14}
-                                height={14}
-                                className={`
-                                  opacity-60 transition-opacity
-                                  hover:opacity-100
-                                `}
-                            />
-                        </button>
-                    )}
-                </div>
+  const handleMarkAsUnread = (chatId: number) => {
+    console.log('Пометить чат как непрочитанный:', chatId)
+    markAsUnread(chatId)
+  }
+
+  const handleAddToContacts = useCallback((chatId: number, firstName: string, lastName: string) => {
+    const fullName = `${firstName} ${lastName}`
+    setAddedContactName(fullName)
+    addToContacts(chatId)
+    setSuccessToastOpen(true)
+  }, [addToContacts]) 
+
+  const handleSuccessToastClose = useCallback(() => {
+    setSuccessToastOpen(false)
+  }, [])
+  
+  const showEmptySearchState = useMemo(() => {
+    return searchValue.trim() !== '' && filteredValue && filteredValue.length === 0
+  }, [searchValue, filteredValue])
+
+  const showEmptyChatsState = useMemo(() => {
+    return !loading && chats && chats.length === 0 && searchValue.trim() === ''
+  }, [loading, chats, searchValue])
+
+  return (
+    <>
+      <div className="flex flex-col h-full">
+        <ChatListSearch
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+          clearSearchInput={clearSearchInput}
+          placeholder={'Поиск...'}
+        />
+        <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8] ">
+        <CustomScrollbar>
+          {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-text-gray">Загрузка...</div>
             </div>
-            <div className="h-11/12 flex-1 overflow-y-auto bg-[#F5F6F8]">
-                <div className="flex flex-col">
-                    {filteredValue?.map((chat, index) => (
-                        <ChatListItem
-                            src="/images/chatHeader/userAvatar.svg"
-                            name={`${chat.chat.firstName} ${chat.chat.lastName}`}
-                            messagePreview={
-                                chat.lastMessage.content
-                            }
-                            timestamp={formatLastSeen(
-                                chat.lastActivityAt * 1000,
-                            )}
-                            unreadCount={
-                                chat.newMessageCount
-                            }
-                            key={chat.id}
-                            selected={
-                                chat.id === selectedChatId
-                            }
-                            onClick={() =>
-                                toSelectChat(chat.id)
-                            }
-                            notificationsEnabled={
-                                chat.notifications
-                            }
-                            messageStatus={
-                                messageStatuses[
-                                    index %
-                                        messageStatuses.length
-                                ]
-                            }
-                            onDeleteChat={() =>
-                                handleDeleteChat(chat.id)
-                            }
-                            onPinChat={() =>
-                                handlePinChat(chat.id)
-                            }
-                            onMuteChat={() =>
-                                handleMuteChat(chat.id)
-                            }
-                            onMarkAsRead={() =>
-                                handleMarkAsRead(chat.id)
-                            }
-                            onMarkAsUnread={() =>
-                                handleMarkAsUnread(chat.id)
-                            }
-                            isPinned={index % 3 === 0}
-                            isChatRead={index % 2 === 0}
-                        />
-                    ))}
-                </div>
+          ) : showEmptySearchState ? (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <EmptySearchState />
             </div>
+          ) : showEmptyChatsState ? (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <EmptyChatsState onStartChat={handleStartChat} />
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              
+                {sortedChats?.map((chat, index) => {
+                // ИЗМЕНЕНО: получаем настройки из Redux вместо локального состояния
+                const settings = chatSettings[chat.id] || {
+                  isFavorite: chat.isFavorite || false,
+                  isChatRead: chat.newMessageCount === 0,
+                  notificationsEnabled: chat.notifications ?? true,
+                  isDeleted: false,
+                  isInContacts: chat.chat.isInContacts || false,
+                  originalUnreadCount: chat.newMessageCount || 0,
+                }
+                if (settings.isDeleted) return null
+                let badgeCount: number | undefined = undefined
+                  if (!settings.isChatRead) {
+                    badgeCount = (settings.originalUnreadCount && settings.originalUnreadCount > 0) 
+                      ? settings.originalUnreadCount 
+                      : 0
+                  }
+                  const avatarSrc = chat.chat.avatarUrl?.trim() 
+                                    ? chat.chat.avatarUrl 
+                                    : "/images/chatHeader/userAvatar.svg";
+                return (
+                  <ChatListItem
+                    src={avatarSrc} 
+                    name={`${chat.chat.firstName} ${chat.chat.lastName}`}
+                    messagePreview={chat.lastMessage.content}
+                    timestamp={formatLastSeen(chat.lastActivityAt * 1000)}
+                    unreadCount={badgeCount}
+                    key={chat.id}
+                    selected={chat.id === selectedChatId}
+                    onClick={() => toSelectChat(chat.id)}
+                    notificationsEnabled={settings.notificationsEnabled}
+                    messageStatus={messageStatuses[index % messageStatuses.length]}
+                    onDeleteChat={() => handleDeleteClick(chat.id, `${chat.chat.firstName} ${chat.chat.lastName}`)} 
+                    onFavoriteChat={() => handleFavoriteChat(chat.id)}
+                    onMuteChat={() => handleMuteChat(chat.id)}
+                    onMarkAsRead={() => handleMarkAsRead(chat.id)}
+                    onMarkAsUnread={() => handleMarkAsUnread(chat.id)}
+                    onAddToContacts={() => handleAddToContacts(chat.id, chat.chat.firstName, chat.chat.lastName)}
+                    isFavorite={settings.isFavorite}
+                    isChatRead={settings.isChatRead}
+                    isInContacts={chat.chat.isInContacts}
+                  />
+                )
+              })}
+              
+              
+            </div>
+          )}
+          </CustomScrollbar>
         </div>
-    )
+      </div>
+      <ChatDeleteModal
+        open={deleteModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        chatName={chatToDelete?.name || ''}
+      />
+      <ChatSuccessToast
+        open={successToastOpen}
+        onClose={handleSuccessToastClose}
+        userName={addedContactName}
+      />
+    </>
+  )
 }

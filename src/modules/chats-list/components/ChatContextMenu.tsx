@@ -31,7 +31,7 @@ export default function ChatContextMenu({
     >
       <Dropdown.Content
         manualPosition={{ left: position.x, top: position.y }}
-        className={cn("w-[200px]")}
+        className={cn("w-50")}
       >
         {onPin && (
           <Dropdown.Item onSelect={onPin}>

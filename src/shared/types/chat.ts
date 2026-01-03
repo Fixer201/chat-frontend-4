@@ -1,5 +1,13 @@
 
 import { AvatarProps } from '@shared/ui/avatar/Avatar'
+//для хранения настроек чата в Redux
+export interface ChatSettings {
+  isFavorite: boolean
+  isChatRead: boolean
+  notificationsEnabled: boolean
+  isDeleted: boolean
+  originalUnreadCount: number
+}
 // варианты представления аватара пользователя
 export type ChatAvatar = {
     avatarWebpUrl?: string | null
@@ -10,61 +18,63 @@ export type ChatAvatar = {
 
 // Тип для UI - все поля camelCase, все вложено в один интерфейс
 export interface ChatItem {
-    id: number
-    chat: {
-        uid: string
-        username: string
-        nickname: string
-        firstName: string
-        lastName: string
-        avatar: string
-        avatarUrl: string
-        avatarWebp: string
-        avatarWebpUrl: string
-        isBlocked: boolean
-        isOnline: boolean
-        wasOnlineAt: number
-        isInContacts: boolean
-    }
-    isFavorite: boolean
-    notifications: boolean
-    newMessageCount: number
-    newFileCount: number
-    name: string
-    chatType: 'private' | 'group' | 'channel'
-    chatKey: string
-    lastActivityAt: number
-    lastSeenMessage: {
-        id: number
-        uid: string
-    }
-    firstNewMessage: {
-        id: number
-        uid: string
-    }
-    lastMessage: {
-        id: number
-        uid: string
-        fromUser: string
-        content: string
-        filesSummary: {
-            types: string[]
-            count: number
-        }
-        hasRepliedMessage: boolean
-        hasForwardedMessage: boolean
-        new: boolean
-        createdAt: number
-        updatedAt: number
-    }
+  id: number;
+  chat: {
+    uid: string;
+    username: string;
+    nickname: string;
+    firstName: string;
+    lastName: string;
+    avatar: string;
+    avatarUrl: string;
+    avatarWebp: string;
+    avatarWebpUrl: string;
+    isBlocked: boolean;
+    isOnline: boolean;
+    wasOnlineAt: number;
+    isInContacts: boolean;
+  };
+  isFavorite: boolean;
+  notifications: boolean;
+  newMessageCount: number;
+  newFileCount: number;
+  name: string;
+  chatType: 'private' | 'group' | 'channel';
+  chatKey: string;
+  lastActivityAt: number;
+  lastSeenMessage: {
+    id: number;
+    uid: string;
+  };
+  firstNewMessage: {
+    id: number;
+    uid: string;
+  };
+  lastMessage: {
+    id: number;
+    uid: string;
+    fromUser: string;
+    content: string;
+    filesSummary: {
+      types: string[];
+      count: number;
+    };
+    hasRepliedMessage: boolean;
+    hasForwardedMessage: boolean;
+    new: boolean;
+    createdAt: number;
+    updatedAt: number;
+  };
+  settings?: ChatSettings;
 }
 
 // Тип для состояния Redux
 export interface ChatsState {
-    items: ChatItem[]
-    loading: boolean
-    error: string | null
-    selectedChatId: number | null
+  items: ChatItem[];
+  loading: boolean;
+  error: string | null;
+  selectedChatId: number | null;
+  chatSettings: Record<string, ChatSettings>;
 }
 
 // Тип для API данных (snake_case)
@@ -124,12 +134,14 @@ export interface ChatListItemProps
     messageStatus?: 'sent' | 'delivered' | 'read' | null
     notificationsEnabled: boolean
     onDeleteChat?: () => void
-    onPinChat?: () => void
+    onFavoriteChat?: () => void
     onMuteChat?: () => void
     onMarkAsRead?: () => void
     onMarkAsUnread?: () => void
-    isPinned?: boolean
+    isFavorite?: boolean
     isChatRead?: boolean
+    onAddToContacts?: () => void
+    isInContacts?: boolean
 }
 
 // Тип для моковых данных (частичный)
