@@ -1,9 +1,14 @@
 import Image from 'next/image'
 
+type Message = {
+    text: string
+    id: number
+}
+
 export default function MessagesList() {
     // TODO: заменить на реальные данные
-    // создать тип для сообщений, не использовать any
-    const messages: any[] = [];
+    // создать тип для сообщений, пока что заглушка
+    const messages: Message[] = []
 
     return (
         <section
@@ -15,8 +20,10 @@ export default function MessagesList() {
             {messages.length === 0 ? (
                 // Empty state
                 <div
-                    className="flex h-full flex-col items-center justify-center
-  text-text-gray"
+                    className={`
+                      flex h-full flex-col items-center justify-center
+                      text-text-gray
+                    `}
                     role="status"
                     aria-label="Пустой чат"
                 >
@@ -27,17 +34,23 @@ export default function MessagesList() {
                         alt="Иллюстрация пустого чата"
                         aria-hidden="false"
                     />
-                    <p className="text-lg font-medium">Сообщений пока нет</p>
-                    <p className="text-sm">Напишите первым :)</p>
+                    <p className="text-lg font-medium">
+                        Сообщений пока нет
+                    </p>
+                    <p className="text-sm">
+                        Напишите первым :)
+                    </p>
                 </div>
             ) : (
                 // Список сообщений
                 <ul className="flex flex-col gap-2 p-4">
                     {messages.map((msg) => (
-                        <li key={msg.id}>{/* MessageItem компонент */}</li>
+                        <li key={msg.id}>
+                            {/* MessageItem компонент */}
+                        </li>
                     ))}
                 </ul>
             )}
         </section>
-    );
+    )
 }

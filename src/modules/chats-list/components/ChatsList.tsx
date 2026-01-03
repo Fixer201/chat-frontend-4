@@ -47,39 +47,54 @@ export default function ChatsList() {
             setSelectedChatId(id)
         }
     }
-    
-const handleDeleteChat = (chatId: number | string) => {
-  console.log('Удалить чат:', chatId);
-  // Здесь будет логика удаления чата
-};
 
-const handlePinChat = (chatId: number | string) => {
-  console.log('Закрепить чат:', chatId);
-  // Здесь будет логика закрепления чата
-};
+    const handleDeleteChat = (chatId: number | string) => {
+        console.log('Удалить чат:', chatId)
+        // Здесь будет логика удаления чата
+    }
 
-const handleMuteChat = (chatId: number | string) => {
-  console.log('Отключить уведомления для чата:', chatId);
-  // Здесь будет логика отключения уведомлений
-};
+    const handlePinChat = (chatId: number | string) => {
+        console.log('Закрепить чат:', chatId)
+        // Здесь будет логика закрепления чата
+    }
 
+    const handleMuteChat = (chatId: number | string) => {
+        console.log(
+            'Отключить уведомления для чата:',
+            chatId,
+        )
+        // Здесь будет логика отключения уведомлений
+    }
 
-const handleMarkAsRead = (chatId: number | string) => {
-    console.log('Пометить чат как прочитанный:', chatId);
-    // Здесь будет логика пометки как прочитанного
-};
+    const handleMarkAsRead = (chatId: number | string) => {
+        console.log('Пометить чат как прочитанный:', chatId)
+        // Здесь будет логика пометки как прочитанного
+    }
 
-const handleMarkAsUnread = (chatId: number | string) => {
-    console.log('Пометить чат как непрочитанный:', chatId);
-    // Здесь будет логика пометки как непрочитанного
-};
-    
-    
+    const handleMarkAsUnread = (
+        chatId: number | string,
+    ) => {
+        console.log(
+            'Пометить чат как непрочитанный:',
+            chatId,
+        )
+        // Здесь будет логика пометки как непрочитанного
+    }
+
     return (
-        <div className="flex flex-col h-full">
-            <div className="h-1/12 min-h-[60px] bg-[#F5F6F8] flex items-center px-4">
+        <div className="flex h-full flex-col">
+            <div
+                className={`
+              flex h-1/12 min-h-[60px] items-center bg-[#F5F6F8] px-4
+            `}
+            >
                 <div className="relative w-full">
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <div
+                        className={`
+                      pointer-events-none absolute top-1/2 left-3
+                      -translate-y-1/2 transform
+                    `}
+                    >
                         <svg
                             viewBox="0 0 17.4883 17.4883"
                             xmlns="http://www.w3.org/2000/svg"
@@ -107,16 +122,24 @@ const handleMarkAsUnread = (chatId: number | string) => {
                         onChange={(e) =>
                             setSearchValue(e.target.value)
                         }
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-white border-[#EEEEEE]
-        focus:outline-none focus:border-[#EEEEEE] focus:ring-0
-        placeholder:text-gray-400 text-sm transition-all duration-200 box-border"
+                        className={`
+                          box-border w-full rounded-lg border border-[#EEEEEE]
+                          bg-white py-2.5 pr-4 pl-10 text-sm transition-all
+                          duration-200
+                          placeholder:text-gray-400
+                          focus:border-[#EEEEEE] focus:ring-0 focus:outline-none
+                        `}
                     />
                     {searchValue && (
                         <button
                             type="button"
                             onClick={clearSearchInput}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 
-                            p-1 hover:bg-gray-100 rounded-full transition-all duration-200"
+                            className={`
+                              absolute top-1/2 right-3 -translate-y-1/2
+                              transform rounded-full p-1 transition-all
+                              duration-200
+                              hover:bg-gray-100
+                            `}
                             aria-label="Очистить поиск"
                         >
                             <Image
@@ -124,13 +147,16 @@ const handleMarkAsUnread = (chatId: number | string) => {
                                 alt="Clear search"
                                 width={14}
                                 height={14}
-                                className="opacity-60 hover:opacity-100 transition-opacity"
+                                className={`
+                                  opacity-60 transition-opacity
+                                  hover:opacity-100
+                                `}
                             />
                         </button>
                     )}
                 </div>
             </div>
-            <div className="flex-1 h-11/12 overflow-y-auto bg-[#F5F6F8]">
+            <div className="h-11/12 flex-1 overflow-y-auto bg-[#F5F6F8]">
                 <div className="flex flex-col">
                     {filteredValue?.map((chat, index) => (
                         <ChatListItem
@@ -170,11 +196,13 @@ const handleMarkAsUnread = (chatId: number | string) => {
                             onMuteChat={() =>
                                 handleMuteChat(chat.id)
                             }
-                            
-                            onMarkAsRead={() => handleMarkAsRead(chat.id)}
-                            onMarkAsUnread={() => handleMarkAsUnread(chat.id)}
-                            
-                            isPinned={index % 3 === 0} 
+                            onMarkAsRead={() =>
+                                handleMarkAsRead(chat.id)
+                            }
+                            onMarkAsUnread={() =>
+                                handleMarkAsUnread(chat.id)
+                            }
+                            isPinned={index % 3 === 0}
                             isChatRead={index % 2 === 0}
                         />
                     ))}

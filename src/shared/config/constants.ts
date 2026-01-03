@@ -25,7 +25,7 @@ export const ContactsListDB: Contact[] = [
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         username: 'string',
-        nickname: '@vlaaad',
+        nickname: '@vlad',
         phone: '987654321',
         firstName: 'Влад',
         lastName: 'Ляшев',
@@ -74,7 +74,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: 0.5,
+        wasOnlineAt: 1696161600000,
     },
 
     {
@@ -93,7 +93,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: 25,
+        wasOnlineAt: '2025-12-26T10:00:00Z',
     },
 
     {
@@ -112,7 +112,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: 1000,
+        wasOnlineAt: '2025-12-25T12:00:00Z',
     },
 
     {
@@ -150,7 +150,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: 1500,
+        wasOnlineAt: '22.01.2022',
     },
 
     {
@@ -169,7 +169,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: 3000,
+        wasOnlineAt: '22.03.2025',
     },
 
     {
@@ -188,7 +188,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: 5000,
+        wasOnlineAt: '26.12.2025',
     },
 ]
 

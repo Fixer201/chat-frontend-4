@@ -26,9 +26,9 @@ export const EmojiCategoryTabs = memo(
         return (
             <div
                 className={`
-              flex w-full items-center justify-between bg-white-bg px-5 pt-5
-              pb-8
-            `}
+                  flex w-full items-center justify-between bg-white-bg px-5 pt-5
+                  pb-8
+                `}
             >
                 {visibleCategories.map((category) => (
                     <CategoryTab

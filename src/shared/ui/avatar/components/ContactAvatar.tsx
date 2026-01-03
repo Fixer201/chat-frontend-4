@@ -3,12 +3,12 @@ import { Badge } from '@shared/ui/badge/Badge'
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
 import { forwardRef } from 'react'
+import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 export type AvatarMode = 'contact' | 'select-contact'
 
-export interface AvatarProps
-    extends HTMLAttributes<HTMLDivElement> {
+export interface ContactAvatarProps extends HTMLAttributes<HTMLDivElement> {
     src: string
     alt?: string
     name: string
@@ -31,13 +31,14 @@ const rowBaseClasses =
 
 const modeClasses: Record<AvatarMode, string> = {
     contact:
+        'bg-gray-light hover:bg-(--color-accent-violet-primary)',
+    'select-contact':
         'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
-    'select-contact': 'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
 }
 
 export const ContactAvatar = forwardRef<
     HTMLDivElement,
-    AvatarProps
+    ContactAvatarProps
 >(
     (
         {
@@ -68,9 +69,13 @@ export const ContactAvatar = forwardRef<
             showSelectIndicator ||
             hasRightElement
 
-const isHighlighted = selected || (mode === 'select-contact' && isSelected)
+        const isHighlighted =
+            selected ||
+            (mode === 'select-contact' && isSelected)
 
-
+        const handleSelectKeyDown = createButtonKeyHandler(
+            () => onSelect?.(),
+        )
 
         return (
             <div
@@ -78,16 +83,19 @@ const isHighlighted = selected || (mode === 'select-contact' && isSelected)
                 className={cn(
                     rowBaseClasses,
                     modeClasses[mode],
-                    
-isHighlighted && 'bg-(--color-accent-violet-dark)/60',
-                    className,
 
+                    isHighlighted &&
+                        'bg-(--color-accent-violet-primary)',
+                    className,
                 )}
                 {...props}
             >
                 <div
                     className={cn(
-                        'relative shrink-0 rounded-full overflow-hidden bg-gray-200 p-4 w-15 h-15',
+                        `
+                          relative h-15 w-15 shrink-0 overflow-hidden
+                          rounded-full bg-gray-200 p-4
+                        `,
                     )}
                 >
                     <Image
@@ -98,12 +106,12 @@ isHighlighted && 'bg-(--color-accent-violet-dark)/60',
                         className="object-cover"
                     />
                 </div>
-                <div className="flex-1 min-w-0 border-b border-b-gray-200">
-                    <div className="min-w-0 flex flex-col ">
+                <div className="min-w-0 flex-1 border-b border-b-gray-200">
+                    <div className="flex min-w-0 flex-col">
                         <div className="flex items-center gap-2">
                             <p
                                 className={cn(
-                                    'text-base font-medium truncate',
+                                    'truncate text-base font-medium',
                                     isHighlighted
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
@@ -116,13 +124,15 @@ isHighlighted && 'bg-(--color-accent-violet-dark)/60',
                         {secondaryText && (
                             <p
                                 className={cn(
-                                    'text-sm truncate',
+                                    'truncate text-sm',
 
-                                     isHighlighted
+                                    isHighlighted
                                         ? 'text-white/80'
                                         : isOnline
-                                            ? 'text-(--color-accent-violet-primary)'
-                                            : 'text-(--color-text-gray)',
+                                          ? `
+                                              text-(--color-accent-violet-primary)
+                                            `
+                                          : 'text-(--color-text-gray)',
                                 )}
                             >
                                 {secondaryText}
@@ -151,9 +161,12 @@ isHighlighted && 'bg-(--color-accent-violet-dark)/60',
                                 {timestamp && (
                                     <span
                                         className={cn(
-                                            'text-xs text-(--color-text-gray) whitespace-nowrap',
+                                            `
+                                              text-xs whitespace-nowrap
+                                              text-(--color-text-gray)
+                                            `,
 
-                                           isHighlighted
+                                            isHighlighted
                                                 ? 'text-white/80'
                                                 : 'text-(--color-text-gray)',
                                         )}
@@ -167,10 +180,14 @@ isHighlighted && 'bg-(--color-accent-violet-dark)/60',
                                         color="primary"
                                         size="md"
                                         className={
-                                           isHighlighted
-                                                ? 'bg-white text-accent-violet-dark/60'
+                                            isHighlighted
+                                                ? `
+                                                  bg-white
+                                                  text-accent-violet-dark/60
+                                                `
                                                 : ''
-                                        }   >
+                                        }
+                                    >
                                         {unreadCount}
                                     </Badge>
                                 }
@@ -179,15 +196,38 @@ isHighlighted && 'bg-(--color-accent-violet-dark)/60',
                         {showSelectIndicator && (
                             <span
                                 className={cn(
-                                    'w-6 h-6 rounded-full border-2 flex items-center justify-center',
-                                   isHighlighted
-                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
-                                        : 'border-(--color-accent-violet-primary)',
+                                    `
+                                      flex h-6 w-6 items-center justify-center
+                                      rounded-full border-2
+                                    `,
+                                    isHighlighted
+                                        ? `
+                                          border-(--color-white-bg)
+                                          bg-(--color-white-bg)
+                                        `
+                                        : `
+                                          border-(--color-accent-violet-primary)
+                                        `,
                                     isSelected
-                                        ? 'bg-(--color-white-bg) border-(--color-white-bg)'
-                                        : 'border-(--color-accent-violet-primary)',
+                                        ? `
+                                          border-(--color-white-bg)
+                                          bg-(--color-white-bg)
+                                        `
+                                        : `
+                                          border-(--color-accent-violet-primary)
+                                        `,
                                 )}
                                 onClick={onSelect}
+                                onKeyDown={
+                                    handleSelectKeyDown
+                                }
+                                role="button"
+                                tabIndex={0}
+                                aria-label={
+                                    isSelected
+                                        ? 'Отменить выбор'
+                                        : 'Выбрать'
+                                }
                             >
                                 {isSelected && (
                                     <Image
@@ -208,5 +248,3 @@ isHighlighted && 'bg-(--color-accent-violet-dark)/60',
 )
 
 ContactAvatar.displayName = 'ContactAvatar'
-
-

@@ -10,8 +10,13 @@ export default function ContactsSearch({
 }: ContactsSearchProps) {
     return (
         <>
-            <div className="flex w-full h-19 p-4 gap-2.5 items-center">
-                <div className="relative flex w-full items-center rounded-lg border border-gray-300 gap-2 h-11 px-3 pr-10 bg-(--color-white-bg)">
+            <div className="flex h-19 w-full items-center gap-2.5 p-4">
+                <div
+                    className={`
+                  relative flex h-11 w-full items-center gap-2 rounded-lg border
+                  border-gray-300 bg-(--color-white-bg) px-3 pr-10
+                `}
+                >
                     <Image
                         src="/images/search/iconsSearch.svg"
                         alt="iconsClose"
@@ -29,7 +34,10 @@ export default function ContactsSearch({
                         onChange={(e) =>
                             onSearchChange(e.target.value)
                         }
-                        className="w-full h-11 focus:outline-none focus:border-transparent"
+                        className={`
+                          h-11 w-full
+                          focus:border-transparent focus:outline-none
+                        `}
                     />
 
                     {searchValue && (
@@ -38,7 +46,10 @@ export default function ContactsSearch({
                             onClick={() =>
                                 onSearchChange('')
                             }
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                            className={`
+                              absolute top-1/2 right-3 -translate-y-1/2
+                              transform cursor-pointer
+                            `}
                         >
                             <Image
                                 src="/images/search/iconsClose.svg"

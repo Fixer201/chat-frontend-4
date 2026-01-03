@@ -8,11 +8,21 @@ type ContactsDeleteProps = {
     onClearSelection: () => void
 }
 
-export default function ContactsDelete({ deleteMode, onToggleDeleteMode, selectedContacts, onClearSelection }: ContactsDeleteProps) {
+export default function ContactsDelete({
+    deleteMode,
+    onToggleDeleteMode,
+    selectedContacts,
+    onClearSelection,
+}: ContactsDeleteProps) {
     return (
         <>
             {deleteMode ? (
-                <div className="w-full h-9 flex justify-between gap-1 bg-gray-light pl-4 pt-2.5 pr-4 pb-2.5">
+                <div
+                    className={`
+                  flex h-9 w-full justify-between gap-1 bg-gray-light pt-2.5
+                  pr-4 pb-2.5 pl-4
+                `}
+                >
                     <Image
                         src="/images/contacts/arrow.svg"
                         alt="back"
@@ -22,7 +32,9 @@ export default function ContactsDelete({ deleteMode, onToggleDeleteMode, selecte
                             width: '24px',
                             height: '24px',
                         }}
-                        onClick={() => onToggleDeleteMode(false)}
+                        onClick={() =>
+                            onToggleDeleteMode(false)
+                        }
                     />
                     <p>Удалить контакты</p>
                     {selectedContacts.length > 0 ? (
@@ -53,7 +65,12 @@ export default function ContactsDelete({ deleteMode, onToggleDeleteMode, selecte
                     )}
                 </div>
             ) : (
-                <div className="w-full h-9 flex justify-between gap-1 bg-gray-light pl-4 pt-2.5 pr-4 pb-2.5">
+                <div
+                    className={`
+                  flex h-9 w-full justify-between gap-1 bg-gray-light pt-2.5
+                  pr-4 pb-2.5 pl-4
+                `}
+                >
                     <p>Контакты пользователей А-чата</p>
                     <Image
                         src="/images/contacts/basket.svg"
@@ -64,7 +81,9 @@ export default function ContactsDelete({ deleteMode, onToggleDeleteMode, selecte
                             width: '24px',
                             height: '24px',
                         }}
-                        onClick={() => onToggleDeleteMode(true)}
+                        onClick={() =>
+                            onToggleDeleteMode(true)
+                        }
                     />
                 </div>
             )}

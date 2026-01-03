@@ -24,28 +24,36 @@ export const ChatAvatarRightSection = ({
     selected,
 }: ChatAvatarRightSectionProps) => {
     return (
-        <div className="ml-auto flex gap-2 items-start">
+        <div className="ml-auto flex items-start gap-2">
             {(timestamp || showUnread || messageStatus) && (
-                <div className="flex flex-col gap-1 items-end">
+                <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1">
-                        {messageStatus && messageStatus !== null && (
-                            <div className={cn(
-                                'w-4 h-4 flex items-center justify-center',
-                                selected && 'opacity-80'
-                            )}>
-                                <MessageStatusIcon 
-                                    status={messageStatus} 
-                                    selected={selected}
-                                />
-                            </div>
-                        )}
+                        {messageStatus &&
+                            messageStatus !== null && (
+                                <div
+                                    className={cn(
+                                        'flex h-4 w-4 items-center justify-center',
+                                        selected &&
+                                            'opacity-80',
+                                    )}
+                                >
+                                    <MessageStatusIcon
+                                        status={
+                                            messageStatus
+                                        }
+                                        selected={selected}
+                                    />
+                                </div>
+                            )}
                         {timestamp && (
-                            <span className={cn(
-                                'text-xs whitespace-nowrap',
-                                selected
-                                    ? 'text-(--color-white-bg) opacity-80'
-                                    : 'text-(--color-text-gray)'
-                            )}>
+                            <span
+                                className={cn(
+                                    'text-xs whitespace-nowrap',
+                                    selected
+                                        ? 'text-(--color-white-bg) opacity-80'
+                                        : 'text-(--color-text-gray)',
+                                )}
+                            >
                                 {timestamp}
                             </span>
                         )}
@@ -57,7 +65,10 @@ export const ChatAvatarRightSection = ({
                             size="md"
                             className={
                                 selected
-                                    ? 'bg-(--color-white-bg) text-(--color-accent-violet-primary)'
+                                    ? `
+                                      bg-(--color-white-bg)
+                                      text-(--color-accent-violet-primary)
+                                    `
                                     : ''
                             }
                         >
@@ -68,7 +79,8 @@ export const ChatAvatarRightSection = ({
             )}
             {rightElement}
         </div>
-    );
-};
+    )
+}
 
-ChatAvatarRightSection.displayName = 'ChatAvatarRightSection';
+ChatAvatarRightSection.displayName =
+    'ChatAvatarRightSection'
