@@ -1,6 +1,8 @@
 # A-Chat
 
-Веб-приложение мессенджера на Next.js с модульной архитектурой.
+A full-featured messenger web application demonstrating professional development practices.
+Built with Next.js 16, TypeScript, and Redux Toolkit using Feature-Sliced Design architecture.
+Perfect for learning enterprise-level code organization, modern React patterns, and collaborative development workflows.
 
 ---
 
