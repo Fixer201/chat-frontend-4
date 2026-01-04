@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import ChevronDownIcon from '@public/icons/settings-sidebar/ChevronDown.svg'
-import Input from '@shared/ui/Input'
+import Input from '@shared/ui/input/Input'
 import { Button } from '@shared/ui/button/Button'
 
 const DAYS = Array.from(
@@ -104,6 +104,8 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-first-name"
                             defaultValue="Сергей"
+                            variant="simple"
+                            textColor="black"
                         />
                     </label>
 
@@ -115,6 +117,8 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-last-name"
                             defaultValue="Иванов"
+                            variant="simple"
+                            textColor="black"
                         />
                     </label>
 
@@ -126,6 +130,8 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-username"
                             defaultValue="bond777"
+                            variant="simple"
+                            textColor="black"
                         />
                     </label>
 
@@ -234,6 +240,8 @@ export default function EditProfileForm() {
                         <Input
                             id="edit-profile-about"
                             defaultValue="Иванов"
+                            variant="simple"
+                            textColor="black"
                         />
                     </label>
 

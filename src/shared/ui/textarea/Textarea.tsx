@@ -15,14 +15,14 @@ const Textarea = forwardRef<
             ref={ref}
             className={cn(
                 `
-            w-full rounded-md bg-white p-4 text-base text-text-black
-            transition-colors outline-none
-          `,
+                  w-full rounded-md bg-white p-4 text-base text-text-black
+                  transition-colors outline-none
+                `,
                 isInvalid &&
                     `
-              border-2 border-[var(--color-system-red)]
-              focus:border-[var(--color-system-red)] focus:shadow-none
-            `,
+                      border-2 border-[var(--color-system-red)]
+                      focus:border-[var(--color-system-red)] focus:shadow-none
+                    `,
                 className,
             )}
             {...props}

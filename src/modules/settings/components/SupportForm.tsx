@@ -6,8 +6,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
-import Input from '@shared/ui/Input'
-import Textarea from '@shared/ui/Textarea'
+import Input from '@shared/ui/input/Input'
+import Textarea from '@shared/ui/textarea/Textarea'
 import { Button } from '@shared/ui/button/Button'
 
 const INVALID_EMAIL_MESSAGE = 'Некорректный e-mail'
@@ -72,8 +72,8 @@ export default function SupportForm() {
                 </button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-[0.01em] text-text-black
-                `}
+                      text-lg font-medium tracking-[0.01em] text-text-black
+                    `}
                 >
                     Обращение в поддержку
                 </h2>
@@ -103,8 +103,8 @@ export default function SupportForm() {
                         <div className="flex flex-col gap-6">
                             <h1
                                 className={`
-                              text-[24px] font-medium text-text-black
-                            `}
+                                  text-[24px] font-medium text-text-black
+                                `}
                             >
                                 Обращение отправлено!
                             </h1>
@@ -142,6 +142,8 @@ export default function SupportForm() {
                                 id="support-email"
                                 type="email"
                                 placeholder="e-mail"
+                                variant="simple"
+                                textColor="black"
                                 isInvalid={showEmailError}
                                 value={email}
                                 onChange={(event) =>
