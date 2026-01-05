@@ -65,8 +65,9 @@ export const Input = forwardRef<
                 {label && (
                     <label
                         className={`
-            h-4 w-full align-[1%] text-sm font-normal text-gray-600
-          `}
+                          h-4 w-full align-[1%] text-sm font-normal
+                          text-gray-600
+                        `}
                     >
                         {label}
                     </label>

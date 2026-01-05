@@ -233,187 +233,231 @@ function DropdownTrigger({
 }
 
 interface DropdownContentProps extends HTMLAttributes<HTMLDivElement> {
-  width?: number|string;
-  className?: string;
-  children: ReactNode;
-  items?: DropdownItemProps[];
-  manualPosition?: {
-    top: number;
-    left: number;
-  }|null;
-  minWidth?: number;
-  maxWidth?:number;
+    width?: number | string
+    className?: string
+    children: ReactNode
+    items?: DropdownItemProps[]
+    manualPosition?: {
+        top: number
+        left: number
+    } | null
+    minWidth?: number
+    maxWidth?: number
 }
 
-function DropdownContent({ 
-  width = 'auto', 
-  minWidth=180,
-  maxWidth=400,
-  className, 
-  children, 
-  items, 
-  style, 
-  manualPosition,
-  ...props 
+function DropdownContent({
+    width = 'auto',
+    minWidth = 180,
+    maxWidth = 400,
+    className,
+    children,
+    items,
+    style,
+    manualPosition,
+    ...props
 }: DropdownContentProps) {
-  const { isOpen, triggerRef, menuRef, placement, offset } = useDropdownContext();
-  const [position, setPosition] = useState<CSSProperties>({ opacity: 0 });
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [contentWidth, setContentWidth] = useState<number | 'auto' | string>(
-    width === 'auto' ? 'auto' : typeof width === 'string' ? width : width
-  );
-  const [calculatedWidth, setCalculatedWidth] = useState<number>(minWidth);
-const [isMeasuring, setIsMeasuring] = useState(false);
- // Реф для отслеживания, измерили ли мы уже ширину
-  const hasMeasuredRef = useRef(false);
-  useLayoutEffect(() => {
-    if (!isOpen || manualPosition) return;
+    const {
+        isOpen,
+        triggerRef,
+        menuRef,
+        placement,
+        offset,
+    } = useDropdownContext()
+    const [position, setPosition] = useState<CSSProperties>(
+        { opacity: 0 },
+    )
+    const contentRef = useRef<HTMLDivElement>(null)
+    const [calculatedWidth, setCalculatedWidth] =
+        useState<number>(minWidth)
+    const hasMeasuredRef = useRef(false)
 
-    const updatePosition = () => {
-      if (!triggerRef.current || !menuRef.current) return;
+    useLayoutEffect(() => {
+        if (!isOpen || manualPosition) return
 
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const menuRect = menuRef.current.getBoundingClientRect();
+        const updatePosition = () => {
+            if (!triggerRef.current || !menuRef.current)
+                return
 
-      let top = triggerRect.bottom + offset + window.scrollY;
-      let left = triggerRect.left + window.scrollX;
+            const triggerRect =
+                triggerRef.current.getBoundingClientRect()
+            const menuRect =
+                menuRef.current.getBoundingClientRect()
 
-      if (placement.startsWith("top")) {
-        top = triggerRect.top - offset - menuRect.height + window.scrollY;
-      }
+            let top =
+                triggerRect.bottom + offset + window.scrollY
+            let left = triggerRect.left + window.scrollX
 
-      if (placement.endsWith("end")) {
-        left = triggerRect.right - menuRect.width + window.scrollX;
-      }
+            if (placement.startsWith('top')) {
+                top =
+                    triggerRect.top -
+                    offset -
+                    menuRect.height +
+                    window.scrollY
+            }
 
-      setPosition({
-        top,
-        left,
-        opacity: 1,
-      });
-    };
+            if (placement.endsWith('end')) {
+                left =
+                    triggerRect.right -
+                    menuRect.width +
+                    window.scrollX
+            }
 
-    updatePosition();
+            setPosition({
+                top,
+                left,
+                opacity: 1,
+            })
+        }
 
-    const handle = () => updatePosition();
-    window.addEventListener("resize", handle);
-    window.addEventListener("scroll", handle, true);
+        updatePosition()
 
-    return () => {
-      window.removeEventListener("resize", handle);
-      window.removeEventListener("scroll", handle, true);
-    };
-  }, [isOpen, offset, placement, triggerRef, menuRef, manualPosition]);
+        const handle = () => updatePosition()
+        window.addEventListener('resize', handle)
+        window.addEventListener('scroll', handle, true)
 
-  const measureTextWidth = useCallback((text: string, font: string = "16px 'Roboto', sans-serif"): number => {
-    if (typeof document === 'undefined') return 0;
-    
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) return 0;
-    
-    context.font = font;
-    const metrics = context.measureText(text);
-    return metrics.width;
-  }, []);
+        return () => {
+            window.removeEventListener('resize', handle)
+            window.removeEventListener(
+                'scroll',
+                handle,
+                true,
+            )
+        }
+    }, [
+        isOpen,
+        offset,
+        placement,
+        triggerRef,
+        menuRef,
+        manualPosition,
+    ])
 
-  const measureDropdownWidth = useCallback(() => {
-    if (!contentRef.current || width !== 'auto') return minWidth;
+    const measureTextWidth = useCallback(
+        (
+            text: string,
+            font: string = "16px 'Roboto', sans-serif",
+        ): number => {
+            if (typeof document === 'undefined') return 0
 
-    const itemElements = contentRef.current.querySelectorAll('.dropdown-item');
-    if (itemElements.length === 0) return minWidth;
+            const canvas = document.createElement('canvas')
+            const context = canvas.getContext('2d')
+            if (!context) return 0
 
-    let maxTextWidth = 0;
-    
-    itemElements.forEach(item => {
-      const textElement = item.querySelector('.dropdown-item-text');
-      if (textElement) {
-        const text = textElement.textContent || '';
-        const textWidth = measureTextWidth(text);
-        maxTextWidth = Math.max(maxTextWidth, textWidth);
-      }
-    });
+            context.font = font
+            const metrics = context.measureText(text)
+            return metrics.width
+        },
+        [],
+    )
 
-    const totalWidth = Math.ceil(maxTextWidth + 96);
-    
-    let finalWidth = Math.max(minWidth, totalWidth);
-    if (maxWidth && finalWidth > maxWidth) {
-      finalWidth = maxWidth;
-    }
-    
-    return finalWidth;
-  }, [width, minWidth, maxWidth, measureTextWidth]);
+    const measureDropdownWidth = useCallback(() => {
+        if (!contentRef.current || width !== 'auto')
+            return minWidth
 
-  useLayoutEffect(() => {
-    if (!isOpen || width !== 'auto' || hasMeasuredRef.current) return;
+        const itemElements =
+            contentRef.current.querySelectorAll(
+                '.dropdown-item',
+            )
+        if (itemElements.length === 0) return minWidth
 
-    setIsMeasuring(true);
-    
-    const updateWidth = () => {
-      const newWidth = measureDropdownWidth();
-      setCalculatedWidth(newWidth);
-      setIsMeasuring(false);
-      hasMeasuredRef.current = true;
-    };
+        let maxTextWidth = 0
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(updateWidth);
-    });
+        itemElements.forEach((item) => {
+            const textElement = item.querySelector(
+                '.dropdown-item-text',
+            )
+            if (textElement) {
+                const text = textElement.textContent || ''
+                const textWidth = measureTextWidth(text)
+                maxTextWidth = Math.max(
+                    maxTextWidth,
+                    textWidth,
+                )
+            }
+        })
 
-    return () => {
-      hasMeasuredRef.current = false;
-    };
-  }, [isOpen, width, measureDropdownWidth]);
+        const totalWidth = Math.ceil(maxTextWidth + 96)
 
-  useEffect(() => {
+        let finalWidth = Math.max(minWidth, totalWidth)
+        if (maxWidth && finalWidth > maxWidth) {
+            finalWidth = maxWidth
+        }
+
+        return finalWidth
+    }, [width, minWidth, maxWidth, measureTextWidth])
+
+    // Measure dropdown width synchronously before browser paints
+    // Uses useLayoutEffect instead of useEffect because:
+    // 1. DOM measurement must happen after layout calculation but before paint
+    // 2. setState inside useLayoutEffect is blocked by React until after measurement
+    // 3. Browser never repaints between initial render (width=0) and final render (width=measured)
+    // 4. This is the official React pattern for layout measurements (https://react.dev/reference/react/useLayoutEffect)
+    useLayoutEffect(() => {
+        if (!isOpen || width !== 'auto') {
+            return
+        }
+
+        // Measure dropdown width only once when it opens
+        // Using ref flag to avoid re-measuring on every effect run
+        if (!hasMeasuredRef.current) {
+            const newWidth = measureDropdownWidth()
+            // This setState inside useLayoutEffect is VALID because:
+            // - It's a DOM measurement use case (documented in React docs)
+            // - No cascading renders: single useLayoutEffect → single setState → done
+            // - React batches this render with the layout measurement, browser doesn't paint between them
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setCalculatedWidth(newWidth)
+            hasMeasuredRef.current = true
+        }
+
+        // Cleanup: Reset measurement flag when dropdown closes so we measure again on next open
+        return () => {
+            hasMeasuredRef.current = false
+        }
+    }, [isOpen, width, measureDropdownWidth])
+
     if (!isOpen) {
-      hasMeasuredRef.current = false;
+        return null
     }
-  }, [isOpen]);
 
-  if (!isOpen) {
-    return null;
-  }
+    const contentStyle: CSSProperties = manualPosition
+        ? {
+              width:
+                  width === 'auto'
+                      ? calculatedWidth
+                      : width,
+              minWidth: minWidth,
+              position: 'fixed' as const,
+              top: manualPosition.top,
+              left: manualPosition.left,
+              opacity: 1,
+              zIndex: 1000,
+              ...(style as CSSProperties),
+          }
+        : {
+              width:
+                  width === 'auto'
+                      ? calculatedWidth
+                      : width,
+              minWidth: minWidth,
+              ...position,
+              ...(style as CSSProperties),
+          }
 
-  const finalWidth = width === 'auto' 
-    ? (isMeasuring ? minWidth : calculatedWidth)
-    : width;
-
- const contentStyle: CSSProperties = manualPosition 
-    ? { 
-        width: width === 'auto' ? calculatedWidth : width,
-        minWidth: minWidth,
-        position: 'fixed' as const, 
-        top: manualPosition.top, 
-        left: manualPosition.left, 
-        opacity: 1, 
-        zIndex: 1000,
-        ...(style as CSSProperties) 
-      }
-    : { 
-         width: width === 'auto' ? calculatedWidth : width,
-        minWidth: minWidth,
-         ...position,
-          ...(style as CSSProperties)
-         };
-
-  return createPortal(
-    (
-      <div
-        ref={menuRef}
-        role="menu"
-        style={contentStyle}
-         className={cn(
-          "absolute z-60 max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-(--color-white-bg) shadow-(--color-context-shadow)",
-          "dropdown-width-auto", 
-          className
-        )}
-        {...props}
-      >
-        
-          <div 
-          ref={contentRef}
-         className="flex max-h-[inherit] flex-col overflow-auto dropdown-no-wrap" //  Добавил dropdown-no-wrap
+    return createPortal(
+        <div
+            ref={menuRef}
+            role="menu"
+            style={contentStyle}
+            className={cn(
+                `
+                  absolute z-60 max-h-[calc(100vh-32px)] overflow-hidden
+                  rounded-xl bg-(--color-white-bg)
+                  shadow-(--color-context-shadow)
+                `,
+                className,
+            )}
+            {...props}
         >
             <div
                 ref={contentRef}
@@ -467,7 +511,7 @@ function DropdownItem({
     onMouseLeave,
     hasDivider = false,
     ...props
-}: DropdownItemProps) {
+}: Readonly<DropdownItemProps>) {
     const { setOpen, closeOnSelect: contextCloseOnSelect } =
         useDropdownContext()
 
@@ -488,55 +532,72 @@ function DropdownItem({
             setOpen(false)
         }
     }
-  };
 
-  return (
-    <>
-    {hasDivider && (
-        <div className="border-t border-(--color-black-alpha-20) my-1" />
-      )}
-    <button
-      type="button"
-      role="menuitem"
-      disabled={disabled}
-      onClick={handleClick}
-       onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-      className={cn(
-        "dropdown-item", 
-        "flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-(--color-black-alpha-20) last:border-b-0",
-        "dropdown-no-wrap", 
-        disabled
-          ? "cursor-not-allowed text-[#9CA3AF]"
-          : danger
-            ? "cursor-pointer text-(--color-system-red) hover:bg-(--color-system-red-surface)"
-            : "cursor-pointer text-(--color-text-black) hover:bg-(--color-gray-light)",
-        className
-      )}
-      {...props}
-    >
-      <span className="dropdown-item-text dropdown-item-content truncate flex-1">
-        {label ?? children}
-      </span>
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Иконка слева от текста (если нужна) */}
-          {icon && (
-            <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">
-              {icon}
-            </span>
-          )}
-         
-          
-        </div>
-       {/* Иконка справа от текста */}
-        {rightIcon && (
-          <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">
-            {rightIcon}
-          </span>
-        )}
-    </button>
-    </>
-  );
+    return (
+        <>
+            {hasDivider && (
+                <div className="my-1 border-t border-(--color-black-alpha-20)" />
+            )}
+            <button
+                type="button"
+                role="menuitem"
+                disabled={disabled}
+                onClick={handleClick}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                className={cn(
+                    `
+                      flex w-full items-center justify-between gap-4 border-b
+                      border-(--color-black-alpha-20) px-4 py-2.5 text-left
+                      text-base leading-[130%] font-normal transition-colors
+                      duration-150
+                      last:border-b-0
+                    `,
+                    {
+                        'cursor-not-allowed text-text-gray':
+                            disabled,
+                        'cursor-pointer text-system-red hover:bg-system-red-surface':
+                            danger,
+                        'cursor-pointer text-text-black hover:bg-gray-light':
+                            !disabled && !danger, // default
+                    },
+
+                    className,
+                )}
+                {...props}
+            >
+                <span
+                    className={`dropdown-item-content flex-1 truncate`}
+                >
+                    {label ?? children}
+                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                    {/* Иконка слева от текста (если нужна) */}
+                    {icon && (
+                        <span
+                            className={`
+                              flex h-5 w-5 items-center justify-center
+                              text-(--color-text-gray) opacity-80
+                            `}
+                        >
+                            {icon}
+                        </span>
+                    )}
+                </div>
+                {/* Иконка справа от текста */}
+                {rightIcon && (
+                    <span
+                        className={`
+                          flex h-5 w-5 items-center justify-center
+                          text-(--color-text-gray) opacity-80
+                        `}
+                    >
+                        {rightIcon}
+                    </span>
+                )}
+            </button>
+        </>
+    )
 }
 
 const Dropdown = DropdownRoot as typeof DropdownRoot & {

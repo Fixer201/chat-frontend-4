@@ -126,9 +126,9 @@ export default function Modal({
                         <div
                             className={cn(
                                 `
-                  flex h-16 w-16 items-center justify-center rounded-full
-                  bg-(--color-accent-violet-white)
-                `,
+                                  flex h-16 w-16 items-center justify-center
+                                  rounded-full bg-(--color-accent-violet-white)
+                                `,
                                 iconAlignClass,
                             )}
                         >
@@ -183,9 +183,9 @@ export default function Modal({
                         {hasActions && (
                             <div
                                 className={`
-                flex flex-col-reverse gap-3
-                sm:flex-row sm:justify-end sm:gap-3
-              `}
+                                  flex flex-col-reverse gap-3
+                                  sm:flex-row sm:justify-end sm:gap-3
+                                `}
                             >
                                 {buttons.map(
                                     (
@@ -235,9 +235,9 @@ export default function Modal({
                                                 }
                                                 className={cn(
                                                     `
-                        w-full min-w-22
-                        sm:w-auto
-                      `,
+                                                      w-full min-w-22
+                                                      sm:w-auto
+                                                    `,
                                                     buttonClass,
                                                 )}
                                             >

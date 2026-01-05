@@ -130,8 +130,8 @@ export const ContactAvatar = forwardRef<
                                         ? 'text-white/80'
                                         : isOnline
                                           ? `
-                                              text-(--color-accent-violet-primary)
-                                            `
+                                            text-(--color-accent-violet-primary)
+                                          `
                                           : 'text-(--color-text-gray)',
                                 )}
                             >

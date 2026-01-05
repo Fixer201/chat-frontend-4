@@ -19,9 +19,9 @@ export default function ContactsDelete({
             {deleteMode ? (
                 <div
                     className={`
-                  flex h-9 w-full justify-between gap-1 bg-gray-light pt-2.5
-                  pr-4 pb-2.5 pl-4
-                `}
+                      flex h-9 w-full justify-between gap-1 bg-gray-light pt-2.5
+                      pr-4 pb-2.5 pl-4
+                    `}
                 >
                     <Image
                         src="/images/contacts/arrow.svg"
@@ -67,9 +67,9 @@ export default function ContactsDelete({
             ) : (
                 <div
                     className={`
-                  flex h-9 w-full justify-between gap-1 bg-gray-light pt-2.5
-                  pr-4 pb-2.5 pl-4
-                `}
+                      flex h-9 w-full justify-between gap-1 bg-gray-light pt-2.5
+                      pr-4 pb-2.5 pl-4
+                    `}
                 >
                     <p>Контакты пользователей А-чата</p>
                     <Image

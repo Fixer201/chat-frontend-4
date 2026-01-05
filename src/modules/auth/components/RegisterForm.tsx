@@ -60,8 +60,8 @@ export default function RegisterForm() {
                     </div>
                     <div
                         className={`
-                      flex h-112 w-90 flex-col items-center justify-between
-                    `}
+                          flex h-112 w-90 flex-col items-center justify-between
+                        `}
                     >
                         <Input
                             label="Введите номер телефона"

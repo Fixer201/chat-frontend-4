@@ -6,7 +6,7 @@ import React, {
     useState,
 } from 'react'
 import { EmojiCategoryTabs } from './EmojiCategoryTabs'
-import { cn } from '@lib/utils'
+import { cn } from '@shared/lib/utils'
 import { getCategoryName } from '@shared/lib/emojiData'
 import { EmojiPickerWithCategoriesProps } from '@shared/types/Emoji'
 import EmojiRow from '@modules/message-composer/components/EmojiRow'

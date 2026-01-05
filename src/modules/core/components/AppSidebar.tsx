@@ -43,8 +43,8 @@ export default function AppSidebar() {
     return (
         <nav
             className={`
-      flex h-[228px] w-12 flex-col items-center justify-between gap-3
-    `}
+              flex h-[228px] w-12 flex-col items-center justify-between gap-3
+            `}
         >
             {navItems.map(({ id, label, Icon, path }) => {
                 const isActive = Boolean(
@@ -63,24 +63,22 @@ export default function AppSidebar() {
                         aria-pressed={isActive}
                         className={cn(
                             `
-                flex h-12 w-12 cursor-pointer items-center justify-center
-                rounded-lg transition-colors
-              `,
+                              flex h-12 w-12 cursor-pointer items-center
+                              justify-center rounded-lg transition-colors
+                            `,
                             isActive
                                 ? 'border border-gray-200 bg-gray-main'
                                 : `
-                  border border-transparent
-                  hover:bg-gray-main
-                `,
+                                  border border-transparent
+                                  hover:bg-gray-main
+                                `,
                         )}
                     >
                         <Icon
                             className={cn(
                                 iconBaseClass,
                                 isActive
-                                    ? `
-                text-accent-violet-primary
-              `
+                                    ? `text-accent-violet-primary`
                                     : `text-text-gray`,
                             )}
                             aria-hidden

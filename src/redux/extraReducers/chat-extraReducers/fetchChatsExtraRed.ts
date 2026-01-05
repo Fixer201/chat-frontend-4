@@ -1,8 +1,8 @@
 import {
     createAsyncThunk,
     PayloadAction,
+    ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
-import { ActionReducerMapBuilder } from '@reduxjs/toolkit'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
 import { transformChatListFromApi } from '@shared/lib/transformChatData'
 import { ChatItem, ChatsState } from '@shared/types/chat'
@@ -66,7 +66,6 @@ export const handleFetchChats = (
                         }
                     }
                 })
-                
             },
         )
         .addCase(fetchChats.rejected, (state, action) => {

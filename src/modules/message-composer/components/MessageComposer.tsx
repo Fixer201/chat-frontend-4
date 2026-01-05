@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
 import { useEffect, useRef, useState } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
-import { cn } from '@lib/utils'
+import { cn } from '@shared/lib/utils'
 
 // Хук для авто-роста textarea
 function useAutoResizeTextarea(value: string) {

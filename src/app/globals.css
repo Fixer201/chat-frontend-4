@@ -397,38 +397,36 @@ body {
 }
 /* В конец файла global.css добавьте: */
 
-
-
-
 /* Стили для dropdown */
 .dropdown-item-content {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Убираем перенос текста в dropdown */
 .dropdown-no-wrap {
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 /* Скрытый элемент для измерения текста */
 .dropdown-measure-element {
-  position: absolute !important;
-  visibility: hidden !important;
-  height: auto !important;
-  width: auto !important;
-  white-space: nowrap !important;
-  font-size: 16px !important;
-  font-weight: 400 !important;
-  font-family: 'Roboto', sans-serif !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
+    position: absolute !important;
+    visibility: hidden !important;
+    height: auto !important;
+    width: auto !important;
+    white-space: nowrap !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    font-family: 'Roboto', sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
 }
+
 @media (max-width: 768px) {
     :root {
         --chat-list-divider-left: calc(50px + 8px + 4px);

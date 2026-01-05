@@ -1,6 +1,11 @@
 'use client'
 
-import React, { useCallback, useRef, useState } from 'react'
+import React, {
+    forwardRef,
+    useCallback,
+    useRef,
+    useState,
+} from 'react'
 import { Avatar } from '@shared/ui/avatar/Avatar'
 import { cn } from '@shared/lib/utils'
 import { ChatListItemDropdown } from './ChatListItemDropdown'
@@ -37,7 +42,7 @@ export const ChatListItem = forwardRef<
             onMarkAsRead,
             onMarkAsUnread,
             isChatRead = true,
-            isInContacts=false,
+            isInContacts = false,
             ...avatarProps
         },
         ref,
@@ -47,60 +52,66 @@ export const ChatListItem = forwardRef<
         const [
             contextMenuPosition,
             setContextMenuPosition,
-        ] = useState({top:0,left:0})
+        ] = useState({ top: 0, left: 0 })
         const containerRef = useRef<HTMLDivElement>(null)
-         const [hoveredItem, setHoveredItem] = useState<string | null>(null)
-        const setRefs = useCallback((node: HTMLDivElement | null) => {
-            if (typeof ref === 'function') {
-                ref(node)
-            } else if (ref) {
-                ref.current = node
-            }
-            containerRef.current = node
-        }, [ref])
-        const handleContextMenu = (e: React.MouseEvent) => {
-            e.preventDefault()
-            setContextMenuPosition({
-                left: e.clientX,
-                top: e.clientY,
-            })
-            setContextMenuOpen(true)
-        },
-        [],
-    )
-
-    const handleMenuItemClick = useCallback(
-        (handler?: () => void) => {
-            handler?.()
-            setContextMenuOpen(false)
-        },
-        [],
-    )
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLDivElement>) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+        const [hoveredItem, setHoveredItem] = useState<
+            string | null
+        >(null)
+        const setRefs = useCallback(
+            (node: HTMLDivElement | null) => {
+                if (typeof ref === 'function') {
+                    ref(node)
+                } else if (ref) {
+                    ref.current = node
+                }
+                containerRef.current = node
+            },
+            [ref],
+        )
+        const handleContextMenu = useCallback(
+            (e: React.MouseEvent) => {
                 e.preventDefault()
-                e.currentTarget.click()
-            }
-        },
-        [],
-    )
+                setContextMenuPosition({
+                    left: e.clientX,
+                    top: e.clientY,
+                })
+                setContextMenuOpen(true)
+            },
+            [],
+        )
 
-    return (
-        <div
-            ref={containerRef}
-            className={STYLES.container}
-            onClick={onClick}
-            onContextMenu={handleContextMenu}
-            onKeyDown={handleKeyDown}
-            role="button"
-            aria-label="Элемент списка чатов"
-            aria-haspopup="menu"
-            aria-expanded={contextMenuOpen}
-            tabIndex={0}
-        >
-            <div className={STYLES.divider} />
+        const handleMenuItemClick = useCallback(
+            (handler?: () => void) => {
+                handler?.()
+                setContextMenuOpen(false)
+            },
+            [],
+        )
+
+        const handleKeyDown = useCallback(
+            (e: React.KeyboardEvent<HTMLDivElement>) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.currentTarget.click()
+                }
+            },
+            [],
+        )
+
+        return (
+            <div
+                ref={containerRef}
+                className={STYLES.container}
+                onClick={onClick}
+                onContextMenu={handleContextMenu}
+                onKeyDown={handleKeyDown}
+                role="button"
+                aria-label="Элемент списка чатов"
+                aria-haspopup="menu"
+                aria-expanded={contextMenuOpen}
+                tabIndex={0}
+            >
+                <div className={STYLES.divider} />
 
                 <Avatar
                     {...avatarProps}
@@ -111,11 +122,19 @@ export const ChatListItem = forwardRef<
                     }
                     isFavorite={isFavorite}
                     isChatRead={isChatRead}
-                    notificationsEnabled={notificationsEnabled}
+                    notificationsEnabled={
+                        notificationsEnabled
+                    }
                     className={cn(
-                        'bg-transparent hover:bg-transparent', // Базовые стили
+                        `
+                          bg-transparent
+                          hover:bg-transparent
+                        `, // Базовые стили
                         selected
-                            ? 'bg-(--color-accent-violet-primary) hover:bg-(--color-accent-violet-primary)'
+                            ? `
+                              bg-(--color-accent-violet-primary)
+                              hover:bg-(--color-accent-violet-primary)
+                            `
                             : 'hover:bg-(--color-gray-main)',
                         'hover:rounded-lg',
                         selected && 'rounded-lg',
@@ -131,7 +150,9 @@ export const ChatListItem = forwardRef<
                     onMarkAsUnread={onMarkAsUnread}
                     onDeleteChat={onDeleteChat}
                     onAddToContacts={onAddToContacts}
-                    notificationsEnabled={notificationsEnabled}
+                    notificationsEnabled={
+                        notificationsEnabled
+                    }
                     isFavorite={isFavorite}
                     isChatRead={isChatRead}
                     isInContacts={isInContacts}
@@ -139,12 +160,9 @@ export const ChatListItem = forwardRef<
                     hoveredItem={hoveredItem}
                     setHoveredItem={setHoveredItem}
                 />
-                
             </div>
         )
     },
 )
 
 ChatListItem.displayName = 'ChatListItem'
-
-export { ChatListItem }

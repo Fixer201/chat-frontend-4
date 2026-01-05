@@ -45,9 +45,9 @@ export const SelectContactAvatar = forwardRef<
                 ref={ref}
                 className={cn(
                     `
-                  flex cursor-pointer gap-3 rounded-md px-3 py-2
-                  transition-colors duration-200 select-none
-                `,
+                      flex cursor-pointer gap-3 rounded-md px-3 py-2
+                      transition-colors duration-200 select-none
+                    `,
                     'bg-(--color-white-bg)',
                     selected &&
                         'bg-(--color-accent-violet-dark)',
@@ -57,9 +57,9 @@ export const SelectContactAvatar = forwardRef<
             >
                 <div
                     className={`
-              relative h-15 w-15 shrink-0 overflow-hidden rounded-full
-              bg-(--color-gray-main)
-            `}
+                      relative h-15 w-15 shrink-0 overflow-hidden rounded-full
+                      bg-(--color-gray-main)
+                    `}
                 >
                     <Image
                         src={src}
@@ -99,19 +99,20 @@ export const SelectContactAvatar = forwardRef<
                     <span
                         className={cn(
                             `
-                          flex h-6 w-6 items-center justify-center rounded-full
-                          border-2
-                        `,
+                              flex h-6 w-6 items-center justify-center
+                              rounded-full border-2
+                            `,
                             selected
                                 ? `
-                                          border-(--color-white-bg)
-                                          bg-(--color-white-bg)
-                                        `
-                                : `
-                                          border-(--color-accent-violet-primary)
-                                        `,
+                                  border-(--color-white-bg)
+                                  bg-(--color-white-bg)
+                                `
+                                : `border-(--color-accent-violet-primary)`,
                             isSelected
-                                ? 'border-(--color-white-bg) bg-(--color-white-bg)'
+                                ? `
+                                  border-(--color-white-bg)
+                                  bg-(--color-white-bg)
+                                `
                                 : 'border-(--color-accent-violet-primary)',
                         )}
                         onClick={(event) => {
