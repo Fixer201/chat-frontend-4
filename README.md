@@ -261,7 +261,6 @@ Alias configured in `tsconfig.json`:
 
 ### `src/app/(private)/layout.tsx`
 
-Главный layout для приватных страниц. Оборачивает все страницы в:
 General layout for private page. Wraps all pages in:
 
 - Redux Provider (acces to store)
@@ -284,7 +283,7 @@ Centralized management of application routes.
 
 ## How to work with the project
 
-### Добавить новую страницу
+### Add new page
 
 1. Create a file in `src/app/(private)/` or `src/app/(public)/`
 2. Export the React component
