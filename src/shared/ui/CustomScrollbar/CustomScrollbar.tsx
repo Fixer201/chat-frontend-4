@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
-import customStyle from '@shared/ui/customScrollbar/customScrollbar.module.css'
+import customStyle from '@shared/ui/СustomScrollbar/СustomScrollbar.module.css'
 export function CustomScrollbar({
     children,
     className = '',
