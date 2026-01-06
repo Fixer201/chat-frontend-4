@@ -36,6 +36,9 @@ body {
     --color-accent-violet-light: var(
         --app-accent-violet-light
     );
+    --color-accent-violet-ultra-light: var(
+        --app-accent-violet-ultra-light
+    );
     --color-accent-violet-dark: var(
         --app-accent-violet-dark
     );
@@ -66,7 +69,6 @@ body {
     --color-violet-shadow-dark: var(
         --app-violet-shadow-dark
     );
-
     /* Custom App Colors - Borders */
     --color-gray-border: var(--app-gray-border);
 }
@@ -125,6 +127,7 @@ body {
     --app-accent-violet-primary: #7769e1; /* Accent/Violet primary */
     --app-accent-violet-white: #cec8ff; /* Accent/violet white */
     --app-accent-violet-light: #e2ddff; /* Accent/Light Violet */
+    --app-accent-violet-ultra-light: #f5f4ff; /* Accent/Violet ultra light */
     --app-accent-violet-dark: #615aa3; /* Accent/violet dark */
 
     /* User Message Color */
@@ -387,6 +390,39 @@ body {
         scrollbar-width: auto; /* Firefox: восстанавливает скролл */
         -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
     }
+}
+
+.custom-scroll {
+    overflow: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scrollbar-gutter: stable; /* Резервирует место под скролл */
+}
+
+.custom-scroll::-webkit-scrollbar {
+    display: none;
+    width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: var(--app-text-gray);
+    border-radius: 4px;
+    border: 1px solid var(--app-black-alpha-70);
+    height: 120px;
+}
+
+.custom-scroll:hover::-webkit-scrollbar {
+    display: block;
+}
+
+.custom-scroll:hover {
+    overflow: scroll;
+    scrollbar-width: auto; /* Firefox: восстанавливает скролл */
+    -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
 }
 
 @utility dropdown-item-content {
