@@ -1,17 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react'
 
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+    return useSyncExternalStore(
+        (listener) => {
+            // Subscribe: добавляем listener для изменений media query
+            const media = globalThis.matchMedia(query)
+            media.addEventListener('change', listener)
 
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
-    const listener = () => setMatches(media.matches);
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  }, [matches, query]);
-
-  return matches;
+            // Cleanup: удаляем listener при размонтировании
+            return () =>
+                media.removeEventListener(
+                    'change',
+                    listener,
+                )
+        },
+        () => {
+            // getSnapshot: возвращаем текущее значение
+            if (typeof globalThis === 'undefined')
+                return false
+            return globalThis.matchMedia(query).matches
+        },
+        () => {
+            // getServerSnapshot: для SSR (всегда false, т.к. на сервере нет окна)
+            return false
+        },
+    )
 }

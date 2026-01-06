@@ -1,3 +1,3 @@
 export default function UnreadBadge() {
-  return <span className="badge">5</span>;
+    return <span>5</span>
 }

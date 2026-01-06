@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
 import { useEffect, useRef, useState } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
-import { cn } from '@lib/utils'
+import { cn } from '@shared/lib/utils'
 
 // Хук для авто-роста textarea
 function useAutoResizeTextarea(value: string) {
@@ -79,20 +79,30 @@ export default function MessageComposer() {
         }, 500)
     }
 
-    return <>
-      
+    return (
+        <div
+            className={`
+              flex h-fit max-h-[472] items-end justify-between rounded-b-md
+              border-t border-gray-border bg-gray-light px-4 py-3
+            `}
+        >
             {/* Attachment Icon */}
             <Image
                 width={25}
                 height={25}
                 src="/icons/messageComposer/Paperclip.svg"
                 alt="paperclip icon"
-                className="cursor-pointer mb-3"
+                className="mb-3 cursor-pointer"
                 role="button"
             />
 
             {/* Message input field */}
-            <div className="w-full relative flex items-end rounded-3xl h-full max-h-96 px-2 py-3 mx-2 bg-white-bg justify-between ">
+            <div
+                className={`
+                  relative mx-2 flex h-full max-h-96 w-full items-center
+                  justify-between rounded-3xl bg-white-bg px-2 py-3
+                `}
+            >
                 <textarea
                     ref={textareaRef}
                     placeholder="Сообщение"
@@ -101,7 +111,11 @@ export default function MessageComposer() {
                     onChange={(event) =>
                         setInputValue(event.target.value)
                     }
-                    className="flex-1 h-auto max-h-80 focus:outline-0 placeholder:text-muted-foreground resize-none rounded-3xl pl-2 pr-8 custom-scroll"
+                    className={`
+                      h-auto max-h-80 flex-1 resize-none rounded-3xl pr-8 pl-2
+                      placeholder:text-text-gray
+                      focus:outline-0
+                    `}
                     rows={1} // начальное количество строк
                 />
 
@@ -126,12 +140,15 @@ export default function MessageComposer() {
                         }
                     />
                     {isEmojiPickerOpen && (
-                        <div className="absolute right-0 bottom-full mb-2 z-50">
+                        <div className="absolute right-0 bottom-full z-50 mb-2">
                             <EmojiPickerWithCategories
                                 onEmojiSelect={
                                     handleEmojiSelect
                                 }
-                                className="shadow-lg w-full h-full max-h-[50vh] min-h-[20vh] rounded-lg bg-white-bg"
+                                className={`
+                                  h-full max-h-[50vh] min-h-[20vh] w-full
+                                  rounded-lg bg-white-bg shadow-lg
+                                `}
                                 emojiSize={32}
                                 emojisPerRow={11}
                             />
@@ -141,7 +158,7 @@ export default function MessageComposer() {
             </div>
 
             {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
-            <button className="w-8 h-8 relative mb-2">
+            <button className="relative mb-2 h-8 w-8">
                 {inputValue.length > 0 ? (
                     <Image
                         onClick={handleSendMessage}
@@ -159,6 +176,6 @@ export default function MessageComposer() {
                     />
                 )}
             </button>
-
-    </>
+        </div>
+    )
 }

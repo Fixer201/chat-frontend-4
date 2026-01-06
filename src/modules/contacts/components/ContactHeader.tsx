@@ -1,17 +1,14 @@
-import Image from 'next/image';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../redux/store';
+import Image from 'next/image'
 
 export default function ContactHeader() {
-
-  const uid = useSelector(
-        (state: RootState) => state.SelectedContact.uid,
-    );
-
     return (
-        <section className="border-b px-4 py-2 bg-primary-background rounded-t-md border-border">
+        <section
+            className={`
+              rounded-t-md border-b border-gray-border bg-gray-main px-4 py-2
+            `}
+        >
             <div className="flex items-center justify-between">
-                <div className="flex gap-4 flex-row items-center">
+                <div className="flex flex-row items-center gap-4">
                     {/* User Icon */}
                     <Image
                         src="/images/chatHeader/userAvatar.svg"
@@ -33,14 +30,8 @@ export default function ContactHeader() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-
-
-
-
-
-                    
                     {/* Кнопки поиска, звонка и т.д. */}
-                    <div className="flex gap-4 text-muted-foreground">
+                    <div className="flex gap-4 text-text-gray">
                         <Image
                             src="/images/chatHeader/Search.svg"
                             height="20"

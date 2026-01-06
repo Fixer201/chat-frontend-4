@@ -13,7 +13,12 @@ const EmojiRow = memo(function EmojiRow({
                 <button
                     key={emoji}
                     data-emoji={emoji}
-                    className="flex items-center justify-center hover:bg-gray-200 rounded-md transition-colors active:scale-95 select-none"
+                    className={`
+                      flex items-center justify-center rounded-md
+                      transition-colors select-none
+                      hover:bg-gray-200
+                      active:scale-95
+                    `}
                     style={buttonStyle}
                     type="button"
                 >

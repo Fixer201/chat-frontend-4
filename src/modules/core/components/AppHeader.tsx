@@ -5,8 +5,11 @@ export function AppHeader() {
     return (
         <>
             <div
-                className="w-300 h-15 flex items-center flex-row justify-between pr-4 pl-4 rotate-0 opacity-100 rounded-br-lg rounded-bl-lg border-r 
-  border-b border-l border-gray-200 bg-gray-main mx-auto"
+                className={`
+                  mx-auto flex h-15 w-300 rotate-0 flex-row items-center
+                  justify-between rounded-br-lg rounded-bl-lg border-r border-b
+                  border-l border-gray-200 bg-gray-main pr-4 pl-4 opacity-100
+                `}
             >
                 <Image
                     src="/images/header/Logo.svg"
@@ -15,7 +18,7 @@ export function AppHeader() {
                     height={44}
                     loading="eager"
                 />
-                <div className="gap-2 flex flex-row items-center ">
+                <div className="flex flex-row items-center gap-2">
                     <Image
                         src="/images/header/appStore.svg"
                         alt="appStore"

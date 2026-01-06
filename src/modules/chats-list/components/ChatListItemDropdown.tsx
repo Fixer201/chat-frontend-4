@@ -3,10 +3,16 @@
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 import Image from 'next/image'
 
+/** Позиция контекстного меню */
+type ContextMenuPosition = Readonly<{
+    top: number
+    left: number
+}>
+
 interface ChatListItemDropdownProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    position: { top: number; left: number }
+    position: ContextMenuPosition
     onMuteChat?: () => void
     onFavoriteChat?: () => void
     onMarkAsRead?: () => void
@@ -18,8 +24,8 @@ interface ChatListItemDropdownProps {
     isChatRead: boolean
     isInContacts: boolean
     onMenuItemClick: (handler?: () => void) => void
-    hoveredItem: string | null
-    setHoveredItem: (item: string | null) => void
+    hoveredItem?: string | null
+    setHoveredItem?: (item: string | null) => void
 }
 
 export const ChatListItemDropdown = ({
@@ -37,7 +43,6 @@ export const ChatListItemDropdown = ({
     isChatRead,
     isInContacts,
     onMenuItemClick,
-    hoveredItem,
     setHoveredItem,
 }: ChatListItemDropdownProps) => {
     return (
@@ -49,13 +54,14 @@ export const ChatListItemDropdown = ({
             <Dropdown.Content
                 manualPosition={position}
                 width="auto"
-                minWidth={200} 
-                maxWidth={350} 
-                className="dropdown-no-wrap" 
+                minWidth={200}
+                maxWidth={350}
             >
                 {!isInContacts && onAddToContacts && (
                     <Dropdown.Item
-                        onSelect={() => onMenuItemClick(onAddToContacts)}
+                        onSelect={() =>
+                            onMenuItemClick(onAddToContacts)
+                        }
                         rightIcon={
                             <Image
                                 src="/images/chatList/addContact.svg"
@@ -65,8 +71,14 @@ export const ChatListItemDropdown = ({
                                 className="opacity-80"
                             />
                         }
-                        onMouseEnter={() => setHoveredItem('addToContacts')}
-                        onMouseLeave={() => setHoveredItem(null)}
+                        onMouseEnter={() =>
+                            setHoveredItem?.(
+                                'addToContacts',
+                            )
+                        }
+                        onMouseLeave={() =>
+                            setHoveredItem?.(null)
+                        }
                     >
                         Добавить в контакты
                     </Dropdown.Item>
@@ -74,90 +86,122 @@ export const ChatListItemDropdown = ({
 
                 {onMuteChat && (
                     <Dropdown.Item
-                        onSelect={() => onMenuItemClick(onMuteChat)}
+                        onSelect={() =>
+                            onMenuItemClick(onMuteChat)
+                        }
                         rightIcon={
                             <Image
-                                src={notificationsEnabled
-                                    ? "/images/chatList/mute.svg"
-                                    : "/images/chatList/unMute.svg"}
-                                alt={notificationsEnabled ? "Отключить уведомления" : "Включить уведомления"}
+                                src={
+                                    notificationsEnabled
+                                        ? '/images/chatList/mute.svg'
+                                        : '/images/chatList/unMute.svg'
+                                }
+                                alt={
+                                    notificationsEnabled
+                                        ? 'Отключить уведомления'
+                                        : 'Включить уведомления'
+                                }
                                 width={16}
                                 height={16}
                                 className="opacity-80"
                             />
                         }
-                        onMouseEnter={() => setHoveredItem('mute')}
-                        onMouseLeave={() => setHoveredItem(null)}
                     >
-                        {notificationsEnabled ? 'Отключить уведомления' : 'Включить уведомления'}
+                        {notificationsEnabled
+                            ? 'Отключить уведомления'
+                            : 'Включить уведомления'}
                     </Dropdown.Item>
                 )}
 
                 {onFavoriteChat && (
                     <Dropdown.Item
-                        onSelect={() => onMenuItemClick(onFavoriteChat)}
+                        onSelect={() =>
+                            onMenuItemClick(onFavoriteChat)
+                        }
                         rightIcon={
                             <Image
-                                src={isFavorite
-                                    ? "/images/chatList/unpin.svg"
-                                    : "/images/chatList/pin.svg"}
-                                alt={isFavorite ? "Открепить" : "Закрепить"}
+                                src={
+                                    isFavorite
+                                        ? '/images/chatList/unpin.svg'
+                                        : '/images/chatList/pin.svg'
+                                }
+                                alt={
+                                    isFavorite
+                                        ? 'Открепить'
+                                        : 'Закрепить'
+                                }
                                 width={16}
                                 height={16}
                                 className="opacity-80"
                             />
                         }
-                        onMouseEnter={() => setHoveredItem('pin')}
-                        onMouseLeave={() => setHoveredItem(null)}
                     >
-                        {isFavorite ? 'Открепить чат' : 'Закрепить чат'}
+                        {isFavorite
+                            ? 'Открепить чат'
+                            : 'Закрепить чат'}
                     </Dropdown.Item>
                 )}
 
-                {isChatRead ? (
-                    onMarkAsUnread && (
-                        <Dropdown.Item
-                            onSelect={() => onMenuItemClick(onMarkAsUnread)}
-                            rightIcon={
-                                <Image
-                                    src="/images/chatList/markAsUnread.svg"
-                                    alt="Пометить непрочитанным"
-                                    width={16}
-                                    height={16}
-                                    className="opacity-80"
-                                />
-                            }
-                            onMouseEnter={() => setHoveredItem('unread')}
-                            onMouseLeave={() => setHoveredItem(null)}
-                        >
-                            Пометить непрочитанным
-                        </Dropdown.Item>
-                    )
-                ) : (
-                    onMarkAsRead && (
-                        <Dropdown.Item
-                            onSelect={() => onMenuItemClick(onMarkAsRead)}
-                            rightIcon={
-                                <Image
-                                    src="/images/chatList/markAsRead.svg"
-                                    alt="Пометить прочитанным"
-                                    width={16}
-                                    height={16}
-                                    className="opacity-80"
-                                />
-                            }
-                            onMouseEnter={() => setHoveredItem('read')}
-                            onMouseLeave={() => setHoveredItem(null)}
-                        >
-                            Пометить прочитанным
-                        </Dropdown.Item>
-                    )
-                )}
+                {isChatRead
+                    ? onMarkAsUnread && (
+                          <Dropdown.Item
+                              onSelect={() =>
+                                  onMenuItemClick(
+                                      onMarkAsUnread,
+                                  )
+                              }
+                              rightIcon={
+                                  <Image
+                                      src="/images/chatList/markAsUnread.svg"
+                                      alt="Пометить непрочитанным"
+                                      width={16}
+                                      height={16}
+                                      className="opacity-80"
+                                  />
+                              }
+                              onMouseEnter={() =>
+                                  setHoveredItem?.('unread')
+                              }
+                              onMouseLeave={() =>
+                                  setHoveredItem?.(null)
+                              }
+                          >
+                              Пометить непрочитанным
+                          </Dropdown.Item>
+                      )
+                    : onMarkAsRead && (
+                          <Dropdown.Item
+                              onSelect={() =>
+                                  onMenuItemClick(
+                                      onMarkAsRead,
+                                  )
+                              }
+                              rightIcon={
+                                  <Image
+                                      src="/images/chatList/markAsRead.svg"
+                                      alt="Пометить прочитанным"
+                                      width={16}
+                                      height={16}
+                                      className="opacity-80"
+                                  />
+                              }
+                              onMouseEnter={() =>
+                                  setHoveredItem?.('read')
+                              }
+                              onMouseLeave={() =>
+                                  setHoveredItem?.(null)
+                              }
+                          >
+                              Пометить прочитанным
+                          </Dropdown.Item>
+                      )}
 
                 {onDeleteChat && (
                     <Dropdown.Item
                         danger
-                        onSelect={() => onMenuItemClick(onDeleteChat)}
+                        onSelect={() =>
+                            onMenuItemClick(onDeleteChat)
+                        }
                         rightIcon={
                             <Image
                                 src="/images/chatList/deleteChat.svg"
@@ -167,8 +211,6 @@ export const ChatListItemDropdown = ({
                                 className="opacity-80"
                             />
                         }
-                        onMouseEnter={() => setHoveredItem('delete')}
-                        onMouseLeave={() => setHoveredItem(null)}
                     >
                         Удалить чат
                     </Dropdown.Item>

@@ -24,7 +24,12 @@ export const EmojiCategoryTabs = memo(
         }, [showRecent])
 
         return (
-            <div className="flex items-center justify-between w-full px-5 pt-5 pb-8 bg-white-bg">
+            <div
+                className={`
+                  flex w-full items-center justify-between bg-white-bg px-5 pt-5
+                  pb-8
+                `}
+            >
                 {visibleCategories.map((category) => (
                     <CategoryTab
                         key={category.slug}
@@ -55,18 +60,30 @@ const CategoryTab = memo(function CategoryTab({
     const Icon = category.emoji
 
     return (
-        <button
+        <div
+            role="button"
+            tabIndex={0}
             onClick={() => onClick(category.slug)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onClick(category.slug)
+                }
+            }}
             className={cn(
-                'flex items-center justify-center w-9 h-9 rounded-lg transition-colors hover:bg-gray-100',
+                `
+                  flex h-9 w-9 cursor-pointer items-center justify-center
+                  rounded-lg transition-colors
+                  hover:bg-gray-100
+                `,
                 isSelected
                     ? 'text-accent-violet-primary'
                     : 'text-text-gray',
             )}
-            title={category.name}
-            type="button"
+            aria-label={category.name}
+            aria-pressed={isSelected}
         >
-            <Icon className="w-7 h-7" />
-        </button>
+            <Icon className="h-7 w-7" />
+        </div>
     )
 })

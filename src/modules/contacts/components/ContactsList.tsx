@@ -10,26 +10,32 @@ import ContactsDelete from './ContactsDelete'
 import Modal from '@shared/ui/modal/Modal'
 import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
+import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
 import { ContactItem } from './ContactItem'
-
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
     const [deleteMode, setDeleteMode] = useState(false)
-    const [selectedContacts, setSelectedContacts] = useState<string[]>([])
+    const [selectedContacts, setSelectedContacts] =
+        useState<string[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const dispatch = useDispatch()
-    const selectedUid = useSelector((state: RootState) => state.SelectedContact.uid)
+    const selectedUid = useSelector(
+        (state: RootState) => state.SelectedContact.uid,
+    )
 
-    const contactsList = useSelector((state: RootState) => state.contacts.list)
+    const contactsList = useSelector(
+        (state: RootState) => state.contacts.list,
+    )
     const { filteredValue: filteredContacts } = useSearch(
         contactsList,
         searchValue,
         [
-            (contact) => `${contact.firstName} ${contact.lastName}`.toLowerCase(),
+            (contact) =>
+                `${contact.firstName} ${contact.lastName}`.toLowerCase(),
             (contact) => `${contact.phone}`,
-            (contact) => `${contact.nickname}`
-        ]
+            (contact) => `${contact.nickname}`,
+        ],
     )
 
     // Сброс выделенного контакта при входе в режим удаления
@@ -41,10 +47,10 @@ export default function ContactsList() {
 
     // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
-        setSelectedContacts(prev =>
+        setSelectedContacts((prev) =>
             prev.includes(uid)
-                ? prev.filter(id => id !== uid)
-                : [...prev, uid]
+                ? prev.filter((id) => id !== uid)
+                : [...prev, uid],
         )
     }
 
@@ -66,45 +72,76 @@ export default function ContactsList() {
             setDeleteMode(false)
             setIsModalOpen(false)
         } catch (error) {
-            console.error('Ошибка при удалении контактов:', error)
+            console.error(
+                'Ошибка при удалении контактов:',
+                error,
+            )
         }
     }
 
+    const handleDeletePanelKeyDown =
+        createButtonKeyHandler(handleOpenModal)
+
     return (
         <>
-            <ContactsSearch searchValue={searchValue} onSearchChange={setSearchValue} />
+            <ContactsSearch
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+            />
 
             {/* панель для режима удаления (если контакты есть) */}
-            {filteredContacts && filteredContacts.length > 0 && (
-                <ContactsDelete
-                    deleteMode={deleteMode}
-                    onToggleDeleteMode={setDeleteMode}
-                    selectedContacts={selectedContacts}
-                    onClearSelection={() => setSelectedContacts([])}
-                />
-            )}
+            {filteredContacts &&
+                filteredContacts.length > 0 && (
+                    <ContactsDelete
+                        deleteMode={deleteMode}
+                        onToggleDeleteMode={setDeleteMode}
+                        selectedContacts={selectedContacts}
+                        onClearSelection={() =>
+                            setSelectedContacts([])
+                        }
+                    />
+                )}
 
             {/* контейнер контактов */}
-            <div className="relative w-full h-11/12 flex-0 custom-scroll overflow-hidden hover:overflow-auto gap-4 flex flex-col">
-                {filteredContacts && filteredContacts.length > 0 ? (
+            <div
+                className={`
+                  relative custom-scroll flex h-11/12 w-full flex-0 flex-col
+                  gap-4 overflow-hidden
+                  hover:overflow-auto
+                `}
+            >
+                {filteredContacts &&
+                filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
                         <ContactItem
                             key={contact.uid}
                             contact={contact}
                             deleteMode={deleteMode}
                             selectedUid={selectedUid}
-                            selectedContacts={selectedContacts}
+                            selectedContacts={
+                                selectedContacts
+                            }
                             searchValue={searchValue}
-                            onSelectContact={handleSelectContact}
-                            onSetSelectedContact={(uid: string) => dispatch(setSelectedContact(uid))}
-
+                            onSelectContact={
+                                handleSelectContact
+                            }
+                            onSetSelectedContact={(
+                                uid: string,
+                            ) =>
+                                dispatch(
+                                    setSelectedContact(uid),
+                                )
+                            }
                         />
-                    )
-
-                    )
+                    ))
                 ) : searchValue.trim() ? (
                     // блок для пустого поиска
-                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                    <div
+                        className={`
+                          flex h-full flex-col items-center justify-center p-4
+                          text-center
+                        `}
+                    >
                         <Image
                             src="/images/search/imgSearchWeb.svg"
                             alt="iconsSearch"
@@ -115,14 +152,23 @@ export default function ContactsList() {
                                 height: '200px',
                             }}
                         />
-                        <p className="mt-2 text-text-gray">Поиск не дал результатов</p>
+                        <p className="mt-2 text-text-gray">
+                            Поиск не дал результатов
+                        </p>
                         <p className="text-sm text-text-gray">
-                            По вашему запросу ничего не найдено. <br /> Измените запрос и попробуйте снова
+                            По вашему запросу ничего не
+                            найдено. <br /> Измените запрос
+                            и попробуйте снова
                         </p>
                     </div>
                 ) : (
                     // блок для пустого списка контактов
-                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                    <div
+                        className={`
+                          flex h-full flex-col items-center justify-center p-4
+                          text-center
+                        `}
+                    >
                         <Image
                             src="/images/search/nullContacts.svg"
                             alt="iconsSearch"
@@ -133,40 +179,63 @@ export default function ContactsList() {
                                 height: '200px',
                             }}
                         />
-                        <p className="mt-2 text-text-gray">Список контактов пока пуст</p>
-                    </div>
-                )}
-
-                {/* панель удаления выбранных контактов */}
-                {deleteMode && selectedContacts.length > 0 && (
-                    <div
-                        className="absolute bottom-0 left-0 right-0 z-10 w-full h-20 flex justify-center items-center bg-(--color-gray-light)  cursor-pointer hover:bg-(--color-accent-violet-light) transition-colors"
-                        onClick={handleOpenModal}
-                        role="button"
-                        aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
-                    >
-                        <p className="text-(--color-system-red)">
-                            Удалить {selectedContacts.length} {getContactWord(selectedContacts.length)}
+                        <p className="mt-2 text-text-gray">
+                            Список контактов пока пуст
                         </p>
                     </div>
                 )}
 
+                {/* панель удаления выбранных контактов */}
+                {deleteMode &&
+                    selectedContacts.length > 0 && (
+                        <div
+                            className={`
+                              absolute right-0 bottom-0 left-0 z-10 flex h-20
+                              w-full cursor-pointer items-center justify-center
+                              bg-gray-light transition-colors
+                              hover:bg-accent-violet-light
+                            `}
+                            onClick={handleOpenModal}
+                            onKeyDown={
+                                handleDeletePanelKeyDown
+                            }
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
+                        >
+                            <p className="text-(--color-system-red)">
+                                Удалить{' '}
+                                {selectedContacts.length}{' '}
+                                {getContactWord(
+                                    selectedContacts.length,
+                                )}
+                            </p>
+                        </div>
+                    )}
+
                 {/* показана только если контакты есть и не в режиме удаления */}
-                {filteredContacts && filteredContacts.length > 0 && !deleteMode && (
-                    <div className="w-full h-9 flex justify-between gap-1 bg-(--color-gray-light) pl-4 pt-2.5 pr-4 pb-2.5">
-                        <p>Пользователи А-чата</p>
-                        <Image
-                            src="/images/contacts/basket.svg"
-                            alt="MainIconsWeb"
-                            width={24}
-                            height={24}
-                            style={{
-                                width: '24px',
-                                height: '24px',
-                            }}
-                        />
-                    </div>
-                )}
+                {filteredContacts &&
+                    filteredContacts.length > 0 &&
+                    !deleteMode && (
+                        <div
+                            className={`
+                              flex h-9 w-full justify-between gap-1
+                              bg-(--color-gray-light) pt-2.5 pr-4 pb-2.5 pl-4
+                            `}
+                        >
+                            <p>Пользователи А-чата</p>
+                            <Image
+                                src="/images/contacts/basket.svg"
+                                alt="MainIconsWeb"
+                                width={24}
+                                height={24}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                }}
+                            />
+                        </div>
+                    )}
             </div>
 
             {/* модальное окно для удаления контактов */}
@@ -179,15 +248,15 @@ export default function ContactsList() {
                 titleAlign="left"
                 buttons={[
                     {
-                        label: "Отмена",
-                        variant: "ghost",  // Без обводки
-                        color: "primary",  // Нейтральный цвет
+                        label: 'Отмена',
+                        variant: 'ghost', // Без обводки
+                        color: 'primary', // Нейтральный цвет
                         onClick: handleCloseModal,
                     },
                     {
-                        label: "Удалить",
-                        variant: "primary",  // Оставлено как было
-                        color: "primary",    // Оставлено как было
+                        label: 'Удалить',
+                        variant: 'primary', // Оставлено как было
+                        color: 'primary', // Оставлено как было
                         onClick: handleConfirmDelete,
                     },
                 ]}

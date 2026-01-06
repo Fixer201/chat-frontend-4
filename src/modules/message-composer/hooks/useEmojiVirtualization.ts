@@ -1,7 +1,10 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
-import { useVirtualizer, Virtualizer } from '@tanstack/react-virtual'
+import {
+    useVirtualizer,
+    Virtualizer,
+} from '@tanstack/react-virtual'
 import { VirtualRow } from '@shared/lib/emojiData'
 
 const HEADER_HEIGHT = 44
@@ -31,7 +34,9 @@ export function useEmojiVirtualization({
 }: UseEmojiVirtualizationOptions): UseEmojiVirtualizationReturn {
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const isScrollingToRef = useRef(false)
-    const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const scrollTimeoutRef = useRef<ReturnType<
+        typeof setTimeout
+    > | null>(null)
 
     // Ref for current category to avoid stale closure in onChange
     const selectedCategoryRef = useRef(selectedCategory)
@@ -48,6 +53,7 @@ export function useEmojiVirtualization({
     )
 
     // Virtualizer setup
+    // eslint-disable-next-line react-hooks/incompatible-library
     const virtualizer = useVirtualizer({
         count: virtualRows.length,
         getScrollElement: () => scrollContainerRef.current,
@@ -59,7 +65,9 @@ export function useEmojiVirtualization({
             const visibleRange = instance.range
             if (!visibleRange) return
 
-            const categorySlug = rowToCategoryMap.get(visibleRange.startIndex)
+            const categorySlug = rowToCategoryMap.get(
+                visibleRange.startIndex,
+            )
             if (
                 categorySlug &&
                 categorySlug !== selectedCategoryRef.current
@@ -94,7 +102,11 @@ export function useEmojiVirtualization({
                 scrollTimeoutRef.current = null
             }, 300)
         },
-        [categoryRowIndices, virtualizer, setSelectedCategory],
+        [
+            categoryRowIndices,
+            virtualizer,
+            setSelectedCategory,
+        ],
     )
 
     return {

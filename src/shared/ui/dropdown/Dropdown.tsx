@@ -1,486 +1,632 @@
-"use client";
+'use client'
 
-import {
-  Children,
-  cloneElement,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type HTMLAttributes,
-  type MutableRefObject,
-  type ReactElement,
-  type ReactNode,
-  type MouseEvent as ReactMouseEvent,
-  type Ref,
-} from "react";
-import { createPortal } from "react-dom";
+import React, {
+    Children,
+    cloneElement,
+    createContext,
+    type CSSProperties,
+    type HTMLAttributes,
+    isValidElement,
+    type MouseEvent as ReactMouseEvent,
+    type MutableRefObject,
+    type ReactElement,
+    type ReactNode,
+    type Ref,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
+import { createPortal } from 'react-dom'
 
-import { cn } from "@shared/lib/utils";
+import { cn } from '@shared/lib/utils'
 
-type Placement = "bottom-start" | "bottom-end" | "top-start" | "top-end";
+type Placement =
+    | 'bottom-start'
+    | 'bottom-end'
+    | 'top-start'
+    | 'top-end'
 
 interface DropdownContextValue {
-  isOpen: boolean;
-  setOpen: (next: boolean) => void;
-  triggerRef: MutableRefObject<HTMLElement | null>;
-  menuRef: MutableRefObject<HTMLDivElement | null>;
-  placement: Placement;
-  offset: number;
-  closeOnSelect: boolean;
+    isOpen: boolean
+    setOpen: (next: boolean) => void
+    // TODO: DON'T USE MutableRefObject HE WAS DEPRECATED
+    triggerRef: MutableRefObject<HTMLElement | null>
+    // TODO: DON'T USE MutableRefObject HE WAS DEPRECATED
+    menuRef: MutableRefObject<HTMLDivElement | null>
+    placement: Placement
+    offset: number
+    closeOnSelect: boolean
 }
 
-const DropdownContext = createContext<DropdownContextValue | null>(null);
+const DropdownContext =
+    createContext<DropdownContextValue | null>(null)
 
 const useDropdownContext = () => {
-  const context = useContext(DropdownContext);
-  if (!context) {
-    throw new Error("Dropdown compound components must be used within <Dropdown>");
-  }
-  return context;
-};
+    const context = useContext(DropdownContext)
+    if (!context) {
+        throw new Error(
+            'Dropdown compound components must be used within <Dropdown>',
+        )
+    }
+    return context
+}
 
-const mergeRefs = <T,>(...refs: Array<Ref<T> | null | undefined>) => {
-  return (value: T | null) => {
-    refs.forEach((ref) => {
-      if (!ref) return;
-      if (typeof ref === "function") {
-        ref(value);
-      } else {
-        ref.current = value;
-      }
-    });
-  };
-};
+const mergeRefs = <T,>(
+    ...refs: Array<Ref<T> | null | undefined>
+) => {
+    return (value: T | null) => {
+        refs.forEach((ref) => {
+            if (!ref) return
+            if (typeof ref === 'function') {
+                ref(value)
+            } else {
+                ref.current = value
+            }
+        })
+    }
+}
 
 interface DropdownProps {
-  children: ReactNode;
-  open?: boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  placement?: Placement;
-  offset?: number;
-  closeOnSelect?: boolean;
+    children: ReactNode
+    open?: boolean
+    defaultOpen?: boolean
+    onOpenChange?: (open: boolean) => void
+    placement?: Placement
+    offset?: number
+    closeOnSelect?: boolean
 }
 
 function DropdownRoot({
-  children,
-  open,
-  defaultOpen,
-  onOpenChange,
-  placement = "bottom-start",
-  offset = 8,
-  closeOnSelect = true,
+    children,
+    open,
+    defaultOpen,
+    onOpenChange,
+    placement = 'bottom-start',
+    offset = 8,
+    closeOnSelect = true,
 }: DropdownProps) {
-  const isControlled = typeof open === "boolean";
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
-  const triggerRef = useRef<HTMLElement | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+    const isControlled = typeof open === 'boolean'
+    const [uncontrolledOpen, setUncontrolledOpen] =
+        useState(defaultOpen ?? false)
+    const triggerRef = useRef<HTMLElement | null>(null)
+    const menuRef = useRef<HTMLDivElement | null>(null)
 
-  const isOpen = isControlled ? Boolean(open) : uncontrolledOpen;
+    const isOpen = isControlled
+        ? Boolean(open)
+        : uncontrolledOpen
 
-  const setOpen = useCallback(
-    (next: boolean) => {
-      if (!isControlled) {
-        setUncontrolledOpen(next);
-      }
-      onOpenChange?.(next);
-    },
-    [isControlled, onOpenChange]
-  );
-const hasTrigger = useMemo(() => {
-    const childrenArray = Children.toArray(children);
-    return childrenArray.some(child => 
-      (child as any)?.type === DropdownTrigger
-    );
-  }, [children]);
+    const setOpen = useCallback(
+        (next: boolean) => {
+            if (!isControlled) {
+                setUncontrolledOpen(next)
+            }
+            onOpenChange?.(next)
+        },
+        [isControlled, onOpenChange],
+    )
+    const hasTrigger = useMemo(() => {
+        const childrenArray = Children.toArray(children)
+        return childrenArray.some((child) => {
+            const element = child as unknown
+            return (
+                typeof element === 'object' &&
+                element !== null &&
+                'type' in element &&
+                (element as { type: unknown }).type ===
+                    DropdownTrigger
+            )
+        })
+    }, [children])
 
-  useEffect(() => {
-    if (!isOpen) return;
+    useEffect(() => {
+        if (!isOpen) return
 
-    const handleClickAway = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if(!hasTrigger){
-        if (menuRef.current?.contains(target)) {
-          return;
+        const handleClickAway = (event: MouseEvent) => {
+            const target = event.target as Node
+
+            // Check if click is outside both menu and trigger
+            const clickedInsideMenu =
+                menuRef.current?.contains(target)
+            const clickedOnTrigger =
+                hasTrigger &&
+                triggerRef.current?.contains(target)
+
+            if (clickedInsideMenu || clickedOnTrigger) {
+                return
+            }
+
+            setOpen(false)
         }
-        setOpen(false);
-        return;
-      }
-      if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) {
-        return;
-      }
-      
-      setOpen(false);
-    };
 
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setOpen(false)
+            }
+        }
 
-    document.addEventListener("mousedown", handleClickAway);
-    document.addEventListener("keydown", handleEscape);
+        document.addEventListener(
+            'mousedown',
+            handleClickAway,
+        )
+        document.addEventListener('keydown', handleEscape)
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickAway);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, setOpen, hasTrigger]);
+        return () => {
+            document.removeEventListener(
+                'mousedown',
+                handleClickAway,
+            )
+            document.removeEventListener(
+                'keydown',
+                handleEscape,
+            )
+        }
+    }, [isOpen, setOpen, hasTrigger])
 
-  const value = useMemo<DropdownContextValue>(
-    () => ({ isOpen, setOpen, triggerRef, menuRef, placement, offset, closeOnSelect }),
-    [closeOnSelect, isOpen, offset, placement, setOpen]
-  );
+    const value = useMemo<DropdownContextValue>(
+        () => ({
+            isOpen,
+            setOpen,
+            triggerRef,
+            menuRef,
+            placement,
+            offset,
+            closeOnSelect,
+        }),
+        [closeOnSelect, isOpen, offset, placement, setOpen],
+    )
 
-  return <DropdownContext.Provider value={value}>{children}</DropdownContext.Provider>;
+    return (
+        <DropdownContext.Provider value={value}>
+            {children}
+        </DropdownContext.Provider>
+    )
 }
 
 interface DropdownTriggerProps {
-  children: ReactElement;
+    children: ReactElement
 }
 
-function DropdownTrigger({ children }: DropdownTriggerProps) {
-  const { isOpen, setOpen, triggerRef } = useDropdownContext();
+function DropdownTrigger({
+    children,
+}: DropdownTriggerProps) {
+    const { isOpen, setOpen, triggerRef } =
+        useDropdownContext()
 
-  const child = Children.only(children) as ReactElement<any>;
-  const existingRef = (child as any).ref as Ref<HTMLElement> | undefined;
-  const existingOnClick = child.props?.onClick as
-    | ((event: ReactMouseEvent<HTMLElement>) => void)
-    | undefined;
+    // Type guard: validate child is a valid React element
+    if (!isValidElement(children)) {
+        throw new Error(
+            'DropdownTrigger requires a valid React element as child',
+        )
+    }
 
-  return cloneElement(child, {
-    ref: mergeRefs<HTMLElement>(triggerRef, existingRef),
-    onClick: (event: ReactMouseEvent<HTMLElement>) => {
-      existingOnClick?.(event);
-      if (event.defaultPrevented) return;
-      setOpen(!isOpen);
-    },
-    "aria-haspopup": "menu",
-    "aria-expanded": isOpen,
-  });
+    // Extract child props with proper typing
+    const childProps = children.props as {
+        ref?: Ref<HTMLElement>
+        onClick?: (
+            event: ReactMouseEvent<HTMLElement>,
+        ) => void
+        [key: string]: unknown
+    }
+
+    const newProps = {
+        ref: mergeRefs<HTMLElement>(
+            triggerRef,
+            childProps.ref,
+        ),
+        onClick: (event: ReactMouseEvent<HTMLElement>) => {
+            childProps.onClick?.(event)
+            if (!event.defaultPrevented) {
+                setOpen(!isOpen)
+            }
+        },
+        'aria-haspopup': 'menu' as const,
+        'aria-expanded': isOpen,
+    }
+
+    // Type assertion needed for cloneElement due to complex typing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return cloneElement(children, newProps as any)
 }
 
 interface DropdownContentProps extends HTMLAttributes<HTMLDivElement> {
-  width?: number|string;
-  className?: string;
-  children: ReactNode;
-  items?: DropdownItemProps[];
-  manualPosition?: {
-    top: number;
-    left: number;
-  }|null;
-  minWidth?: number;
-  maxWidth?:number;
+    width?: number | string
+    className?: string
+    children: ReactNode
+    items?: DropdownItemProps[]
+    manualPosition?: {
+        top: number
+        left: number
+    } | null
+    minWidth?: number
+    maxWidth?: number
 }
 
-function DropdownContent({ 
-  width = 'auto', 
-  minWidth=180,
-  maxWidth=400,
-  className, 
-  children, 
-  items, 
-  style, 
-  manualPosition,
-  ...props 
+function DropdownContent({
+    width = 'auto',
+    minWidth = 180,
+    maxWidth = 400,
+    className,
+    children,
+    items,
+    style,
+    manualPosition,
+    ...props
 }: DropdownContentProps) {
-  const { isOpen, triggerRef, menuRef, placement, offset } = useDropdownContext();
-  const [position, setPosition] = useState<CSSProperties>({ opacity: 0 });
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [contentWidth, setContentWidth] = useState<number | 'auto' | string>(
-    width === 'auto' ? 'auto' : typeof width === 'string' ? width : width
-  );
-  const [calculatedWidth, setCalculatedWidth] = useState<number>(minWidth);
-const [isMeasuring, setIsMeasuring] = useState(false);
- // Реф для отслеживания, измерили ли мы уже ширину
-  const hasMeasuredRef = useRef(false);
-  useLayoutEffect(() => {
-    if (!isOpen || manualPosition) return;
+    const {
+        isOpen,
+        triggerRef,
+        menuRef,
+        placement,
+        offset,
+    } = useDropdownContext()
+    const [position, setPosition] = useState<CSSProperties>(
+        { opacity: 0 },
+    )
+    const contentRef = useRef<HTMLDivElement>(null)
+    const [calculatedWidth, setCalculatedWidth] =
+        useState<number>(minWidth)
+    const hasMeasuredRef = useRef(false)
 
-    const updatePosition = () => {
-      if (!triggerRef.current || !menuRef.current) return;
+    useLayoutEffect(() => {
+        if (!isOpen || manualPosition) return
 
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const menuRect = menuRef.current.getBoundingClientRect();
+        const updatePosition = () => {
+            if (!triggerRef.current || !menuRef.current)
+                return
 
-      let top = triggerRect.bottom + offset + window.scrollY;
-      let left = triggerRect.left + window.scrollX;
+            const triggerRect =
+                triggerRef.current.getBoundingClientRect()
+            const menuRect =
+                menuRef.current.getBoundingClientRect()
 
-      if (placement.startsWith("top")) {
-        top = triggerRect.top - offset - menuRect.height + window.scrollY;
-      }
+            let top =
+                triggerRect.bottom + offset + window.scrollY
+            let left = triggerRect.left + window.scrollX
 
-      if (placement.endsWith("end")) {
-        left = triggerRect.right - menuRect.width + window.scrollX;
-      }
+            if (placement.startsWith('top')) {
+                top =
+                    triggerRect.top -
+                    offset -
+                    menuRect.height +
+                    window.scrollY
+            }
 
-      setPosition({
-        top,
-        left,
-        opacity: 1,
-      });
-    };
+            if (placement.endsWith('end')) {
+                left =
+                    triggerRect.right -
+                    menuRect.width +
+                    window.scrollX
+            }
 
-    updatePosition();
+            setPosition({
+                top,
+                left,
+                opacity: 1,
+            })
+        }
 
-    const handle = () => updatePosition();
-    window.addEventListener("resize", handle);
-    window.addEventListener("scroll", handle, true);
+        updatePosition()
 
-    return () => {
-      window.removeEventListener("resize", handle);
-      window.removeEventListener("scroll", handle, true);
-    };
-  }, [isOpen, offset, placement, triggerRef, menuRef, manualPosition]);
+        const handle = () => updatePosition()
+        window.addEventListener('resize', handle)
+        window.addEventListener('scroll', handle, true)
 
-  const measureTextWidth = useCallback((text: string, font: string = "16px 'Roboto', sans-serif"): number => {
-    if (typeof document === 'undefined') return 0;
-    
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) return 0;
-    
-    context.font = font;
-    const metrics = context.measureText(text);
-    return metrics.width;
-  }, []);
+        return () => {
+            window.removeEventListener('resize', handle)
+            window.removeEventListener(
+                'scroll',
+                handle,
+                true,
+            )
+        }
+    }, [
+        isOpen,
+        offset,
+        placement,
+        triggerRef,
+        menuRef,
+        manualPosition,
+    ])
 
-  const measureDropdownWidth = useCallback(() => {
-    if (!contentRef.current || width !== 'auto') return minWidth;
+    const measureTextWidth = useCallback(
+        (
+            text: string,
+            font: string = "16px 'Roboto', sans-serif",
+        ): number => {
+            if (typeof document === 'undefined') return 0
 
-    const itemElements = contentRef.current.querySelectorAll('.dropdown-item');
-    if (itemElements.length === 0) return minWidth;
+            const canvas = document.createElement('canvas')
+            const context = canvas.getContext('2d')
+            if (!context) return 0
 
-    let maxTextWidth = 0;
-    
-    itemElements.forEach(item => {
-      const textElement = item.querySelector('.dropdown-item-text');
-      if (textElement) {
-        const text = textElement.textContent || '';
-        const textWidth = measureTextWidth(text);
-        maxTextWidth = Math.max(maxTextWidth, textWidth);
-      }
-    });
+            context.font = font
+            const metrics = context.measureText(text)
+            return metrics.width
+        },
+        [],
+    )
 
-    const totalWidth = Math.ceil(maxTextWidth + 96);
-    
-    let finalWidth = Math.max(minWidth, totalWidth);
-    if (maxWidth && finalWidth > maxWidth) {
-      finalWidth = maxWidth;
-    }
-    
-    return finalWidth;
-  }, [width, minWidth, maxWidth, measureTextWidth]);
+    const measureDropdownWidth = useCallback(() => {
+        if (!contentRef.current || width !== 'auto')
+            return minWidth
 
-  useLayoutEffect(() => {
-    if (!isOpen || width !== 'auto' || hasMeasuredRef.current) return;
+        const itemElements =
+            contentRef.current.querySelectorAll(
+                '.dropdown-item',
+            )
+        if (itemElements.length === 0) return minWidth
 
-    setIsMeasuring(true);
-    
-    const updateWidth = () => {
-      const newWidth = measureDropdownWidth();
-      setCalculatedWidth(newWidth);
-      setIsMeasuring(false);
-      hasMeasuredRef.current = true;
-    };
+        let maxTextWidth = 0
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(updateWidth);
-    });
+        itemElements.forEach((item) => {
+            const textElement = item.querySelector(
+                '.dropdown-item-text',
+            )
+            if (textElement) {
+                const text = textElement.textContent || ''
+                const textWidth = measureTextWidth(text)
+                maxTextWidth = Math.max(
+                    maxTextWidth,
+                    textWidth,
+                )
+            }
+        })
 
-    return () => {
-      hasMeasuredRef.current = false;
-    };
-  }, [isOpen, width, measureDropdownWidth]);
+        const totalWidth = Math.ceil(maxTextWidth + 96)
 
-  useEffect(() => {
+        let finalWidth = Math.max(minWidth, totalWidth)
+        if (maxWidth && finalWidth > maxWidth) {
+            finalWidth = maxWidth
+        }
+
+        return finalWidth
+    }, [width, minWidth, maxWidth, measureTextWidth])
+
+    // Measure dropdown width synchronously before browser paints
+    // Uses useLayoutEffect instead of useEffect because:
+    // 1. DOM measurement must happen after layout calculation but before paint
+    // 2. setState inside useLayoutEffect is blocked by React until after measurement
+    // 3. Browser never repaints between initial render (width=0) and final render (width=measured)
+    // 4. This is the official React pattern for layout measurements (https://react.dev/reference/react/useLayoutEffect)
+    useLayoutEffect(() => {
+        if (!isOpen || width !== 'auto') {
+            return
+        }
+
+        // Measure dropdown width only once when it opens
+        // Using ref flag to avoid re-measuring on every effect run
+        if (!hasMeasuredRef.current) {
+            const newWidth = measureDropdownWidth()
+            // This setState inside useLayoutEffect is VALID because:
+            // - It's a DOM measurement use case (documented in React docs)
+            // - No cascading renders: single useLayoutEffect → single setState → done
+            // - React batches this render with the layout measurement, browser doesn't paint between them
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setCalculatedWidth(newWidth)
+            hasMeasuredRef.current = true
+        }
+
+        // Cleanup: Reset measurement flag when dropdown closes so we measure again on next open
+        return () => {
+            hasMeasuredRef.current = false
+        }
+    }, [isOpen, width, measureDropdownWidth])
+
     if (!isOpen) {
-      hasMeasuredRef.current = false;
+        return null
     }
-  }, [isOpen]);
 
-  if (!isOpen) {
-    return null;
-  }
+    const contentStyle: CSSProperties = manualPosition
+        ? {
+              width:
+                  width === 'auto'
+                      ? calculatedWidth
+                      : width,
+              minWidth: minWidth,
+              position: 'fixed' as const,
+              top: manualPosition.top,
+              left: manualPosition.left,
+              opacity: 1,
+              zIndex: 1000,
+              ...(style as CSSProperties),
+          }
+        : {
+              width:
+                  width === 'auto'
+                      ? calculatedWidth
+                      : width,
+              minWidth: minWidth,
+              ...position,
+              ...(style as CSSProperties),
+          }
 
-  const finalWidth = width === 'auto' 
-    ? (isMeasuring ? minWidth : calculatedWidth)
-    : width;
-
- const contentStyle: CSSProperties = manualPosition 
-    ? { 
-        width: width === 'auto' ? calculatedWidth : width,
-        minWidth: minWidth,
-        position: 'fixed' as const, 
-        top: manualPosition.top, 
-        left: manualPosition.left, 
-        opacity: 1, 
-        zIndex: 1000,
-        ...(style as CSSProperties) 
-      }
-    : { 
-         width: width === 'auto' ? calculatedWidth : width,
-        minWidth: minWidth,
-         ...position,
-          ...(style as CSSProperties)
-         };
-
-  return createPortal(
-    (
-      <div
-        ref={menuRef}
-        role="menu"
-        style={contentStyle}
-         className={cn(
-          "absolute z-60 max-h-[calc(100vh-32px)] overflow-hidden rounded-xl bg-(--color-white-bg) shadow-(--color-context-shadow)",
-          "dropdown-width-auto", 
-          className
-        )}
-        {...props}
-      >
-        
-          <div 
-          ref={contentRef}
-         className="flex max-h-[inherit] flex-col overflow-auto dropdown-no-wrap" //  Добавил dropdown-no-wrap
+    return createPortal(
+        <div
+            ref={menuRef}
+            role="menu"
+            style={contentStyle}
+            className={cn(
+                `
+                  absolute z-60 max-h-[calc(100vh-32px)] overflow-hidden
+                  rounded-xl bg-(--color-white-bg)
+                  shadow-(--color-context-shadow)
+                `,
+                className,
+            )}
+            {...props}
         >
-          {items?.map((item, index) => (
-            <DropdownItem key={`${item.label ?? index}-${index}`} {...item} />
-          ))}
-          {children}
-        </div>
-          
-        
-      </div>
-    ),
-    document.body
-  );
+            <div
+                ref={contentRef}
+                className={`flex max-h-[inherit] flex-col overflow-auto`}
+            >
+                {items?.map((item, index) => (
+                    <DropdownItem
+                        key={`${item.label ?? index}-${index}`}
+                        {...item}
+                    />
+                ))}
+                {children}
+            </div>
+        </div>,
+        document.body,
+    )
 }
 
 interface DropdownItemProps extends HTMLAttributes<HTMLButtonElement> {
-  label?: string;
-  icon?: ReactNode;
-  rightIcon?: ReactNode;
-  danger?: boolean;
-  disabled?: boolean;
-  onSelect?: () => void;
-  closeOnSelect?: boolean;
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  hasDivider?: boolean;
+    label?: string
+    icon?: ReactNode
+    rightIcon?: ReactNode
+    danger?: boolean
+    disabled?: boolean
+    onSelect?: () => void
+    closeOnSelect?: boolean
+    onClick?: (
+        event: React.MouseEvent<HTMLButtonElement>,
+    ) => void
+    onMouseEnter?: (
+        event: React.MouseEvent<HTMLButtonElement>,
+    ) => void
+    onMouseLeave?: (
+        event: React.MouseEvent<HTMLButtonElement>,
+    ) => void
+    hasDivider?: boolean
 }
 
 function DropdownItem({
-  label,
-  icon,
-  rightIcon,
-  danger,
-  disabled,
-  onClick,
-  onSelect,
-  className,
-  closeOnSelect,
-  children,
-  onMouseEnter,
-  onMouseLeave,
-  hasDivider = false,
-  ...props
-}: DropdownItemProps) {
-  const { setOpen, closeOnSelect: contextCloseOnSelect } = useDropdownContext();
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (disabled) {
-      event.preventDefault();
-      return;
-    }
-    onClick?.(event);
-    if (event.defaultPrevented) return;
-    onSelect?.();
-    if (closeOnSelect ?? contextCloseOnSelect) {
-      setOpen(false);
-    }
-  };
+    label,
+    icon,
+    rightIcon,
+    danger,
+    disabled,
+    onClick,
+    onSelect,
+    className,
+    closeOnSelect,
+    children,
+    onMouseEnter,
+    onMouseLeave,
+    hasDivider = false,
+    ...props
+}: Readonly<DropdownItemProps>) {
+    const { setOpen, closeOnSelect: contextCloseOnSelect } =
+        useDropdownContext()
 
-  return (
-    <>
-    {hasDivider && (
-        <div className="border-t border-(--color-black-alpha-20) my-1" />
-      )}
-    <button
-      type="button"
-      role="menuitem"
-      disabled={disabled}
-      onClick={handleClick}
-       onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-      className={cn(
-        "dropdown-item", 
-        "flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left text-base font-normal leading-[130%] transition-colors duration-150 border-b border-(--color-black-alpha-20) last:border-b-0",
-        "dropdown-no-wrap", 
-        disabled
-          ? "cursor-not-allowed text-[#9CA3AF]"
-          : danger
-            ? "cursor-pointer text-(--color-system-red) hover:bg-(--color-system-red-surface)"
-            : "cursor-pointer text-(--color-text-black) hover:bg-(--color-gray-light)",
-        className
-      )}
-      {...props}
-    >
-      <span className="dropdown-item-text dropdown-item-content truncate flex-1">
-        {label ?? children}
-      </span>
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Иконка слева от текста (если нужна) */}
-          {icon && (
-            <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">
-              {icon}
-            </span>
-          )}
-         
-          
-        </div>
-       {/* Иконка справа от текста */}
-        {rightIcon && (
-          <span className="text-(--color-text-gray) w-5 h-5 flex items-center justify-center opacity-80">
-            {rightIcon}
-          </span>
-        )}
-    </button>
-    </>
-  );
+    const handleClick = (
+        event: React.MouseEvent<HTMLButtonElement>,
+    ) => {
+        if (disabled) {
+            event.preventDefault()
+            return
+        }
+
+        onClick?.(event)
+        if (event.defaultPrevented) return
+
+        onSelect?.()
+
+        if (closeOnSelect ?? contextCloseOnSelect) {
+            setOpen(false)
+        }
+    }
+
+    return (
+        <>
+            {hasDivider && (
+                <div className="my-1 border-t border-(--color-black-alpha-20)" />
+            )}
+            <button
+                type="button"
+                role="menuitem"
+                disabled={disabled}
+                onClick={handleClick}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                className={cn(
+                    `
+                      flex w-full items-center justify-between gap-4 border-b
+                      border-(--color-black-alpha-20) px-4 py-2.5 text-left
+                      text-base leading-[130%] font-normal transition-colors
+                      duration-150
+                      last:border-b-0
+                    `,
+                    {
+                        'cursor-not-allowed text-text-gray':
+                            disabled,
+                        'cursor-pointer text-system-red hover:bg-system-red-surface':
+                            danger,
+                        'cursor-pointer text-text-black hover:bg-gray-light':
+                            !disabled && !danger, // default
+                    },
+
+                    className,
+                )}
+                {...props}
+            >
+                <span
+                    className={`dropdown-item-content flex-1 truncate`}
+                >
+                    {label ?? children}
+                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                    {/* Иконка слева от текста (если нужна) */}
+                    {icon && (
+                        <span
+                            className={`
+                              flex h-5 w-5 items-center justify-center
+                              text-(--color-text-gray) opacity-80
+                            `}
+                        >
+                            {icon}
+                        </span>
+                    )}
+                </div>
+                {/* Иконка справа от текста */}
+                {rightIcon && (
+                    <span
+                        className={`
+                          flex h-5 w-5 items-center justify-center
+                          text-(--color-text-gray) opacity-80
+                        `}
+                    >
+                        {rightIcon}
+                    </span>
+                )}
+            </button>
+        </>
+    )
 }
 
 const Dropdown = DropdownRoot as typeof DropdownRoot & {
-  Trigger: typeof DropdownTrigger;
-  Content: typeof DropdownContent;
-  Item: typeof DropdownItem;
-};
+    Trigger: typeof DropdownTrigger
+    Content: typeof DropdownContent
+    Item: typeof DropdownItem
+}
 
-Dropdown.Trigger = DropdownTrigger;
-Dropdown.Content = DropdownContent;
-Dropdown.Item = DropdownItem;
+Dropdown.Trigger = DropdownTrigger
+Dropdown.Content = DropdownContent
+Dropdown.Item = DropdownItem
 
-export type { DropdownProps, DropdownItemProps };
-export default Dropdown;
+export type { DropdownProps, DropdownItemProps }
+export default Dropdown
 
-// Пример использования:
-// <Dropdown>
-//   <Dropdown.Trigger>
-//     <Button variant="ghost">Меню</Button>
-//   </Dropdown.Trigger>
-//   <Dropdown.Content width={220}>
-//     <Dropdown.Item onSelect={() => console.log("Ответить")}>
-//       Ответить
-//     </Dropdown.Item>
-//     <Dropdown.Item icon={<CheckIcon />}>Выбрать</Dropdown.Item>
-//     <Dropdown.Item danger icon={<TrashIcon />}>
-//       Удалить
-//     </Dropdown.Item>
-//   </Dropdown.Content>
-// </Dropdown>
+/**
+ * Example usage:
+ * <Dropdown>
+ *   <Dropdown.Trigger>
+ *     <Button variant="ghost">Menu</Button>
+ *   </Dropdown.Trigger>
+ *   <Dropdown.Content width={220}>
+ *     <Dropdown.Item onSelect={() => console.log("Reply")}>
+ *       Reply
+ *     </Dropdown.Item>
+ *     <Dropdown.Item icon={<CheckIcon />}>Select</Dropdown.Item>
+ *     <Dropdown.Item danger icon={<TrashIcon />}>
+ *       Delete
+ *     </Dropdown.Item>
+ *   </Dropdown.Content>
+ * </Dropdown>
+ */

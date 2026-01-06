@@ -9,9 +9,13 @@ export default function ChatHeader({
     chat: ChatItem
 }>) {
     return (
-        <section className="border-b px-4 py-2 bg-primary-background rounded-t-md border-border">
+        <section
+            className={`
+              rounded-t-md border-b border-gray-border bg-gray-light px-4 py-2
+            `}
+        >
             <div className="flex items-center justify-between">
-                <div className="flex gap-4 flex-row items-center">
+                <div className="flex flex-row items-center gap-4">
                     {/* User Icon */}
                     <Image
                         src={getAvatarSrc(chat.chat)}
@@ -41,7 +45,7 @@ export default function ChatHeader({
                 </div>
                 <div className="flex gap-2">
                     {/* Кнопки поиска, звонка и т.д. */}
-                    <div className="flex gap-4 text-muted-foreground">
+                    <div className="flex gap-4 text-text-gray">
                         <button
                             className="cursor-pointer"
                             type="button"

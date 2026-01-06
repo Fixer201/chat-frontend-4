@@ -6,7 +6,7 @@ import React, {
     useState,
 } from 'react'
 import { EmojiCategoryTabs } from './EmojiCategoryTabs'
-import { cn } from '@lib/utils'
+import { cn } from '@shared/lib/utils'
 import { getCategoryName } from '@shared/lib/emojiData'
 import { EmojiPickerWithCategoriesProps } from '@shared/types/Emoji'
 import EmojiRow from '@modules/message-composer/components/EmojiRow'
@@ -115,9 +115,12 @@ export function EmojiPickerWithCategories({
             {/* Virtualized scroll container */}
             <div
                 ref={scrollContainerRef}
-                className="h-full px-3 overflow-y-auto overflow-x-hidden scrollbar-thin"
+                className={`
+                  custom-scroll h-full overflow-x-hidden overflow-y-auto px-3
+                `}
                 style={{ width: containerWidth }}
                 onClick={handleContainerClick}
+                role="presentation"
             >
                 <div
                     style={{
@@ -185,7 +188,12 @@ function CategoryHeader({
     slug,
 }: Readonly<{ slug: string }>) {
     return (
-        <p className="text-text-gray text-start text-lg py-2 px-1 sticky top-0 bg-white-bg">
+        <p
+            className={`
+              sticky top-0 bg-white-bg px-1 py-2 text-start text-lg
+              text-text-gray
+            `}
+        >
             {getCategoryName(slug)}
         </p>
     )

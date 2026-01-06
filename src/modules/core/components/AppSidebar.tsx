@@ -1,57 +1,94 @@
-'use client';
-import { usePathname, useRouter } from 'next/navigation';
+'use client'
+import { usePathname, useRouter } from 'next/navigation'
 
-import { cn } from '@shared/lib/utils';
-import ContactsIcon from '@public/icons/app-sidebar/contacts.svg';
-import MessageIcon from '@public/icons/app-sidebar/message.svg';
-import ServiceIcon from '@public/icons/app-sidebar/service.svg';
-import SettingsIcon from '@public/icons/app-sidebar/settings.svg';
+import { cn } from '@shared/lib/utils'
+import ContactsIcon from '@public/icons/app-sidebar/contacts.svg'
+import MessageIcon from '@public/icons/app-sidebar/message.svg'
+import ServiceIcon from '@public/icons/app-sidebar/service.svg'
+import SettingsIcon from '@public/icons/app-sidebar/settings.svg'
 
-const iconBaseClass = 'h-8 w-8 transition-colors';
+const iconBaseClass = 'h-8 w-8 transition-colors'
 
 const navItems = [
-  { id: 'messages', label: 'Messages', Icon: MessageIcon, path: '/chats' },
-  { id: 'service', label: 'Services', Icon: ServiceIcon, path: '/test-components' },
-  { id: 'contacts', label: 'Contacts', Icon: ContactsIcon, path: '/contacts' },
-  { id: 'settings', label: 'Settings', Icon: SettingsIcon, path: '/settings' },
-];
+    {
+        id: 'messages',
+        label: 'Messages',
+        Icon: MessageIcon,
+        path: '/chats',
+    },
+    {
+        id: 'service',
+        label: 'Services',
+        Icon: ServiceIcon,
+        path: '/test-components',
+    },
+    {
+        id: 'contacts',
+        label: 'Contacts',
+        Icon: ContactsIcon,
+        path: '/contacts',
+    },
+    {
+        id: 'settings',
+        label: 'Settings',
+        Icon: SettingsIcon,
+        path: '/settings',
+    },
+]
 
 export default function AppSidebar() {
-  const router = useRouter();
-  const pathname = usePathname();
+    const router = useRouter()
+    const pathname = usePathname()
 
-  return (
-    <nav className="flex h-[228px] w-12 flex-col items-center justify-between gap-3 ">
-      {navItems.map(({ id, label, Icon, path }) => {
-  const isActive = Boolean(path && pathname.startsWith(path));
+    return (
+        <nav
+            className={`
+              flex h-[228px] w-12 flex-col items-center justify-between gap-3
+            `}
+        >
+            {navItems.map(({ id, label, Icon, path }) => {
+                const isActive = Boolean(
+                    path && pathname.startsWith(path),
+                )
 
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => {
-              if (path) {
-                router.push(path);
-              }
-            }}
-            aria-pressed={isActive}
-            className={cn(
-              'flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg  transition-colors',
-              isActive
-                ? 'border border-gray-200 bg-gray-main'
-                : 'border border-transparent  hover:bg-gray-main'
-            )}
-          >
-            <Icon
-              className={cn(iconBaseClass, isActive ? 'text-accent-violet-primary' : 'text-text-gray')}
-              aria-hidden
-            />
-            <span className="sr-only">{label}</span>
-          </button>
-        )
-      })}
-    </nav>
-  );
-
+                return (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                            if (path) {
+                                router.push(path)
+                            }
+                        }}
+                        aria-pressed={isActive}
+                        className={cn(
+                            `
+                              flex h-12 w-12 cursor-pointer items-center
+                              justify-center rounded-lg transition-colors
+                            `,
+                            isActive
+                                ? 'border border-gray-200 bg-gray-main'
+                                : `
+                                  border border-transparent
+                                  hover:bg-gray-main
+                                `,
+                        )}
+                    >
+                        <Icon
+                            className={cn(
+                                iconBaseClass,
+                                isActive
+                                    ? `text-accent-violet-primary`
+                                    : `text-text-gray`,
+                            )}
+                            aria-hidden
+                        />
+                        <span className="sr-only">
+                            {label}
+                        </span>
+                    </button>
+                )
+            })}
+        </nav>
+    )
 }
-
