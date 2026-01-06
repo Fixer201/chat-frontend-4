@@ -57,13 +57,13 @@ export const ChatAvatar = forwardRef<
                 ref={ref}
                 className={cn(
                     `
-                  flex cursor-pointer gap-3 rounded-md px-3 py-2
-                  transition-colors duration-200 select-none
-                `,
+                      flex cursor-pointer gap-3 rounded-md px-3 py-2
+                      transition-colors duration-200 select-none
+                    `,
                     `
-                  bg-(--color-white-bg)
-                  hover:bg-(--color-gray-light)
-                `,
+                      bg-(--color-white-bg)
+                      hover:bg-(--color-gray-light)
+                    `,
                     'relative rounded-none',
                     selected &&
                         'bg-(--color-accent-violet-primary)',
@@ -73,9 +73,9 @@ export const ChatAvatar = forwardRef<
             >
                 <div
                     className={`
-              relative h-15 w-15 shrink-0 overflow-hidden rounded-full
-              bg-(--color-gray-main)
-            `}
+                      relative h-15 w-15 shrink-0 overflow-hidden rounded-full
+                      bg-(--color-gray-main)
+                    `}
                 >
                     <Image
                         src={src}
@@ -108,7 +108,9 @@ export const ChatAvatar = forwardRef<
                                     className={cn(
                                         'truncate text-sm',
                                         selected
-                                            ? 'text-(--color-white-bg) opacity-80'
+                                            ? `
+                                              text-(--color-white-bg) opacity-80
+                                            `
                                             : 'text-(--color-text-gray)',
                                     )}
                                 />
@@ -118,7 +120,9 @@ export const ChatAvatar = forwardRef<
                                     className={cn(
                                         'truncate text-sm',
                                         selected
-                                            ? 'text-(--color-white-bg) opacity-80'
+                                            ? `
+                                              text-(--color-white-bg) opacity-80
+                                            `
                                             : 'text-(--color-text-gray)',
                                     )}
                                 >

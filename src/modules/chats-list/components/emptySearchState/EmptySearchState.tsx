@@ -13,15 +13,18 @@ export default function EmptySearchState({
     return (
         <div
             className={cn(
-                'flex min-h-100 w-full flex-col items-center justify-center px-4',
+                `
+                  flex min-h-100 w-full flex-col items-center justify-center
+                  px-4
+                `,
                 className,
             )}
         >
             <div
                 className={cn(
                     `
-        ${customStyles['empty-search-container']}
-      `,
+                      ${customStyles['empty-search-container']}
+                    `,
                     className,
                 )}
             >
@@ -42,8 +45,8 @@ export default function EmptySearchState({
                     <div className="w-full">
                         <h3
                             className={`
-              ${customStyles['empty-search-title']}
-            `}
+                              ${customStyles['empty-search-title']}
+                            `}
                         >
                             Поиск не дал результатов
                         </h3>
@@ -53,16 +56,16 @@ export default function EmptySearchState({
                     <div className="flex w-full flex-col gap-3">
                         <p
                             className={`
-              ${customStyles['empty-search-text']}
-            `}
+                              ${customStyles['empty-search-text']}
+                            `}
                         >
                             По вашему запросу ничего не
                             найдено.
                         </p>
                         <p
                             className={`
-              ${customStyles['empty-search-text']}
-            `}
+                              ${customStyles['empty-search-text']}
+                            `}
                         >
                             Измените запрос и попробуйте
                             снова.

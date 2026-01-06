@@ -191,33 +191,33 @@ export function CustomScrollbar({
         <div
             ref={containerRef}
             className={`
-        ${customStyle['custom-scroll-container']}
-        ${className}
-      `}
+              ${customStyle['custom-scroll-container']}
+              ${className}
+            `}
         >
             <div
                 ref={contentRef}
                 className={`
-          ${customStyle['custom-scroll-content']}
-        `}
+                  ${customStyle['custom-scroll-content']}
+                `}
             >
                 {children}
             </div>
             <div
                 className={`
-        ${customStyle['custom-scrollbar']}
-      `}
+                  ${customStyle['custom-scrollbar']}
+                `}
             >
                 <div
                     className={`
-          ${customStyle['custom-scrollbar-track']}
-        `}
+                      ${customStyle['custom-scrollbar-track']}
+                    `}
                 />
                 <div
                     ref={thumbRef}
                     className={`
-            ${customStyle['custom-scrollbar-thumb']}
-          `}
+                      ${customStyle['custom-scrollbar-thumb']}
+                    `}
                     onMouseDown={handleThumbMouseDown}
                 />
             </div>

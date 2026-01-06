@@ -17,7 +17,10 @@ export default function EmptyChatsState({
     return (
         <div
             className={cn(
-                'flex min-h-100 w-full flex-col items-center justify-center px-4',
+                `
+                  flex min-h-100 w-full flex-col items-center justify-center
+                  px-4
+                `,
                 className,
             )}
         >
@@ -40,7 +43,11 @@ export default function EmptyChatsState({
                 </div>
 
                 {/* Текстовый блок */}
-                <div className="flex w-full max-w-90 flex-col items-center gap-6">
+                <div
+                    className={`
+                      flex w-full max-w-90 flex-col items-center gap-6
+                    `}
+                >
                     {/* Заголовок */}
                     <div className="w-full">
                         <h3
@@ -49,10 +56,10 @@ export default function EmptyChatsState({
                                     'empty-chats-title'
                                 ],
                                 `
-                text-center text-base leading-[130%] font-normal
-                tracking-[0.01em] text-text-gray
-                sm:text-lg
-              `,
+                                  text-center text-base leading-[130%]
+                                  font-normal tracking-[0.01em] text-text-gray
+                                  sm:text-lg
+                                `,
                             )}
                         >
                             У вас пока нет чатов

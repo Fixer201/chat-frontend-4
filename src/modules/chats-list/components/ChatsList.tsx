@@ -210,17 +210,29 @@ export default function ChatsList() {
                     <CustomScrollbar>
                         {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
                         {loading ? (
-                            <div className="flex h-full items-center justify-center">
+                            <div
+                                className={`
+                              flex h-full items-center justify-center
+                            `}
+                            >
                                 <div className="text-text-gray">
                                     Загрузка...
                                 </div>
                             </div>
                         ) : showEmptySearchState ? (
-                            <div className="flex flex-1 items-center justify-center p-4">
+                            <div
+                                className={`
+                              flex flex-1 items-center justify-center p-4
+                            `}
+                            >
                                 <EmptySearchState />
                             </div>
                         ) : showEmptyChatsState ? (
-                            <div className="flex flex-1 items-center justify-center p-4">
+                            <div
+                                className={`
+                              flex flex-1 items-center justify-center p-4
+                            `}
+                            >
                                 <EmptyChatsState
                                     onStartChat={
                                         handleStartChat

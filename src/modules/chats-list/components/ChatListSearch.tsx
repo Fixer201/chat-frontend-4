@@ -48,23 +48,22 @@ export default function ChatListSearch({
                         setSearchValue(e.target.value)
                     }
                     className={`
-                          box-border w-full rounded-lg border border-[#EEEEEE]
-                          bg-white py-2.5 pr-4 pl-10 text-sm transition-all
-                          duration-200
-                          placeholder:text-gray-400
-                          focus:border-[#EEEEEE] focus:ring-0 focus:outline-none
-                        `}
+                      box-border w-full rounded-lg border border-[#EEEEEE]
+                      bg-white py-2.5 pr-4 pl-10 text-sm transition-all
+                      duration-200
+                      placeholder:text-gray-400
+                      focus:border-[#EEEEEE] focus:ring-0 focus:outline-none
+                    `}
                 />
                 {searchValue && (
                     <button
                         type="button"
                         onClick={clearSearchInput}
                         className={`
-                              absolute top-1/2 right-3 -translate-y-1/2
-                              transform rounded-full p-1 transition-all
-                              duration-200
-                              hover:bg-gray-100
-                            `}
+                          absolute top-1/2 right-3 -translate-y-1/2 transform
+                          rounded-full p-1 transition-all duration-200
+                          hover:bg-gray-100
+                        `}
                         aria-label="Очистить поиск"
                     >
                         <Image
@@ -73,9 +72,9 @@ export default function ChatListSearch({
                             width={14}
                             height={14}
                             className={`
-                                  opacity-60 transition-opacity
-                                  hover:opacity-100
-                                `}
+                              opacity-60 transition-opacity
+                              hover:opacity-100
+                            `}
                         />
                     </button>
                 )}

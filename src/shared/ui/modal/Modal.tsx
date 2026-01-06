@@ -2,12 +2,12 @@ import Image from 'next/image'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 import { cn } from '@shared/lib/utils'
+import type { ButtonProps } from '@shared/ui/button/Button'
 import { Button } from '@shared/ui/button/Button'
 import {
     createEscapeKeyHandler,
     createEscapeKeyHandlerWithCondition,
 } from '@shared/lib/keyboard-handlers'
-import type { ButtonProps } from '@shared/ui/button/Button'
 
 type ModalButtonConfig = {
     label: string
@@ -37,9 +37,27 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const containerBase =
-    'w-full max-w-md rounded-[8px] bg-white shadow-[0_24px_80px_rgba(40,32,77,0.15)] p-6'
+    'w-full max-w-md rounded-md bg-white shadow-context-shadow p-6'
 const overlayBase =
-    'fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#9587F566]'
+    'fixed inset-0 z-50 flex items-center justify-center px-4 bg-violet-shadow-dark'
+
+const alignmentVariants = {
+    left: {
+        text: 'text-left',
+        items: 'items-start',
+        icon: 'self-start',
+    },
+    center: {
+        text: 'text-center',
+        items: 'items-center',
+        icon: 'self-center',
+    },
+    right: {
+        text: 'text-right',
+        items: 'items-end',
+        icon: 'self-end',
+    },
+} as const
 
 export default function Modal({
     open,
@@ -81,27 +99,17 @@ export default function Modal({
 
     const secondaryTextClass =
         descriptionColor === 'muted'
-            ? 'text-[#747474]'
-            : 'text-[#1C1C1E]'
+            ? 'text-text-gray'
+            : 'text-text-black'
+
     const hasActions = buttons.length > 0
-    const textAlignClass =
-        titleAlign === 'left'
-            ? 'text-left'
-            : titleAlign === 'right'
-              ? 'text-right'
-              : 'text-center'
-    const itemsAlignClass =
-        titleAlign === 'left'
-            ? 'items-start'
-            : titleAlign === 'right'
-              ? 'items-end'
-              : 'items-center'
-    const iconAlignClass =
-        titleAlign === 'left'
-            ? 'self-start'
-            : titleAlign === 'right'
-              ? 'self-end'
-              : 'self-center'
+
+    const alignment = alignmentVariants[titleAlign]
+    const {
+        text: textAlignClass,
+        items: itemsAlignClass,
+        icon: iconAlignClass,
+    } = alignment
 
     return (
         <div
@@ -127,14 +135,12 @@ export default function Modal({
                             className={cn(
                                 `
                                   flex h-16 w-16 items-center justify-center
-                                  rounded-full bg-(--color-accent-violet-white)
+                                  rounded-full bg-accent-violet-white
                                 `,
                                 iconAlignClass,
                             )}
                         >
-                            {icon ? (
-                                icon
-                            ) : (
+                            {icon || (
                                 <Image
                                     src={iconSrc as string}
                                     alt={iconAlt}
@@ -212,7 +218,7 @@ export default function Modal({
 
                                         return (
                                             <Button
-                                                key={`${label}-${index}`}
+                                                key={index}
                                                 variant={
                                                     resolvedVariant
                                                 }

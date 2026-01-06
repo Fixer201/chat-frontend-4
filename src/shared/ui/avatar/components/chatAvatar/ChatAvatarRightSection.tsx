@@ -88,9 +88,9 @@ export const ChatAvatarRightSection = ({
                                 className={
                                     selected
                                         ? `
-                                      bg-(--color-white-bg)
-                                      text-(--color-accent-violet-primary)
-                                    `
+                                          bg-(--color-white-bg)
+                                          text-(--color-accent-violet-primary)
+                                        `
                                         : ''
                                 }
                             >
@@ -104,9 +104,9 @@ export const ChatAvatarRightSection = ({
                                 className={
                                     selected
                                         ? `
-                                      bg-(--color-white-bg)
-                                      text-(--color-accent-violet-primary)
-                                    `
+                                          bg-(--color-white-bg)
+                                          text-(--color-accent-violet-primary)
+                                        `
                                         : ''
                                 }
                             >
