@@ -115,7 +115,9 @@ export const ChatAvatar = forwardRef<
                                     )}
                                 />
                             )}
-                            {messagePreview && (
+                            
+                        </div>
+                        {messagePreview && (
                                 <p
                                     className={cn(
                                         'truncate text-sm',
@@ -129,18 +131,8 @@ export const ChatAvatar = forwardRef<
                                     {messagePreview}
                                 </p>
                             )}
-                        </div>
                     </div>
-                    {hasRightSection && (
-                        <ChatAvatarRightSection
-                            timestamp={timestamp}
-                            showUnread={showUnread}
-                            unreadCount={unreadCount}
-                            messageStatus={messageStatus}
-                            rightElement={rightElement}
-                            selected={selected}
-                        />
-                    )}
+                    
                 </div>
                 {hasRightSection && (
                     <ChatAvatarRightSection
