@@ -76,6 +76,13 @@ body {
 :root {
     --radius: 0.625rem; /* 10px */
     --chat-list-divider-left: calc(60px + 12px + 8px);
+    --app-login-background: url(/images/login/Background.svg);
+    --app-login-start: url(/images/login/StartPage.svg);
+    --app-login-width: clamp(75rem, 90vw, 90rem);
+    --app-login-height: clamp(64rem, 64vh, 64rem);
+    --app-start-screen-shadow: drop-shadow(
+        -24px -24px 80px #695c7a26
+    );
     /* Primary Colors */ /* !Name in Figma Design! */
     --app-white-bg: hsla(
         0,

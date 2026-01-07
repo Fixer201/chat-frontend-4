@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
@@ -82,6 +83,7 @@ export function CustomScrollbar({
         const containerHeight = container.clientHeight
         const thumbHeight =
             thumbRef.current?.clientHeight || 20
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const trackHeight = containerHeight - thumbHeight
 
         // Рассчитываем новый scrollTop

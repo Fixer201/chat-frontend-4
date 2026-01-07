@@ -34,7 +34,6 @@ export const getContactWebStatus = (
     if (isNaN(lastOnlineDate.getTime())) {
         return STATUS_TEXTS.justNow
     }
-
     const diffMs = now.getTime() - lastOnlineDate.getTime()
     const diffMinutes = diffMs / (1000 * 60)
 

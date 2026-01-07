@@ -13,9 +13,9 @@ export default function ContactsSearch({
             <div className="flex h-19 w-full items-center gap-2.5 p-4">
                 <div
                     className={`
-                      relative flex h-11 w-full items-center gap-2 rounded-lg
-                      border border-gray-300 bg-(--color-white-bg) px-3 pr-10
-                    `}
+                  relative flex h-11 w-full items-center gap-2 rounded-lg border
+                  border-gray-300 bg-(--color-white-bg) px-3 pr-10
+                `}
                 >
                     <Image
                         src="/images/search/iconsSearch.svg"
