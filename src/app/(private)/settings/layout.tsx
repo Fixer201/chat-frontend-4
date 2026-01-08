@@ -23,9 +23,9 @@ export default function SettingsLayout({
             >
                 <div
                     className={`
-                      h-full w-full rounded-md border border-gray-200
-                      bg-gray-main
-                    `}
+                                          h-full w-full rounded-md border
+                                          border-app-divider bg-gray-main
+                                        `}
                 >
                     {children}
                 </div>

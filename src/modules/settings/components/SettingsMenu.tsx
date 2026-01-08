@@ -60,7 +60,7 @@ export default function SettingsMenu() {
         closeDeleteModal()
     }, [closeDeleteModal])
     const asideClass = cn(
-        'h-11/12 w-full rounded-md border border-gray-200 bg-gray-main',
+        'h-11/12 w-full rounded-md border border-app-divider bg-gray-main',
         'md:w-80',
         'lg:w-96',
     )
@@ -86,13 +86,15 @@ export default function SettingsMenu() {
             <div className="flex h-full w-full flex-col rounded-md bg-gray-main">
                 <div
                     className={`
-                      mb-4 flex items-center justify-center rounded-t-md
-                      border-b border-gray-200 bg-gray-main p-4
-                    `}
+                                          mb-4 flex items-center justify-center
+                                          rounded-t-md border-b
+                                          border-app-divider bg-gray-main p-4
+                                        `}
                 >
                     <h1
                         className={`
-                          text-lg font-medium tracking-[0.01em] text-text-black
+                          text-lg font-medium tracking-extra-tight
+                          text-text-black
                         `}
                     >
                         Настройки
@@ -117,7 +119,7 @@ export default function SettingsMenu() {
                         <div className="flex flex-col">
                             <span
                                 className={`
-                                  text-lg font-medium tracking-[0.01em]
+                                  text-lg font-medium tracking-extra-tight
                                   text-text-black
                                 `}
                             >
@@ -149,16 +151,26 @@ export default function SettingsMenu() {
                                     href={href}
                                     className={cn(
                                         `
-                                          flex w-full items-center gap-3
-                                          border-b border-gray-200 p-4 text-left
-                                          text-base text-text-black
-                                          transition-colors
-                                          hover:bg-(--color-accent-violet-ultra-light)
-                                        `,
+                                                                                  flex
+                                                                                  w-full
+                                                                                  items-center
+                                                                                  gap-3
+                                                                                  border-b
+                                                                                  border-app-divider
+                                                                                  p-4
+                                                                                  text-left
+                                                                                  text-base
+                                                                                  text-text-black
+                                                                                  transition-colors
+                                                                                  hover:bg-(--color-accent-violet-ultra-light)
+                                                                                `,
                                         index !==
                                             menuItems.length -
                                                 1 &&
-                                            `border-b border-gray-200`,
+                                            `
+                                                                                          border-b
+                                                                                          border-app-divider
+                                                                                        `,
                                         isActive &&
                                             `
                                               bg-(--color-accent-violet-ultra-light)
