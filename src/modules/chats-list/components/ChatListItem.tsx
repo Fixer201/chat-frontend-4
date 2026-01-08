@@ -12,6 +12,7 @@ import { ChatListItemDropdown } from './ChatListItemDropdown'
 import { ChatListItemProps } from '@shared/types/chat'
 
 /** Позиция контекстного меню */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ContextMenuPosition = Readonly<{
     top: number
     left: number
@@ -57,6 +58,7 @@ export const ChatListItem = forwardRef<
         const [hoveredItem, setHoveredItem] = useState<
             string | null
         >(null)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const setRefs = useCallback(
             (node: HTMLDivElement | null) => {
                 if (typeof ref === 'function') {

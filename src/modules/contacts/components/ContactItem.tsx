@@ -33,7 +33,6 @@ export const ContactItem: React.FC<ContactItemProps> = ({
             contact.isOnline,
             contact.wasOnlineAt,
         )
-
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setStatusText(status)
     }, [contact.isOnline, contact.wasOnlineAt])

@@ -18,7 +18,6 @@ export default function MessagesList() {
             className="flex h-full w-full flex-col overflow-y-auto"
         >
             {messages.length === 0 ? (
-                // Empty state
                 <div
                     className={`
                       flex h-full flex-col items-center justify-center

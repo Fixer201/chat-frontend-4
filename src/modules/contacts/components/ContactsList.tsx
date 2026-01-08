@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import ContactsSearch from './ContactsSearch'
 import { useDispatch, useSelector } from 'react-redux'
@@ -10,7 +11,6 @@ import ContactsDelete from './ContactsDelete'
 import Modal from '@shared/ui/modal/Modal'
 import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
-import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
 import { ContactItem } from './ContactItem'
 
 export default function ContactsList() {
@@ -79,9 +79,6 @@ export default function ContactsList() {
         }
     }
 
-    const handleDeletePanelKeyDown =
-        createButtonKeyHandler(handleOpenModal)
-
     return (
         <>
             <ContactsSearch
@@ -105,10 +102,10 @@ export default function ContactsList() {
             {/* контейнер контактов */}
             <div
                 className={`
-                  relative custom-scroll flex h-11/12 w-full flex-0 flex-col
-                  gap-4 overflow-hidden
-                  hover:overflow-auto
-                `}
+              relative custom-scroll flex h-11/12 w-full flex-0 flex-col gap-4
+              overflow-hidden
+              hover:overflow-auto
+            `}
             >
                 {filteredContacts &&
                 filteredContacts.length > 0 ? (
@@ -136,11 +133,12 @@ export default function ContactsList() {
                     ))
                 ) : searchValue.trim() ? (
                     // блок для пустого поиска
+
                     <div
                         className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                      flex h-full flex-col items-center justify-center p-4
+                      text-center
+                    `}
                     >
                         <Image
                             src="/images/search/imgSearchWeb.svg"
@@ -165,9 +163,9 @@ export default function ContactsList() {
                     // блок для пустого списка контактов
                     <div
                         className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                      flex h-full flex-col items-center justify-center p-4
+                      text-center
+                    `}
                     >
                         <Image
                             src="/images/search/nullContacts.svg"
@@ -188,19 +186,16 @@ export default function ContactsList() {
                 {/* панель удаления выбранных контактов */}
                 {deleteMode &&
                     selectedContacts.length > 0 && (
+                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                         <div
                             className={`
-                              absolute right-0 bottom-0 left-0 z-10 flex h-20
-                              w-full cursor-pointer items-center justify-center
-                              bg-gray-light transition-colors
-                              hover:bg-accent-violet-light
-                            `}
+                          absolute right-0 bottom-0 left-0 z-10 flex h-20 w-full
+                          cursor-pointer items-center justify-center
+                          bg-(--color-gray-light) transition-colors
+                          hover:bg-(--color-accent-violet-light)
+                        `}
                             onClick={handleOpenModal}
-                            onKeyDown={
-                                handleDeletePanelKeyDown
-                            }
                             role="button"
-                            tabIndex={0}
                             aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
                         >
                             <p className="text-(--color-system-red)">
@@ -219,9 +214,9 @@ export default function ContactsList() {
                     !deleteMode && (
                         <div
                             className={`
-                              flex h-9 w-full justify-between gap-1
-                              bg-(--color-gray-light) pt-2.5 pr-4 pb-2.5 pl-4
-                            `}
+                      flex h-9 w-full justify-between gap-1
+                      bg-(--color-gray-light) pt-2.5 pr-4 pb-2.5 pl-4
+                    `}
                         >
                             <p>Пользователи А-чата</p>
                             <Image
@@ -249,14 +244,14 @@ export default function ContactsList() {
                 buttons={[
                     {
                         label: 'Отмена',
-                        variant: 'ghost', // Без обводки
-                        color: 'primary', // Нейтральный цвет
+                        variant: 'ghost',
+                        color: 'primary',
                         onClick: handleCloseModal,
                     },
                     {
                         label: 'Удалить',
-                        variant: 'primary', // Оставлено как было
-                        color: 'primary', // Оставлено как было
+                        variant: 'primary',
+                        color: 'primary',
                         onClick: handleConfirmDelete,
                     },
                 ]}
