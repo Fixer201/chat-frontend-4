@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 import Image from 'next/image'
 import type { HTMLAttributes, ReactNode } from 'react'
 

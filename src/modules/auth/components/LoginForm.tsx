@@ -100,42 +100,25 @@ export default function LoginForm() {
     const handleSendCode = async () => {
         setLoading(true)
         setError('')
-        const csrfToken = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('csrftoken='))
-            ?.split('=')[1]
 
         const requestBody = {
             phone_number: `+${phoneNumber.replace(/\D/g, '')}`,
         }
-
         console.log('Отправка запроса:', requestBody)
 
         try {
             const response = await fetch(
-                'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/get/code/',
+                '/api/auth/send-code',
                 {
                     method: 'POST',
                     headers: {
-                        accept: 'application/json',
                         'Content-Type': 'application/json',
-                        // ...(process.env.NEXT_PUBLIC_API_KEY && { 'X-API-Key': process.env.NEXT_PUBLIC_API_KEY }),
-                        ...(csrfToken && {
-                            'X-CSRFTOKEN': csrfToken,
-                        }),
-                        // 'X-CSRFTOKEN': 'MGevOossL74v8o0FyEpZjNDWHwlqHCqU84FSL5uDukCOp8DhNINzQ4NUzzIsTuKt',
-                        //'CSRF-TOKEN' : '7c79972d-bb85-438a-8e19-a2dd85d99f87'
                     },
                     body: JSON.stringify(requestBody),
                 },
             )
-
-            console.log(
-                'Ответ:',
-                response.status,
-                await response.text(),
-            )
-
+            const data = await response.json()
+            console.log('Ответ:', response.status, data)
             if (response.ok) {
                 setIsModalOpen(false)
                 setShowCodeForm(true)
@@ -146,6 +129,7 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
+            console.error('Fetch error:', err)
         } finally {
             setLoading(false)
         }
@@ -156,33 +140,21 @@ export default function LoginForm() {
         if (isBlocked) return
         setLoading(true)
         setError('')
-        const csrfToken = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('csrftoken='))
-            ?.split('=')[1]
         const requestBody = {
             phone_number: `+${phoneNumber.replace(/\D/g, '')}`,
             code: code,
         }
-
         console.log(
             'Отправка запроса на верификацию:',
             requestBody,
         )
-
         try {
             const response = await fetch(
-                'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/get/token/',
+                '/api/auth/verify-code',
                 {
                     method: 'POST',
                     headers: {
-                        accept: 'application/json',
                         'Content-Type': 'application/json',
-                        // ...(process.env.NEXT_PUBLIC_API_KEY && { 'X-API-Key': process.env.NEXT_PUBLIC_API_KEY }),
-                        ...(csrfToken && {
-                            'X-CSRFTOKEN': csrfToken,
-                        }),
-                        // 'X-CSRFTOKEN': 'MGevOossL74v8o0FyEpZjNDWHwlqHCqU84FSL5uDukCOp8DhNINzQ4NUzzIsTuKt'
                     },
                     body: JSON.stringify(requestBody),
                 },
@@ -217,6 +189,7 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
+            console.error('Verify error:', err)
         } finally {
             setLoading(false)
         }
@@ -236,10 +209,10 @@ export default function LoginForm() {
         console.log('Личные данные:', data)
         setLoading(true)
         setError('')
-        const csrfToken = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('csrftoken='))
-            ?.split('=')[1]
+        // const csrfToken = document.cookie
+        //     .split('; ')
+        //     .find((row) => row.startsWith('csrftoken='))
+        //     ?.split('=')[1]
         const accessToken =
             localStorage.getItem('access_token')
         const apiKey = process.env.NEXT_PUBLIC_API_KEY
@@ -247,39 +220,43 @@ export default function LoginForm() {
             ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/?api_key=${apiKey}`
             : 'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/'
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    // 'Authorization': `Bearer ${accessToken}`,
-                    // ...(process.env.NEXT_PUBLIC_API_KEY && { 'X-API-Key': process.env.NEXT_PUBLIC_API_KEY }),
-                    // ...(csrfToken && { 'X-CSRFTOKEN': csrfToken })
-                    ...(accessToken && {
-                        Authorization: `Bearer ${accessToken}`,
-                    }),
-                    ...(csrfToken && {
-                        'X-CSRFTOKEN': csrfToken,
+            const response = await fetch(
+                '/api/auth/profile',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(accessToken && {
+                            Authorization: `Bearer ${accessToken}`,
+                        }),
+                    },
+                    body: JSON.stringify({
+                        nickname: data.nickname,
+                        first_name: data.name,
+                        last_name: '',
+                        patronymic: '',
+                        additional_information: '',
+                        birthday: 0,
+                        email: 'lialia1986@mail.ru', //пока временно
+                        gender: 'male',
+                        country: 'RU',
+                        city_id: 5,
+                        // phone: `+${phoneNumber.replace(/\D/g, '')}`,
                     }),
                 },
-                body: JSON.stringify({
-                    nickname: data.nickname,
-                    first_name: data.name,
-                    last_name: '',
-                    patronymic: '',
-                    additional_information: '',
-                    birthday: 0,
-                    email: 'lialia1986@mail.ru', //пока временно
-                    gender: 'male',
-                    country: 'RU',
-                    city_id: 5,
-                    // phone: `+${phoneNumber.replace(/\D/g, '')}`,
-                }),
-            })
+            )
+
+            let responseData
+            try {
+                responseData = await response.json()
+            } catch {
+                responseData = {}
+            }
+
             console.log(
                 'Response:',
                 response.status,
-                await response.text(),
+                responseData,
             )
 
             if (response.ok) {
@@ -291,6 +268,7 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
+            console.error('Profile error:', err)
         } finally {
             setLoading(false)
         }

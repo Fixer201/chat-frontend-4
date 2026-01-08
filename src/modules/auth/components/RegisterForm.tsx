@@ -164,6 +164,7 @@ export default function RegisterForm({
                                             : 'gray'
                                     }
                                 />
+
                                 <Input
                                     label={
                                         nicknameError ||
@@ -184,6 +185,7 @@ export default function RegisterForm({
                                             : 'gray'
                                     }
                                 />
+
                                 <span className="text-[14px]">
                                     Нажимая на
                                     &quot;Зарегистрироваться&quot;,

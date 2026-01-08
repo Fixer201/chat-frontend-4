@@ -1,5 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-class-order */
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
@@ -18,28 +16,20 @@ export default function SuccessRegister() {
             console.error('Refresh token не найден')
             return null
         }
-        const csrfToken = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('csrftoken='))
-            ?.split('=')[1]
-        const apiKey = process.env.NEXT_PUBLIC_API_KEY
-        const url = apiKey
-            ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/refresh/?api_key=${apiKey}`
-            : 'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/refresh/'
+
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    ...(csrfToken && {
-                        'X-CSRFTOKEN': csrfToken,
+            const response = await fetch(
+                '/api/auth/refresh',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        refresh: refreshToken,
                     }),
                 },
-                body: JSON.stringify({
-                    refresh: refreshToken,
-                }),
-            })
+            )
             if (response.ok) {
                 const data = await response.json()
                 localStorage.setItem(
@@ -51,7 +41,6 @@ export default function SuccessRegister() {
                 console.error(
                     'Ошибка refresh token:',
                     response.status,
-                    await response.text(),
                 )
                 return null
             }
@@ -67,28 +56,18 @@ export default function SuccessRegister() {
             console.error('Access token не найден')
             return false
         }
-        const csrfToken = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('csrftoken='))
-            ?.split('=')[1]
-        const apiKey = process.env.NEXT_PUBLIC_API_KEY
-        const url = apiKey
-            ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/?api_key=${apiKey}`
-            : 'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/'
         try {
-            let response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${accessToken}`,
-                    ...(csrfToken && {
-                        'X-CSRFTOKEN': csrfToken,
-                    }),
-                    // ...(process.env.NEXT_PUBLIC_API_KEY && { 'X-API-Key': process.env.NEXT_PUBLIC_API_KEY }),
+            let response = await fetch(
+                '/api/auth/profile',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({}),
                 },
-                body: JSON.stringify({}),
-            })
+            )
             if (response.status === 401) {
                 // Токен истек, пытаемся обновить
                 console.log('Token истек, обновление')
@@ -96,20 +75,18 @@ export default function SuccessRegister() {
                     await refreshAccessToken()
                 if (newAccessToken) {
                     // Повторяем запрос с новым токеном
-                    response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            accept: 'application/json',
-                            'Content-Type':
-                                'application/json',
-                            Authorization: `Bearer ${newAccessToken}`,
-                            ...(csrfToken && {
-                                'X-CSRFTOKEN': csrfToken,
-                            }),
-                            // ...(process.env.NEXT_PUBLIC_API_KEY && { 'X-API-Key': process.env.NEXT_PUBLIC_API_KEY }),
+                    response = await fetch(
+                        '/api/auth/profile',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                                Authorization: `Bearer ${newAccessToken}`,
+                            },
+                            body: JSON.stringify({}),
                         },
-                        body: JSON.stringify({}),
-                    })
+                    )
                 } else {
                     return false
                 }
@@ -126,7 +103,6 @@ export default function SuccessRegister() {
                 console.error(
                     'ошибка профиля',
                     response.status,
-                    await response.text(),
                 )
                 return false
             }
@@ -153,10 +129,10 @@ export default function SuccessRegister() {
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-              relative hidden h-(--app-login-height) w-(--app-login-width)
-              flex-col items-center justify-center
-              md:flex
-            `}
+                  relative hidden h-(--app-login-height) w-(--app-login-width)
+                  flex-col items-center justify-center
+                  md:flex
+                `}
                 style={{
                     backgroundImage:
                         'var(--app-login-background)',
@@ -164,9 +140,9 @@ export default function SuccessRegister() {
             >
                 <div
                     className={`
-                  absolute flex h-190 w-122 flex-col items-center justify-center
-                  rounded-2xl
-                `}
+                      absolute flex h-190 w-122 flex-col items-center
+                      justify-center rounded-2xl
+                    `}
                     style={{
                         filter: 'var(--app-start-screen-shadow)',
                         backgroundImage:
@@ -183,15 +159,15 @@ export default function SuccessRegister() {
                     />
                     <div
                         className={`
-                      absolute top-74 left-16 flex h-95 w-90 flex-col
-                      justify-between gap-4
-                    `}
+                          absolute top-74 left-16 flex h-95 w-90 flex-col
+                          justify-between gap-4
+                        `}
                     >
                         <div className="flex flex-col items-center gap-6">
                             <span
                                 className={`
-                              text-accent-violet-primary text-3xl font-bold
-                            `}
+                                  text-3xl font-bold text-accent-violet-primary
+                                `}
                             >
                                 Поздравляем!
                             </span>

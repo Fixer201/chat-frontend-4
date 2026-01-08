@@ -10,7 +10,6 @@ export default function ChatHeader({
 }>) {
     return (
         <section
-            // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
             className={`
               rounded-t-md border-b border-gray-border bg-gray-light px-4 py-2
             `}
