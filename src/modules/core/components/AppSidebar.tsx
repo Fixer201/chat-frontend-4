@@ -67,7 +67,7 @@ export default function AppSidebar() {
                               justify-center rounded-lg transition-colors
                             `,
                             isActive
-                                ? 'border border-gray-200 bg-gray-main'
+                                ? 'border border-app-divider bg-gray-main'
                                 : `
                                   border border-transparent
                                   hover:bg-gray-main

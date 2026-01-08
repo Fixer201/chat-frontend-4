@@ -42,9 +42,10 @@ export default function EditProfileForm() {
         >
             <header
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-gray-200 bg-gray-main px-6 py-4
-                `}
+                                  flex items-center justify-start gap-3
+                                  rounded-t-md border-b border-app-divider
+                                  bg-gray-main px-6 py-4
+                                `}
             >
                 <button
                     type="button"
@@ -60,8 +61,9 @@ export default function EditProfileForm() {
                 </button>
                 <h2
                     className={`
-                      text-lg font-medium tracking-[0.01em] text-text-black
-                    `}
+                                          text-lg font-medium
+                                          tracking-extra-tight text-text-black
+                                        `}
                 >
                     Редактирование профиля
                 </h2>
