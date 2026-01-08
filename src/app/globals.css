@@ -76,6 +76,13 @@ body {
 :root {
     --radius: 0.625rem; /* 10px */
     --chat-list-divider-left: calc(60px + 12px + 8px);
+    --app-login-background: url(/images/login/Background.svg);
+    --app-login-start: url(/images/login/StartPage.svg);
+    --app-login-width: clamp(75rem, 90vw, 90rem);
+    --app-login-height: clamp(64rem, 64vh, 64rem);
+    --app-start-screen-shadow: drop-shadow(
+        -24px -24px 80px #695c7a26
+    );
     /* Primary Colors */ /* !Name in Figma Design! */
     --app-white-bg: hsla(
         0,
@@ -165,6 +172,11 @@ body {
         47%,
         1
     ); /* Miscellaneous/Window Controls/Maximize */
+
+    /* Dropdown sizing defaults (overrideable via theme) */
+    --dropdown-min-width: 180px;
+    --dropdown-max-width: 400px;
+    --dropdown-extra-padding: 96px;
 
     /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
     --app-call-modal-red: hsla(
@@ -353,6 +365,12 @@ body {
 
 /* IDE может жаловаться, но такое правило есть в tailwind v4 */
 /* https://github.com/mobiwise-dev/tailwind-v4-utilities */
+@utility dropdown-item {
+    /* Used by querySelectorAll in Dropdown.tsx for width calculation */
+    /* This is a marker utility with no visual properties */
+    display: block;
+}
+
 @utility custom-text-gradient-black {
     background: var(--app-black-gradient);
     background-clip: text;
@@ -435,6 +453,7 @@ body {
 
 /* Стили для dropdown */
 .dropdown-item-content {
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
