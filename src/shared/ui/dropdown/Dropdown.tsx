@@ -23,6 +23,7 @@ import React, {
 import { createPortal } from 'react-dom'
 
 import { cn } from '@shared/lib/utils'
+import styles from '@shared/ui/dropdown/Dropdown.module.css'
 
 type Placement =
     | 'bottom-start'
@@ -241,14 +242,14 @@ interface DropdownContentProps extends HTMLAttributes<HTMLDivElement> {
         top: number
         left: number
     } | null
-    minWidth?: number
-    maxWidth?: number
+    minWidth?: number | string
+    maxWidth?: number | string
 }
 
 function DropdownContent({
     width = 'auto',
-    minWidth = 180,
-    maxWidth = 400,
+    minWidth,
+    maxWidth,
     className,
     children,
     items,
@@ -267,9 +268,48 @@ function DropdownContent({
         { opacity: 0 },
     )
     const contentRef = useRef<HTMLDivElement>(null)
-    const [calculatedWidth, setCalculatedWidth] =
-        useState<number>(minWidth)
     const hasMeasuredRef = useRef(false)
+
+    const readCssVar = (name: string, fallback: number) => {
+        if (typeof window === 'undefined') return fallback
+        try {
+            const raw = getComputedStyle(
+                document.documentElement,
+            ).getPropertyValue(name)
+            if (!raw) return fallback
+            const parsed = parseFloat(
+                raw.replace(/px/, '').trim(),
+            )
+            return Number.isFinite(parsed)
+                ? parsed
+                : fallback
+        } catch {
+            return fallback
+        }
+    }
+
+    const resolvedMinWidth = (() => {
+        if (typeof minWidth === 'number') return minWidth
+        if (
+            typeof minWidth === 'string' &&
+            minWidth.endsWith('px')
+        )
+            return parseFloat(minWidth)
+        return readCssVar('--dropdown-min-width', 180)
+    })()
+
+    const resolvedMaxWidth = (() => {
+        if (typeof maxWidth === 'number') return maxWidth
+        if (
+            typeof maxWidth === 'string' &&
+            maxWidth.endsWith('px')
+        )
+            return parseFloat(maxWidth)
+        return readCssVar('--dropdown-max-width', 400)
+    })()
+
+    const [calculatedWidth, setCalculatedWidth] =
+        useState<number>(resolvedMinWidth)
 
     useLayoutEffect(() => {
         if (!isOpen || manualPosition) return
@@ -332,59 +372,42 @@ function DropdownContent({
         manualPosition,
     ])
 
-    const measureTextWidth = useCallback(
-        (
-            text: string,
-            font: string = "16px 'Roboto', sans-serif",
-        ): number => {
-            if (typeof document === 'undefined') return 0
-
-            const canvas = document.createElement('canvas')
-            const context = canvas.getContext('2d')
-            if (!context) return 0
-
-            context.font = font
-            const metrics = context.measureText(text)
-            return metrics.width
-        },
-        [],
-    )
-
     const measureDropdownWidth = useCallback(() => {
+        const minW = resolvedMinWidth
+        const maxW = resolvedMaxWidth
         if (!contentRef.current || width !== 'auto')
-            return minWidth
+            return minW
 
         const itemElements =
             contentRef.current.querySelectorAll(
                 '.dropdown-item',
             )
-        if (itemElements.length === 0) return minWidth
+        if (itemElements.length === 0) return minW
 
-        let maxTextWidth = 0
+        let maxItemWidth = 0
 
         itemElements.forEach((item) => {
-            const textElement = item.querySelector(
-                '.dropdown-item-text',
-            )
-            if (textElement) {
-                const text = textElement.textContent || ''
-                const textWidth = measureTextWidth(text)
-                maxTextWidth = Math.max(
-                    maxTextWidth,
-                    textWidth,
-                )
-            }
+            const el = item as HTMLElement
+            // Use scrollWidth to measure full content width including icons/padding
+            const itemWidth =
+                el.scrollWidth ||
+                el.getBoundingClientRect().width
+            maxItemWidth = Math.max(maxItemWidth, itemWidth)
         })
 
-        const totalWidth = Math.ceil(maxTextWidth + 96)
+        const extra = readCssVar(
+            '--dropdown-extra-padding',
+            96,
+        )
+        const totalWidth = Math.ceil(maxItemWidth + extra)
 
-        let finalWidth = Math.max(minWidth, totalWidth)
-        if (maxWidth && finalWidth > maxWidth) {
-            finalWidth = maxWidth
+        let finalWidth = Math.max(minW, totalWidth)
+        if (maxW && finalWidth > maxW) {
+            finalWidth = maxW as number
         }
 
         return finalWidth
-    }, [width, minWidth, maxWidth, measureTextWidth])
+    }, [width, resolvedMinWidth, resolvedMaxWidth])
 
     // Measure dropdown width synchronously before browser paints
     // Uses useLayoutEffect instead of useEffect because:
@@ -400,14 +423,18 @@ function DropdownContent({
         // Measure dropdown width only once when it opens
         // Using ref flag to avoid re-measuring on every effect run
         if (!hasMeasuredRef.current) {
-            const newWidth = measureDropdownWidth()
-            // This setState inside useLayoutEffect is VALID because:
-            // - It's a DOM measurement use case (documented in React docs)
-            // - No cascading renders: single useLayoutEffect → single setState → done
-            // - React batches this render with the layout measurement, browser doesn't paint between them
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCalculatedWidth(newWidth)
-            hasMeasuredRef.current = true
+            // Defer measurement to allow contentRef to be populated
+            const timeoutId = setTimeout(() => {
+                const newWidth = measureDropdownWidth()
+                // This setState inside useLayoutEffect is VALID because:
+                // - It's a DOM measurement use case (documented in React docs)
+                // - No cascading renders: single useLayoutEffect → single setState → done
+                // - React batches this render with the layout measurement, browser doesn't paint between them
+                setCalculatedWidth(newWidth)
+                hasMeasuredRef.current = true
+            }, 0)
+
+            return () => clearTimeout(timeoutId)
         }
 
         // Cleanup: Reset measurement flag when dropdown closes so we measure again on next open
@@ -426,7 +453,7 @@ function DropdownContent({
                   width === 'auto'
                       ? calculatedWidth
                       : width,
-              minWidth: minWidth,
+              minWidth: resolvedMinWidth,
               position: 'fixed' as const,
               top: manualPosition.top,
               left: manualPosition.left,
@@ -439,7 +466,8 @@ function DropdownContent({
                   width === 'auto'
                       ? calculatedWidth
                       : width,
-              minWidth: minWidth,
+              minWidth: resolvedMinWidth,
+              maxWidth: resolvedMaxWidth,
               ...position,
               ...(style as CSSProperties),
           }
@@ -449,19 +477,12 @@ function DropdownContent({
             ref={menuRef}
             role="menu"
             style={contentStyle}
-            className={cn(
-                `
-                  absolute z-60 max-h-[calc(100vh-32px)] overflow-hidden
-                  rounded-xl bg-(--color-white-bg)
-                  shadow-(--color-context-shadow)
-                `,
-                className,
-            )}
+            className={cn(styles.dropdownMenu, className)}
             {...props}
         >
             <div
                 ref={contentRef}
-                className={`flex max-h-[inherit] flex-col overflow-auto`}
+                className={styles.dropdownContent}
             >
                 {items?.map((item, index) => (
                     <DropdownItem
@@ -536,7 +557,7 @@ function DropdownItem({
     return (
         <>
             {hasDivider && (
-                <div className="my-1 border-t border-(--color-black-alpha-20)" />
+                <div className={styles.dropdownDivider} />
             )}
             <button
                 type="button"
@@ -546,52 +567,31 @@ function DropdownItem({
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
                 className={cn(
-                    `
-                      flex w-full items-center justify-between gap-4 border-b
-                      border-(--color-black-alpha-20) px-4 py-2.5 text-left
-                      text-base leading-[130%] font-normal transition-colors
-                      duration-150
-                      last:border-b-0
-                    `,
+                    'dropdown-item',
+                    styles.dropdownItem,
                     {
-                        'cursor-not-allowed text-text-gray':
-                            disabled,
-                        'cursor-pointer text-system-red hover:bg-system-red-surface':
-                            danger,
-                        'cursor-pointer text-text-black hover:bg-gray-light':
-                            !disabled && !danger, // default
+                        [styles.danger]: danger,
+                        [styles.default]:
+                            !disabled && !danger,
                     },
-
                     className,
                 )}
                 {...props}
             >
-                <span
-                    className={`dropdown-item-content flex-1 truncate`}
-                >
+                <span className={styles.dropdownItemText}>
                     {label ?? children}
                 </span>
-                <div className="flex shrink-0 items-center gap-2">
-                    {/* Иконка слева от текста (если нужна) */}
+                <div className={styles.dropdownItemIcons}>
                     {icon && (
                         <span
-                            className={`
-                              flex h-5 w-5 items-center justify-center
-                              text-(--color-text-gray) opacity-80
-                            `}
+                            className={styles.dropdownIcon}
                         >
                             {icon}
                         </span>
                     )}
                 </div>
-                {/* Иконка справа от текста */}
                 {rightIcon && (
-                    <span
-                        className={`
-                          flex h-5 w-5 items-center justify-center
-                          text-(--color-text-gray) opacity-80
-                        `}
-                    >
+                    <span className={styles.dropdownIcon}>
                         {rightIcon}
                     </span>
                 )}
