@@ -55,10 +55,9 @@ export default function SupportForm() {
         >
             <header
                 className={`
-                                  flex items-center justify-start gap-3
-                                  rounded-t-md border-b border-app-divider
-                                  bg-gray-main px-6 py-4
-                                `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <button
                     type="button"
@@ -73,9 +72,8 @@ export default function SupportForm() {
                 </button>
                 <h2
                     className={`
-                                          text-lg font-medium
-                                          tracking-extra-tight text-text-black
-                                        `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     Обращение в поддержку
                 </h2>
@@ -105,10 +103,8 @@ export default function SupportForm() {
                         <div className="flex flex-col gap-6">
                             <h1
                                 className={`
-                                                                  text-display-24
-                                                                  font-medium
-                                                                  text-text-black
-                                                                `}
+                                  text-display-24 font-medium text-text-black
+                                `}
                             >
                                 Обращение отправлено!
                             </h1>

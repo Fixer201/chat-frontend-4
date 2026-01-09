@@ -1,14 +1,36 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import {
+    type CSSProperties,
+    type HTMLAttributes,
+    type ReactNode,
+    useEffect,
+    useRef,
+    useCallback,
+} from 'react'
+
+import { cn } from '@shared/lib/utils'
 import customStyle from '@shared/ui/CustomScrollbar/CustomScrollbar.module.css'
+
+interface CustomScrollbarProps {
+    children: ReactNode
+    className?: string
+    contentClassName?: string
+    contentProps?: HTMLAttributes<HTMLDivElement>
+    style?: CSSProperties
+    contentStyle?: CSSProperties
+    autoHeight?: boolean
+}
+
 export function CustomScrollbar({
     children,
     className = '',
-}: {
-    children: React.ReactNode
-    className?: string
-}) {
+    contentClassName = '',
+    contentProps,
+    style,
+    contentStyle,
+    autoHeight = false,
+}: CustomScrollbarProps) {
     const contentRef = useRef<HTMLDivElement>(null)
     const thumbRef = useRef<HTMLDivElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -191,34 +213,44 @@ export function CustomScrollbar({
     return (
         <div
             ref={containerRef}
-            className={`
-              ${customStyle['custom-scroll-container']}
-              ${className}
-            `}
+            className={cn(
+                customStyle['custom-scroll-container'],
+                autoHeight &&
+                    customStyle[
+                        'custom-scroll-container-auto'
+                    ],
+                className,
+            )}
+            style={style}
         >
             <div
                 ref={contentRef}
-                className={`
-                  ${customStyle['custom-scroll-content']}
-                `}
+                className={cn(
+                    customStyle['custom-scroll-content'],
+                    contentClassName,
+                )}
+                style={contentStyle}
+                {...contentProps}
             >
                 {children}
             </div>
             <div
-                className={`
-                  ${customStyle['custom-scrollbar']}
-                `}
+                className={customStyle['custom-scrollbar']}
             >
                 <div
-                    className={`
-                      ${customStyle['custom-scrollbar-track']}
-                    `}
+                    className={
+                        customStyle[
+                            'custom-scrollbar-track'
+                        ]
+                    }
                 />
                 <div
                     ref={thumbRef}
-                    className={`
-                      ${customStyle['custom-scrollbar-thumb']}
-                    `}
+                    className={
+                        customStyle[
+                            'custom-scrollbar-thumb'
+                        ]
+                    }
                     onMouseDown={handleThumbMouseDown}
                 />
             </div>
