@@ -135,7 +135,7 @@ export const ChatListItem = forwardRef<
                               bg-(--color-accent-violet-primary)
                               hover:bg-(--color-accent-violet-primary)
                             `
-                            : 'hover:bg-(--color-gray-main)',
+                            : 'hover:bg-(--color-accent-violet-light)',
                         'hover:rounded-lg',
                         selected && 'rounded-lg',
                     )}

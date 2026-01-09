@@ -66,7 +66,7 @@ export const ChatAvatar = forwardRef<
                     `,
                     'relative rounded-none',
                     selected &&
-                        'bg-(--color-accent-violet-primary)',
+                        'hover:bg-(--color-accent-violet-light)',
                     className,
                 )}
                 {...props}
@@ -119,9 +119,7 @@ export const ChatAvatar = forwardRef<
                                 className={cn(
                                     'truncate text-sm',
                                     selected
-                                        ? `
-                                              text-(--color-white-bg) opacity-80
-                                            `
+                                        ? `text-(--color-white-bg) opacity-80`
                                         : 'text-(--color-text-gray)',
                                 )}
                             >
