@@ -12,7 +12,7 @@ import { useSearch } from '@shared/hooks/useSearch'
 import { ChatListItem } from './ChatListItem'
 import ChatDeleteModal from './ChatDeleteModal'
 import ChatSuccessToast from './ChatSuccessToast'
-import EmptySearchState from './emptySearchState/EmptySearchState'
+import EmptySearchState from '../../../shared/ui/emptySearchState/EmptySearchState'
 import EmptyChatsState from './emptyChatsState/EmptyChatsState'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { useRouter } from 'next/navigation'
@@ -205,8 +205,8 @@ export default function ChatsList() {
             <div className="flex h-full flex-col">
                 <div
                     className={`
-                 flex h-19 w-full items-center gap-2.5 bg-[#F5F6F8] p-4
-               `}
+                      flex h-19 w-full items-center gap-2.5 bg-[#F5F6F8] p-4
+                    `}
                 >
                     <Search
                         value={searchValue}
@@ -219,13 +219,13 @@ export default function ChatsList() {
                         <button
                             type="button"
                             className={`
-              flex-shrink-0 rounded-lg p-2 transition-colors
-              hover:bg-gray-200
-            `}
+                              flex-shrink-0 rounded-lg p-2 transition-colors
+                              hover:bg-gray-200
+                            `}
                             aria-label="Фильтр"
                         >
                             <Image
-                                src="/icons/app-sidebar/settings.svg"
+                                src="/icons/createCollab.svg"
                                 alt="filter"
                                 width={20}
                                 height={20}
@@ -234,39 +234,39 @@ export default function ChatsList() {
                     )}
                 </div>
                 <div className="h-11/12 flex-1 overflow-y-auto bg-[#F5F6F8]">
-                    <CustomScrollbar>
-                        {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
-                        {loading ? (
-                            <div
-                                className={`
+                    {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
+                    {loading ? (
+                        <div
+                            className={`
                                   flex h-full items-center justify-center
                                 `}
-                            >
-                                <div className="text-text-gray">
-                                    Загрузка...
-                                </div>
+                        >
+                            <div className="text-text-gray">
+                                Загрузка...
                             </div>
-                        ) : showEmptySearchState ? (
-                            <div
-                                className={`
+                        </div>
+                    ) : showEmptySearchState ? (
+                        <div
+                            className={`
                                   flex flex-1 items-center justify-center p-4
                                 `}
-                            >
-                                <EmptySearchState />
-                            </div>
-                        ) : showEmptyChatsState ? (
-                            <div
-                                className={`
+                        >
+                            <EmptySearchState />
+                        </div>
+                    ) : showEmptyChatsState ? (
+                        <div
+                            className={`
                                   flex flex-1 items-center justify-center p-4
                                 `}
-                            >
-                                <EmptyChatsState
-                                    onStartChat={
-                                        handleStartChat
-                                    }
-                                />
-                            </div>
-                        ) : (
+                        >
+                            <EmptyChatsState
+                                onStartChat={
+                                    handleStartChat
+                                }
+                            />
+                        </div>
+                    ) : (
+                        <CustomScrollbar>
                             <div className="flex flex-col">
                                 {sortedChats?.map(
                                     (chat, index) => {
@@ -409,8 +409,8 @@ export default function ChatsList() {
                                     },
                                 )}
                             </div>
-                        )}
-                    </CustomScrollbar>
+                        </CustomScrollbar>
+                    )}
                 </div>
             </div>
             <ChatDeleteModal

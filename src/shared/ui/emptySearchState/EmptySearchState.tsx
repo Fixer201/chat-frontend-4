@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { cn } from '@shared/lib/utils'
-import customStyles from '@modules/chats-list/components/emptySearchState/emptySearchState.module.css'
+import customStyles from './emptySearchState.module.css'
 interface EmptySearchStateProps {
     className?: string
 }
@@ -40,7 +40,7 @@ export default function EmptySearchState({
                 </div>
 
                 {/* Текстовый блок */}
-                <div className="flex w-full flex-col items-center gap-6">
+                <div className="flex w-full flex-col items-center gap-2">
                     {/* Заголовок */}
                     <div className="w-full">
                         <h3
@@ -53,7 +53,7 @@ export default function EmptySearchState({
                     </div>
 
                     {/* Описание */}
-                    <div className="flex w-full flex-col gap-3">
+                    <div className="flex w-full flex-col gap-2">
                         <p
                             className={`
                               ${customStyles['empty-search-text']}

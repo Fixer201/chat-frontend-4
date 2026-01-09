@@ -12,6 +12,8 @@ import { getContactWord } from '@shared/lib/getContactWord'
 import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
 import { ContactItem } from './ContactItem'
 import Search from '@shared/ui/Search'
+import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -110,61 +112,44 @@ export default function ContactsList() {
             {/* контейнер контактов */}
             <div
                 className={`
-                  relative custom-scroll flex h-11/12 w-full flex-0 flex-col
-                  gap-4 overflow-hidden
-                  hover:overflow-auto
+                  relative flex h-11/12 w-full flex-0 flex-col gap-4
+                  overflow-hidden
                 `}
             >
                 {filteredContacts &&
                 filteredContacts.length > 0 ? (
-                    filteredContacts.map((contact) => (
-                        <ContactItem
-                            key={contact.uid}
-                            contact={contact}
-                            deleteMode={deleteMode}
-                            selectedUid={selectedUid}
-                            selectedContacts={
-                                selectedContacts
-                            }
-                            searchValue={searchValue}
-                            onSelectContact={
-                                handleSelectContact
-                            }
-                            onSetSelectedContact={(
-                                uid: string,
-                            ) =>
-                                dispatch(
-                                    setSelectedContact(uid),
-                                )
-                            }
-                        />
-                    ))
+                    <CustomScrollbar>
+                        {filteredContacts.map((contact) => (
+                            <ContactItem
+                                key={contact.uid}
+                                contact={contact}
+                                deleteMode={deleteMode}
+                                selectedUid={selectedUid}
+                                selectedContacts={
+                                    selectedContacts
+                                }
+                                searchValue={searchValue}
+                                onSelectContact={
+                                    handleSelectContact
+                                }
+                                onSetSelectedContact={(
+                                    uid: string,
+                                ) =>
+                                    dispatch(
+                                        setSelectedContact(
+                                            uid,
+                                        ),
+                                    )
+                                }
+                            />
+                        ))}
+                    </CustomScrollbar>
                 ) : searchValue.trim() ? (
                     // блок для пустого поиска
                     <div
-                        className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                        className={`flex flex-1 items-center justify-center p-4`}
                     >
-                        <Image
-                            src="/images/search/imgSearchWeb.svg"
-                            alt="iconsSearch"
-                            width={200}
-                            height={200}
-                            style={{
-                                width: '200px',
-                                height: '200px',
-                            }}
-                        />
-                        <p className="mt-2 text-text-gray">
-                            Поиск не дал результатов
-                        </p>
-                        <p className="text-sm text-text-gray">
-                            По вашему запросу ничего не
-                            найдено. <br /> Измените запрос
-                            и попробуйте снова
-                        </p>
+                        <EmptySearchState />
                     </div>
                 ) : (
                     // блок для пустого списка контактов

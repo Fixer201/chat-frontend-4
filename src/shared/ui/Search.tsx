@@ -28,15 +28,16 @@ export default function Search({
     return (
         <div
             className={`
-      min-w-0 flex-1
-      ${className}
-    `}
+              min-w-0 flex-1
+              ${className}
+            `}
         >
             <div
                 className={`
-            relative flex h-11 w-full min-w-0 items-center gap-2 rounded-lg
-            border border-gray-300 bg-[var(--color-white-bg)] px-3 pr-10
-          `}
+                  relative flex h-11 w-full min-w-0 items-center gap-2
+                  rounded-lg border border-gray-300 bg-[var(--color-white-bg)]
+                  px-3 pr-10
+                `}
             >
                 {leftIconSrc && (
                     <Image
@@ -60,11 +61,11 @@ export default function Search({
                     }
                     aria-label={ariaLabel}
                     className={`
-            h-11 w-full min-w-0 bg-transparent py-2.5 text-sm
-            placeholder:text-gray-400
-            focus:border-transparent focus:outline-none
-            ${inputClassName}
-          `}
+                      h-11 w-full min-w-0 bg-transparent py-2.5 text-sm
+                      placeholder:text-gray-400
+                      focus:border-transparent focus:outline-none
+                      ${inputClassName}
+                    `}
                 />
 
                 {showClearButton && value && (
@@ -72,10 +73,10 @@ export default function Search({
                         type="button"
                         onClick={() => onChange('')}
                         className={`
-                absolute top-1/2 right-3 -translate-y-1/2 transform rounded-full
-                p-1 transition-all duration-200
-                hover:bg-gray-100
-              `}
+                          absolute top-1/2 right-3 -translate-y-1/2 transform
+                          rounded-full p-1 transition-all duration-200
+                          hover:bg-gray-100
+                        `}
                         aria-label="Очистить поиск"
                     >
                         <Image
@@ -88,9 +89,9 @@ export default function Search({
                                 height: '14px',
                             }}
                             className={`
-                opacity-60 transition-opacity
-                hover:opacity-100
-              `}
+                              opacity-60 transition-opacity
+                              hover:opacity-100
+                            `}
                         />
                     </button>
                 )}
