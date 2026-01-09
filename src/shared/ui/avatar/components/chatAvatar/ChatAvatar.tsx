@@ -108,31 +108,27 @@ export const ChatAvatar = forwardRef<
                                     className={cn(
                                         'truncate text-sm',
                                         selected
-                                            ? `
-                                              text-(--color-white-bg) opacity-80
-                                            `
-                                            : 'text-(--color-text-gray)',
+                                            ? 'brightness-0 invert'
+                                            : 'opacity-70',
                                     )}
                                 />
                             )}
-                            
                         </div>
                         {messagePreview && (
-                                <p
-                                    className={cn(
-                                        'truncate text-sm',
-                                        selected
-                                            ? `
+                            <p
+                                className={cn(
+                                    'truncate text-sm',
+                                    selected
+                                        ? `
                                               text-(--color-white-bg) opacity-80
                                             `
-                                            : 'text-(--color-text-gray)',
-                                    )}
-                                >
-                                    {messagePreview}
-                                </p>
-                            )}
+                                        : 'text-(--color-text-gray)',
+                                )}
+                            >
+                                {messagePreview}
+                            </p>
+                        )}
                     </div>
-                    
                 </div>
                 {hasRightSection && (
                     <ChatAvatarRightSection
