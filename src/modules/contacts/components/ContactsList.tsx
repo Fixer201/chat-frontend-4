@@ -1,5 +1,4 @@
 'use client'
-import ContactsSearch from './ContactsSearch'
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
@@ -12,6 +11,7 @@ import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
 import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
 import { ContactItem } from './ContactItem'
+import Search from '@shared/ui/Search'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -84,10 +84,15 @@ export default function ContactsList() {
 
     return (
         <>
-            <ContactsSearch
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-            />
+            <div className="flex h-19 w-full items-center gap-2.5 p-4">
+                <Search
+                    value={searchValue}
+                    onChange={setSearchValue}
+                    placeholder="Поиск"
+                    clearIconSrc="/images/search/closeSearch.svg"
+                    showClearButton={true}
+                />
+            </div>
 
             {/* панель для режима удаления (если контакты есть) */}
             {filteredContacts &&
