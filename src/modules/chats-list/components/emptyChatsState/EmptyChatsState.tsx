@@ -57,7 +57,8 @@ export default function EmptyChatsState({
                                 ],
                                 `
                                   text-center text-base leading-[130%]
-                                  font-normal tracking-[0.01em] text-text-gray
+                                  font-normal tracking-extra-tight
+                                  text-text-gray
                                   sm:text-lg
                                 `,
                             )}
