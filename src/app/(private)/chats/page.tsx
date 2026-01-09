@@ -9,7 +9,7 @@ export default function ChatsPage() {
             {/* Левая колонка - список чатов */}
             <div
                 className={`
-                  h-11/12 w-full rounded-md bg-gray-main
+                  h-11/12 w-full rounded-md border border-gray-200 bg-gray-main
                   md:w-80
                   lg:w-96
                 `}
@@ -20,7 +20,8 @@ export default function ChatsPage() {
             {/* Правая колонка - пустой state (скрыт на mobile) */}
             <div
                 className={`
-                  hidden h-11/12 flex-1
+                  hidden h-11/12 flex-1 rounded-md border border-gray-200
+                  bg-gray-main
                   md:block
                 `}
             >
