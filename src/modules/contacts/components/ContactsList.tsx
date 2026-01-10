@@ -82,7 +82,7 @@ export default function ContactsList() {
 
     return (
         <>
-            <div className="flex h-1/12 min-h-15 items-center bg-[#F5F6F8] px-4">
+            <div className="flex h-1/12 min-h-15 items-center bg-(--color-gray-main) px-4">
                 <Search
                     value={searchValue}
                     onChange={setSearchValue}
