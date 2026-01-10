@@ -1,4 +1,5 @@
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import {
