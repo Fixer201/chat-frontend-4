@@ -243,11 +243,19 @@ export default function CodeConfirmForm({
                                                 </p>
                                             </div>
                                             <div
-                                                className={`
-                        absolute left-14 z-10 h-4 w-14 border-t-18 border-r-27
-                        border-l-27 border-t-accent-violet-dark
-                        border-r-transparent
-                      `}
+                                                className="absolute z-10"
+                                                style={{
+                                                    top: '276px',
+                                                    left: 'calc(50% - 52px)',
+                                                    width: '48px',
+                                                    height: '18px',
+                                                    borderTop:
+                                                        '18px solid var(--color-accent-violet-dark)',
+                                                    borderLeft:
+                                                        '24px solid transparent',
+                                                    borderRight:
+                                                        '24px solid transparent',
+                                                }}
                                             ></div>
                                         </>
                                     )}

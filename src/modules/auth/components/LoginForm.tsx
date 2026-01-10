@@ -166,7 +166,7 @@ export default function LoginForm() {
                 response.status,
                 data,
             )
-            if (response.ok || code === '11111') {
+            if (response.ok) {
                 // Сохраняем токены в localStorage
                 localStorage.setItem(
                     'refresh_token',
@@ -233,15 +233,6 @@ export default function LoginForm() {
                     body: JSON.stringify({
                         nickname: data.nickname,
                         first_name: data.name,
-                        last_name: '',
-                        patronymic: '',
-                        additional_information: '',
-                        birthday: 0,
-                        email: 'lialia1986@mail.ru', //пока временно
-                        gender: 'male',
-                        country: 'RU',
-                        city_id: 5,
-                        // phone: `+${phoneNumber.replace(/\D/g, '')}`,
                     }),
                 },
             )
