@@ -1,6 +1,5 @@
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
-import ContactsSearch from './ContactsSearch'
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
@@ -13,6 +12,7 @@ import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
 import { ContactItem } from './ContactItem'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
+import Search from '@shared/ui/Search'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -79,18 +79,16 @@ export default function ContactsList() {
             )
         }
     }
-    const clearSearchInput = () => {
-        setSearchValue('')
-    }
 
     return (
         <>
             <div className="flex h-1/12 min-h-15 items-center bg-[#F5F6F8] px-4">
-                <ContactsSearch
-                    searchValue={searchValue}
-                    setSearchValue={setSearchValue}
-                    clearSearchInput={clearSearchInput}
+                <Search
+                    value={searchValue}
+                    onChange={setSearchValue}
                     placeholder="Поиск"
+                    clearIconSrc="/images/search/iconsClose.svg"
+                    showClearButton={true}
                 />
             </div>
 
