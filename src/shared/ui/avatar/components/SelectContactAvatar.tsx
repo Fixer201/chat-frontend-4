@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'

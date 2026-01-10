@@ -1,3 +1,5 @@
+/* eslint-disable better-tailwindcss/no-conflicting-classes */
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 
 import Image from 'next/image'
@@ -150,20 +152,19 @@ export default function SettingsMenu() {
                                     href={href}
                                     className={cn(
                                         `
-                                          flex w-full items-center gap-3
-                                          border-b border-app-divider p-4
+                                         flex w-full items-center
+                                          gap-3 border-b border-app-divider p-4
                                           text-left text-base text-text-black
                                           transition-colors
                                           hover:bg-(--color-accent-violet-ultra-light)
+                                          hover:bg-accent-violet-ultra-light
                                         `,
                                         index !==
                                             menuItems.length -
                                                 1 &&
                                             `border-b border-app-divider`,
                                         isActive &&
-                                            `
-                                              bg-(--color-accent-violet-ultra-light)
-                                            `,
+                                            `bg-accent-violet-ultra-light`,
                                     )}
                                     aria-current={
                                         isActive

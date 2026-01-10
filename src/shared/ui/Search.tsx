@@ -36,8 +36,8 @@ export default function Search({
             <div
                 className={`
                   relative flex h-11 w-full min-w-0 items-center gap-2
-                  rounded-lg border border-gray-300 bg-(--color-white-bg)
-                  px-3 pr-10
+                  rounded-lg border border-gray-300 bg-(--color-white-bg) px-3
+                  pr-10
                 `}
             >
                 {leftIconSrc && (

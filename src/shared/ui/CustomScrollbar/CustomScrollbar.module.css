@@ -1,85 +1,97 @@
 /* В CSS добавь: */
 .custom-scroll-container {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.custom-scroll-container-auto {
+    height: auto;
+    max-height: inherit;
 }
 
 .custom-scroll-content {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  overflow-y: scroll;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-right: 17px;
-  margin-right: -17px;
-  box-sizing: content-box;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-right: 17px;
+    margin-right: -17px;
+    box-sizing: content-box;
+}
+
+.custom-scroll-container-auto .custom-scroll-content {
+    height: auto;
+    max-height: inherit;
 }
 
 .custom-scroll-content::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 .custom-scrollbar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 6px;
-  z-index: 1000;
-  pointer-events: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    z-index: 1000;
+    pointer-events: none;
 }
 
 .custom-scrollbar-track {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 6px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
 }
 
 .custom-scroll-container:hover .custom-scrollbar-track {
-  opacity: 0.3;
-  background: #C5C5C5;
+    opacity: 0.3;
+    background: #c5c5c5;
 }
 
 .custom-scrollbar-thumb {
-  position: absolute;
-  right: 0;
-  width: 6px;
-  background: #C5C5C5;
-  border-radius: 4px;
-  cursor: pointer;
-  pointer-events: auto;
-  opacity: 0;
-  transition: opacity 0.3s, background 0.2s;
-  user-select: none;
-  touch-action: none;
+    position: absolute;
+    right: 0;
+    width: 6px;
+    background: #c5c5c5;
+    border-radius: 4px;
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 0;
+    transition:
+        opacity 0.3s,
+        background 0.2s;
+    user-select: none;
+    touch-action: none;
 }
 
 .custom-scroll-container:hover .custom-scrollbar-thumb {
-  opacity: 1;
+    opacity: 1;
 }
 
 .custom-scrollbar-thumb:hover {
-  background: #A5A5A5;
+    background: #a5a5a5;
 }
 
 .custom-scrollbar-thumb:active {
-  background: #858585;
+    background: #858585;
 }
 
 /* Стили для состояния drag */
 body.scrollbar-dragging {
-  user-select: none;
-  cursor: grabbing;
+    user-select: none;
+    cursor: grabbing;
 }
 
 body.scrollbar-dragging * {
-  cursor: grabbing !important;
+    cursor: grabbing !important;
 }
