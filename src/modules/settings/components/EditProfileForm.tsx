@@ -7,7 +7,7 @@ import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import Input from '@shared/ui/input/Input'
 import { Button } from '@shared/ui/button/Button'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
-import { DatePicker } from '@shared/ui/date-picker/DatePicker'
+import { DatePicker } from '@shared/ui/datePicker/DatePicker'
 
 const DEFAULT_BIRTHDAY = {
     day: 1,
