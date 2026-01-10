@@ -86,10 +86,9 @@ export default function SettingsMenu() {
             <div className="flex h-full w-full flex-col rounded-md bg-gray-main">
                 <div
                     className={`
-                                          mb-4 flex items-center justify-center
-                                          rounded-t-md border-b
-                                          border-app-divider bg-gray-main p-4
-                                        `}
+                      mb-4 flex items-center justify-center rounded-t-md
+                      border-b border-app-divider bg-gray-main p-4
+                    `}
                 >
                     <h1
                         className={`
@@ -151,30 +150,18 @@ export default function SettingsMenu() {
                                     href={href}
                                     className={cn(
                                         `
-                                                                                  flex
-                                                                                  w-full
-                                                                                  items-center
-                                                                                  gap-3
-                                                                                  border-b
-                                                                                  border-app-divider
-                                                                                  p-4
-                                                                                  text-left
-                                                                                  text-base
-                                                                                  text-text-black
-                                                                                  transition-colors
-                                                                                  hover:bg-(--color-accent-violet-ultra-light)
-                                                                                `,
+                                          flex w-full items-center gap-3
+                                          border-b border-app-divider p-4
+                                          text-left text-base text-text-black
+                                          transition-colors
+                                          hover:bg-accent-violet-ultra-light
+                                        `,
                                         index !==
                                             menuItems.length -
                                                 1 &&
-                                            `
-                                                                                          border-b
-                                                                                          border-app-divider
-                                                                                        `,
+                                            `border-b border-app-divider`,
                                         isActive &&
-                                            `
-                                              bg-(--color-accent-violet-ultra-light)
-                                            `,
+                                            `bg-accent-violet-ultra-light`,
                                     )}
                                     aria-current={
                                         isActive
