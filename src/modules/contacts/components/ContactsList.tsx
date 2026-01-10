@@ -13,6 +13,7 @@ import { getContactWord } from '@shared/lib/getContactWord'
 import { ContactItem } from './ContactItem'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
+import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -176,19 +177,7 @@ export default function ContactsList() {
                       text-center
                     `}
                         >
-                            <Image
-                                src="/images/search/nullContacts.svg"
-                                alt="iconsSearch"
-                                width={200}
-                                height={200}
-                                style={{
-                                    width: '200px',
-                                    height: '200px',
-                                }}
-                            />
-                            <p className="mt-2 text-text-gray">
-                                Список контактов пока пуст
-                            </p>
+                            <EmptySearchState />
                         </div>
                     )}
 
