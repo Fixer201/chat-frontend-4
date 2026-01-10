@@ -25,6 +25,8 @@ body {
     /* Custom App Colors - Text */
     --color-text-black: var(--app-text-black);
     --color-text-gray: var(--app-text-gray);
+    --tracking-extra-tight: var(--app-letter-spacing-tight);
+    --font-size-24: var(--app-font-size-24);
 
     /* Custom App Colors - Accent */
     --color-accent-violet-primary: var(
@@ -114,6 +116,7 @@ body {
         0%,
         0.2
     ); /* Gray tone/black (20%) */
+    --app-gray-border: #eeeeee; /* Divider border */
 
     /* Text Colors */
     --app-text-black: hsla(
@@ -123,6 +126,8 @@ body {
         1
     ); /* Text/Black */
     --app-text-gray: hsla(0, 0%, 45%, 1); /* Text/Gray */
+    --app-letter-spacing-tight: 0.01em; /* Tracking for section headings */
+    --app-font-size-24: 1.5rem; /* 24px */
     --app-black-gradient: linear-gradient(
         181.47deg,
         hsla(0, 0%, 84%, 1) -221.42%,
@@ -257,6 +262,7 @@ body {
         0%,
         0.2
     ); /* Gray tone/black (20%) */
+    --app-gray-border: #eeeeee; /* Divider border */
 
     /* Text Colors */
     --app-text-black: hsla(
@@ -376,6 +382,18 @@ body {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+@utility tracking-extra-tight {
+    letter-spacing: var(--tracking-extra-tight);
+}
+
+@utility border-app-divider {
+    border-color: var(--color-gray-border);
+}
+
+@utility text-display-24 {
+    font-size: var(--font-size-24);
 }
 
 @utility custom-scroll {

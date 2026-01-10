@@ -8,7 +8,7 @@ export function AppHeader() {
                 className={`
                   mx-auto flex h-15 w-300 rotate-0 flex-row items-center
                   justify-between rounded-br-lg rounded-bl-lg border-r border-b
-                  border-l border-gray-200 bg-gray-main pr-4 pl-4 opacity-100
+                  border-l border-app-divider bg-gray-main pr-4 pl-4 opacity-100
                 `}
             >
                 <Image
