@@ -1,3 +1,5 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import {
@@ -90,10 +92,6 @@ export default function ChatsList() {
         if (!aIsFavorite && bIsFavorite) return 1
         return 0
     })
-
-    const clearSearchInput = () => {
-        setSearchValue('')
-    }
 
     const toSelectChat = (id: number): void => {
         if (id === selectedChatId) {
@@ -217,7 +215,7 @@ export default function ChatsList() {
                         <button
                             type="button"
                             className={`
-                              flex-shrink-0 rounded-lg p-2 transition-colors
+                              shrink-0 rounded-lg p-2 transition-colors
                               hover:bg-gray-200
                             `}
                             aria-label="Фильтр"

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { Contact } from '@shared/types/contact'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
-import { getContactWebStatus } from '@shared/lib/getContactWebStatus'
+import { getStatusText } from '@shared/lib/getStatusText'
 
 interface ContactItemProps {
     contact: Contact
@@ -19,23 +19,20 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     deleteMode,
     selectedUid,
     selectedContacts,
+    searchValue,
     onSelectContact,
     onSetSelectedContact,
 }) => {
-    const [statusText, setStatusText] = useState('')
+    const [secondaryText, setSecondaryText] = useState('')
     useEffect(() => {
-        // Вычисляем статус на клиенте после гидрации для избежания mismatch.
-        // getContactWebStatus() использует new Date() для расчета относительного времени,
+        // Вычисляем secondaryText на клиенте после гидрации для избежания mismatch.
+        // getStatusText() использует getContactWebStatus(), который зависит от new Date(),
         // поэтому значение будет разным на сервере (SSR) и клиенте.
         // useEffect гарантирует, что вычисление происходит ТОЛЬКО после гидрации.
-        // https://nextjs.org/docs/messages/react-hydration-error
-        const status = getContactWebStatus(
-            contact.isOnline,
-            contact.wasOnlineAt,
-        )
+        const text = getStatusText(contact, searchValue)
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setStatusText(status)
-    }, [contact.isOnline, contact.wasOnlineAt])
+        setSecondaryText(text)
+    }, [contact, searchValue])
 
     return (
         <ContactAvatar
@@ -43,7 +40,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
             name={`${contact.firstName} ${contact.lastName}`}
             mode={deleteMode ? 'select-contact' : 'contact'}
             isOnline={contact.isOnline}
-            statusText={statusText}
+            statusText={secondaryText}
             onClick={() =>
                 !deleteMode &&
                 onSetSelectedContact(contact.uid)

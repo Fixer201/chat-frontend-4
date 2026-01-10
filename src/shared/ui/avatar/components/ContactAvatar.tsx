@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Badge } from '@shared/ui/badge/Badge'
 import { cn } from '@shared/lib/utils'
@@ -30,10 +31,8 @@ const rowBaseClasses =
     'flex gap-3 px-3 py-2 rounded-md transition-colors duration-200 select-none cursor-pointer'
 
 const modeClasses: Record<AvatarMode, string> = {
-    contact:
-        'bg-gray-light hover:bg-(--color-accent-violet-primary)',
-    'select-contact':
-        'bg-gray-light hover:bg-(--color-accent-violet-dark)/60',
+    contact: 'bg-(--color-gray-light)',
+    'select-contact': 'bg-(--color-gray-light)',
 }
 
 export const ContactAvatar = forwardRef<
@@ -83,7 +82,6 @@ export const ContactAvatar = forwardRef<
                 className={cn(
                     rowBaseClasses,
                     modeClasses[mode],
-                    'group',
                     isHighlighted &&
                         'bg-(--color-accent-violet-primary)',
                     className,
@@ -91,31 +89,38 @@ export const ContactAvatar = forwardRef<
                 {...props}
             >
                 <div
-                    className={cn(
-                        `
-                          relative h-15 w-15 shrink-0 overflow-hidden
-                          rounded-full bg-gray-200 p-4
-                        `,
-                    )}
+                    className={`
+                  relative h-15 w-15 shrink-0 overflow-hidden rounded-full
+                  bg-gray-200 p-4
+                `}
                 >
                     <Image
                         src={src}
                         alt={alt ?? name}
                         fill
                         sizes={'40px'}
-                        className="object-cover"
+                        className={`
+                      object-cover
+                    `}
                     />
                 </div>
-                <div className="min-w-0 flex-1 border-b border-b-gray-200">
+                <div
+                    className={`
+                  min-w-0 flex-1 border-b border-(--color-gray-border)
+                `}
+                >
                     <div className="flex min-w-0 flex-col">
                         <div className="flex items-center gap-2">
                             <p
                                 className={cn(
-                                    'truncate text-base font-medium',
+                                    `
+                                      truncate text-base font-medium
+                                    `,
                                     isHighlighted
                                         ? 'text-(--color-white-bg)'
-                                        : 'text-(--color-text-black)',
-                                    'group-hover:text-(--color-white-bg)',
+                                        : `
+                                      text-(--color-text-black)
+                                    `,
                                 )}
                             >
                                 {name}
@@ -125,16 +130,16 @@ export const ContactAvatar = forwardRef<
                         {secondaryText && (
                             <p
                                 className={cn(
-                                    'truncate text-sm',
-
+                                    `
+                                      truncate text-sm
+                                    `,
                                     isHighlighted
-                                        ? 'text-white/80'
+                                        ? 'text-(--color-white-bg)'
                                         : isOnline
                                           ? `
-                                            text-(--color-accent-violet-primary)
-                                          `
-                                          : 'text-(--color-text-gray)',
-                                    'group-hover:text-(--color-white-bg)',
+                                              text-(--color-accent-violet-primary)
+                                            `
+                                          : 'text-(--color-text-black)',
                                 )}
                             >
                                 {secondaryText}
@@ -145,8 +150,6 @@ export const ContactAvatar = forwardRef<
                 {showRightSection && (
                     <div
                         className={cn(
-                            'flex gap-2',
-
                             'ml-3 flex gap-2',
                             showChatMeta
                                 ? 'items-start'
@@ -154,45 +157,38 @@ export const ContactAvatar = forwardRef<
                         )}
                     >
                         {showChatMeta && (
-                            <div
-                                className={cn(
-                                    'flex flex-col gap-1',
-                                    'items-center',
-                                )}
-                            >
+                            <div className="flex flex-col items-center gap-1">
                                 {timestamp && (
                                     <span
                                         className={cn(
                                             `
                                               text-xs whitespace-nowrap
-                                              text-(--color-text-gray)
                                             `,
-
                                             isHighlighted
-                                                ? 'text-white/80'
-                                                : 'text-(--color-text-gray)',
+                                                ? 'text-(--color-white-bg)'
+                                                : `
+                                              text-(--color-text-black)
+                                            `,
                                         )}
                                     >
                                         {timestamp}
                                     </span>
                                 )}
-                                {
-                                    <Badge
-                                        variant="counter"
-                                        color="primary"
-                                        size="md"
-                                        className={
-                                            isHighlighted
-                                                ? `
-                                                  bg-white
-                                                  text-accent-violet-dark/60
-                                                `
-                                                : ''
-                                        }
-                                    >
-                                        {unreadCount}
-                                    </Badge>
-                                }
+                                <Badge
+                                    variant="counter"
+                                    color="primary"
+                                    size="md"
+                                    className={
+                                        isHighlighted
+                                            ? `
+                                      bg-white
+                                      text-(--color-accent-violet-primary)
+                                    `
+                                            : ''
+                                    }
+                                >
+                                    {unreadCount}
+                                </Badge>
                             </div>
                         )}
                         {showSelectIndicator && (
@@ -202,15 +198,8 @@ export const ContactAvatar = forwardRef<
                                       flex h-6 w-6 items-center justify-center
                                       rounded-full border-2
                                     `,
-                                    isHighlighted
-                                        ? `
-                                          border-(--color-white-bg)
-                                          bg-(--color-white-bg)
-                                        `
-                                        : `
-                                          border-(--color-accent-violet-primary)
-                                        `,
-                                    isSelected
+                                    isHighlighted ||
+                                        isSelected
                                         ? `
                                           border-(--color-white-bg)
                                           bg-(--color-white-bg)

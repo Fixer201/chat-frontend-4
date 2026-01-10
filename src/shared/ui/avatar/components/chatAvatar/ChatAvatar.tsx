@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
@@ -119,7 +120,9 @@ export const ChatAvatar = forwardRef<
                                 className={cn(
                                     'truncate text-sm',
                                     selected
-                                        ? `text-(--color-white-bg) opacity-80`
+                                        ? `
+                                              text-(--color-white-bg) opacity-80
+                                            `
                                         : 'text-(--color-text-gray)',
                                 )}
                             >
