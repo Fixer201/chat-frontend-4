@@ -1,6 +1,5 @@
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
-import ContactsSearch from './ContactsSearch'
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
@@ -12,6 +11,9 @@ import Modal from '@shared/ui/modal/Modal'
 import { removeContacts } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
 import { ContactItem } from './ContactItem'
+import Search from '@shared/ui/Search'
+import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -81,10 +83,15 @@ export default function ContactsList() {
 
     return (
         <>
-            <ContactsSearch
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-            />
+            <div className="flex h-19 w-full items-center gap-2.5 p-4">
+                <Search
+                    value={searchValue}
+                    onChange={setSearchValue}
+                    placeholder="Поиск"
+                    clearIconSrc="/images/search/closeSearch.svg"
+                    showClearButton={true}
+                />
+            </div>
 
             {/* панель для режима удаления (если контакты есть) */}
             {filteredContacts &&
@@ -109,28 +116,32 @@ export default function ContactsList() {
             >
                 {filteredContacts &&
                 filteredContacts.length > 0 ? (
-                    filteredContacts.map((contact) => (
-                        <ContactItem
-                            key={contact.uid}
-                            contact={contact}
-                            deleteMode={deleteMode}
-                            selectedUid={selectedUid}
-                            selectedContacts={
-                                selectedContacts
-                            }
-                            searchValue={searchValue}
-                            onSelectContact={
-                                handleSelectContact
-                            }
-                            onSetSelectedContact={(
-                                uid: string,
-                            ) =>
-                                dispatch(
-                                    setSelectedContact(uid),
-                                )
-                            }
-                        />
-                    ))
+                    <CustomScrollbar>
+                        {filteredContacts.map((contact) => (
+                            <ContactItem
+                                key={contact.uid}
+                                contact={contact}
+                                deleteMode={deleteMode}
+                                selectedUid={selectedUid}
+                                selectedContacts={
+                                    selectedContacts
+                                }
+                                searchValue={searchValue}
+                                onSelectContact={
+                                    handleSelectContact
+                                }
+                                onSetSelectedContact={(
+                                    uid: string,
+                                ) =>
+                                    dispatch(
+                                        setSelectedContact(
+                                            uid,
+                                        ),
+                                    )
+                                }
+                            />
+                        ))}
+                    </CustomScrollbar>
                 ) : searchValue.trim() ? (
                     // блок для пустого поиска
 
@@ -140,24 +151,7 @@ export default function ContactsList() {
                       text-center
                     `}
                     >
-                        <Image
-                            src="/images/search/imgSearchWeb.svg"
-                            alt="iconsSearch"
-                            width={200}
-                            height={200}
-                            style={{
-                                width: '200px',
-                                height: '200px',
-                            }}
-                        />
-                        <p className="mt-2 text-text-gray">
-                            Поиск не дал результатов
-                        </p>
-                        <p className="text-sm text-text-gray">
-                            По вашему запросу ничего не
-                            найдено. <br /> Измените запрос
-                            и попробуйте снова
-                        </p>
+                        <EmptySearchState />
                     </div>
                 ) : (
                     // блок для пустого списка контактов

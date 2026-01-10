@@ -83,7 +83,7 @@ export const ContactAvatar = forwardRef<
                 className={cn(
                     rowBaseClasses,
                     modeClasses[mode],
-
+                    'group',
                     isHighlighted &&
                         'bg-(--color-accent-violet-primary)',
                     className,
@@ -115,6 +115,7 @@ export const ContactAvatar = forwardRef<
                                     isHighlighted
                                         ? 'text-(--color-white-bg)'
                                         : 'text-(--color-text-black)',
+                                    'group-hover:text-(--color-white-bg)',
                                 )}
                             >
                                 {name}
@@ -133,6 +134,7 @@ export const ContactAvatar = forwardRef<
                                             text-(--color-accent-violet-primary)
                                           `
                                           : 'text-(--color-text-gray)',
+                                    'group-hover:text-(--color-white-bg)',
                                 )}
                             >
                                 {secondaryText}

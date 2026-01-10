@@ -66,7 +66,7 @@ export const ChatAvatar = forwardRef<
                     `,
                     'relative rounded-none',
                     selected &&
-                        'bg-(--color-accent-violet-primary)',
+                        'hover:bg-(--color-accent-violet-light)',
                     className,
                 )}
                 {...props}
@@ -108,31 +108,25 @@ export const ChatAvatar = forwardRef<
                                     className={cn(
                                         'truncate text-sm',
                                         selected
-                                            ? `
-                                              text-(--color-white-bg) opacity-80
-                                            `
-                                            : 'text-(--color-text-gray)',
+                                            ? 'brightness-0 invert'
+                                            : 'opacity-70',
                                     )}
                                 />
                             )}
-                            
                         </div>
                         {messagePreview && (
-                                <p
-                                    className={cn(
-                                        'truncate text-sm',
-                                        selected
-                                            ? `
-                                              text-(--color-white-bg) opacity-80
-                                            `
-                                            : 'text-(--color-text-gray)',
-                                    )}
-                                >
-                                    {messagePreview}
-                                </p>
-                            )}
+                            <p
+                                className={cn(
+                                    'truncate text-sm',
+                                    selected
+                                        ? `text-(--color-white-bg) opacity-80`
+                                        : 'text-(--color-text-gray)',
+                                )}
+                            >
+                                {messagePreview}
+                            </p>
+                        )}
                     </div>
-                    
                 </div>
                 {hasRightSection && (
                     <ChatAvatarRightSection
