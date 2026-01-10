@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 import Image from 'next/image'
 
 export default function ContactHeader() {

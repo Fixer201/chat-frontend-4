@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
@@ -115,24 +116,22 @@ export const ChatAvatar = forwardRef<
                                     )}
                                 />
                             )}
-                            
                         </div>
                         {messagePreview && (
-                                <p
-                                    className={cn(
-                                        'truncate text-sm',
-                                        selected
-                                            ? `
+                            <p
+                                className={cn(
+                                    'truncate text-sm',
+                                    selected
+                                        ? `
                                               text-(--color-white-bg) opacity-80
                                             `
-                                            : 'text-(--color-text-gray)',
-                                    )}
-                                >
-                                    {messagePreview}
-                                </p>
-                            )}
+                                        : 'text-(--color-text-gray)',
+                                )}
+                            >
+                                {messagePreview}
+                            </p>
+                        )}
                     </div>
-                    
                 </div>
                 {hasRightSection && (
                     <ChatAvatarRightSection
