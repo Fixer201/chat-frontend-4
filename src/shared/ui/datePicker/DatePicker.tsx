@@ -229,10 +229,10 @@ const SelectField = ({
                             `,
                             isOpen &&
                                 `
-                              rounded-b-none border-b-0
-                              border-accent-violet-primary
-                              shadow-(--color-context-shadow)
-                            `,
+                                  rounded-b-none border-b-0
+                                  border-accent-violet-primary
+                                  shadow-(--color-context-shadow)
+                                `,
                             !selectedOption &&
                                 `text-text-gray`,
                         )}
