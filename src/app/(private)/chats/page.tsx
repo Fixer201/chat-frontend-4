@@ -1,7 +1,7 @@
 'use client'
 
-import ChatsList from '@modules/chats-list/components/ChatsList'
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
+import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 
 export default function ChatsPage() {
     return (
@@ -14,7 +14,7 @@ export default function ChatsPage() {
                   lg:w-96
                 `}
             >
-                <ChatsList />
+                <ChatsListWrapper />
             </div>
 
             {/* Правая колонка - пустой state (скрыт на mobile) */}

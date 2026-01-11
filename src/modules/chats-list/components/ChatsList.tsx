@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
@@ -23,8 +22,14 @@ import Search from '@shared/ui/Search'
 import Image from 'next/image'
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 import CreateMenuButton from './CreateMenuButton'
-
-export default function ChatsList() {
+interface ChatsListProps {
+    onCreateGroup?: () => void
+    onCreateChannel?: () => void
+}
+export default function ChatsList({
+    onCreateGroup,
+    onCreateChannel,
+}: ChatsListProps) {
     const router = useRouter()
     const [createMenuPosition, setCreateMenuPosition] =
         useState({ top: 0, left: 0 })
@@ -229,9 +234,13 @@ export default function ChatsList() {
                     />
 
                     <CreateMenuButton
-                        onSelectGroup={handleCreateGroup}
+                        onSelectGroup={
+                            onCreateGroup ||
+                            (() => alert('Создать группу'))
+                        }
                         onSelectChannel={
-                            handleCreateChannel
+                            onCreateChannel ||
+                            (() => alert('Создать канал'))
                         }
                     />
                 </div>

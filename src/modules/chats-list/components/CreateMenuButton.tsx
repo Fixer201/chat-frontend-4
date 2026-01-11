@@ -58,22 +58,6 @@ export default function CreateMenuButton({
         [menuWidth],
     )
 
-    const handleCreateGroup = useCallback(() => {
-        if (onSelectGroup) {
-            onSelectGroup()
-        } else {
-            alert('Создать группу')
-        }
-    }, [onSelectGroup])
-
-    const handleCreateChannel = useCallback(() => {
-        if (onSelectChannel) {
-            onSelectChannel()
-        } else {
-            alert('Создать канал')
-        }
-    }, [onSelectChannel])
-
     return (
         <Dropdown>
             <Dropdown.Trigger>
@@ -104,7 +88,7 @@ export default function CreateMenuButton({
             >
                 <Dropdown.Item
                     label="Создать группу"
-                    onSelect={handleCreateGroup}
+                    onSelect={onSelectGroup}
                     rightIcon={
                         <Image
                             src="/icons/chatList/createGroup.svg"
@@ -117,7 +101,7 @@ export default function CreateMenuButton({
                 />
                 <Dropdown.Item
                     label="Создать канал"
-                    onSelect={handleCreateChannel}
+                    onSelect={onSelectChannel}
                     rightIcon={
                         <Image
                             src="/icons/chatList/createChannel.svg"
