@@ -9,11 +9,16 @@ body {
 }
 
 @theme inline {
-    --radius-sm: calc(var(--radius) - 4px); /* 6px */
-    --radius-md: calc(var(--radius) - 2px); /* 8px */
-    --radius-lg: var(--radius); /* 10px */
-    --radius-xl: calc(var(--radius) + 4px); /* 14px */
-    --radius-3xl: calc(var(--radius) + 10px); /* 20px */
+    --radius-sm: calc(var(--radius) - 4px);
+    /* 6px */
+    --radius-md: calc(var(--radius) - 2px);
+    /* 8px */
+    --radius-lg: var(--radius);
+    /* 10px */
+    --radius-xl: calc(var(--radius) + 4px);
+    /* 14px */
+    --radius-3xl: calc(var(--radius) + 10px);
+    /* 20px */
     /* UI Component Colors */
     /* Custom App Colors - Primary */
     --color-white-bg: var(--app-white-bg);
@@ -76,7 +81,8 @@ body {
 }
 
 :root {
-    --radius: 0.625rem; /* 10px */
+    --radius: 0.625rem;
+    /* 10px */
     --chat-list-divider-left: calc(60px + 12px + 8px);
     --app-login-background: url(/images/login/Background.svg);
     --app-login-start: url(/images/login/StartPage.svg);
@@ -85,49 +91,30 @@ body {
     --app-start-screen-shadow: drop-shadow(
         -24px -24px 80px #695c7a26
     );
-    /* Primary Colors */ /* !Name in Figma Design! */
-    --app-white-bg: hsla(
-        0,
-        0%,
-        100%,
-        1
-    ); /* White tone/White bg */
-    --app-gray-main: hsla(
-        220,
-        18%,
-        97%,
-        1
-    ); /* Gray tone/Gray */
-    --app-gray-light: hsla(
-        220,
-        18%,
-        97%,
-        0.5
-    ); /* Gray tone/Gray light (50%) */
-    --app-black-alpha-70: hsla(
-        0,
-        0%,
-        0%,
-        0.7
-    ); /* Gray tone/black (70%) */
-    --app-black-alpha-20: hsla(
-        0,
-        0%,
-        0%,
-        0.2
-    ); /* Gray tone/black (20%) */
-    --app-gray-border: #eeeeee; /* Divider border */
+    /* Primary Colors */
+    /* !Name in Figma Design! */
+    --app-white-bg: hsla(0, 0%, 100%, 1);
+    /* White tone/White bg */
+    --app-gray-main: hsla(220, 18%, 97%, 1);
+    /* Gray tone/Gray */
+    --app-gray-light: hsla(220, 18%, 97%, 0.5);
+    /* Gray tone/Gray light (50%) */
+    --app-black-alpha-70: hsla(0, 0%, 0%, 0.7);
+    /* Gray tone/black (70%) */
+    --app-black-alpha-20: hsla(0, 0%, 0%, 0.2);
+    /* Gray tone/black (20%) */
+    --app-gray-border: #eeeeee;
+    /* Divider border */
 
     /* Text Colors */
-    --app-text-black: hsla(
-        240,
-        3%,
-        11%,
-        1
-    ); /* Text/Black */
-    --app-text-gray: hsla(0, 0%, 45%, 1); /* Text/Gray */
-    --app-letter-spacing-tight: 0.01em; /* Tracking for section headings */
-    --app-font-size-24: 1.5rem; /* 24px */
+    --app-text-black: hsla(240, 3%, 11%, 1);
+    /* Text/Black */
+    --app-text-gray: hsla(0, 0%, 45%, 1);
+    /* Text/Gray */
+    --app-letter-spacing-tight: 0.01em;
+    /* Tracking for section headings */
+    --app-font-size-24: 1.5rem;
+    /* 24px */
     --app-black-gradient: linear-gradient(
         181.47deg,
         hsla(0, 0%, 84%, 1) -221.42%,
@@ -136,230 +123,136 @@ body {
     );
 
     /* Accent Colors */
-    --app-accent-violet-primary: #7769e1; /* Accent/Violet primary */
-    --app-accent-violet-white: #cec8ff; /* Accent/violet white */
-    --app-accent-violet-light: #e2ddff; /* Accent/Light Violet */
-    --app-accent-violet-ultra-light: #f5f4ff; /* Accent/Violet ultra light */
-    --app-accent-violet-dark: #615aa3; /* Accent/violet dark */
+    --app-accent-violet-primary: #7769e1;
+    /* Accent/Violet primary */
+    --app-accent-violet-white: #cec8ff;
+    /* Accent/violet white */
+    --app-accent-violet-light: #e2ddff;
+    /* Accent/Light Violet */
+    --app-accent-violet-ultra-light: #f5f4ff;
+    /* Accent/Violet ultra light */
+    --app-accent-violet-dark: #615aa3;
+    /* Accent/violet dark */
 
     /* User Message Color */
-    --app-teal-secondary: hsla(
-        170,
-        59%,
-        90%,
-        1
-    ); /* Complementary/Teal Secondary */
+    --app-teal-secondary: hsla(170, 59%, 90%, 1);
+    /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: #ff0000; /* System/Red */
-    --app-system-red-soft: rgba(
-        255,
-        0,
-        0,
-        0.6
-    ); /* System/Red 60% */
-    --app-system-red-surface: rgba(
-        255,
-        0,
-        0,
-        0.12
-    ); /* System/Red Surface */
-    --app-system-red-dark: #cc0000; /* System/Red Dark */
-    --app-system-blue: hsla(
-        211,
-        100%,
-        50%,
-        1
-    ); /* System/Blue */
-    --app-system-green: hsla(
-        129,
-        67%,
-        47%,
-        1
-    ); /* Miscellaneous/Window Controls/Maximize */
+    --app-system-red: #ff0000;
+    /* System/Red */
+    --app-system-red-soft: rgba(255, 0, 0, 0.6);
+    /* System/Red 60% */
+    --app-system-red-surface: rgba(255, 0, 0, 0.12);
+    /* System/Red Surface */
+    --app-system-red-dark: #cc0000;
+    /* System/Red Dark */
+    --app-system-blue: hsla(211, 100%, 50%, 1);
+    /* System/Blue */
+    --app-system-green: hsla(129, 67%, 47%, 1);
+    /* Miscellaneous/Window Controls/Maximize */
 
     /* Dropdown sizing defaults (overrideable via theme) */
     --dropdown-min-width: 180px;
     --dropdown-max-width: 400px;
     --dropdown-extra-padding: 96px;
 
-    /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
-    --app-call-modal-red: hsla(
-        359,
-        100%,
-        61%,
-        1
-    ); /* Colors/Red */
-    --app-call-modal-green: hsla(
-        135,
-        59%,
-        49%,
-        1
-    ); /* Colors/Green */
+    /* Call Modal Window */
+    /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
+    --app-call-modal-red: hsla(359, 100%, 61%, 1);
+    /* Colors/Red */
+    --app-call-modal-green: hsla(135, 59%, 49%, 1);
+    /* Colors/Green */
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
-    --app-call-timer-green: hsla(
-        140,
-        100%,
-        37%,
-        1
-    ); /*  !Not Found! */
+    --app-call-timer-green: hsla(140, 100%, 37%, 1);
+    /*  !Not Found! */
 
     /* Shadows */
-    --app-context-shadow: hsla(
-        0,
-        0%,
-        0%,
-        0.2
-    ); /* context menu shadow */
+    --app-context-shadow: hsla(0, 0%, 0%, 0.2);
+    /* context menu shadow */
 
     /* Not Found names in Figma design */
     /* Violet */
-    --app-violet-shadow-light: hsla(
-        246,
-        90%,
-        96%,
-        1
-    ); /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
-    --app-violet-shadow-dark: hsla(
-        248,
-        85%,
-        75%,
-        0.4
-    ); /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
+    --app-violet-shadow-light: hsla(246, 90%, 96%, 1);
+    /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
+    --app-violet-shadow-dark: hsla(248, 85%, 75%, 0.4);
+    /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
     /*========================================================================================================= */
 }
 
 .dark {
-    /* Primary Colors */ /* !Name in Figma Design! */
-    --app-white-bg: hsla(
-        0,
-        0%,
-        100%,
-        1
-    ); /* White tone/White bg */
-    --app-gray-main: hsla(
-        220,
-        18%,
-        97%,
-        1
-    ); /* Gray tone/Gray */
-    --app-gray-light: hsla(
-        220,
-        18%,
-        97%,
-        0.5
-    ); /* Gray tone/Gray light (50%) */
-    --app-black-alpha-70: hsla(
-        0,
-        0%,
-        0%,
-        0.7
-    ); /* Gray tone/black (70%) */
-    --app-black-alpha-20: hsla(
-        0,
-        0%,
-        0%,
-        0.2
-    ); /* Gray tone/black (20%) */
-    --app-gray-border: #eeeeee; /* Divider border */
+    /* Primary Colors */
+    /* !Name in Figma Design! */
+    --app-white-bg: hsla(0, 0%, 100%, 1);
+    /* White tone/White bg */
+    --app-gray-main: hsla(220, 18%, 97%, 1);
+    /* Gray tone/Gray */
+    --app-gray-light: hsla(220, 18%, 97%, 0.5);
+    /* Gray tone/Gray light (50%) */
+    --app-black-alpha-70: hsla(0, 0%, 0%, 0.7);
+    /* Gray tone/black (70%) */
+    --app-black-alpha-20: hsla(0, 0%, 0%, 0.2);
+    /* Gray tone/black (20%) */
+    --app-gray-border: #eeeeee;
+    /* Divider border */
 
     /* Text Colors */
-    --app-text-black: hsla(
-        240,
-        3%,
-        11%,
-        1
-    ); /* Text/Black */
-    --app-text-gray: hsla(0, 0%, 45%, 1); /* Text/Gray */
+    --app-text-black: hsla(240, 3%, 11%, 1);
+    /* Text/Black */
+    --app-text-gray: hsla(0, 0%, 45%, 1);
+    /* Text/Gray */
 
     /* Accent Colors */
-    --app-accent-violet-primary: #7769e1; /* Accent/Violet primary */
-    --app-accent-violet-white: #cec8ff; /* Accent/violet white */
-    --app-accent-violet-light: #e2ddff; /* Accent/Light Violet */
-    --app-accent-violet-dark: #615aa3; /* Accent/violet dark */
+    --app-accent-violet-primary: #7769e1;
+    /* Accent/Violet primary */
+    --app-accent-violet-white: #cec8ff;
+    /* Accent/violet white */
+    --app-accent-violet-light: #e2ddff;
+    /* Accent/Light Violet */
+    --app-accent-violet-dark: #615aa3;
+    /* Accent/violet dark */
 
     /* User Message Color */
-    --app-teal-secondary: hsla(
-        170,
-        59%,
-        90%,
-        1
-    ); /* Complementary/Teal Secondary */
+    --app-teal-secondary: hsla(170, 59%, 90%, 1);
+    /* Complementary/Teal Secondary */
 
     /* System Colors */
-    --app-system-red: #ff0000; /* System/Red */
-    --app-system-red-soft: rgba(
-        255,
-        0,
-        0,
-        0.6
-    ); /* System/Red 60% */
-    --app-system-red-surface: rgba(
-        255,
-        0,
-        0,
-        0.12
-    ); /* System/Red Surface */
-    --app-system-red-dark: #cc0000; /* System/Red Dark */
-    --app-system-blue: hsla(
-        211,
-        100%,
-        50%,
-        1
-    ); /* System/Blue */
-    --app-system-green: hsla(
-        129,
-        67%,
-        47%,
-        1
-    ); /* Miscellaneous/Window Controls/Maximize */
+    --app-system-red: #ff0000;
+    /* System/Red */
+    --app-system-red-soft: rgba(255, 0, 0, 0.6);
+    /* System/Red 60% */
+    --app-system-red-surface: rgba(255, 0, 0, 0.12);
+    /* System/Red Surface */
+    --app-system-red-dark: #cc0000;
+    /* System/Red Dark */
+    --app-system-blue: hsla(211, 100%, 50%, 1);
+    /* System/Blue */
+    --app-system-green: hsla(129, 67%, 47%, 1);
+    /* Miscellaneous/Window Controls/Maximize */
 
-    /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
-    --app-call-modal-red: hsla(
-        359,
-        100%,
-        61%,
-        1
-    ); /* Colors/Red */
-    --app-call-modal-green: hsla(
-        135,
-        59%,
-        49%,
-        1
-    ); /* Colors/Green */
+    /* Call Modal Window */
+    /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
+    --app-call-modal-red: hsla(359, 100%, 61%, 1);
+    /* Colors/Red */
+    --app-call-modal-green: hsla(135, 59%, 49%, 1);
+    /* Colors/Green */
 
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
-    --app-call-timer-green: hsla(
-        140,
-        100%,
-        37%,
-        1
-    ); /*  !Not Found! */
+    --app-call-timer-green: hsla(140, 100%, 37%, 1);
+    /*  !Not Found! */
 
     /* Shadows */
-    --app-context-shadow: hsla(
-        0,
-        0%,
-        0%,
-        0.2
-    ); /* context menu shadow */
+    --app-context-shadow: hsla(0, 0%, 0%, 0.2);
+    /* context menu shadow */
 
     /* Not Found names in Figma design */
     /* Violet */
-    --app-violet-shadow-light: hsla(
-        246,
-        90%,
-        96%,
-        1
-    ); /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
-    --app-violet-shadow-dark: hsla(
-        248,
-        85%,
-        75%,
-        0.4
-    ); /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
+    --app-violet-shadow-light: hsla(246, 90%, 96%, 1);
+    /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
+    --app-violet-shadow-dark: hsla(248, 85%, 75%, 0.4);
+    /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
     /*========================================================================================================= */
 }
 
@@ -400,7 +293,9 @@ body {
     overflow: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    scrollbar-gutter: stable; /* Резервирует место под скролл */
+    scrollbar-gutter: stable;
+
+    /* Резервирует место под скролл */
     &::-webkit-scrollbar {
         display: none;
         width: 6px;
@@ -423,8 +318,10 @@ body {
 
     &:hover {
         overflow: scroll;
-        scrollbar-width: auto; /* Firefox: восстанавливает скролл */
-        -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
+        scrollbar-width: auto;
+        /* Firefox: восстанавливает скролл */
+        -ms-overflow-style: auto;
+        /* IE/Edge: восстанавливает скролл */
     }
 }
 
@@ -432,7 +329,8 @@ body {
     overflow: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    scrollbar-gutter: stable; /* Резервирует место под скролл */
+    scrollbar-gutter: stable;
+    /* Резервирует место под скролл */
 }
 
 .custom-scroll::-webkit-scrollbar {
@@ -457,8 +355,10 @@ body {
 
 .custom-scroll:hover {
     overflow: scroll;
-    scrollbar-width: auto; /* Firefox: восстанавливает скролл */
-    -ms-overflow-style: auto; /* IE/Edge: восстанавливает скролл */
+    scrollbar-width: auto;
+    /* Firefox: восстанавливает скролл */
+    -ms-overflow-style: auto;
+    /* IE/Edge: восстанавливает скролл */
 }
 
 @utility dropdown-item-content {
@@ -467,6 +367,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 /* В конец файла global.css добавьте: */
 
 /* Стили для dropdown */
@@ -504,4 +405,38 @@ body {
     :root {
         --chat-list-divider-left: calc(50px + 8px + 4px);
     }
+    .login-container {
+        height: 100vh !important;
+        width: 100vw !important;
+        background-image: none !important;
+    }
+    .start-screen-inner {
+        height: 100% !important;
+        width: 100% !important;
+    }
+    .logo-mobile {
+        top: 25% !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+    .content-mobile {
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        height: auto !important;
+        width: 100% !important;
+        padding: 0 16px !important;
+    }
+}
+
+@utility bg-app-login-background {
+    background-image: var(--app-login-background);
+}
+
+@utility filter-app-start-screen-shadow {
+    filter: var(--app-start-screen-shadow);
+}
+
+@utility bg-app-login-start {
+    background-image: var(--app-login-start);
 }
