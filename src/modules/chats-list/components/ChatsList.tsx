@@ -6,6 +6,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react'
 import { useChats } from '@shared/hooks/useChats'
@@ -20,11 +21,13 @@ import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { useRouter } from 'next/navigation'
 import Search from '@shared/ui/Search'
 import Image from 'next/image'
+import Dropdown from '@shared/ui/dropdown/Dropdown'
+import CreateMenuButton from './CreateMenuButton'
 
 export default function ChatsList() {
     const router = useRouter()
-    const [showFilterButton, setShowFilterButton] =
-        useState(true)
+    const [createMenuPosition, setCreateMenuPosition] =
+        useState({ top: 0, left: 0 })
     const [searchValue, setSearchValue] = useState('')
     const [deleteModalOpen, setDeleteModalOpen] =
         useState(false)
@@ -198,6 +201,19 @@ export default function ChatsList() {
         )
     }, [loading, chats, searchValue])
 
+    // Обработчики для меню создания
+    const handleCreateGroup = useCallback(() => {
+        // Реальная логика создания группы
+        alert('Создать группу')
+        // router.push('/create-group')
+    }, [])
+
+    const handleCreateChannel = useCallback(() => {
+        // Реальная логика создания канала
+        alert('Создать канал')
+        // router.push('/create-channel')
+    }, [])
+
     return (
         <>
             <div className="flex h-full flex-col">
@@ -211,23 +227,13 @@ export default function ChatsList() {
                         clearIconSrc="/images/search/closeSearch.svg"
                         showClearButton={true}
                     />
-                    {showFilterButton && (
-                        <button
-                            type="button"
-                            className={`
-                              shrink-0 rounded-lg p-2 transition-colors
-                              hover:bg-gray-200
-                            `}
-                            aria-label="Фильтр"
-                        >
-                            <Image
-                                src="/icons/createCollab.svg"
-                                alt="filter"
-                                width={20}
-                                height={20}
-                            />
-                        </button>
-                    )}
+
+                    <CreateMenuButton
+                        onSelectGroup={handleCreateGroup}
+                        onSelectChannel={
+                            handleCreateChannel
+                        }
+                    />
                 </div>
                 <div className="h-11/12 flex-1 overflow-y-auto">
                     {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
