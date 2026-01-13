@@ -61,6 +61,7 @@ export default function ContactsDelete({
                                 width: '24px',
                                 height: '24px',
                             }}
+                            className="cursor-pointer"
                         />
                     )}
                 </div>
@@ -81,6 +82,7 @@ export default function ContactsDelete({
                             width: '24px',
                             height: '24px',
                         }}
+                        className="cursor-pointer"
                         onClick={() =>
                             onToggleDeleteMode(true)
                         }

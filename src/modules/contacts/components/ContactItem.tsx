@@ -1,3 +1,4 @@
+// ContactItem.tsx
 'use client'
 import React, { useEffect, useState } from 'react'
 import { Contact } from '@shared/types/contact'
@@ -13,6 +14,14 @@ interface ContactItemProps {
     onSelectContact: (uid: string) => void
     onSetSelectedContact: (uid: string) => void
 }
+
+/** Tailwind классы для компонента */
+const STYLES = {
+    container:
+        'relative px-2 py-1 transition-all duration-200',
+    divider:
+        'absolute right-4 bottom-0 left-(--chat-list-divider-left) h-px bg-(--color-black-alpha-20)',
+} as const
 
 export const ContactItem: React.FC<ContactItemProps> = ({
     contact,
@@ -35,27 +44,37 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     }, [contact, searchValue])
 
     return (
-        <ContactAvatar
-            src={`/images/contacts/${contact?.avatarUrl}`}
-            name={`${contact.firstName} ${contact.lastName}`}
-            mode={deleteMode ? 'select-contact' : 'contact'}
-            isOnline={contact.isOnline}
-            statusText={secondaryText}
-            onClick={() =>
-                !deleteMode &&
-                onSetSelectedContact(contact.uid)
-            }
-            selected={contact.uid === selectedUid}
-            onSelect={
-                deleteMode
-                    ? () => onSelectContact(contact.uid)
-                    : undefined
-            }
-            isSelected={
-                deleteMode
-                    ? selectedContacts.includes(contact.uid)
-                    : false
-            }
-        />
+        <div className={STYLES.container}>
+            <div className={STYLES.divider} />
+            <ContactAvatar
+                src={`/images/contacts/${contact?.avatarUrl}`}
+                name={`${contact.firstName} ${contact.lastName}`}
+                mode={
+                    deleteMode
+                        ? 'select-contact'
+                        : 'contact'
+                }
+                isOnline={contact.isOnline}
+                statusText={secondaryText}
+                onClick={() =>
+                    deleteMode
+                        ? onSelectContact(contact.uid)
+                        : onSetSelectedContact(contact.uid)
+                }
+                selected={contact.uid === selectedUid}
+                onSelect={
+                    deleteMode
+                        ? () => onSelectContact(contact.uid)
+                        : undefined
+                }
+                isSelected={
+                    deleteMode
+                        ? selectedContacts.includes(
+                              contact.uid,
+                          )
+                        : false
+                }
+            />
+        </div>
     )
 }

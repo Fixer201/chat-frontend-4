@@ -1,3 +1,4 @@
+// ContactAvatar.tsx
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Badge } from '@shared/ui/badge/Badge'
@@ -28,12 +29,7 @@ export interface ContactAvatarProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const rowBaseClasses =
-    'flex gap-3 px-3 py-2 rounded-md transition-colors duration-200 select-none cursor-pointer'
-
-const modeClasses: Record<AvatarMode, string> = {
-    contact: 'bg-(--color-gray-light)',
-    'select-contact': 'bg-(--color-gray-light)',
-}
+    'flex cursor-pointer gap-3 rounded-md px-3 py-2 transition-colors duration-200 select-none relative rounded-none'
 
 export const ContactAvatar = forwardRef<
     HTMLDivElement,
@@ -81,9 +77,12 @@ export const ContactAvatar = forwardRef<
                 ref={ref}
                 className={cn(
                     rowBaseClasses,
-                    modeClasses[mode],
-                    isHighlighted &&
-                        'bg-(--color-accent-violet-primary)',
+                    `bg-transparent hover:bg-transparent`,
+                    selected
+                        ? `bg-(--color-accent-violet-primary) hover:bg-(--color-accent-violet-primary)`
+                        : 'hover:bg-(--color-accent-violet-light)',
+                    'hover:rounded-lg',
+                    selected && 'rounded-lg',
                     className,
                 )}
                 {...props}
@@ -106,7 +105,7 @@ export const ContactAvatar = forwardRef<
                 </div>
                 <div
                     className={`
-                  min-w-0 flex-1 border-b border-(--color-gray-border)
+                  min-w-0 flex-1
                 `}
                 >
                     <div className="flex min-w-0 flex-col">
