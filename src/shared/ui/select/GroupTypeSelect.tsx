@@ -104,15 +104,15 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
                         <div className="flex-1">
                             <div
                                 className={`
-                              text-base leading-3 text-(--color-text-black)
-                            `}
+                                  text-base leading-3 text-(--color-text-black)
+                                `}
                             >
                                 Закрытая
                             </div>
                             <div
                                 className={`
-                              mt-1 text-sm text-(--color-text-gray)
-                            `}
+                                  mt-1 text-sm text-(--color-text-gray)
+                                `}
                             >
                                 В закрытую группу можно
                                 попасть только
@@ -168,15 +168,15 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
                         <div className="flex-1">
                             <div
                                 className={`
-                              text-base leading-3 text-(--color-text-black)
-                            `}
+                                  text-base leading-3 text-(--color-text-black)
+                                `}
                             >
                                 Открытая
                             </div>
                             <div
                                 className={`
-                              mt-1 text-sm text-(--color-text-gray)
-                            `}
+                                  mt-1 text-sm text-(--color-text-gray)
+                                `}
                             >
                                 Открытую группу можно найти
                                 через поиск. Присоединиться

@@ -109,18 +109,18 @@ const FloatingTextarea = forwardRef<
                         ? `rounded-md border border-(--color-gray-border)`
                         : position === 'top'
                           ? `
-                rounded-t-md rounded-b-none border border-b
-                border-(--color-gray-border)
-              `
+                            rounded-t-md rounded-b-none border border-b
+                            border-(--color-gray-border)
+                          `
                           : position === 'bottom'
                             ? `
-                rounded-t-none rounded-b-md border border-t
-                border-(--color-gray-border)
-              `
+                              rounded-t-none rounded-b-md border border-t
+                              border-(--color-gray-border)
+                            `
                             : `
-                rounded-none border border-t-0 border-b-0
-                border-(--color-gray-border)
-              `,
+                              rounded-none border border-t-0 border-b-0
+                              border-(--color-gray-border)
+                            `,
                     className || '',
                 )}
                 onMouseDown={(e) => {
@@ -149,10 +149,10 @@ const FloatingTextarea = forwardRef<
                     onBlur={() => setFocused(false)}
                     className={cn(
                         `
-              max-h-75 resize-none overflow-hidden px-3 pt-5 pr-10 pb-3
-              text-base leading-6
-              focus:outline-none
-            `,
+                          max-h-75 resize-none overflow-hidden px-3 pt-5 pr-10
+                          pb-3 text-base leading-6
+                          focus:outline-none
+                        `,
 
                         className || '',
                     )}
@@ -163,15 +163,16 @@ const FloatingTextarea = forwardRef<
                 {label && (
                     <label
                         className={`
-              pointer-events-none absolute left-3 transition-all
-              ${
-                  val || focused
-                      ? 'top-2 text-xs'
-                      : `
-                    top-1/2 -translate-y-1/2 text-base text-(--color-text-gray)
-                  `
-              }
-            `}
+                          pointer-events-none absolute left-3 transition-all
+                          ${
+                              val || focused
+                                  ? 'top-2 text-xs'
+                                  : `
+                        top-1/2 -translate-y-1/2 text-base
+                        text-(--color-text-gray)
+                      `
+                          }
+                        `}
                     >
                         {label}
                     </label>
@@ -182,12 +183,12 @@ const FloatingTextarea = forwardRef<
                         className={cn(
                             `absolute top-1 right-2 text-xs`,
                             `
-              ${
-                  val.length < maxLength
-                      ? 'text-(--color-text-gray)'
-                      : 'text-(--color-system-red)'
-              }
-            `,
+                              ${
+                                  val.length < maxLength
+                                      ? 'text-(--color-text-gray)'
+                                      : 'text-(--color-system-red)'
+                              }
+                            `,
                         )}
                     >
                         {`${val.length}/${maxLength}`}
@@ -205,10 +206,10 @@ const FloatingTextarea = forwardRef<
                         variant="ghost"
                         color="neutral"
                         className={`
-              absolute top-1/2 right-2 flex h-4 w-4 -translate-y-1/2
-              items-center justify-center rounded-full bg-(--color-text-gray)
-              p-0 text-xs text-white
-            `}
+                          absolute top-1/2 right-2 flex h-4 w-4 -translate-y-1/2
+                          items-center justify-center rounded-full
+                          bg-(--color-text-gray) p-0 text-xs text-white
+                        `}
                     >
                         ×
                     </Button>
