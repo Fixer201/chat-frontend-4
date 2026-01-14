@@ -30,9 +30,9 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
             <div
                 style={{ width: size, height: size }}
                 className={`
-          flex items-center justify-center overflow-hidden rounded-full
-          bg-(--color-accent-violet-light)
-        `}
+                  flex items-center justify-center overflow-hidden rounded-full
+                  bg-(--color-accent-violet-light)
+                `}
             >
                 <Image
                     src={
@@ -41,6 +41,8 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
                     }
                     alt={name}
                     className={`h-full w-full object-cover`}
+                    width={80}
+                    height={80}
                 />
             </div>
             <input
@@ -56,8 +58,9 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
                 variant="ghost"
                 size="md"
                 className={`
-          mt-1 w-full text-center text-base text-(--color-accent-violet-primary)
-        `}
+                  mt-1 w-full text-center text-base
+                  text-(--color-accent-violet-primary)
+                `}
             >
                 Выбрать фотографию
             </Button>

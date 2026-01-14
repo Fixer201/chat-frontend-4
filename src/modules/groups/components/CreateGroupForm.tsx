@@ -1,104 +1,160 @@
 // src/modules/chat-room/components/CreateGroupForm.tsx
 'use client'
 
-import { useState } from 'react'
-
+import { useEffect, useMemo, useState } from 'react'
+import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
+import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
+import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
+import { Button } from '@shared/ui/button/Button'
+import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 interface CreateGroupFormProps {
     onBack: () => void
-    onNext: (groupName: string) => void // Теперь передаем название группы
+    onNext: (data: string) => void
 }
 
 export default function CreateGroupForm({
     onBack,
     onNext,
 }: CreateGroupFormProps) {
-    const [groupName, setGroupName] = useState('')
+    const [photoFile, setPhotoFile] = useState<File | null>(
+        null,
+    )
+    const photoPreview = useMemo(
+        () =>
+            photoFile
+                ? URL.createObjectURL(photoFile)
+                : null,
+        [photoFile],
+    )
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        return () => {
+            if (photoPreview)
+                URL.revokeObjectURL(photoPreview)
+        }
+    }, [photoPreview])
+    const [name, setName] = useState('')
+    const [description, setDescription] = useState('')
+    const [type, setType] = useState<
+        'open' | 'closed' | ''
+    >('')
+
+    // photoPreview is derived via useMemo; no state update here
+
+    const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        if (!groupName.trim()) return
-
-        console.log(
-            'Переходим к выбору участников для группы:',
-            groupName,
-        )
-
-        // Передаем название группы дальше
-        onNext(groupName)
+        if (!name.trim() || !description.trim() || !type)
+            return
+        onNext({
+            name: name.trim(),
+            description: description.trim(),
+            type,
+            photo: photoFile,
+        })
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <div
+            className={`flex h-full flex-col rounded-md bg-gray-main`}
+        >
             <div
                 className={`
-                  flex items-center gap-4 border-b border-gray-200 p-4
-                `}
+        flex items-center justify-start gap-3 rounded-t-md border-b
+        border-app-divider bg-gray-main px-6 py-4
+      `}
             >
-                <button
+                <Button
                     onClick={onBack}
-                    className="rounded bg-gray-200 px-4 py-2"
+                    aria-label="Назад"
+                    variant="ghost"
+                    size="sm"
+                    className={`
+            flex items-center justify-center rounded-full text-text-black
+            transition-colors
+            hover:bg-(--color-accent-violet-ultra-light)
+          `}
                 >
-                    ← Назад к чатам
-                </button>
-                <h1 className="text-xl font-semibold">
+                    <BackIcon className="mx-1 cursor-pointer" />
+                </Button>
+                <h2
+                    className={`
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
+                >
                     Создать группу
-                </h1>
+                </h2>
             </div>
 
-            <div className="flex-1 p-4">
+            <div className="flex flex-1 justify-center p-4">
                 <form
-                    onSubmit={handleSubmit}
-                    className="space-y-6"
+                    onSubmit={onSubmit}
+                    className="w-full max-w-[328px] space-y-4"
                 >
-                    <div className="space-y-2">
-                        <label
-                            htmlFor="set-group-name"
-                            className={`block text-sm font-medium`}
-                        >
-                            Название группы *
-                        </label>
-                        <input
-                            id="set-group-name"
-                            type="text"
-                            value={groupName}
-                            onChange={(e) =>
-                                setGroupName(e.target.value)
-                            }
-                            className={`
-                              w-full rounded-lg border border-gray-300 p-3
-                            `}
-                            placeholder="Введите название группы"
-                            required
-                            autoFocus
+                    <div className="flex flex-col items-center">
+                        <AvatarPicker
+                            src={photoPreview}
+                            name={name || 'Группа'}
+                            onFile={setPhotoFile}
                         />
-                        <p className="text-sm text-text-gray">
-                            Например: `Рабочая команда,
-                            Семья, Друзья`
-                        </p>
                     </div>
 
-                    <div className="rounded-lg bg-gray-50 p-4">
-                        <h3 className="mb-2 font-medium">
-                            Совет
-                        </h3>
-                        <p className="text-sm text-text-gray">
-                            Выберите понятное название, по
-                            которому участники смогут легко
-                            найти группу.
-                        </p>
+                    <div className="w-full">
+                        <div className="flex w-full flex-col">
+                            <FloatingTextarea
+                                position="top"
+                                label="Название*"
+                                maxLength={100}
+                                value={name}
+                                onChange={(e) =>
+                                    setName(
+                                        (
+                                            e.target as HTMLTextAreaElement
+                                        ).value,
+                                    )
+                                }
+                            />
+                            <FloatingTextarea
+                                position="bottom"
+                                label="Описание"
+                                maxLength={250}
+                                value={description}
+                                onChange={(e) =>
+                                    setDescription(
+                                        (
+                                            e.target as HTMLTextAreaElement
+                                        ).value,
+                                    )
+                                }
+                            />
+                        </div>
                     </div>
 
-                    <div className="border-t border-gray-200 pt-4">
-                        <button
+                    <div>
+                        <GroupTypeSelect
+                            value={type}
+                            onChange={(v) => setType(v)}
+                        />
+                    </div>
+
+                    <div className="flex justify-center">
+                        <Button
                             type="submit"
-                            disabled={!groupName.trim()}
+                            disabled={
+                                !name.trim() ||
+                                !description.trim() ||
+                                !type
+                            }
+                            variant="solid"
+                            size="md"
                             className={`
-                              w-full rounded bg-blue-500 px-4 py-2 text-white
-                              disabled:cursor-not-allowed disabled:opacity-50
-                            `}
+                h-14 w-full max-w-82 rounded-md
+                disabled:cursor-not-allowed disabled:opacity-50
+              `}
                         >
-                            Далее
-                        </button>
+                            <span className="text-base font-medium">
+                                Далее
+                            </span>
+                        </Button>
                     </div>
                 </form>
             </div>

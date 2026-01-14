@@ -168,9 +168,9 @@ const FloatingTextarea = forwardRef<
                               val || focused
                                   ? 'top-2 text-xs'
                                   : `
-                        top-1/2 -translate-y-1/2 text-base
-                        text-(--color-text-gray)
-                      `
+                                    top-1/2 -translate-y-1/2 text-base
+                                    text-(--color-text-gray)
+                                  `
                           }
                         `}
                     >
