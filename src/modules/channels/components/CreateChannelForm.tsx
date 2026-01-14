@@ -33,8 +33,8 @@ export default function CreateChannelForm({
         <div className="flex h-full flex-col">
             <div
                 className={`
-              flex items-center gap-4 border-b border-gray-200 p-4
-            `}
+                  flex items-center gap-4 border-b border-gray-200 p-4
+                `}
             >
                 <button
                     onClick={onBack}

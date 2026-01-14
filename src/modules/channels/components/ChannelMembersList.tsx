@@ -16,8 +16,8 @@ export default function ChannelMembersList({
         <div className="flex h-full flex-col">
             <div
                 className={`
-              flex items-center gap-4 border-b border-gray-200 p-4
-            `}
+                  flex items-center gap-4 border-b border-gray-200 p-4
+                `}
             >
                 <button
                     onClick={onBack}
@@ -49,8 +49,8 @@ export default function ChannelMembersList({
                 <div className="mb-6 space-y-2">
                     <div
                         className={`
-                      flex items-center justify-between rounded border p-3
-                    `}
+                          flex items-center justify-between rounded border p-3
+                        `}
                     >
                         <span>Участник 1</span>
                         <input
@@ -60,8 +60,8 @@ export default function ChannelMembersList({
                     </div>
                     <div
                         className={`
-                      flex items-center justify-between rounded border p-3
-                    `}
+                          flex items-center justify-between rounded border p-3
+                        `}
                     >
                         <span>Участник 2</span>
                         <input
@@ -71,8 +71,8 @@ export default function ChannelMembersList({
                     </div>
                     <div
                         className={`
-                      flex items-center justify-between rounded border p-3
-                    `}
+                          flex items-center justify-between rounded border p-3
+                        `}
                     >
                         <span>Участник 3</span>
                         <input
@@ -82,8 +82,8 @@ export default function ChannelMembersList({
                     </div>
                     <div
                         className={`
-                      flex items-center justify-between rounded border p-3
-                    `}
+                          flex items-center justify-between rounded border p-3
+                        `}
                     >
                         <span>Участник 4</span>
                         <input
@@ -93,8 +93,8 @@ export default function ChannelMembersList({
                     </div>
                     <div
                         className={`
-                      flex items-center justify-between rounded border p-3
-                    `}
+                          flex items-center justify-between rounded border p-3
+                        `}
                     >
                         <span>Участник 5</span>
                         <input
