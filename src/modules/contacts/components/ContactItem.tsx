@@ -1,4 +1,3 @@
-// ContactItem.tsx
 'use client'
 import React, { useEffect, useState } from 'react'
 import { Contact } from '@shared/types/contact'

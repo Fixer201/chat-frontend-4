@@ -1,4 +1,3 @@
-// ContactsList.tsx
 'use client'
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
@@ -81,6 +80,14 @@ export default function ContactsList() {
         }
     }
 
+    // Функция для переключения режима удаления со сбросом выбранных контактов
+    const handleToggleDeleteMode = (mode: boolean) => {
+        setDeleteMode(mode)
+        if (mode) {
+            setSelectedContacts([])
+        }
+    }
+
     return (
         <>
             <div className="flex h-1/12 min-h-15 items-center px-4">
@@ -98,7 +105,9 @@ export default function ContactsList() {
                 filteredContacts.length > 0 && (
                     <ContactsDelete
                         deleteMode={deleteMode}
-                        onToggleDeleteMode={setDeleteMode}
+                        onToggleDeleteMode={
+                            handleToggleDeleteMode
+                        }
                         selectedContacts={selectedContacts}
                         onClearSelection={() =>
                             setSelectedContacts([])
@@ -158,9 +167,9 @@ export default function ContactsList() {
                                 Поиск не дал результатов
                             </p>
                             <p className="text-sm text-text-gray">
-                                По вашему запросу ничего не
-                                найдено. <br /> Измените
-                                запрос и попробуйте снова
+                                Поиск не дал результатов.{' '}
+                                <br /> Измените запрос и
+                                попробуйте снова
                             </p>
                         </div>
                     ) : (
@@ -181,10 +190,9 @@ export default function ContactsList() {
                             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                             <div
                                 className={`
-                                  absolute right-0 bottom-0 left-0 z-10 flex
-                                  h-20 w-full cursor-pointer items-center
-                                  justify-center bg-(--color-gray-light)
-                                  transition-colors
+                                  right-0 left-0 z-10 flex h-20 w-full
+                                  cursor-pointer items-center justify-center
+                                  bg-(--color-gray-light) transition-colors
                                   hover:bg-(--color-accent-violet-light)
                                 `}
                                 onClick={handleOpenModal}

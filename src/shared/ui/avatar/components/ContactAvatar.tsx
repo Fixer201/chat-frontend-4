@@ -1,4 +1,3 @@
-// ContactAvatar.tsx
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Badge } from '@shared/ui/badge/Badge'
@@ -225,6 +224,7 @@ export const ContactAvatar = forwardRef<
                                         alt="selected"
                                         width={20}
                                         height={20}
+                                        onClick={onSelect}
                                     />
                                 )}
                             </span>
