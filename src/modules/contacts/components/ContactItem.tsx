@@ -15,7 +15,6 @@ interface ContactItemProps {
     onSetSelectedContact: (uid: string) => void
 }
 
-/** Tailwind классы для компонента */
 const STYLES = {
     container:
         'relative px-2 py-1 transition-all duration-200',
@@ -61,7 +60,13 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                         ? onSelectContact(contact.uid)
                         : onSetSelectedContact(contact.uid)
                 }
-                selected={contact.uid === selectedUid}
+                selected={
+                    deleteMode
+                        ? selectedContacts.includes(
+                              contact.uid,
+                          )
+                        : contact.uid === selectedUid
+                }
                 onSelect={
                     deleteMode
                         ? () => onSelectContact(contact.uid)
