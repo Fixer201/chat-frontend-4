@@ -22,9 +22,9 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
                 aria-expanded={open}
                 onClick={() => setOpen((s) => !s)}
                 className={`
-          flex h-14 w-full items-center justify-between rounded-md
-          bg-(--color-white-bg) px-3 py-0 text-left
-        `}
+                  flex h-14 w-full items-center justify-between rounded-md
+                  bg-(--color-white-bg) px-3 py-0 text-left
+                `}
             >
                 <div className="text-base text-(--color-text-gray)">
                     {value
@@ -55,8 +55,8 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
             {open && (
                 <div
                     className={`
-          mt-2 flex w-full flex-col gap-3 rounded-md bg-white p-4
-        `}
+                      mt-2 flex w-full flex-col gap-3 rounded-md bg-white p-4
+                    `}
                 >
                     <button
                         type="button"
@@ -65,40 +65,55 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
                             setOpen(false)
                         }}
                         className={`
-              flex h-19 w-full items-center gap-3 rounded-md px-4 text-left
-              hover:bg-(--color-gray-light)
-            `}
+                          flex h-19 w-full items-center gap-3 rounded-md px-4
+                          text-left
+                          hover:bg-(--color-gray-light)
+                        `}
                     >
                         <div
-                            className={`mr-2 flex h-5 w-5 items-center justify-center`}
+                            className={`
+                              mr-2 flex h-5 w-5 items-center justify-center
+                            `}
                         >
                             {value === 'closed' ? (
                                 <div
                                     className={`
-                  flex h-5 w-5 items-center justify-center rounded-full border-1
-                  border-(--color-system-blue) bg-(--color-white-bg)
-                `}
+                                      flex h-5 w-5 items-center justify-center
+                                      rounded-full border-1
+                                      border-(--color-system-blue)
+                                      bg-(--color-white-bg)
+                                    `}
                                 >
                                     <div
                                         className={`
-                  h-3 w-3 rounded-full bg-(--color-system-blue)
-                `}
+                                          h-3 w-3 rounded-full
+                                          bg-(--color-system-blue)
+                                        `}
                                     />
                                 </div>
                             ) : (
                                 <div
                                     className={`
-                  h-5 w-5 rounded-full border border-(--color-text-gray)
-                  bg-(--color-white-bg)
-                `}
+                                      h-5 w-5 rounded-full border
+                                      border-(--color-text-gray)
+                                      bg-(--color-white-bg)
+                                    `}
                                 />
                             )}
                         </div>
                         <div className="flex-1">
-                            <div className="text-base leading-3 text-(--color-text-black)">
+                            <div
+                                className={`
+                              text-base leading-3 text-(--color-text-black)
+                            `}
+                            >
                                 Закрытая
                             </div>
-                            <div className="mt-1 text-sm text-(--color-text-gray)">
+                            <div
+                                className={`
+                              mt-1 text-sm text-(--color-text-gray)
+                            `}
+                            >
                                 В закрытую группу можно
                                 попасть только
                                 по приглашению
@@ -114,40 +129,55 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
                             setOpen(false)
                         }}
                         className={`
-              flex h-19 w-full items-center gap-3 rounded-md px-4 text-left
-              hover:bg-(--color-gray-light)
-            `}
+                          flex h-19 w-full items-center gap-3 rounded-md px-4
+                          text-left
+                          hover:bg-(--color-gray-light)
+                        `}
                     >
                         <div
-                            className={`mr-2 flex h-5 w-5 items-center justify-center`}
+                            className={`
+                              mr-2 flex h-5 w-5 items-center justify-center
+                            `}
                         >
                             {value === 'open' ? (
                                 <div
                                     className={`
-                  flex h-5 w-5 items-center justify-center rounded-full border-1
-                  border-(--color-system-blue) bg-(--color-white-bg)
-                `}
+                                      flex h-5 w-5 items-center justify-center
+                                      rounded-full border-1
+                                      border-(--color-system-blue)
+                                      bg-(--color-white-bg)
+                                    `}
                                 >
                                     <div
                                         className={`
-                  h-3 w-3 rounded-full bg-(--color-system-blue)
-                `}
+                                          h-3 w-3 rounded-full
+                                          bg-(--color-system-blue)
+                                        `}
                                     />
                                 </div>
                             ) : (
                                 <div
                                     className={`
-                  h-5 w-5 rounded-full border border-(--color-text-gray)
-                  bg-(--color-white-bg)
-                `}
+                                      h-5 w-5 rounded-full border
+                                      border-(--color-text-gray)
+                                      bg-(--color-white-bg)
+                                    `}
                                 />
                             )}
                         </div>
                         <div className="flex-1">
-                            <div className="text-base leading-3 text-(--color-text-black)">
+                            <div
+                                className={`
+                              text-base leading-3 text-(--color-text-black)
+                            `}
+                            >
                                 Открытая
                             </div>
-                            <div className="mt-1 text-sm text-(--color-text-gray)">
+                            <div
+                                className={`
+                              mt-1 text-sm text-(--color-text-gray)
+                            `}
+                            >
                                 Открытую группу можно найти
                                 через поиск. Присоединиться
                                 к ней может любой
