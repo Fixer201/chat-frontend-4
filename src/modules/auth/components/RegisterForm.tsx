@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+// RegisterForm.tsx
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface RegisterFormProps {
     phoneNumber: string
@@ -22,16 +24,70 @@ export default function RegisterForm({
     const [nickname, setNickname] = useState('')
     const [nameError, setNameError] = useState('')
     const [nicknameError, setNicknameError] = useState('')
-    const validationRegex = /^[а-яА-Яa-zA-Z\s\-]*$/
+    const [nicknameUniqueError, setNicknameUniqueError] =
+        useState('')
+    const [debouncedNickname, setDebouncedNickname] =
+        useState('')
+    const nameValidationRegex = /^[а-яА-Яa-zA-Z\s\-]*$/
+    const nicknameValidationRegex = /^[a-zA-Z0-9._]*$/
+
+    // Debouncing для nickname
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedNickname(nickname)
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [nickname])
+
+    // Проверка уникальности nickname
+    useEffect(() => {
+        if (
+            debouncedNickname &&
+            nicknameValidationRegex.test(debouncedNickname)
+        ) {
+            const checkUnique = async () => {
+                try {
+                    const response = await fetch(
+                        `/api/auth/unique_nickname_check/${encodeURIComponent(debouncedNickname)}`,
+                    )
+                    if (response.ok) {
+                        const data = await response.json()
+                        if (data.is_unique === false) {
+                            setNicknameUniqueError(
+                                'этот никнейм занят другим',
+                            )
+                        } else {
+                            setNicknameUniqueError('')
+                        }
+                    } else {
+                        setNicknameUniqueError(
+                            'Не удалось проверить уникальность никнейма',
+                        )
+                    }
+                } catch (error) {
+                    console.error(
+                        'Ошибка проверки уникальности:',
+                        error,
+                    )
+                    setNicknameUniqueError(
+                        'Не удалось проверить уникальность никнейма',
+                    )
+                }
+            }
+            checkUnique()
+        } else {
+            setNicknameUniqueError('')
+        }
+    }, [debouncedNickname, nicknameValidationRegex])
 
     const handleNameChange = (
         e: React.ChangeEvent<HTMLInputElement>,
     ) => {
         const value = e.target.value
         if (value.length > 30) return
-        if (validationRegex.test(value)) {
+        if (nameValidationRegex.test(value)) {
             setName(value)
-            setNameError('') // ввели корректно - очистка ошибки
+            setNameError('')
         } else {
             setNameError(
                 'используйте только буквы, пробел или тире',
@@ -44,20 +100,25 @@ export default function RegisterForm({
     ) => {
         const value = e.target.value
         if (value.length > 30) return
-        if (validationRegex.test(value)) {
+        if (nicknameValidationRegex.test(value)) {
             setNickname(value)
-            setNicknameError('') // ввели корректно - очистка ошибки
+            setNicknameError('')
         } else {
             setNicknameError(
-                'используйте только буквы, пробел или тире',
+                'используйте только буквы, цифры, точку или подчеркивание',
             )
         }
     }
 
     const handleSubmit = () => {
-        if (name && nickname) {
+        if (
+            name &&
+            nickname &&
+            !nameError &&
+            !nicknameError &&
+            !nicknameUniqueError
+        ) {
             onSubmit({ name, nickname })
-            // отправить на бэкенд
         }
     }
 
@@ -98,10 +159,11 @@ export default function RegisterForm({
                 >
                     <div
                         className={`
-            absolute flex w-full flex-col items-center justify-between gap-6
+             absolute flex h-152 w-90 flex-col items-center justify-between
+              gap-6
           `}
                     >
-                        <div className="relative flex w-full items-center">
+                        <div className="relative flex h-17 w-90 items-center">
                             <button
                                 onClick={onBack}
                                 className={`
@@ -167,6 +229,7 @@ export default function RegisterForm({
 
                                 <Input
                                     label={
+                                        nicknameUniqueError ||
                                         nicknameError ||
                                         'Введите никнейм'
                                     }
@@ -180,6 +243,7 @@ export default function RegisterForm({
                                     }
                                     inputSize="lg"
                                     color={
+                                        nicknameUniqueError ||
                                         nicknameError
                                             ? 'red'
                                             : 'gray'
@@ -207,7 +271,10 @@ export default function RegisterForm({
                                     onClick={handleSubmit}
                                     disabled={
                                         !name.trim() ||
-                                        !nickname.trim()
+                                        !nickname.trim() ||
+                                        !!nameError ||
+                                        !!nicknameError ||
+                                        !!nicknameUniqueError
                                     }
                                 >
                                     Зарегистрироваться
