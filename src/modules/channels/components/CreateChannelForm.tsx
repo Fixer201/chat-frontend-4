@@ -106,7 +106,7 @@ export default function CreateChannelForm({
                       text-lg font-medium tracking-extra-tight text-text-black
                     `}
                 >
-                    Создать группу
+                    Создать канал
                 </h2>
             </div>
 

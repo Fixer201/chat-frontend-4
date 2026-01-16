@@ -1,6 +1,9 @@
 // src/modules/chat-room/components/GroupMembersList.tsx
 'use client'
 
+import { Button } from '@shared/ui/button/Button'
+import BackIcon from '@public/icons/settings-sidebar/Back.svg'
+import ContactsListInvitation from '@modules/contacts/components/ContactsListInvitation'
 interface GroupMembersListProps {
     groupName: string // Теперь принимаем название группы вместо ID
     onBack: () => void
@@ -13,92 +16,62 @@ export default function GroupMembersList({
     onFinish,
 }: GroupMembersListProps) {
     return (
-        <div className="flex h-full flex-col">
+        <div
+            className={`flex h-full flex-col rounded-md bg-gray-main`}
+        >
             <div
                 className={`
-                  flex items-center gap-4 border-b border-gray-200 p-4
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
                 `}
             >
-                <button
+                <Button
                     onClick={onBack}
-                    className="rounded bg-gray-200 px-4 py-2"
+                    aria-label="Назад"
+                    variant="ghost"
+                    size="sm"
+                    className={`
+                      flex items-center justify-center rounded-full
+                      text-text-black transition-colors
+                      hover:bg-(--color-accent-violet-ultra-light)
+                    `}
                 >
-                    ← Назад к форме
-                </button>
-                <h1 className="text-xl font-semibold">
-                    Выбор участников
-                </h1>
+                    <BackIcon className="mx-1 cursor-pointer" />
+                </Button>
+                <h2
+                    className={`
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
+                >
+                    Пригласить участников
+                </h2>
             </div>
 
-            <div className="flex-1 p-4">
-                <div className="mb-6 rounded-lg bg-blue-50 p-4">
-                    <p className="font-medium">
-                        Создаем группу:
-                    </p>
-                    <p className="text-lg font-semibold">
-                        `{groupName}`
-                    </p>
-                </div>
-
-                <p className="mb-4">
-                    Выберите участников для группы:
-                </p>
-
-                <div className="mb-6 space-y-2">
-                    <div
-                        className={`
-                          flex items-center justify-between rounded border p-3
-                        `}
-                    >
-                        <span>Участник 1</span>
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4"
-                        />
-                    </div>
-                    <div
-                        className={`
-                          flex items-center justify-between rounded border p-3
-                        `}
-                    >
-                        <span>Участник 2</span>
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4"
-                        />
-                    </div>
-                    <div
-                        className={`
-                          flex items-center justify-between rounded border p-3
-                        `}
-                    >
-                        <span>Участник 3</span>
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4"
-                        />
-                    </div>
-                </div>
-
-                <div className="rounded-lg bg-gray-50 p-4">
-                    <h3 className="mb-2 font-medium">
-                        Информация
-                    </h3>
-                    <p className="text-sm text-text-gray">
-                        Все выбранные участники получат
-                        уведомление о добавлении в группу `
-                        {groupName}`.
-                    </p>
-                </div>
+            <div
+                className={`
+                 w-full rounded-md border border-gray-200 bg-gray-main
+                 md:w-80
+                 lg:w-96
+               `}
+            >
+                <ContactsListInvitation />
             </div>
 
-            <div className="border-t border-gray-200 p-4">
-                <button
+            <div className="flex justify-center">
+                <Button
                     onClick={onFinish}
-                    className="w-full rounded bg-green-500 px-4 py-2 text-white"
+                    disabled={!groupName.trim()}
+                    variant="solid"
+                    size="md"
+                    className={`
+                              h-14 w-full max-w-82 rounded-md
+                              disabled:cursor-not-allowed disabled:opacity-50
+                            `}
                 >
-                    Создать
-                </button>
+                    <span className="text-base font-medium">
+                        Далее
+                    </span>
+                </Button>
             </div>
         </div>
     )

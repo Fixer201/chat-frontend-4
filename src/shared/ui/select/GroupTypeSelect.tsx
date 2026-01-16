@@ -81,47 +81,48 @@ const GroupTypeSelect: React.FC<GroupTypeSelectProps> = ({
                         >
                             <div
                                 className={`
-                                   mr-2 flex h-5 w-5 items-center justify-center
-                                 `}
+                                  mr-2 flex h-5 w-5 items-center justify-center
+                                `}
                             >
                                 {value === option.value ? (
                                     <div
                                         className={`
-                                              flex h-5 w-5 items-center
-                                              justify-center rounded-full border
-                                              border-(--color-system-blue)
-                                              bg-(--color-white-bg)
-                                            `}
+                                          flex h-5 w-5 items-center
+                                          justify-center rounded-full border
+                                          border-(--color-system-blue)
+                                          bg-(--color-white-bg)
+                                        `}
                                     >
                                         <div
                                             className={`
-                                                  h-3 w-3 rounded-full
-                                                  bg-(--color-system-blue)
-                                                `}
+                                              h-3 w-3 rounded-full
+                                              bg-(--color-system-blue)
+                                            `}
                                         />
                                     </div>
                                 ) : (
                                     <div
                                         className={`
-                                              h-5 w-5 rounded-full border
-                                              border-(--color-text-gray)
-                                              bg-(--color-white-bg)
-                                            `}
+                                          h-5 w-5 rounded-full border
+                                          border-(--color-text-gray)
+                                          bg-(--color-white-bg)
+                                        `}
                                     />
                                 )}
                             </div>
                             <div className="flex-1">
                                 <div
                                     className={`
-                                  text-base leading-3 text-(--color-text-black)
-                                `}
+                                      text-base leading-3
+                                      text-(--color-text-black)
+                                    `}
                                 >
                                     {option.optionName}
                                 </div>
                                 <div
                                     className={`
-                                  mt-1 text-sm text-(--color-text-gray)
-                                `}
+                                      mt-1 text-sm text-(--color-text-gray)
+                                    `}
                                 >
                                     {
                                         option.optionDescription
