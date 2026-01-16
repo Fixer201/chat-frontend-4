@@ -20,11 +20,10 @@ type View =
 export default function ChatsListWrapper() {
     const [currentView, setCurrentView] =
         useState<View>('chats')
-    const [groupName, setGroupName] = useState<string>('')
     const [groupData, setGroupData] =
         useState<onNextProps | null>(null)
-    const [channelName, setChannelName] =
-        useState<string>('')
+    const [channelData, setChannelData] =
+        useState<onNextProps | null>(null)
     const [selectedContacts, setSelectedContacts] =
         useState<Contact[]>([])
     // Обработчики для группы
@@ -34,9 +33,22 @@ export default function ChatsListWrapper() {
 
     const handleBackFromCreateGroup = () => {
         setCurrentView('chats')
-        setGroupName('')
+        setGroupData(null)
     }
 
+    const handleBackFromGroupMembers = () => {
+        setCurrentView('create-group')
+    }
+
+    // Обработчики для канала
+    const handleCreateChannel = () => {
+        setCurrentView('create-channel')
+    }
+
+    const handleBackFromCreateChannel = () => {
+        setCurrentView('chats')
+        setChannelData(null)
+    }
     const handleNextFromCreateGroup = (
         payload: onNextProps | string,
     ) => {
@@ -54,11 +66,28 @@ export default function ChatsListWrapper() {
         }
         setCurrentView('group-members')
     }
+    const handleNextFromCreateChannel = (
+        payload: string | onNextProps,
+    ) => {
+        if (typeof payload === 'object') {
+            // Сохраняем все данные группы
+            setChannelData(payload)
+        } else {
+            // Для обратной совместимости
+            setChannelData({
+                name: payload,
+                description: '',
+                type: '',
+                photo: null,
+            })
+        }
 
-    const handleBackFromGroupMembers = () => {
-        setCurrentView('create-group')
+        setCurrentView('channel-members')
     }
 
+    const handleBackFromChannelMembers = () => {
+        setCurrentView('create-channel')
+    }
     const handleFinishGroupCreation = (
         contacts: Contact[],
     ) => {
@@ -101,36 +130,44 @@ export default function ChatsListWrapper() {
         setGroupData(null)
         setSelectedContacts([])
     }
-
-    // Обработчики для канала
-    const handleCreateChannel = () => {
-        setCurrentView('create-channel')
-    }
-
-    const handleBackFromCreateChannel = () => {
-        setCurrentView('chats')
-        setChannelName('')
-    }
-
-    const handleNextFromCreateChannel = (
-        payload: string | onNextProps,
+    const handleFinishChannelCreation = (
+        contacts: Contact[],
     ) => {
-        const name =
-            typeof payload === 'string'
-                ? payload
-                : (payload?.name ?? '')
-        setChannelName(name)
-        setCurrentView('channel-members')
-    }
+        // Собираем все данные для создания группы
+        const channelInfo = {
+            ...channelData!,
+            members: contacts,
+            membersCount: contacts.length,
+        }
 
-    const handleBackFromChannelMembers = () => {
-        setCurrentView('create-channel')
-    }
+        // Показываем алерт со всеми данными
+        const memberNames = contacts
+            .map(
+                (contact) =>
+                    `${contact.firstName} ${contact.lastName}`,
+            )
+            .join(', ')
 
-    const handleFinishChannelCreation = () => {
+        alert(
+            `Создан канал:\n\n` +
+                `Название: ${channelData?.name}\n` +
+                `Описание: ${channelData?.description}\n` +
+                `Тип: ${channelData?.type}\n` +
+                `Фото: ${channelData?.photo ? 'Есть' : 'Нет'}\n` +
+                `Участники (${contacts.length}): ${memberNames}\n\n` +
+                `Объект данных для отправки на сервер:\n` +
+                JSON.stringify(channelInfo, null, 2),
+        )
+
+        // Здесь можно добавить API вызов для создания группы
+        console.log(
+            'Данные для создания группы:',
+            channelInfo,
+        )
+        // Сбрасываем состояния
         setCurrentView('chats')
-        console.log(`Канал "${channelName}" создан!`)
-        setChannelName('')
+        setChannelData(null)
+        setSelectedContacts([])
     }
 
     // Рендерим соответствующий компонент
@@ -181,9 +218,9 @@ export default function ChatsListWrapper() {
             )
 
         case 'channel-members':
-            return channelName ? (
+            return channelData ? (
                 <ChannelMembersList
-                    channelName={channelName}
+                    channelData={channelData}
                     onBack={handleBackFromChannelMembers}
                     onFinish={handleFinishChannelCreation}
                 />

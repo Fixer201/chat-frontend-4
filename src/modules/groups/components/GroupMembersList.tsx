@@ -43,7 +43,7 @@ export default function GroupMembersList({
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
-    const { name, description, type, photo } = groupData
+    const { name } = groupData
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
@@ -86,11 +86,11 @@ export default function GroupMembersList({
             <div
                 className={cn(
                     `
-                  min-h-0 w-full flex-1 rounded-md border border-gray-200
-                  bg-gray-main
-                  md:w-80
-                  lg:w-96
-                `,
+                      min-h-0 w-full flex-1 rounded-md border border-gray-200
+                      bg-gray-main
+                      md:w-80
+                      lg:w-96
+                    `,
                     `max-h-(--screen-112)`,
                 )}
             >
