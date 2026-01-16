@@ -20,3 +20,8 @@ export interface GroupTypeOptionProps {
     optionName?: string
     optionDescription?: string
 }
+export interface GroupTypeOptionProps {
+    value?: string
+    optionName?: string
+    optionDescription?: string
+}
