@@ -20,10 +20,9 @@ export default function ChatsPage() {
             {/* Правая колонка - пустой state (скрыт на mobile) */}
             <div
                 className={`
-                                  hidden flex-1 rounded-md border
-                                  border-gray-200 bg-gray-main
-                                  md:block
-                                `}
+                  hidden flex-1 rounded-md border border-gray-200 bg-gray-main
+                  md:block
+                `}
             >
                 <EmptyChatState />
                 {/* по умолчанию когда чат не

@@ -1,13 +1,13 @@
-// src/modules/chat-room/components/CreateGroupForm.tsx
-'use client'
-
 import { useEffect, useMemo, useState } from 'react'
 import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
 import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
 import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
 import { Button } from '@shared/ui/button/Button'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
-import { onNextProps } from '@shared/types/createGroup'
+import {
+    GroupTypeOptionProps,
+    onNextProps,
+} from '@shared/types/createGroup'
 interface CreateGroupFormProps {
     onBack: () => void
     onNext: (data: onNextProps | string) => void
@@ -36,20 +36,50 @@ export default function CreateGroupForm({
     }, [photoPreview])
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
-    const [type, setType] = useState<
-        'open' | 'closed' | ''
-    >('')
 
+    const options = [
+        {
+            value: 'open',
+            optionName: 'Открытая',
+            optionDescription: `Открытую группу можно найти
+                                через поиск. Присоединиться
+                                к ней может любой
+                                пользователь`,
+        },
+        {
+            value: 'closed',
+            optionName: 'Закрытая',
+            optionDescription: `В закрытую группу можно
+                                попасть только
+                                по приглашению
+                                или пригласительной ссылке`,
+        },
+    ]
+
+    const [choosenOption, setChoosenOption] =
+        useState<GroupTypeOptionProps>({
+            value: '',
+            optionName: '',
+            optionDescription: '',
+        })
     // photoPreview is derived via useMemo; no state update here
-
+    const handleChangeOption = (
+        option: GroupTypeOptionProps,
+    ) => {
+        setChoosenOption((prev) => ({ ...prev, ...option }))
+    }
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        if (!name.trim() || !description.trim() || !type)
+        if (
+            !name.trim() ||
+            !description.trim() ||
+            !choosenOption.value
+        )
             return
         onNext({
             name: name.trim(),
             description: description.trim(),
-            type,
+            type: choosenOption.value,
             photo: photoFile,
         })
     }
@@ -132,8 +162,12 @@ export default function CreateGroupForm({
 
                     <div>
                         <GroupTypeSelect
-                            value={type}
-                            onChange={(v) => setType(v)}
+                            selectLabel="Тип группы"
+                            value={choosenOption.value}
+                            options={options}
+                            onChange={(option) =>
+                                handleChangeOption(option)
+                            }
                         />
                     </div>
 
@@ -143,7 +177,7 @@ export default function CreateGroupForm({
                             disabled={
                                 !name.trim() ||
                                 !description.trim() ||
-                                !type
+                                !choosenOption.value
                             }
                             variant="solid"
                             size="md"
