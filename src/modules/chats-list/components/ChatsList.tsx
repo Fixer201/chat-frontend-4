@@ -22,6 +22,7 @@ import Search from '@shared/ui/Search'
 import Image from 'next/image'
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 import CreateMenuButton from './CreateMenuButton'
+import { cn } from '@shared/lib/utils'
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
@@ -245,10 +246,10 @@ export default function ChatsList({
                     />
                 </div>
                 <div
-                    className="min-h-0 flex-1 overflow-auto"
-                    style={{
-                        maxHeight: 'calc(100vh - 112px)',
-                    }}
+                    className={cn(
+                        `min-h-0 flex-1 overflow-auto`,
+                        `max-h-(--screen-112)`,
+                    )}
                 >
                     {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
                     {loading ? (

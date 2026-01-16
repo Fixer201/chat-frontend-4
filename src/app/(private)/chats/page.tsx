@@ -5,7 +5,7 @@ import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 
 export default function ChatsPage() {
     return (
-        <div className="flex min-h-dvh max-w-full gap-6">
+        <div className="flex min-h-11/12 max-w-full gap-6">
             {/* Левая колонка - список чатов */}
             <div
                 className={`

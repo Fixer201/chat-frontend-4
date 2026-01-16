@@ -1,28 +1,31 @@
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
-import { useDispatch, useSelector } from 'react-redux'
+
 import Image from 'next/image'
-import { setSelectedContact } from '@redux/slices/selectedContactSlice'
-import { RootState } from '@redux/store'
 import { useState } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 import { ContactItemInvitation } from './ContactItemInvitation'
+import { Contact } from '@shared/types/contact'
 
-export default function ContactsListInvitation() {
+interface ContactsListInvitationProps {
+    selectedContacts: string[]
+    handleSelectContact: (uid: string) => void
+    selectedUid: string | null
+    contactsList: Contact[]
+    handleSetSelectedContact: (uid: string) => void
+}
+export default function ContactsListInvitation({
+    selectedContacts,
+    handleSelectContact,
+    selectedUid,
+    contactsList,
+    handleSetSelectedContact,
+}: ContactsListInvitationProps) {
     const [searchValue, setSearchValue] = useState('')
-    const [selectedContacts, setSelectedContacts] =
-        useState<string[]>([])
-    const dispatch = useDispatch()
-    const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContact.uid,
-    )
 
-    const contactsList = useSelector(
-        (state: RootState) => state.contacts.list,
-    )
     const { filteredValue: filteredContacts } = useSearch(
         contactsList,
         searchValue,
@@ -33,14 +36,6 @@ export default function ContactsListInvitation() {
             (contact) => `${contact.nickname}`,
         ],
     )
-
-    const handleSelectContact = (uid: string) => {
-        setSelectedContacts((prev) =>
-            prev.includes(uid)
-                ? prev.filter((id) => id !== uid)
-                : [...prev, uid],
-        )
-    }
 
     return (
         <>
@@ -78,14 +73,8 @@ export default function ContactsListInvitation() {
                                 onSelectContact={
                                     handleSelectContact
                                 }
-                                onSetSelectedContact={(
-                                    uid: string,
-                                ) =>
-                                    dispatch(
-                                        setSelectedContact(
-                                            uid,
-                                        ),
-                                    )
+                                onSetSelectedContact={
+                                    handleSetSelectedContact
                                 }
                             />
                         ))}
