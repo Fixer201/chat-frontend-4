@@ -118,16 +118,10 @@ export default function EditProfileForm() {
                     <div className="flex flex-col items-center gap-2">
                         <div
                             className={`
-                                                                                                      flex
-                                                                                                      h-50
-                                                                                                      w-50
-                                                                                                      items-center
-                                                                                                      justify-center
-                                                                                                      overflow-hidden
-                                                                                                      rounded-full
-                                                                                                      bg-accent-violet-light
-                                                                                                      text-accent-violet-primary
-                                                                                                    `}
+                              flex h-50 w-50 items-center justify-center
+                              overflow-hidden rounded-full
+                              bg-accent-violet-light text-accent-violet-primary
+                            `}
                         >
                             <Image
                                 src={avatarPreview}
