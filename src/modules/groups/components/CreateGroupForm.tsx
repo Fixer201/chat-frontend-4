@@ -7,9 +7,10 @@ import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
 import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
 import { Button } from '@shared/ui/button/Button'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
+import { onNextProps } from '@shared/types/createGroup'
 interface CreateGroupFormProps {
     onBack: () => void
-    onNext: (data: string) => void
+    onNext: (data: onNextProps | string) => void
 }
 
 export default function CreateGroupForm({
@@ -59,9 +60,9 @@ export default function CreateGroupForm({
         >
             <div
                 className={`
-        flex items-center justify-start gap-3 rounded-t-md border-b
-        border-app-divider bg-gray-main px-6 py-4
-      `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <Button
                     onClick={onBack}
@@ -69,10 +70,10 @@ export default function CreateGroupForm({
                     variant="ghost"
                     size="sm"
                     className={`
-            flex items-center justify-center rounded-full text-text-black
-            transition-colors
-            hover:bg-(--color-accent-violet-ultra-light)
-          `}
+                      flex items-center justify-center rounded-full
+                      text-text-black transition-colors
+                      hover:bg-(--color-accent-violet-ultra-light)
+                    `}
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
                 </Button>
@@ -88,7 +89,7 @@ export default function CreateGroupForm({
             <div className="flex flex-1 justify-center p-4">
                 <form
                     onSubmit={onSubmit}
-                    className="w-full max-w-[328px] space-y-4"
+                    className="w-full max-w-82 space-y-4"
                 >
                     <div className="flex flex-col items-center">
                         <AvatarPicker
@@ -147,9 +148,9 @@ export default function CreateGroupForm({
                             variant="solid"
                             size="md"
                             className={`
-                h-14 w-full max-w-82 rounded-md
-                disabled:cursor-not-allowed disabled:opacity-50
-              `}
+                              h-14 w-full max-w-82 rounded-md
+                              disabled:cursor-not-allowed disabled:opacity-50
+                            `}
                         >
                             <span className="text-base font-medium">
                                 Далее

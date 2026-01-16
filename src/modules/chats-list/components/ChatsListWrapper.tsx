@@ -7,6 +7,7 @@ import CreateGroupForm from '@modules/groups/components/CreateGroupForm'
 import GroupMembersList from '@modules/groups/components/GroupMembersList'
 import ChannelMembersList from '@modules/channels/components/ChannelMembersList'
 import CreateChannelForm from '@modules/channels/components/CreateChannelForm'
+import { onNextProps } from '@shared/types/createGroup'
 
 type View =
     | 'chats'
@@ -32,7 +33,13 @@ export default function ChatsListWrapper() {
         setGroupName('')
     }
 
-    const handleNextFromCreateGroup = (name: string) => {
+    const handleNextFromCreateGroup = (
+        payload: onNextProps | string,
+    ) => {
+        const name =
+            typeof payload === 'string'
+                ? payload
+                : (payload?.name ?? '')
         setGroupName(name)
         setCurrentView('group-members')
     }
@@ -57,7 +64,13 @@ export default function ChatsListWrapper() {
         setChannelName('')
     }
 
-    const handleNextFromCreateChannel = (name: string) => {
+    const handleNextFromCreateChannel = (
+        payload: string | onNextProps,
+    ) => {
+        const name =
+            typeof payload === 'string'
+                ? payload
+                : (payload?.name ?? '')
         setChannelName(name)
         setCurrentView('channel-members')
     }
