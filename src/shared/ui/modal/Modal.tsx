@@ -25,6 +25,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
     onClose?: () => void
     title: string
     description?: string
+    titleClassName?: string
     descriptionColor?: 'default' | 'muted'
     titleAlign?: 'left' | 'center' | 'right'
     blurBackground?: boolean
@@ -39,7 +40,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
 const containerBase =
     'w-full max-w-md rounded-md bg-white shadow-context-shadow p-6'
 const overlayBase =
-    'fixed inset-0 z-50 flex items-center justify-center px-4 bg-violet-shadow-dark'
+    'fixed inset-0 z-[9999] flex items-center justify-center px-4 bg-violet-shadow-dark'
 
 const alignmentVariants = {
     left: {
@@ -66,6 +67,7 @@ export default function Modal({
     description,
     descriptionColor = 'default',
     titleAlign = 'center',
+    titleClassName,
     blurBackground = false,
     closeOnOverlayClick = true,
     iconSrc,
@@ -157,7 +159,12 @@ export default function Modal({
                             textAlignClass,
                         )}
                     >
-                        <h2 className="m-0 text-lg font-medium text-[#1C1C1E]">
+                        <h2
+                            className={cn(
+                                'm-0 text-lg font-medium text-[#1C1C1E]',
+                                titleClassName,
+                            )}
+                        >
                             {title}
                         </h2>
                         {(description || children) && (
