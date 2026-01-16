@@ -14,7 +14,11 @@ export default function ChatRoom({
             <div className="flex-1 overflow-y-auto">
                 <MessagesList />
             </div>
-            <MessageComposer />
+
+            <MessageComposer
+                toUserId={chat.chat.uid}
+                chatKey={chat.chatKey}
+            />
         </div>
     )
 }

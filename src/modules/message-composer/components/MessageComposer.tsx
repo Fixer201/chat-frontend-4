@@ -5,6 +5,12 @@ import Smile from '@public/icons/messageComposer/Smile.svg'
 import { useEffect, useRef, useState } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
 import { cn } from '@shared/lib/utils'
+import { useWebSocket } from '@shared/context/websocketContext'
+
+type MessageComposerProps = {
+    chatKey: string
+    toUserId: string
+}
 
 // Хук для авто-роста textarea
 function useAutoResizeTextarea(value: string) {
@@ -26,17 +32,35 @@ function useAutoResizeTextarea(value: string) {
     return ref
 }
 
-export default function MessageComposer() {
+export default function MessageComposer({
+    chatKey,
+    toUserId,
+}: MessageComposerProps) {
+    // Текст сообщения в инпуте
     const [inputValue, setInputValue] = useState<string>('')
+
+    // Флаг состояние открытия пикера эмодзи
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] =
         useState(false)
+
     // Store timer ref to allow cancellation when user re-hovers before delay expires
     const timerRef = useRef<NodeJS.Timeout | null>(null)
+
     const textareaRef = useAutoResizeTextarea(inputValue)
+
+    // получаем данные из контекста
+    const { sendMessage, status } = useWebSocket()
 
     // Функция отправки сообщения
     const handleSendMessage = () => {
         if (inputValue.trim().length === 0) return
+
+        sendMessage({
+            chatKey: chatKey,
+            content: inputValue,
+            toUserId: toUserId,
+            status: 'publish',
+        })
 
         console.log('Отправка сообщения:', inputValue)
 
