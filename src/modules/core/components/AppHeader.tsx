@@ -1,18 +1,7 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import Image from 'next/image'
-import Cookies from 'js-cookie'
-import { useRouter } from 'next/navigation'
 
 export function AppHeader() {
-    const router = useRouter()
-
-    const handleLogout = () => {
-        Cookies.remove('access_token')
-        Cookies.remove('refresh_token')
-        router.push('/auth/register')
-    }
-
     return (
         <>
             <div
@@ -44,18 +33,6 @@ export function AppHeader() {
                         height={44}
                         loading="eager"
                     />
-                    {/* Кнопка выхода — подумать куда воткнуть ее */}
-                    <button
-                        onClick={handleLogout}
-                        className={`
-                          cursor-pointer text-sm text-accent-violet-primary
-                          transition-colors
-                          hover:text-accent-violet-primary
-                        `}
-                        title="Выйти"
-                    >
-                        Выйти
-                    </button>
                 </div>
             </div>
         </>
