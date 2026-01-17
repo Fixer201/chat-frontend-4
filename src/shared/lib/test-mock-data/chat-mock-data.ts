@@ -9,6 +9,7 @@ import { ApiChatItem } from '@shared/types/chat'
 import { generateAvatarUrl } from './avatarGenerator'
 import { AVATAR_SOURCES } from './avatarSources'
 
+// Функция генерации моковых данных чатов
 // Фиксированные UID из ContactsListDB для синхронизации с контактами
 const CONTACT_UIDS = [
     '3fa85f64-5717-4562-b3fc-2c963f66afa6', // Влад Ляшев
