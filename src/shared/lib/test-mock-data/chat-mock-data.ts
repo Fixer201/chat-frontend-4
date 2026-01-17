@@ -1,15 +1,19 @@
-// /**
-//  * Генерирует массив моковых данных для чатов
-//  * @param count - количество элементов для генерации
-//  * @returns Promise<ChatItem[]> - массив объектов ChatItem
+// Генератор моковых данных для чатов (для тестирования/разработки)
+/**
+ * Генерирует массив моковых данных для чатов
+ * @param count - количество элементов для генерации
+ * @returns Promise<ChatItem[]> - массив объектов ChatItem
+ */
 
 import { ApiChatItem } from '@shared/types/chat'
 import { generateAvatarUrl } from './avatarGenerator'
 import { AVATAR_SOURCES } from './avatarSources'
 
+// Функция генерации моковых данных чатов
 export function generateLocalMockChatItems(
     count: number,
 ): ApiChatItem[] {
+    // Массивы тестовых данных
     const firstNames = [
         'Алексей',
         'Мария',
@@ -73,13 +77,17 @@ export function generateLocalMockChatItems(
         'Когда будет готов отчет?',
         'Жду твоего ответа',
     ]
-    const nowInSeconds = Math.floor(Date.now() / 1000)
 
+    // Текущее время в секундах
+    const nowInSeconds = Math.floor(Date.now() / 1000)
     const thirtyDaysInSeconds = 30 * 24 * 60 * 60
     const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER
+
+    // Генерация массива чатов
     return Array(count)
         .fill(null)
         .map((_, index) => {
+            // Выбор данных из массивов по кругу
             const firstName =
                 firstNames[index % firstNames.length]
             const lastName =
@@ -102,6 +110,7 @@ export function generateLocalMockChatItems(
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const generatorIndex = index % generators.length
 
+            // Генерация URL аватарок
             const avatarUrl = generateAvatarUrl(
                 avatarSeed,
                 300,
@@ -116,6 +125,7 @@ export function generateLocalMockChatItems(
                 AVATAR_SOURCE,
             )
 
+            // Генерация случайных временных меток
             const randomSecondsAgo = Math.floor(
                 Math.random() * thirtyDaysInSeconds,
             )
@@ -143,6 +153,7 @@ export function generateLocalMockChatItems(
                     ? Math.random() > 0.3
                     : Math.random() > 0.8
 
+            // Формирование объекта чата
             const chatItem: ApiChatItem = {
                 id: baseId,
                 chat: {

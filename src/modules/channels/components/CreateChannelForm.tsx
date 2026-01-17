@@ -1,3 +1,4 @@
+// Форма создания нового канала (похожа на форму создания группы)
 import { useEffect, useMemo, useState } from 'react'
 import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
 import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
@@ -8,18 +9,23 @@ import {
     GroupTypeOptionProps,
     onNextProps,
 } from '@shared/types/createGroup'
+
+// Интерфейс пропсов компонента CreateChannelForm
 interface CreateChannelFormProps {
-    onBack: () => void
-    onNext: (data: onNextProps | string) => void
+    onBack: () => void // Обработчик возврата к предыдущему экрану
+    onNext: (data: onNextProps | string) => void // Обработчик перехода к следующему шагу
 }
 
+// Компонент формы создания нового канала (структурно идентичен CreateGroupForm)
 export default function CreateChannelForm({
     onBack,
     onNext,
 }: CreateChannelFormProps) {
+    // Состояние для файла аватарки канала
     const [photoFile, setPhotoFile] = useState<File | null>(
         null,
     )
+    // Мемоизированное значение для предпросмотра аватарки
     const photoPreview = useMemo(
         () =>
             photoFile
@@ -28,15 +34,19 @@ export default function CreateChannelForm({
         [photoFile],
     )
 
+    // Эффект для очистки URL при размонтировании
     useEffect(() => {
         return () => {
             if (photoPreview)
                 URL.revokeObjectURL(photoPreview)
         }
     }, [photoPreview])
-    const [name, setName] = useState('')
-    const [description, setDescription] = useState('')
 
+    // Состояния для полей формы
+    const [name, setName] = useState('') // Название канала
+    const [description, setDescription] = useState('') // Описание канала
+
+    // Опции для выбора типа канала (отличаются от групповых)
     const options = [
         {
             value: 'public',
@@ -50,26 +60,32 @@ export default function CreateChannelForm({
         },
     ]
 
+    // Состояние для выбранного типа канала
     const [choosenOption, setChoosenOption] =
         useState<GroupTypeOptionProps>({
             value: '',
             optionName: '',
             optionDescription: '',
         })
-    // photoPreview is derived via useMemo; no state update here
+
+    // Обработчик изменения типа канала
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
         setChoosenOption((prev) => ({ ...prev, ...option }))
     }
+
+    // Обработчик отправки формы
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        // Валидация обязательных полей
         if (
             !name.trim() ||
             !description.trim() ||
             !choosenOption.value
         )
             return
+        // Передаем данные родительскому компоненту
         onNext({
             name: name.trim(),
             description: description.trim(),
@@ -82,6 +98,7 @@ export default function CreateChannelForm({
         <div
             className={`flex h-full flex-col rounded-md bg-gray-main`}
         >
+            {/* Шапка формы с кнопкой назад и заголовком */}
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -96,7 +113,7 @@ export default function CreateChannelForm({
                     className={`
                       flex items-center justify-center rounded-full
                       text-text-black transition-colors
-                      hover:bg-(--color-accent-violet-ultra-light)
+                      hover:bg-accent-violet-ultra-light
                     `}
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
@@ -110,19 +127,22 @@ export default function CreateChannelForm({
                 </h2>
             </div>
 
+            {/* Основное содержимое формы */}
             <div className="flex flex-1 justify-center p-4">
                 <form
                     onSubmit={onSubmit}
                     className="w-full max-w-82 space-y-4"
                 >
+                    {/* Выбор аватарки канала */}
                     <div className="flex flex-col items-center">
                         <AvatarPicker
                             src={photoPreview}
-                            name={name || 'Группа'}
+                            name={name || 'Группа'} // Fallback название
                             onFile={setPhotoFile}
                         />
                     </div>
 
+                    {/* Поля ввода названия и описания */}
                     <div className="w-full">
                         <div className="flex w-full flex-col">
                             <FloatingTextarea
@@ -154,6 +174,7 @@ export default function CreateChannelForm({
                         </div>
                     </div>
 
+                    {/* Выбор типа канала */}
                     <div>
                         <GroupTypeSelect
                             selectLabel="Тип канала"
@@ -165,6 +186,7 @@ export default function CreateChannelForm({
                         />
                     </div>
 
+                    {/* Кнопка отправки формы */}
                     <div className="flex justify-center">
                         <Button
                             type="submit"

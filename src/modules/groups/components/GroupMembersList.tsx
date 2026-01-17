@@ -1,3 +1,4 @@
+// Компонент списка участников для создания группы
 // src/modules/chat-room/components/GroupMembersList.tsx
 'use client'
 
@@ -11,50 +12,67 @@ import { RootState } from '@redux/store'
 import { setContacts } from '@redux/slices/contactsSlice'
 import { Contact } from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
+
+// Интерфейс пропсов компонента GroupMembersList
 interface GroupMembersListProps {
-    groupData: onNextProps // Принимаем все данные о группе
-    onBack: () => void
-    onFinish: (selectedContacts: Contact[]) => void
+    groupData: onNextProps // Принимаем все данные о группе (название, описание, тип, фото)
+    onBack: () => void // Обработчик возврата к форме создания группы
+    onFinish: (selectedContacts: Contact[]) => void // Обработчик завершения создания группы с выбранными контактами
 }
 
+// Компонент для выбора участников при создании группы
 export default function GroupMembersList({
     groupData,
     onBack,
     onFinish,
 }: GroupMembersListProps) {
+    // Состояние для хранения ID выбранных контактов
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
     const dispatch = useDispatch()
+
+    // Получение данных из Redux store
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
     )
+
+    // Обработчик выбора/отмены выбора контакта
     const handleSelectContact = (uid: string) => {
-        setSelectedContactIds((prev) =>
-            prev.includes(uid)
-                ? prev.filter((id) => id !== uid)
-                : [...prev, uid],
+        setSelectedContactIds(
+            (prev) =>
+                prev.includes(uid)
+                    ? prev.filter((id) => id !== uid) // Удаляем если уже выбран
+                    : [...prev, uid], // Добавляем если не выбран
         )
     }
+
     // Получаем полные объекты контактов по выбранным ID
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
-    const { name } = groupData
+
+    const { name } = groupData // Название группы из данных формы
+
+    // Обработчик установки выбранного контакта в Redux
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
+
+    // Обработчик завершения выбора участников
     const handleFinishClick = () => {
-        // Вызываем родительский обработчик
+        // Вызываем родительский обработчик с выбранными контактами
         onFinish(selectedContacts)
     }
+
     return (
         <div
             className={`flex h-full min-h-0 flex-col rounded-md bg-gray-main`}
         >
+            {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -69,7 +87,7 @@ export default function GroupMembersList({
                     className={`
                       flex items-center justify-center rounded-full
                       text-text-black transition-colors
-                      hover:bg-(--color-accent-violet-ultra-light)
+                      hover:bg-accent-violet-ultra-light
                     `}
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
@@ -83,15 +101,16 @@ export default function GroupMembersList({
                 </h2>
             </div>
 
+            {/* Список контактов для выбора участников */}
             <div
                 className={cn(
                     `
-                      min-h-0 w-full flex-1 rounded-md border border-gray-200
+                      min-h-0 w-full flex-1 rounded-md border border-app-divider
                       bg-gray-main
                       md:w-80
                       lg:w-96
                     `,
-                    `max-h-(--screen-112)`,
+                    `max-h-(--screen-height-list)`,
                 )}
             >
                 <ContactsListInvitation
@@ -107,12 +126,13 @@ export default function GroupMembersList({
                 />
             </div>
 
+            {/* Кнопка завершения выбора участников */}
             <div
                 className={`flex items-center justify-center px-4 pt-4 pb-8`}
             >
                 <Button
                     onClick={handleFinishClick}
-                    disabled={!name.trim()}
+                    disabled={!name.trim()} // Кнопка активна только если есть название группы
                     variant="solid"
                     size="md"
                     className={`

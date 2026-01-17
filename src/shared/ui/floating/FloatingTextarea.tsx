@@ -1,21 +1,24 @@
-import React, {
+// Компонент текстового поля с плавающим лейблом, автоматической высотой и счетчиком символов
+import Textarea from '@shared/ui/textarea/Textarea'
+import { Button } from '@shared/ui/button/Button'
+import { cn } from '@shared/lib/utils'
+import {
     forwardRef,
     useEffect,
     useRef,
     useState,
 } from 'react'
-import Textarea from '@shared/ui/textarea/Textarea'
-import { Button } from '@shared/ui/button/Button'
-import { cn } from '@shared/lib/utils'
 
+// Интерфейс пропсов для компонента FloatingTextarea
 export interface FloatingTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-    label?: string
-    maxLength?: number
-    showCounterOnFocus?: boolean
-    // layout position for joined fields: 'single' | 'top' | 'bottom' | 'middle'
+    label?: string // Плавающая подпись, которая поднимается при фокусе/заполнении
+    maxLength?: number // Максимальное количество символов
+    showCounterOnFocus?: boolean // Показывать счетчик только при фокусе или всегда
+    // Позиция для стилизации скруглений углов при объединении нескольких полей
     position?: 'single' | 'top' | 'middle' | 'bottom'
 }
 
+// Компонент текстового поля с плавающей подписью и адаптивной высотой
 const FloatingTextarea = forwardRef<
     HTMLTextAreaElement,
     FloatingTextareaProps
@@ -33,9 +36,12 @@ const FloatingTextarea = forwardRef<
         },
         ref,
     ) => {
+        // Внутренний ref для доступа к DOM-элементу textarea
         const innerRef = useRef<HTMLTextAreaElement | null>(
             null,
         )
+
+        // Функция для объединения внешнего и внутреннего ref
         const mergedRef = (
             node: HTMLTextAreaElement | null,
         ) => {
@@ -48,28 +54,36 @@ const FloatingTextarea = forwardRef<
             }
         }
 
+        // Состояние фокуса на поле
         const [focused, setFocused] = useState(false)
+        // Определяем, контролируется ли компонент извне
         const isControlled = typeof value === 'string'
+        // Локальное состояние для неконтролируемого режима
         const [internalVal, setInternalVal] =
             useState<string>(
                 isControlled ? (value as string) : '',
             )
+        // Используем значение в зависимости от режима
         const val = isControlled
             ? (value as string)
             : internalVal
 
+        // Функция для автоматической регулировки высоты textarea
         const autoSize = (
             el?: HTMLTextAreaElement | null,
         ) => {
             if (!el) return
+            // Сбрасываем высоту, затем устанавливаем нужную
             el.style.height = 'auto'
             el.style.height = `${Math.min(300, el.scrollHeight)}px`
         }
 
+        // Эффект для изменения высоты при изменении значения
         useEffect(() => {
             autoSize(innerRef.current)
         }, [val])
 
+        // Обработчик изменения значения в textarea
         const handleChange = (
             e: React.ChangeEvent<HTMLTextAreaElement>,
         ) => {
@@ -78,6 +92,7 @@ const FloatingTextarea = forwardRef<
             if (onChange) onChange(e)
         }
 
+        // Функция очистки поля
         const clear = () => {
             if (!isControlled) setInternalVal('')
             if (innerRef.current) {
@@ -85,7 +100,7 @@ const FloatingTextarea = forwardRef<
                 autoSize(innerRef.current)
                 innerRef.current.focus()
             }
-            // notify parent via onChange with a simple event-like object
+            // Имитируем событие onChange для уведомления родительского компонента
             if (onChange) {
                 const synthetic = {
                     target: { value: '' },
@@ -94,7 +109,7 @@ const FloatingTextarea = forwardRef<
             }
         }
 
-        // show counter only while the field is focused (optionally when empty if showCounterOnFocus)
+        // Определяем, нужно ли показывать счетчик символов
         const showCounter = maxLength
             ? focused &&
               (val.length > 0 || showCounterOnFocus)
@@ -105,6 +120,7 @@ const FloatingTextarea = forwardRef<
                 className={cn(
                     `relative bg-white`,
                     `bg-white`,
+                    // Стили для разных позиций (для объединенных полей формы)
                     position === 'single'
                         ? `rounded-md border border-(--color-gray-border)`
                         : position === 'top'
@@ -123,23 +139,23 @@ const FloatingTextarea = forwardRef<
                             `,
                     className || '',
                 )}
+                // Обработчик клика для управления фокусом
                 onMouseDown={(e) => {
                     const el = innerRef.current
                     const target = e.target as HTMLElement
                     if (target.closest('button')) return
 
-                    // If this textarea is already focused, preventDefault to avoid blur
-                    // when clicking inside the same control. Otherwise allow the browser
-                    // to blur the previously focused field, then focus this one.
+                    // Предотвращаем потерю фокуса при клике внутри уже активного поля
                     if (document.activeElement === el) {
                         e.preventDefault()
                         el?.focus()
                     } else {
-                        // allow blur on previous element first, then focus this textarea
+                        // Даем браузеру сначала снять фокус с предыдущего элемента
                         setTimeout(() => el?.focus(), 0)
                     }
                 }}
             >
+                {/* Основное текстовое поле */}
                 <Textarea
                     ref={mergedRef}
                     value={val}
@@ -153,13 +169,13 @@ const FloatingTextarea = forwardRef<
                           pb-3 text-base leading-6
                           focus:outline-none
                         `,
-
                         className || '',
                     )}
                     rows={1}
                     {...props}
                 />
 
+                {/* Плавающая подпись */}
                 {label && (
                     <label
                         className={`
@@ -178,6 +194,7 @@ const FloatingTextarea = forwardRef<
                     </label>
                 )}
 
+                {/* Счетчик символов (показывается при определенных условиях) */}
                 {showCounter && maxLength && (
                     <div
                         className={cn(
@@ -195,6 +212,7 @@ const FloatingTextarea = forwardRef<
                     </div>
                 )}
 
+                {/* Кнопка очистки (появляется при фокусе и наличии текста) */}
                 {focused && val.length > 0 && (
                     <Button
                         type="button"

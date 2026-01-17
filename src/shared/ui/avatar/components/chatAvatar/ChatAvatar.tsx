@@ -1,3 +1,4 @@
+// Компонент аватарки чата с информацией о сообщении
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { cn } from '@shared/lib/utils'
@@ -6,22 +7,24 @@ import { forwardRef } from 'react'
 import type { HTMLAttributes, ReactNode } from 'react'
 import { ChatAvatarRightSection } from './ChatAvatarRightSection'
 
+// Пропсы компонента ChatAvatar
 export interface ChatAvatarProps extends HTMLAttributes<HTMLDivElement> {
-    src: string
-    alt?: string
-    name: string
-    messagePreview?: string
-    timestamp?: string
-    unreadCount?: number
-    selected?: boolean
-    rightElement?: ReactNode
-    className?: string
-    notificationsEnabled?: boolean
-    messageStatus?: 'sent' | 'delivered' | 'read' | null
-    isFavorite?: boolean
-    isChatRead?: boolean
+    src: string // URL изображения аватарки
+    alt?: string // Alt текст для изображения
+    name: string // Имя пользователя/чата
+    messagePreview?: string // Предпросмотр последнего сообщения
+    timestamp?: string // Время последнего сообщения
+    unreadCount?: number // Количество непрочитанных сообщений
+    selected?: boolean // Флаг выбранного элемента
+    rightElement?: ReactNode // Дополнительный элемент справа
+    className?: string // Дополнительные CSS классы
+    notificationsEnabled?: boolean // Флаг включенных уведомлений
+    messageStatus?: 'sent' | 'delivered' | 'read' | null // Статус сообщения
+    isFavorite?: boolean // Флаг избранного чата
+    isChatRead?: boolean // Флаг прочитанности
 }
 
+// Компонент аватарки чата с информацией о сообщении
 export const ChatAvatar = forwardRef<
     HTMLDivElement,
     ChatAvatarProps
@@ -45,14 +48,18 @@ export const ChatAvatar = forwardRef<
         },
         ref,
     ) => {
+        // Определяем, нужно ли показывать бейдж непрочитанных
         const showUnread =
             typeof unreadCount === 'number' &&
             unreadCount > 0
+
+        // Определяем, есть ли правая секция (таймстамп, бейдж, статус)
         const hasRightSection =
             timestamp ||
             showUnread ||
             messageStatus ||
             rightElement
+
         return (
             <div
                 ref={ref}
@@ -72,6 +79,7 @@ export const ChatAvatar = forwardRef<
                 )}
                 {...props}
             >
+                {/* Контейнер аватарки */}
                 <div
                     className={`
                       relative h-15 w-15 shrink-0 overflow-hidden rounded-full
@@ -86,6 +94,8 @@ export const ChatAvatar = forwardRef<
                         className="object-cover"
                     />
                 </div>
+
+                {/* Основная информация (имя и предпросмотр сообщения) */}
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-col">
                         <div className="flex items-center gap-2">
@@ -99,6 +109,7 @@ export const ChatAvatar = forwardRef<
                             >
                                 {name}
                             </p>
+                            {/* Иконка отключенных уведомлений */}
                             {notificationsEnabled ===
                                 false && (
                                 <Image
@@ -115,6 +126,7 @@ export const ChatAvatar = forwardRef<
                                 />
                             )}
                         </div>
+                        {/* Предпросмотр последнего сообщения */}
                         {messagePreview && (
                             <p
                                 className={cn(
@@ -131,6 +143,8 @@ export const ChatAvatar = forwardRef<
                         )}
                     </div>
                 </div>
+
+                {/* Правая секция с дополнительной информацией */}
                 {hasRightSection && (
                     <ChatAvatarRightSection
                         timestamp={timestamp}

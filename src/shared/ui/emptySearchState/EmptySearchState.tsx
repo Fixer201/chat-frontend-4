@@ -1,13 +1,17 @@
+// Компонент состояния "Поиск не дал результатов"
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 
 import Image from 'next/image'
 import { cn } from '@shared/lib/utils'
 import customStyles from './emptySearchState.module.css'
+
+// Интерфейс пропсов компонента EmptySearchState
 interface EmptySearchStateProps {
-    className?: string
+    className?: string // Дополнительные CSS классы
 }
 
+// Компонент для отображения состояния, когда поиск не дал результатов
 export default function EmptySearchState({
     className,
 }: EmptySearchStateProps) {
@@ -29,7 +33,7 @@ export default function EmptySearchState({
                     className,
                 )}
             >
-                {/* Картинка */}
+                {/* Иллюстрация "ничего не найдено" */}
                 <div className="relative h-50 w-50 shrink-0">
                     <Image
                         src="/images/search/imgSearchWeb.svg"

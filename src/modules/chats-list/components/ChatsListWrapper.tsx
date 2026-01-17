@@ -1,6 +1,5 @@
-// src/modules/chats-list/components/ChatsListWrapper.tsx
 'use client'
-
+// Импортируем компоненты для различных представлений
 import { useState } from 'react'
 import ChatsList from './ChatsList'
 import CreateGroupForm from '@modules/groups/components/CreateGroupForm'
@@ -10,6 +9,7 @@ import CreateChannelForm from '@modules/channels/components/CreateChannelForm'
 import { onNextProps } from '@shared/types/createGroup'
 import { Contact } from '@shared/types/contact'
 
+// Определяем типы возможных представлений (экранов) внутри компонента
 type View =
     | 'chats'
     | 'create-group'
@@ -17,38 +17,49 @@ type View =
     | 'create-channel'
     | 'channel-members'
 
+// Основной компонент-обертка для управления отображением списка чатов
+// и форм создания групп/каналов
 export default function ChatsListWrapper() {
+    // Состояние для текущего активного представления (экрана)
     const [currentView, setCurrentView] =
         useState<View>('chats')
+    // Состояние для хранения данных создаваемой группы
     const [groupData, setGroupData] =
         useState<onNextProps | null>(null)
+    // Состояние для хранения данных создаваемого канала
     const [channelData, setChannelData] =
         useState<onNextProps | null>(null)
+    // Состояние для хранения выбранных контактов (участников группы/канала)
     const [selectedContacts, setSelectedContacts] =
         useState<Contact[]>([])
-    // Обработчики для группы
+
+    // Обработчик перехода к форме создания группы
     const handleCreateGroup = () => {
         setCurrentView('create-group')
     }
 
+    // Обработчик возврата из формы создания группы к списку чатов
     const handleBackFromCreateGroup = () => {
         setCurrentView('chats')
         setGroupData(null)
     }
 
+    // Обработчик возврата из списка участников группы к форме создания группы
     const handleBackFromGroupMembers = () => {
         setCurrentView('create-group')
     }
 
-    // Обработчики для канала
+    // Обработчик перехода к форме создания канала
     const handleCreateChannel = () => {
         setCurrentView('create-channel')
     }
-
+    // Обработчик возврата из формы создания канала к списку чатов
     const handleBackFromCreateChannel = () => {
         setCurrentView('chats')
         setChannelData(null)
     }
+    // Обработчик перехода от формы создания группы к выбору участников
+    // Принимает либо строку (для обратной совместимости), либо объект с данными группы
     const handleNextFromCreateGroup = (
         payload: onNextProps | string,
     ) => {
@@ -66,6 +77,7 @@ export default function ChatsListWrapper() {
         }
         setCurrentView('group-members')
     }
+    // Обработчик перехода от формы создания канала к выбору участников
     const handleNextFromCreateChannel = (
         payload: string | onNextProps,
     ) => {
@@ -84,10 +96,12 @@ export default function ChatsListWrapper() {
 
         setCurrentView('channel-members')
     }
-
+    // Обработчик возврата из списка участников канала к форме создания канала
     const handleBackFromChannelMembers = () => {
         setCurrentView('create-channel')
     }
+    // Обработчик завершения создания группы
+    // Принимает массив выбранных контактов
     const handleFinishGroupCreation = (
         contacts: Contact[],
     ) => {
@@ -130,6 +144,7 @@ export default function ChatsListWrapper() {
         setGroupData(null)
         setSelectedContacts([])
     }
+    // Обработчик завершения создания канала
     const handleFinishChannelCreation = (
         contacts: Contact[],
     ) => {
@@ -202,7 +217,7 @@ export default function ChatsListWrapper() {
                         onClick={() =>
                             setCurrentView('chats')
                         }
-                        className="mt-4 rounded bg-gray-200 px-4 py-2"
+                        className="mt-4 rounded bg-gray-main px-4 py-2"
                     >
                         Вернуться к чатам
                     </button>
@@ -233,7 +248,7 @@ export default function ChatsListWrapper() {
                         onClick={() =>
                             setCurrentView('chats')
                         }
-                        className="mt-4 rounded bg-gray-200 px-4 py-2"
+                        className="mt-4 rounded bg-gray-main px-4 py-2"
                     >
                         Вернуться к чатам
                     </button>

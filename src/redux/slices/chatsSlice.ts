@@ -1,3 +1,4 @@
+// Redux slice для управления состоянием чатов
 import {
     createSlice,
     PayloadAction,
@@ -12,24 +13,28 @@ import {
     fetchChats,
 } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
 
+// Начальное состояние для чатов
 const initialState: ChatsState = {
-    items: [],
-    loading: false,
-    error: null,
-    selectedChatId: null,
-    chatSettings: {},
+    items: [], // Массив чатов
+    loading: false, // Флаг загрузки
+    error: null, // Сообщение об ошибке
+    selectedChatId: null, // ID выбранного чата
+    chatSettings: {}, // Настройки для каждого чата (ключ - ID чата)
 }
 
+// Создание slice для чатов
 const chatsSlice = createSlice({
     name: 'chats',
     initialState,
     reducers: {
+        // Установка выбранного чата
         setSelectedChat: (
             state,
             action: PayloadAction<number | null>,
         ) => {
             state.selectedChatId = action.payload
         },
+        // Обновление данных чата
         updateChat: (
             state,
             action: PayloadAction<ChatItem>,
@@ -41,7 +46,7 @@ const chatsSlice = createSlice({
                 state.items[index] = action.payload
             }
         },
-        // обновление настроек конкретного чата
+        // Обновление настроек конкретного чата
         updateChatSettings: (
             state,
             action: PayloadAction<{
@@ -51,6 +56,7 @@ const chatsSlice = createSlice({
         ) => {
             const { chatId, settings } = action.payload
 
+            // Если настройки для этого чата еще не существуют, создаем их
             if (!state.chatSettings[chatId]) {
                 const chat = state.items.find(
                     (c) => c.id === chatId,
@@ -66,12 +72,13 @@ const chatsSlice = createSlice({
                 }
             }
 
+            // Обновляем настройки
             state.chatSettings[chatId] = {
                 ...state.chatSettings[chatId],
                 ...settings,
             }
 
-            // Обновляем также в items для совместимости
+            // Обновляем также в items для совместимости со старым кодом
             const chatIndex = state.items.findIndex(
                 (c) => c.id === chatId,
             )
@@ -86,7 +93,7 @@ const chatsSlice = createSlice({
             }
         },
 
-        // переключение избранного
+        // Переключение избранного статуса чата
         toggleFavorite: (
             state,
             action: PayloadAction<number>,
@@ -96,11 +103,13 @@ const chatsSlice = createSlice({
                 state.chatSettings[chatId]
 
             if (currentSettings) {
+                // Инвертируем статус избранного
                 state.chatSettings[chatId] = {
                     ...currentSettings,
                     isFavorite: !currentSettings.isFavorite,
                 }
             } else {
+                // Если настроек нет, создаем их
                 const chat = state.items.find(
                     (c) => c.id === chatId,
                 )
@@ -116,7 +125,7 @@ const chatsSlice = createSlice({
             }
         },
 
-        // переключение уведомлений
+        // Переключение состояния уведомлений
         toggleNotifications: (
             state,
             action: PayloadAction<number>,
@@ -126,6 +135,7 @@ const chatsSlice = createSlice({
                 state.chatSettings[chatId]
 
             if (currentSettings) {
+                // Инвертируем статус уведомлений
                 state.chatSettings[chatId] = {
                     ...currentSettings,
                     notificationsEnabled:
@@ -134,7 +144,7 @@ const chatsSlice = createSlice({
             }
         },
 
-        // пометить как прочитанное
+        // Пометка чата как прочитанного
         markAsRead: (
             state,
             action: PayloadAction<number>,
@@ -156,7 +166,7 @@ const chatsSlice = createSlice({
             }
         },
 
-        // пометить как непрочитанное
+        // Пометка чата как непрочитанного
         markAsUnread: (
             state,
             action: PayloadAction<number>,
@@ -174,7 +184,7 @@ const chatsSlice = createSlice({
             }
         },
 
-        //  пометить как удаленное
+        // Пометка чата как удаленного
         markAsDeleted: (
             state,
             action: PayloadAction<number>,
@@ -189,6 +199,7 @@ const chatsSlice = createSlice({
                     isDeleted: true,
                 }
             } else {
+                // Если настроек нет, создаем их с флагом удаления
                 const chat = state.items.find(
                     (c) => c.id === chatId,
                 )
@@ -204,7 +215,7 @@ const chatsSlice = createSlice({
             }
         },
 
-        // добавить в контакты
+        // Добавление чата в контакты
         addToContacts: (
             state,
             action: PayloadAction<number>,
@@ -220,16 +231,19 @@ const chatsSlice = createSlice({
             }
         },
 
-        // сбросить все настройки
+        // Сброс всех настроек чатов
         resetChatSettings: (state) => {
             state.chatSettings = {}
         },
     },
+    // Обработчики для асинхронных действий (загрузка чатов)
     extraReducers: (builder) => {
         handleFetchChats(builder, initialState)
     },
 })
+// Экспорт асинхронного thunk для загрузки чатов
 export { fetchChats }
+// Экспорт всех action creators
 export const {
     setSelectedChat,
     updateChat,
@@ -242,4 +256,5 @@ export const {
     addToContacts,
     resetChatSettings,
 } = chatsSlice.actions
+// Экспорт reducer
 export default chatsSlice.reducer

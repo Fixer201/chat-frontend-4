@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
-
+// Компонент списка чатов
 import {
     useCallback,
     useEffect,
     useMemo,
-    useRef,
     useState,
 } from 'react'
 import { useChats } from '@shared/hooks/useChats'
@@ -19,57 +17,64 @@ import EmptyChatsState from './emptyChatsState/EmptyChatsState'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { useRouter } from 'next/navigation'
 import Search from '@shared/ui/Search'
-import Image from 'next/image'
-import Dropdown from '@shared/ui/dropdown/Dropdown'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
+// Интерфейс пропсов компонента ChatsList
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
 }
+// Основной компонент списка чатов
 export default function ChatsList({
     onCreateGroup,
     onCreateChannel,
 }: ChatsListProps) {
     const router = useRouter()
-    const [createMenuPosition, setCreateMenuPosition] =
-        useState({ top: 0, left: 0 })
+    // Состояние для значения поиска
     const [searchValue, setSearchValue] = useState('')
+    // Состояние для отображения модального окна удаления чата
     const [deleteModalOpen, setDeleteModalOpen] =
         useState(false)
+    // Состояние для отслеживания процесса удаления (загрузки)
     const [isDeleting, setIsDeleting] = useState(false)
+    // Состояние для отображения тоста об успешном добавлении в контакты
     const [successToastOpen, setSuccessToastOpen] =
         useState(false)
+    // Состояние для хранения имени добавленного контакта (для тоста)
     const [addedContactName, setAddedContactName] =
         useState('')
+    // Состояние для хранения информации о чате, который планируется удалить
     const [chatToDelete, setChatToDelete] = useState<{
         id: number
         name: string
     } | null>(null)
-
+    // Используем кастомный хук useChats для управления состоянием чатов
     const {
-        chats,
-        loading,
-        loadChats,
-        chatSettings,
-        toggleFavorite,
-        toggleNotifications,
-        markAsRead,
-        markAsUnread,
-        deleteChat,
-        addToContacts,
-        selectedChatId,
-        selectChat,
+        chats, // Массив чатов
+        loading, // Флаг загрузки
+        loadChats, // Функция загрузки чатов
+        chatSettings, // Настройки для каждого чата (избранное, уведомления и т.д.)
+        toggleFavorite: handleFavoriteChat, // Функция добавления/удаления из избранного
+        toggleNotifications: handleMuteChat, // Функция включения/выключения уведомлений
+        markAsRead: handleMarkAsRead, // Функция пометки как прочитанного
+        markAsUnread: handleMarkAsUnread, // Функция пометки как непрочитанного
+        deleteChat, // Функция удаления чата
+        addToContacts, // Функция добавления в контакты
+        selectedChatId, // ID выбранного чата
+        selectChat, // Функция выбора чата
     } = useChats()
 
+    // Эффект для загрузки чатов при монтировании компонента
     useEffect(() => {
         loadChats(15)
     }, [loadChats])
 
+    // Обработчик начала нового чата (переход на страницу контактов)
     const handleStartChat = useCallback(() => {
         router.push('/contacts')
     }, [router])
 
+    // Массив статусов сообщений для демонстрационных целей (в реальном приложении получается с сервера)
     const messageStatuses: (
         | 'sent'
         | 'delivered'
@@ -77,9 +82,10 @@ export default function ChatsList({
         | null
     )[] = ['sent', 'delivered', 'read', null]
 
+    // Используем хук useSearch для фильтрации чатов по строке поиска
     const { filteredValue } = useSearch(
         chats?.filter(
-            (chat) => !chatSettings[chat.id]?.isDeleted,
+            (chat) => !chatSettings[chat.id]?.isDeleted, // Исключаем удаленные чаты из поиска
         ) || [],
         searchValue,
         [
@@ -91,6 +97,7 @@ export default function ChatsList({
         ],
     )
 
+    // Сортируем чаты: избранные в начале списка
     const sortedChats = [...filteredValue].sort((a, b) => {
         const aIsFavorite =
             chatSettings[a.id]?.isFavorite || false
@@ -102,14 +109,16 @@ export default function ChatsList({
         return 0
     })
 
+    // Функция выбора чата по клику
     const toSelectChat = (id: number): void => {
         if (id === selectedChatId) {
-            selectChat(null)
+            selectChat(null) // Если чат уже выбран, снимаем выбор
         } else {
-            selectChat(id)
+            selectChat(id) // Иначе выбираем чат
         }
     }
 
+    // Обработчик клика по кнопке удаления чата
     const handleDeleteClick = useCallback(
         (chatId: number, chatName: string) => {
             setChatToDelete({ id: chatId, name: chatName })
@@ -118,19 +127,21 @@ export default function ChatsList({
         [],
     )
 
+    // Обработчик подтверждения удаления чата
     const handleDeleteConfirm = useCallback(async () => {
         if (!chatToDelete || isDeleting) return
 
         setIsDeleting(true)
 
         try {
+            // Имитация задержки при удалении (в реальном приложении здесь был бы API-запрос)
             await new Promise((resolve) =>
                 setTimeout(resolve, 1000),
             )
 
             console.log('Удалить чат:', chatToDelete.id)
 
-            deleteChat(chatToDelete.id)
+            deleteChat(chatToDelete.id) // Вызываем функцию удаления из хука useChats
 
             setDeleteModalOpen(false)
             setChatToDelete(null)
@@ -141,37 +152,13 @@ export default function ChatsList({
         }
     }, [chatToDelete, isDeleting, deleteChat])
 
+    // Обработчик отмены удаления чата
     const handleDeleteCancel = useCallback(() => {
         setDeleteModalOpen(false)
         setChatToDelete(null)
     }, [])
 
-    const handleFavoriteChat = (chatId: number) => {
-        console.log('Закрепить чат:', chatId)
-        toggleFavorite(chatId)
-    }
-
-    const handleMuteChat = (chatId: number) => {
-        console.log(
-            'Отключить уведомления для чата:',
-            chatId,
-        )
-        toggleNotifications(chatId)
-    }
-
-    const handleMarkAsRead = (chatId: number) => {
-        console.log('Пометить чат как прочитанный:', chatId)
-        markAsRead(chatId)
-    }
-
-    const handleMarkAsUnread = (chatId: number) => {
-        console.log(
-            'Пометить чат как непрочитанный:',
-            chatId,
-        )
-        markAsUnread(chatId)
-    }
-
+    // Обработчик добавления чата в контакты
     const handleAddToContacts = useCallback(
         (
             chatId: number,
@@ -179,50 +166,42 @@ export default function ChatsList({
             lastName: string,
         ) => {
             const fullName = `${firstName} ${lastName}`
-            setAddedContactName(fullName)
-            addToContacts(chatId)
-            setSuccessToastOpen(true)
+            setAddedContactName(fullName) // Сохраняем имя для отображения в тосте
+            addToContacts(chatId) // Вызываем функцию добавления из хука useChats
+            setSuccessToastOpen(true) // Показываем тост об успехе
         },
         [addToContacts],
     )
 
+    // Обработчик закрытия тоста об успешном добавлении
     const handleSuccessToastClose = useCallback(() => {
         setSuccessToastOpen(false)
     }, [])
 
+    // Мемоизированное значение: нужно ли показывать состояние пустого поиска
     const showEmptySearchState = useMemo(() => {
         return (
-            searchValue.trim() !== '' &&
+            searchValue.trim() !== '' && // Поиск не пустой
             filteredValue &&
-            filteredValue.length === 0
+            filteredValue.length === 0 // И ничего не найдено
         )
     }, [searchValue, filteredValue])
 
+    // Мемоизированное значение: нужно ли показывать состояние отсутствия чатов
     const showEmptyChatsState = useMemo(() => {
         return (
-            !loading &&
+            !loading && // Загрузка завершена
             chats &&
-            chats.length === 0 &&
-            searchValue.trim() === ''
+            chats.length === 0 && // Чатов нет
+            searchValue.trim() === '' // Поиск не выполняется
         )
     }, [loading, chats, searchValue])
 
-    // Обработчики для меню создания
-    const handleCreateGroup = useCallback(() => {
-        // Реальная логика создания группы
-        alert('Создать группу')
-        // router.push('/create-group')
-    }, [])
-
-    const handleCreateChannel = useCallback(() => {
-        // Реальная логика создания канала
-        alert('Создать канал')
-        // router.push('/create-channel')
-    }, [])
-
+    // Рендер компонента
     return (
         <>
-            <div className="flex h-full min-h-0 flex-col">
+            <div className="flex h-(--screen-height-list) min-h-0 flex-col">
+                {/* Верхняя панель с поиском и кнопкой создания */}
                 <div
                     className={`flex h-19 w-full items-center gap-2.5 p-4`}
                 >
@@ -245,13 +224,14 @@ export default function ChatsList({
                         }
                     />
                 </div>
+                {/* Основная область со списком чатов */}
                 <div
                     className={cn(
                         `min-h-0 flex-1 overflow-auto`,
                         `max-h-(--screen-112)`,
                     )}
                 >
-                    {/* ИЗМЕНЕНО: используем loading из Redux вместо isLoading */}
+                    {/* Если идет загрузка, показываем индикатор */}
                     {loading ? (
                         <div
                             className={`flex h-full items-center justify-center`}
@@ -261,6 +241,7 @@ export default function ChatsList({
                             </div>
                         </div>
                     ) : showEmptySearchState ? (
+                        // Если поиск не дал результатов
                         <div
                             className={`
                               flex flex-1 items-center justify-center p-4
@@ -269,6 +250,7 @@ export default function ChatsList({
                             <EmptySearchState />
                         </div>
                     ) : showEmptyChatsState ? (
+                        // Если чатов вообще нет
                         <div
                             className={`
                               flex flex-1 items-center justify-center p-4
@@ -281,11 +263,12 @@ export default function ChatsList({
                             />
                         </div>
                     ) : (
+                        // Отображаем список чатов с кастомным скроллбаром
                         <CustomScrollbar>
                             <div className="flex flex-col">
                                 {sortedChats?.map(
                                     (chat, index) => {
-                                        // ИЗМЕНЕНО: получаем настройки из Redux вместо локального состояния
+                                        // Получаем настройки для текущего чата
                                         const settings =
                                             chatSettings[
                                                 chat.id
@@ -309,10 +292,12 @@ export default function ChatsList({
                                                     chat.newMessageCount ||
                                                     0,
                                             }
+                                        // Пропускаем удаленные чаты
                                         if (
                                             settings.isDeleted
                                         )
                                             return null
+                                        // Рассчитываем количество непрочитанных для бейджа
                                         let badgeCount:
                                             | number
                                             | undefined =
@@ -327,11 +312,13 @@ export default function ChatsList({
                                                     ? settings.originalUnreadCount
                                                     : 0
                                         }
+                                        // Определяем URL аватарки, используя fallback при отсутствии
                                         const avatarSrc =
                                             chat.chat.avatarUrl?.trim()
                                                 ? chat.chat
                                                       .avatarUrl
                                                 : '/images/chatHeader/userAvatar.svg'
+                                        // Рендерим элемент списка чатов
                                         return (
                                             <ChatListItem
                                                 src={
@@ -428,12 +415,14 @@ export default function ChatsList({
                     )}
                 </div>
             </div>
+            {/* Модальное окно подтверждения удаления чата */}
             <ChatDeleteModal
                 open={deleteModalOpen}
                 onClose={handleDeleteCancel}
                 onConfirm={handleDeleteConfirm}
                 chatName={chatToDelete?.name || ''}
             />
+            {/* Тост об успешном добавлении в контакты */}
             <ChatSuccessToast
                 open={successToastOpen}
                 onClose={handleSuccessToastClose}

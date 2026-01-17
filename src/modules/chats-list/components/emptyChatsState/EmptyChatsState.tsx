@@ -1,3 +1,4 @@
+// Компонент состояния "Нет чатов" (пустой экран)
 'use client'
 
 import Image from 'next/image'
@@ -5,11 +6,13 @@ import { Button } from '@shared/ui/button/Button'
 import { cn } from '@shared/lib/utils'
 import customStyles from '@modules/chats-list/components/emptyChatsState/emptyChatsState.module.css'
 
+// Интерфейс пропсов компонента EmptyChatsState
 interface EmptyChatsStateProps {
-    className?: string
-    onStartChat?: () => void
+    className?: string // Дополнительные CSS классы
+    onStartChat?: () => void // Обработчик клика по кнопке "Начать чат"
 }
 
+// Компонент для отображения состояния, когда чатов нет
 export default function EmptyChatsState({
     className,
     onStartChat,
@@ -31,7 +34,7 @@ export default function EmptyChatsState({
                     className,
                 )}
             >
-                {/* Картинка */}
+                {/* Иллюстрация */}
                 <div className="relative h-50 w-50 shrink-0">
                     <Image
                         src="/images/search/imgSearchWeb.svg"

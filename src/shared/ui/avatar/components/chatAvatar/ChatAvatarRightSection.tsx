@@ -1,23 +1,25 @@
+// Компонент правой секции аватарки чата (таймстамп, бейдж, статус)
 'use client'
 
 import { Badge } from '@shared/ui/badge/Badge'
 import { cn } from '@shared/lib/utils'
-
 import type { ReactNode } from 'react'
 import { MessageStatusIcon } from '@shared/ui/messageStatusIcon/MessageStatusIcon'
 import Image from 'next/image'
 
+// Пропсы компонента ChatAvatarRightSection
 interface ChatAvatarRightSectionProps {
-    timestamp?: string
-    showUnread: boolean
-    unreadCount?: number | undefined
-    messageStatus?: 'sent' | 'delivered' | 'read' | null
-    rightElement?: ReactNode
-    selected?: boolean
-    isFavorite?: boolean
-    isChatRead?: boolean
+    timestamp?: string // Время последнего сообщения
+    showUnread: boolean // Флаг показа бейджа непрочитанных
+    unreadCount?: number | undefined // Количество непрочитанных сообщений
+    messageStatus?: 'sent' | 'delivered' | 'read' | null // Статус сообщения
+    rightElement?: ReactNode // Дополнительный элемент
+    selected?: boolean // Флаг выбранного элемента
+    isFavorite?: boolean // Флаг избранного чата
+    isChatRead?: boolean // Флаг прочитанности
 }
 
+// Компонент правой секции аватарки с дополнительной информацией
 export const ChatAvatarRightSection = ({
     timestamp,
     showUnread,
@@ -30,9 +32,11 @@ export const ChatAvatarRightSection = ({
 }: ChatAvatarRightSectionProps) => {
     return (
         <div className="ml-auto flex items-start gap-2">
+            {/* Секция с временем, статусом и бейджами */}
             {(timestamp || showUnread || messageStatus) && (
                 <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1">
+                        {/* Иконка статуса сообщения */}
                         {messageStatus &&
                             messageStatus !== null && (
                                 <div
@@ -53,6 +57,7 @@ export const ChatAvatarRightSection = ({
                                     />
                                 </div>
                             )}
+                        {/* Время последнего сообщения */}
                         {timestamp && (
                             <span
                                 className={cn(
@@ -66,7 +71,9 @@ export const ChatAvatarRightSection = ({
                             </span>
                         )}
                     </div>
+                    {/* Отображение иконки закрепления или бейджа непрочитанных */}
                     {isFavorite ? (
+                        // Иконка закрепленного чата
                         <Image
                             src="/images/chatList/pin.svg"
                             alt={'Закреплено'}
@@ -79,6 +86,7 @@ export const ChatAvatarRightSection = ({
                             )}
                         />
                     ) : (
+                        // Бейдж непрочитанных сообщений
                         !isChatRead &&
                         (showUnread ? (
                             <Badge
@@ -97,6 +105,7 @@ export const ChatAvatarRightSection = ({
                                 {unreadCount}
                             </Badge>
                         ) : (
+                            // Пустой бейдж (если чат не прочитан, но нет непрочитанных)
                             <Badge
                                 variant="counter"
                                 color="primary"
@@ -116,6 +125,7 @@ export const ChatAvatarRightSection = ({
                     )}
                 </div>
             )}
+            {/* Дополнительный элемент справа (например, меню действий) */}
             {rightElement}
         </div>
     )

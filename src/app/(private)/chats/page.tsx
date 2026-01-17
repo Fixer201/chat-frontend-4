@@ -9,18 +9,20 @@ export default function ChatsPage() {
             {/* Левая колонка - список чатов */}
             <div
                 className={`
-                  w-full rounded-md border border-gray-200 bg-gray-main
+                  w-full rounded-md border border-app-divider bg-gray-main
                   md:w-80
                   lg:w-96
                 `}
             >
+                {/* Обертка для списка чатов и форм создания групп/каналов */}
                 <ChatsListWrapper />
             </div>
 
             {/* Правая колонка - пустой state (скрыт на mobile) */}
             <div
                 className={`
-                  hidden flex-1 rounded-md border border-gray-200 bg-gray-main
+                  hidden flex-1 rounded-md border border-app-divider
+                  bg-gray-main
                   md:block
                 `}
             >

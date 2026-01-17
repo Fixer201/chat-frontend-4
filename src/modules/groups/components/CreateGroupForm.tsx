@@ -1,3 +1,4 @@
+// Форма создания новой группы
 import { useEffect, useMemo, useState } from 'react'
 import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
 import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
@@ -8,35 +9,44 @@ import {
     GroupTypeOptionProps,
     onNextProps,
 } from '@shared/types/createGroup'
+
+// Интерфейс пропсов компонента CreateGroupForm
 interface CreateGroupFormProps {
-    onBack: () => void
-    onNext: (data: onNextProps | string) => void
+    onBack: () => void // Обработчик возврата к предыдущему экрану
+    onNext: (data: onNextProps | string) => void // Обработчик перехода к следующему шагу (с данными формы или строкой названия)
 }
 
+// Компонент формы создания новой группы
 export default function CreateGroupForm({
     onBack,
     onNext,
 }: CreateGroupFormProps) {
+    // Состояние для файла аватарки группы
     const [photoFile, setPhotoFile] = useState<File | null>(
         null,
     )
+    // Мемоизированное значение для предпросмотра аватарки
     const photoPreview = useMemo(
         () =>
             photoFile
-                ? URL.createObjectURL(photoFile)
+                ? URL.createObjectURL(photoFile) // Создаем URL для предпросмотра
                 : null,
         [photoFile],
     )
 
+    // Эффект для очистки URL при размонтировании компонента
     useEffect(() => {
         return () => {
             if (photoPreview)
-                URL.revokeObjectURL(photoPreview)
+                URL.revokeObjectURL(photoPreview) // Освобождаем память
         }
     }, [photoPreview])
-    const [name, setName] = useState('')
-    const [description, setDescription] = useState('')
 
+    // Состояния для полей формы
+    const [name, setName] = useState('') // Название группы
+    const [description, setDescription] = useState('') // Описание группы
+
+    // Опции для выбора типа группы
     const options = [
         {
             value: 'open',
@@ -56,26 +66,32 @@ export default function CreateGroupForm({
         },
     ]
 
+    // Состояние для выбранного типа группы
     const [choosenOption, setChoosenOption] =
         useState<GroupTypeOptionProps>({
             value: '',
             optionName: '',
             optionDescription: '',
         })
-    // photoPreview is derived via useMemo; no state update here
+
+    // Обработчик изменения типа группы
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
         setChoosenOption((prev) => ({ ...prev, ...option }))
     }
+
+    // Обработчик отправки формы
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        // Валидация: все обязательные поля должны быть заполнены
         if (
             !name.trim() ||
             !description.trim() ||
             !choosenOption.value
         )
             return
+        // Передаем данные родительскому компоненту
         onNext({
             name: name.trim(),
             description: description.trim(),
@@ -88,6 +104,7 @@ export default function CreateGroupForm({
         <div
             className={`flex h-full flex-col rounded-md bg-gray-main`}
         >
+            {/* Шапка формы с кнопкой назад и заголовком */}
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -116,19 +133,22 @@ export default function CreateGroupForm({
                 </h2>
             </div>
 
+            {/* Основное содержимое формы */}
             <div className="flex flex-1 justify-center p-4">
                 <form
                     onSubmit={onSubmit}
                     className="w-full max-w-82 space-y-4"
                 >
+                    {/* Выбор аватарки группы */}
                     <div className="flex flex-col items-center">
                         <AvatarPicker
                             src={photoPreview}
-                            name={name || 'Группа'}
+                            name={name || 'Группа'} // Fallback название если поле пустое
                             onFile={setPhotoFile}
                         />
                     </div>
 
+                    {/* Поля ввода названия и описания */}
                     <div className="w-full">
                         <div className="flex w-full flex-col">
                             <FloatingTextarea
@@ -160,6 +180,7 @@ export default function CreateGroupForm({
                         </div>
                     </div>
 
+                    {/* Выбор типа группы */}
                     <div>
                         <GroupTypeSelect
                             selectLabel="Тип группы"
@@ -171,6 +192,7 @@ export default function CreateGroupForm({
                         />
                     </div>
 
+                    {/* Кнопка отправки формы */}
                     <div className="flex justify-center">
                         <Button
                             type="submit"

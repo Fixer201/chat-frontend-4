@@ -1,3 +1,4 @@
+// Утилиты для трансформации данных чатов между API форматом и UI форматом
 import {
     ApiChatItem,
     ChatItem,
@@ -61,6 +62,7 @@ export const transformChatListFromApi = (
     apiChats: ApiChatItem[],
 ): ChatItem[] => {
     return apiChats.map((item) => {
+        // Инициализация настроек чата на основе API данных
         const chatSettings: ChatSettings = {
             isFavorite: item.is_favorite || false,
             isChatRead: item.new_message_count === 0,
@@ -70,8 +72,10 @@ export const transformChatListFromApi = (
             originalUnreadCount:
                 item.new_message_count || 0,
         }
+        // Трансформация данных из API формата в UI формат
         const chatItemFromApi =
             transformChatItemFromApi(item)
+        // Добавление настроек в объект чата
         chatItemFromApi.settings = chatSettings
         return {
             ...chatItemFromApi,
