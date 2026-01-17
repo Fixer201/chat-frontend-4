@@ -1,11 +1,25 @@
 'use client'
 
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
+import { useChats } from '@shared/hooks/useChats'
+import ChatRoom from '@modules/chat-room/components/ChatRoom'
+import { useEffect } from 'react'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 
 export default function ChatsPage() {
+    const { chats, selectedChatId, loadChats } = useChats()
+
+    useEffect(() => {
+        loadChats(15)
+    }, [loadChats])
+
+    // Найти чат по ID
+    const selectedChat = chats.find(
+        (chat) => chat.id === selectedChatId,
+    )
+
     return (
-        <div className="flex min-h-11/12 max-w-full gap-6">
+        <div className="flex h-screen max-w-full gap-6">
             {/* Левая колонка - список чатов */}
             <div
                 className={`
@@ -26,9 +40,11 @@ export default function ChatsPage() {
                   md:block
                 `}
             >
-                <EmptyChatState />
-                {/* по умолчанию когда чат не
-                выбран. */}
+                {selectedChat ? (
+                    <ChatRoom chat={selectedChat} />
+                ) : (
+                    <EmptyChatState />
+                )}
             </div>
         </div>
     )

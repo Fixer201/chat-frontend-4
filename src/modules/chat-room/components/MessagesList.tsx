@@ -1,14 +1,22 @@
+'use client'
+
 import Image from 'next/image'
+import { useWebSocket } from '@shared/context/websocketContext'
+import MessageItem from './MessageItem'
 
-type Message = {
-    text: string
-    id: number
-}
+export default function MessagesList({
+    chatKey,
+}: Readonly<{
+    chatKey: string
+}>) {
+    const { messages } = useWebSocket()
 
-export default function MessagesList() {
-    // TODO: заменить на реальные данные
-    // создать тип для сообщений, пока что заглушка
-    const messages: Message[] = []
+    // Фильтруем сообщения только для текущего чата
+    const chatMessages = messages.filter(
+        (msg) => msg.chatKey === chatKey,
+    )
+
+    console.log(chatMessages)
 
     return (
         <section
@@ -17,7 +25,7 @@ export default function MessagesList() {
             aria-live="polite"
             className="flex h-full w-full flex-col overflow-y-auto"
         >
-            {messages.length === 0 ? (
+            {chatMessages.length === 0 ? (
                 <div
                     className={`
                       flex h-full flex-col items-center justify-center
@@ -43,9 +51,11 @@ export default function MessagesList() {
             ) : (
                 // Список сообщений
                 <ul className="flex flex-col gap-2 p-4">
-                    {messages.map((msg) => (
-                        <li key={msg.id}>
-                            {/* MessageItem компонент */}
+                    {chatMessages.map((message) => (
+                        <li key={message.uid}>
+                            <MessageItem
+                                message={message}
+                            />
                         </li>
                     ))}
                 </ul>

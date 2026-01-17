@@ -62,8 +62,19 @@ export function useWebSocketChat() {
         }
     }, [])
 
-    function onMessage(data: MessageEvent) {
-        console.log('Received: ', data)
+    function onMessage(event: MessageEvent) {
+        console.log('Received: ', event)
+
+        // получаем ответ сервера и парсим его
+        const data = JSON.parse(event.data)
+
+        if (
+            // если удачно получили сообщение
+            data.action === 'create_text_message' &&
+            data.status === 'success'
+        ) {
+            setMessages((prev) => [...prev, data.message])
+        }
     }
 
     // Вспомогательная функция для получения токена из LocalStorage
@@ -89,16 +100,19 @@ export function useWebSocketChat() {
 
         // Обработка событий
         socket.onopen = () => {
+            console.log('WebSocket opened')
             onOpen()
         }
 
         socket.onclose = () => {
+            console.log('WebSocket closed')
             onClose()
         }
         socket.onerror = (ev: Event) => {
             onError(ev)
         }
         socket.onmessage = (data: MessageEvent) => {
+            console.log('onMessage вызван: ', data)
             onMessage(data)
         }
 
@@ -142,7 +156,6 @@ export function useWebSocketChat() {
                 // отправляем данные
                 object: {
                     to_user_uid: toUserId,
-                    chat_key: chatKey,
                     content: content,
                     status: status,
                     files: files,
@@ -150,6 +163,9 @@ export function useWebSocketChat() {
                     forwarded_messages: forwardedMessages,
                 },
             }
+
+            console.log('Отправили на сервер: ', messageObj)
+
             // Отправляем только есть соединение
             if (
                 wsRef.current?.readyState === WebSocket.OPEN

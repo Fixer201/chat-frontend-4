@@ -19,8 +19,8 @@ const EmojiRow = memo(function EmojiRow({
                       hover:bg-gray-200
                       active:scale-95
                     `}
+                    tabIndex={1}
                     style={buttonStyle}
-                    type="button"
                 >
                     <Emoji emoji={emoji} size={32} />
                 </button>

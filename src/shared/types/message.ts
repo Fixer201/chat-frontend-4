@@ -12,10 +12,14 @@ export type ForwardedMessage = {
 }
 
 export type Message = {
-    toUserId: string
-    chatKey: string
-    content: string
-    status: string
+    uid?: string // ID сообщения (приходит от сервера)
+    toUserId?: string // кому отправляем (опционально для входящих)
+    chatKey: string // ключ чата
+    content: string // текст сообщения
+    status: string // publish/draft
+    from_user?: string // от кого сообщение (приходит от сервера)
+    created_at?: number // timestamp создания
+    updated_at?: number // timestamp обновления
     files?: MessageFile[]
     repliedMessages?: RepliedMessage[]
     forwardedMessages?: ForwardedMessage[]

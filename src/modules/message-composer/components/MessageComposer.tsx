@@ -35,7 +35,7 @@ function useAutoResizeTextarea(value: string) {
 export default function MessageComposer({
     chatKey,
     toUserId,
-}: MessageComposerProps) {
+}: Readonly<MessageComposerProps>) {
     // Текст сообщения в инпуте
     const [inputValue, setInputValue] = useState<string>('')
 
@@ -144,7 +144,8 @@ export default function MessageComposer({
                 />
 
                 {/* Emoji picker trigger */}
-                <button
+                <div
+                    role="button"
                     className="absolute right-4 bottom-2 mb-1.5"
                     onMouseEnter={handleEmojiPickerOpen}
                     onMouseLeave={handleEmojiPickerClose}
@@ -178,7 +179,7 @@ export default function MessageComposer({
                             />
                         </div>
                     )}
-                </button>
+                </div>
             </div>
 
             {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
