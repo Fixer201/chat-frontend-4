@@ -205,8 +205,8 @@ export default function RegisterForm({
                         >
                             <div
                                 className={`
-                              flex w-90 items-center justify-center
-                            `}
+                                  flex w-90 items-center justify-center
+                                `}
                             >
                                 <p className="text-center text-[32px] font-bold">
                                     Личная информация
@@ -304,7 +304,15 @@ export default function RegisterForm({
                                 <Button
                                     variant="solid"
                                     size="md"
-                                    color="light-gray"
+                                    color={
+                                        name.trim() &&
+                                        nickname.trim() &&
+                                        !nameError &&
+                                        !nicknameError &&
+                                        !nicknameUniqueError
+                                            ? 'primary'
+                                            : 'light-gray'
+                                    }
                                     className="w-full"
                                     onClick={handleSubmit}
                                     disabled={
