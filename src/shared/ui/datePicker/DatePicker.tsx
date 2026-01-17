@@ -261,6 +261,13 @@ const SelectField = ({
                       border-accent-violet-primary bg-white-bg p-1
                       shadow-(--color-context-shadow)
                     `}
+                    style={{
+                        borderTopLeftRadius: 0,
+                        borderTopRightRadius: 0,
+                        borderTopWidth: 1,
+                        borderColor:
+                            'var(--color-accent-violet-primary)',
+                    }}
                 >
                     <CustomScrollbar
                         className="max-h-60"

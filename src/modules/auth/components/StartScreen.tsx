@@ -15,43 +15,18 @@ export default function StartScreen() {
     return (
         <>
             <div className="flex min-h-screen items-center justify-center">
-                <div
-                    className={`
-          relative hidden h-(--app-login-height) w-(--app-login-width) flex-col
-          items-center justify-center
-          md:flex
-        `}
-                    style={{
-                        backgroundImage:
-                            'var(--app-login-background)',
-                    }}
-                >
-                    <div
-                        className={`
-            absolute flex h-190 w-122 flex-col items-center justify-center
-            rounded-2xl
-          `}
-                        style={{
-                            filter: 'var(--app-start-screen-shadow)',
-                            backgroundImage:
-                                'var(--app-login-start)',
-                        }}
-                    >
+                <div className="login-container relative flex h-(--app-login-height) w-(--app-login-width) flex-col items-center justify-center bg-app-login-background">
+                    <div className="start-screen-inner absolute flex h-190 w-122 flex-col items-center justify-center rounded-2xl bg-app-login-start filter-app-start-screen-shadow">
                         <Image
                             src="/images/login/Logo.svg"
                             alt="Logo"
                             width={179}
                             height={161}
-                            className="absolute top-18 left-41 z-10"
+                            className="logo-mobile absolute top-18 left-41 z-10"
                             loading="eager"
                         />
 
-                        <div
-                            className={`
-              absolute top-74 left-16 flex h-95 w-90 flex-col justify-between
-              gap-4
-            `}
-                        >
+                        <div className="content-mobile absolute top-74 left-16 flex h-95 w-90 flex-col justify-between gap-4">
                             <div className="flex flex-col items-center gap-6">
                                 <span className="text-text-primary text-3xl font-bold">
                                     А-Чат
