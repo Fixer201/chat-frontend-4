@@ -27,11 +27,15 @@ export default function GroupMembersList({
     onFinish,
 }: GroupMembersListProps) {
     // Состояние для хранения ID выбранных контактов
+    // Используем массив строк (uid) вместо полных объектов для оптимизации
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
+
+    // Хук useDispatch для отправки actions в Redux store
     const dispatch = useDispatch()
 
-    // Получение данных из Redux store
+    // Получение данных из Redux store с помощью useSelector
+    // useSelector подписывает компонент на изменения в store и вызывает ререндер при изменении
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -40,29 +44,33 @@ export default function GroupMembersList({
     )
 
     // Обработчик выбора/отмены выбора контакта
+    // Принимает uid контакта и добавляет/удаляет его из массива selectedContactIds
     const handleSelectContact = (uid: string) => {
         setSelectedContactIds(
             (prev) =>
                 prev.includes(uid)
-                    ? prev.filter((id) => id !== uid) // Удаляем если уже выбран
-                    : [...prev, uid], // Добавляем если не выбран
+                    ? prev.filter((id) => id !== uid) // Удаляем если уже выбран (toggle off)
+                    : [...prev, uid], // Добавляем если не выбран (toggle on)
         )
     }
 
     // Получаем полные объекты контактов по выбранным ID
+    // Фильтруем массив contactsList, оставляя только контакты с uid из selectedContactIds
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
 
-    const { name } = groupData // Название группы из данных формы
+    const { name } = groupData // Деструктурируем название группы из данных формы
 
     // Обработчик установки выбранного контакта в Redux
+    // Отправляет action setContacts с uid выбранного контакта
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
     // Обработчик завершения выбора участников
+    // Собирает все данные и передает их родительскому компоненту
     const handleFinishClick = () => {
         // Вызываем родительский обработчик с выбранными контактами
         onFinish(selectedContacts)
@@ -102,6 +110,7 @@ export default function GroupMembersList({
             </div>
 
             {/* Список контактов для выбора участников */}
+            {/* cn используется для условного объединения классов */}
             <div
                 className={cn(
                     `
@@ -113,6 +122,7 @@ export default function GroupMembersList({
                     `max-h-(--screen-height-list)`,
                 )}
             >
+                {/* Компонент списка контактов для выбора участников */}
                 <ContactsListInvitation
                     selectedContacts={selectedContactIds}
                     handleSelectContact={

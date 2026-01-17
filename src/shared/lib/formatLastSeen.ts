@@ -1,7 +1,7 @@
 // Функция форматирования времени последнего подключения
 /**
  * Форматирует время последнего подключения в удобный формат
- * @param lastSeenMs - timestamp в миллисекундах
+ * @param lastSeenMs - timestamp в миллисекундах (Unix timestamp * 1000)
  * @returns
  *   - Сегодня: "ЧЧ:ММ" (например: "21:49")
  *   - Эта неделя (но не сегодня): "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"
@@ -14,12 +14,14 @@ export const formatLastSeen = (
     const now = new Date()
 
     // Проверяем сегодняшний день
+    // Сравниваем день, месяц и год для определения "сегодня"
     if (
         lastSeen.getDate() === now.getDate() &&
         lastSeen.getMonth() === now.getMonth() &&
         lastSeen.getFullYear() === now.getFullYear()
     ) {
         // Сегодня - возвращаем время в формате ЧЧ:ММ
+        // padStart добавляет ведущий ноль для однозначных чисел
         const hours = lastSeen
             .getHours()
             .toString()
@@ -31,7 +33,8 @@ export const formatLastSeen = (
         return `${hours}:${minutes}`
     }
 
-    // Проверяем эту неделю
+    // Проверяем эту неделю (последние 7 дней)
+    // Создаем дату 7 дней назад для сравнения
     const weekAgo = new Date(now)
     weekAgo.setDate(weekAgo.getDate() - 7)
 
@@ -46,17 +49,18 @@ export const formatLastSeen = (
             'Пт',
             'Сб',
         ]
-        return days[lastSeen.getDay()]
+        return days[lastSeen.getDay()] // getDay() возвращает 0-6 (0 - воскресенье)
     }
 
     // Ранее - возвращаем дату в формате ДД.ММ.ГГГГ
+    // padStart(2, '0') для обеспечения двузначного формата
     const day = lastSeen
         .getDate()
         .toString()
         .padStart(2, '0')
     const month = (lastSeen.getMonth() + 1)
         .toString()
-        .padStart(2, '0')
+        .padStart(2, '0') // Месяцы 0-11
     const year = lastSeen.getFullYear()
     return `${day}.${month}.${year}`
 }

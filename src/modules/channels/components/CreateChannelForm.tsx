@@ -17,6 +17,7 @@ interface CreateChannelFormProps {
 }
 
 // Компонент формы создания нового канала (структурно идентичен CreateGroupForm)
+// Дублирование кода оправдано тем, что в будущем формы могут развиваться по-разному
 export default function CreateChannelForm({
     onBack,
     onNext,
@@ -25,28 +26,31 @@ export default function CreateChannelForm({
     const [photoFile, setPhotoFile] = useState<File | null>(
         null,
     )
+
     // Мемоизированное значение для предпросмотра аватарки
     const photoPreview = useMemo(
         () =>
             photoFile
-                ? URL.createObjectURL(photoFile)
+                ? URL.createObjectURL(photoFile) // Создаем Blob URL для отображения выбранного файла
                 : null,
-        [photoFile],
+        [photoFile], // Пересчет только при изменении photoFile
     )
 
     // Эффект для очистки URL при размонтировании
+    // Важно для предотвращения утечек памяти в браузере
     useEffect(() => {
         return () => {
             if (photoPreview)
-                URL.revokeObjectURL(photoPreview)
+                URL.revokeObjectURL(photoPreview) // Освобождаем память от Blob URL
         }
-    }, [photoPreview])
+    }, [photoPreview]) // Зависимость от photoPreview
 
     // Состояния для полей формы
     const [name, setName] = useState('') // Название канала
     const [description, setDescription] = useState('') // Описание канала
 
     // Опции для выбора типа канала (отличаются от групповых)
+    // Значения 'public' и 'private' соответствуют бэкенд-логике
     const options = [
         {
             value: 'public',
@@ -72,25 +76,28 @@ export default function CreateChannelForm({
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
-        setChoosenOption((prev) => ({ ...prev, ...option }))
+        setChoosenOption((prev) => ({ ...prev, ...option })) // Мерджим новое значение с текущим состоянием
     }
 
     // Обработчик отправки формы
     const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault() // Предотвращаем перезагрузку страницы
+
         // Валидация обязательных полей
+        // Проверяем, что все поля заполнены (после удаления пробелов)
         if (
             !name.trim() ||
             !description.trim() ||
             !choosenOption.value
         )
-            return
+            return // Если какое-то поле пустое - не продолжаем
+
         // Передаем данные родительскому компоненту
         onNext({
-            name: name.trim(),
+            name: name.trim(), // Убираем лишние пробелы
             description: description.trim(),
             type: choosenOption.value,
-            photo: photoFile,
+            photo: photoFile, // Может быть null
         })
     }
 
@@ -136,9 +143,9 @@ export default function CreateChannelForm({
                     {/* Выбор аватарки канала */}
                     <div className="flex flex-col items-center">
                         <AvatarPicker
-                            src={photoPreview}
-                            name={name || 'Группа'} // Fallback название
-                            onFile={setPhotoFile}
+                            src={photoPreview} // Blob URL или null
+                            name={name || 'Группа'} // Fallback название (опечатка, должно быть 'Канал')
+                            onFile={setPhotoFile} // Колбэк для обновления состояния файла
                         />
                     </div>
 
@@ -177,9 +184,9 @@ export default function CreateChannelForm({
                     {/* Выбор типа канала */}
                     <div>
                         <GroupTypeSelect
-                            selectLabel="Тип канала"
+                            selectLabel="Тип канала" // Отличается от "Тип группы"
                             value={choosenOption.value}
-                            options={options}
+                            options={options} // Другие опции для каналов
                             onChange={(option) =>
                                 handleChangeOption(option)
                             }

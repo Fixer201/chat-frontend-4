@@ -5,6 +5,7 @@
  */
 
 // Объект с источниками аватарок
+// as const делает значения readonly литералами для лучшей TypeScript типизации
 export const AVATAR_SOURCES = {
     PISSUM: 'picsum',
     UNSPLASH: 'unsplash',
@@ -16,9 +17,11 @@ export const AVATAR_SOURCES = {
 } as const
 
 // Тип для источника аватарки
+// Создает union type из значений AVATAR_SOURCES: 'picsum' | 'unsplash' | ...
 export type AvatarSource = keyof typeof AVATAR_SOURCES
 
 // Описания источников для отображения пользователю
+// Используется в UI для пояснения, откуда берутся аватарки
 export const SOURCE_DESCRIPTIONS = {
     [AVATAR_SOURCES.PISSUM]:
         'Picsum Photos - случайные фото',
@@ -37,4 +40,5 @@ export const SOURCE_DESCRIPTIONS = {
 }
 
 // Источник по умолчанию
+// Используется когда источник не указан явно
 export const DEFAULT_AVATAR_SOURCE = AVATAR_SOURCES.PISSUM

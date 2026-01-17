@@ -20,17 +20,22 @@ interface ChannelMembersListProps {
 }
 
 // Компонент для выбора участников при создании канала (структурно идентичен GroupMembersList)
+// Дублирование кода позволяет в будущем разнести логику групп и каналов
 export default function ChannelMembersList({
     channelData,
     onBack,
     onFinish,
 }: ChannelMembersListProps) {
     // Состояние для хранения ID выбранных контактов
+    // Локальное состояние компонента, не сохраняется в Redux
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
+
+    // Хук для отправки actions в Redux store
     const dispatch = useDispatch()
 
     // Получение данных из Redux store
+    // useSelector подписывается на изменения в store и вызывает ререндер при изменении данных
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -39,28 +44,33 @@ export default function ChannelMembersList({
     )
 
     // Обработчик выбора/отмены выбора контакта
+    // Реализует toggle логику: если uid уже в массиве - удаляем, если нет - добавляем
     const handleSelectContact = (uid: string) => {
-        setSelectedContactIds((prev) =>
-            prev.includes(uid)
-                ? prev.filter((id) => id !== uid)
-                : [...prev, uid],
+        setSelectedContactIds(
+            (prev) =>
+                prev.includes(uid)
+                    ? prev.filter((id) => id !== uid) // Удаляем из массива
+                    : [...prev, uid], // Добавляем в массив
         )
     }
 
     // Получаем полные объекты контактов по выбранным ID
+    // Преобразуем массив uid в массив полных объектов Contact
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
 
-    const { name } = channelData // Название канала из данных формы
+    const { name } = channelData // Деструктурируем название канала из данных формы
 
     // Обработчик установки выбранного контакта в Redux
+    // Отправляет action для обновления глобального состояния выбранного контакта
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
     // Обработчик завершения выбора участников
+    // Вызывается при клике на кнопку "Далее"
     const handleFinishClick = () => {
         // Вызываем родительский обработчик с выбранными контактами
         onFinish(selectedContacts)
@@ -108,9 +118,10 @@ export default function ChannelMembersList({
                       md:w-80
                       lg:w-96
                     `,
-                    `max-h-(--screen-height-list)`,
+                    `max-h-(--screen-height-list)`, // CSS custom property для ограничения высоты
                 )}
             >
+                {/* Переиспользуемый компонент списка контактов */}
                 <ContactsListInvitation
                     selectedContacts={selectedContactIds}
                     handleSelectContact={

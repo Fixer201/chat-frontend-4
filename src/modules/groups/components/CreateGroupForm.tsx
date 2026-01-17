@@ -12,8 +12,9 @@ import {
 
 // Интерфейс пропсов компонента CreateGroupForm
 interface CreateGroupFormProps {
-    onBack: () => void // Обработчик возврата к предыдущему экрану
+    onBack: () => void // Обработчик возврата к предыдущему экрану - вызывается при клике на кнопку "Назад"
     onNext: (data: onNextProps | string) => void // Обработчик перехода к следующему шагу (с данными формы или строкой названия)
+    // Поддерживает два формата данных для обратной совместимости со старым кодом
 }
 
 // Компонент формы создания новой группы
@@ -22,31 +23,36 @@ export default function CreateGroupForm({
     onNext,
 }: CreateGroupFormProps) {
     // Состояние для файла аватарки группы
+    // Используем useState с типом File | null, так как аватар может отсутствовать
     const [photoFile, setPhotoFile] = useState<File | null>(
         null,
     )
+
     // Мемоизированное значение для предпросмотра аватарки
+    // useMemo используется для оптимизации - URL.createObjectURL создается только при изменении photoFile
     const photoPreview = useMemo(
         () =>
             photoFile
-                ? URL.createObjectURL(photoFile) // Создаем URL для предпросмотра
-                : null,
-        [photoFile],
+                ? URL.createObjectURL(photoFile) // Создаем Blob URL для предпросмотра выбранного файла
+                : null, // Если файла нет - возвращаем null
+        [photoFile], // Пересчет только при изменении photoFile
     )
 
-    // Эффект для очистки URL при размонтировании компонента
+    // Эффект для очистки URL при размонтировании компонента или изменении photoPreview
+    // URL.createObjectURL создает URL, который занимает память в браузере
     useEffect(() => {
         return () => {
             if (photoPreview)
-                URL.revokeObjectURL(photoPreview) // Освобождаем память
+                URL.revokeObjectURL(photoPreview) // Освобождаем память, удаляя Blob URL
         }
-    }, [photoPreview])
+    }, [photoPreview]) // Зависимость от photoPreview - очищаем при изменении или размонтировании
 
     // Состояния для полей формы
-    const [name, setName] = useState('') // Название группы
+    const [name, setName] = useState('') // Название группы - инициализируем пустой строкой
     const [description, setDescription] = useState('') // Описание группы
 
     // Опции для выбора типа группы
+    // Массив объектов с фиксированными значениями - не изменяется между рендерами
     const options = [
         {
             value: 'open',
@@ -67,6 +73,7 @@ export default function CreateGroupForm({
     ]
 
     // Состояние для выбранного типа группы
+    // Инициализируем пустым объектом с полями-заглушками
     const [choosenOption, setChoosenOption] =
         useState<GroupTypeOptionProps>({
             value: '',
@@ -75,28 +82,34 @@ export default function CreateGroupForm({
         })
 
     // Обработчик изменения типа группы
+    // Принимает частичный объект option и объединяет его с текущим состоянием
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
-        setChoosenOption((prev) => ({ ...prev, ...option }))
+        setChoosenOption((prev) => ({ ...prev, ...option })) // Мерджим предыдущее состояние с новыми значениями
     }
 
     // Обработчик отправки формы
+    // Вызывается при submit формы (клик на кнопку или Enter в поле ввода)
     const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault() // Предотвращаем стандартное поведение формы (перезагрузку страницы)
+
         // Валидация: все обязательные поля должны быть заполнены
+        // trim() удаляет пробелы в начале и конце строки
         if (
             !name.trim() ||
             !description.trim() ||
             !choosenOption.value
         )
-            return
+            return // Если какое-то поле пустое - прерываем выполнение
+
         // Передаем данные родительскому компоненту
+        // Собираем все данные формы в объект onNextProps
         onNext({
-            name: name.trim(),
+            name: name.trim(), // Убираем лишние пробелы
             description: description.trim(),
             type: choosenOption.value,
-            photo: photoFile,
+            photo: photoFile, // Может быть null если пользователь не выбрал фото
         })
     }
 
@@ -105,6 +118,7 @@ export default function CreateGroupForm({
             className={`flex h-full flex-col rounded-md bg-gray-main`}
         >
             {/* Шапка формы с кнопкой назад и заголовком */}
+            {/* Используем flex для горизонтального выравнивания элементов */}
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -119,9 +133,10 @@ export default function CreateGroupForm({
                     className={`
                       flex items-center justify-center rounded-full
                       text-text-black transition-colors
-                      hover:bg-(--color-accent-violet-ultra-light)
+                      hover:bg-accent-violet-ultra-light
                     `}
                 >
+                    {/* SVG иконка импортированная как React компонент */}
                     <BackIcon className="mx-1 cursor-pointer" />
                 </Button>
                 <h2
@@ -134,6 +149,7 @@ export default function CreateGroupForm({
             </div>
 
             {/* Основное содержимое формы */}
+            {/* flex-1 позволяет форме занимать все доступное пространство */}
             <div className="flex flex-1 justify-center p-4">
                 <form
                     onSubmit={onSubmit}
@@ -142,9 +158,9 @@ export default function CreateGroupForm({
                     {/* Выбор аватарки группы */}
                     <div className="flex flex-col items-center">
                         <AvatarPicker
-                            src={photoPreview}
+                            src={photoPreview} // Blob URL для предпросмотра
                             name={name || 'Группа'} // Fallback название если поле пустое
-                            onFile={setPhotoFile}
+                            onFile={setPhotoFile} // Колбэк для обновления photoFile
                         />
                     </div>
 
@@ -195,7 +211,7 @@ export default function CreateGroupForm({
                     {/* Кнопка отправки формы */}
                     <div className="flex justify-center">
                         <Button
-                            type="submit"
+                            type="submit" // type="submit" активирует отправку формы при клике
                             disabled={
                                 !name.trim() ||
                                 !description.trim() ||

@@ -9,16 +9,18 @@ import { transformChatListFromApi } from '@shared/lib/transformChatData'
 import { ChatItem, ChatsState } from '@shared/types/chat'
 
 // Асинхронный thunk для загрузки чатов
+// createAsyncThunk автоматически создает action types: chats/fetchChats/pending, /fulfilled, /rejected
 export const fetchChats = createAsyncThunk(
-    'chats/fetchChats',
+    'chats/fetchChats', // Префикс для action types
     async (count: number = 15, { rejectWithValue }) => {
         try {
             // Получаем моковые данные (в реальном приложении здесь был бы API-запрос)
+            // generateLocalMockChatItems создает массив тестовых данных для разработки
             const mockData =
                 generateLocalMockChatItems(count)
 
             // Преобразуем в camelCase для UI
-            // Фильтруем валидные данные
+            // Фильтруем валидные данные - убираем null/undefined значения
             const validData = mockData.filter(
                 (item): item is Required<typeof item> =>
                     item !== null &&
@@ -30,9 +32,11 @@ export const fetchChats = createAsyncThunk(
             >[0]
 
             // Возвращаем трансформированные данные
+            // transformChatListFromApi конвертирует snake_case API формата в camelCase UI формата
             return transformChatListFromApi(validData)
         } catch {
             // Обработка ошибок
+            // rejectWithValue позволяет передать кастомное значение при rejection
             return rejectWithValue(
                 'Не удалось загрузить чаты',
             )
@@ -41,12 +45,14 @@ export const fetchChats = createAsyncThunk(
 )
 
 // Обработчики для этого thunk (extraReducers)
+// Вынесены в отдельную функцию для лучшей организации кода и переиспользования
 export const handleFetchChats = (
-    builder: ActionReducerMapBuilder<ChatsState>,
-    initialState: ChatsState,
+    builder: ActionReducerMapBuilder<ChatsState>, // Типизированный builder от Redux Toolkit
+    initialState: ChatsState, // Начальное состояние для сброса при ошибке
 ) => {
     builder
         // Обработка начала загрузки
+        // Устанавливаем loading: true и сбрасываем ошибку
         .addCase(fetchChats.pending, (state) => {
             state.loading = true
             state.error = null
@@ -57,7 +63,9 @@ export const handleFetchChats = (
             (state, action: PayloadAction<ChatItem[]>) => {
                 state.loading = false
                 state.items = action.payload // Сохраняем загруженные чаты
+
                 // Инициализируем настройки для каждого загруженного чата
+                // Проходим по всем чатам и создаем объект настроек если его нет
                 action.payload.forEach((chat) => {
                     if (!state.chatSettings[chat.id]) {
                         state.chatSettings[chat.id] = {
@@ -78,7 +86,7 @@ export const handleFetchChats = (
         // Обработка ошибки загрузки
         .addCase(fetchChats.rejected, (state, action) => {
             state.loading = false
-            state.error = action.payload as string
-            state.chatSettings = initialState.chatSettings // Сбрасываем настройки
+            state.error = action.payload as string // Сохраняем сообщение об ошибке
+            state.chatSettings = initialState.chatSettings // Сбрасываем настройки к начальному состоянию
         })
 }

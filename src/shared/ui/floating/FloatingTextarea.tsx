@@ -17,6 +17,19 @@ export interface FloatingTextareaProps extends React.TextareaHTMLAttributes<HTML
     // Позиция для стилизации скруглений углов при объединении нескольких полей
     position?: 'single' | 'top' | 'middle' | 'bottom'
 }
+export interface PositionStyle {
+    single: string
+    top: string
+    bottom: string
+    middle: string
+}
+//Объект для возвращения стилей в зависимости от позиции
+const positionStyle: PositionStyle = {
+    single: `rounded-md border border-(--color-gray-border)`,
+    top: `rounded-t-md rounded-b-none border border-b border-(--color-gray-border)`,
+    bottom: `rounded-t-none rounded-b-md border border-t border-(--color-gray-border)`,
+    middle: `rounded-none border border-t-0 border-b-0 border-(--color-gray-border)`,
+}
 
 // Компонент текстового поля с плавающей подписью и адаптивной высотой
 const FloatingTextarea = forwardRef<
@@ -36,12 +49,15 @@ const FloatingTextarea = forwardRef<
         },
         ref,
     ) => {
-        // Внутренний ref для доступа к DOM-элементу textarea
+        // Используем useRef для сохранения ссылки на DOM-элемент textarea между рендерами
+        // Это позволяет управлять элементом напрямую (например, для авторазмера)
         const innerRef = useRef<HTMLTextAreaElement | null>(
             null,
         )
 
-        // Функция для объединения внешнего и внутреннего ref
+        // Кастомная функция mergeRefs, которая объединяет внешний ref (из пропсов)
+        // и внутренний ref (innerRef) в одну функцию
+        // Это позволяет родительскому компоненту также иметь доступ к textarea элементу
         const mergedRef = (
             node: HTMLTextAreaElement | null,
         ) => {
@@ -54,53 +70,68 @@ const FloatingTextarea = forwardRef<
             }
         }
 
-        // Состояние фокуса на поле
+        // useState для отслеживания состояния фокуса
+        // Нужен для определения, когда показывать счетчик и изменять стили лейбла
         const [focused, setFocused] = useState(false)
         // Определяем, контролируется ли компонент извне
+        // В React есть два подхода: controlled (значение через props) и uncontrolled (значение в state)
         const isControlled = typeof value === 'string'
-        // Локальное состояние для неконтролируемого режима
+        // Локальное состояние для uncontrolled режима
+        // Используем useState вместо useRef, чтобы вызывать ререндер при изменении значения
         const [internalVal, setInternalVal] =
             useState<string>(
                 isControlled ? (value as string) : '',
             )
-        // Используем значение в зависимости от режима
+        // Выбираем значение в зависимости от режима работы компонента
         const val = isControlled
             ? (value as string)
             : internalVal
 
-        // Функция для автоматической регулировки высоты textarea
+        // Функция автоматического изменения высоты textarea
+        // Использует scrollHeight для определения фактической высоты содержимого
+        // Ограничивает максимальную высоту 300px для предотвращения чрезмерного роста
         const autoSize = (
             el?: HTMLTextAreaElement | null,
         ) => {
             if (!el) return
-            // Сбрасываем высоту, затем устанавливаем нужную
+            // Устанавливаем высоту 'auto' для сброса предыдущих значений
+            // Затем вычисляем необходимую высоту на основе scrollHeight
             el.style.height = 'auto'
             el.style.height = `${Math.min(300, el.scrollHeight)}px`
         }
 
-        // Эффект для изменения высоты при изменении значения
+        // useEffect для вызова autoSize при каждом изменении значения
+        // Зависимость [val] гарантирует, что высота пересчитывается при изменении текста
+        // Используем innerRef.current для доступа к DOM-элементу
         useEffect(() => {
             autoSize(innerRef.current)
-        }, [val])
+        }, [val]) // Пересчет только при изменении значения, а не при каждом рендере
 
         // Обработчик изменения значения в textarea
         const handleChange = (
             e: React.ChangeEvent<HTMLTextAreaElement>,
         ) => {
+            // В uncontrolled режиме обновляем локальное состояние
             if (!isControlled)
                 setInternalVal(e.target.value)
+            // Прокидываем событие onChange родительскому компоненту
+            // Это позволяет родителю реагировать на изменения даже в uncontrolled режиме
             if (onChange) onChange(e)
         }
 
         // Функция очистки поля
+        // Работает в обоих режимах (controlled и uncontrolled)
         const clear = () => {
+            // В uncontrolled режиме сбрасываем локальное состояние
             if (!isControlled) setInternalVal('')
+            // Прямая работа с DOM-элементом для немедленного обновления
             if (innerRef.current) {
                 innerRef.current.value = ''
-                autoSize(innerRef.current)
-                innerRef.current.focus()
+                autoSize(innerRef.current) // Сбрасываем высоту после очистки
+                innerRef.current.focus() // Возвращаем фокус на поле
             }
-            // Имитируем событие onChange для уведомления родительского компонента
+            // Создаем синтетическое событие для уведомления родительского компонента
+            // Важно для controlled компонентов, чтобы родитель знал об очистке
             if (onChange) {
                 const synthetic = {
                     target: { value: '' },
@@ -109,7 +140,10 @@ const FloatingTextarea = forwardRef<
             }
         }
 
-        // Определяем, нужно ли показывать счетчик символов
+        // Логика отображения счетчика символов
+        // Счетчик показывается только при определенных условиях:
+        // 1. Если указан maxLength
+        // 2. Если поле в фокусе И (есть текст ИЛИ showCounterOnFocus=true)
         const showCounter = maxLength
             ? focused &&
               (val.length > 0 || showCounterOnFocus)
@@ -118,39 +152,28 @@ const FloatingTextarea = forwardRef<
         return (
             <div
                 className={cn(
-                    `relative bg-white`,
-                    `bg-white`,
+                    `relative bg-white-bg`,
+                    `bg-white-bg`,
                     // Стили для разных позиций (для объединенных полей формы)
-                    position === 'single'
-                        ? `rounded-md border border-(--color-gray-border)`
-                        : position === 'top'
-                          ? `
-                            rounded-t-md rounded-b-none border border-b
-                            border-(--color-gray-border)
-                          `
-                          : position === 'bottom'
-                            ? `
-                              rounded-t-none rounded-b-md border border-t
-                              border-(--color-gray-border)
-                            `
-                            : `
-                              rounded-none border border-t-0 border-b-0
-                              border-(--color-gray-border)
-                            `,
+                    positionStyle[position],
                     className || '',
                 )}
-                // Обработчик клика для управления фокусом
+                // Кастомный обработчик клика для улучшения UX
+                // Решает проблему потери фокуса при клике внутри поля
                 onMouseDown={(e) => {
                     const el = innerRef.current
                     const target = e.target as HTMLElement
+                    // Игнорируем клики по кнопкам внутри контейнера
                     if (target.closest('button')) return
 
-                    // Предотвращаем потерю фокуса при клике внутри уже активного поля
+                    // Если поле уже в фокусе, предотвращаем стандартное поведение
+                    // чтобы не вызывать blur/focus цикл при клике внутри активного поля
                     if (document.activeElement === el) {
                         e.preventDefault()
                         el?.focus()
                     } else {
-                        // Даем браузеру сначала снять фокус с предыдущего элемента
+                        // Даем браузеру сначала обработать blur предыдущего элемента
+                        // Затем фокусируем текущее поле
                         setTimeout(() => el?.focus(), 0)
                     }
                 }}
@@ -185,7 +208,7 @@ const FloatingTextarea = forwardRef<
                                   ? 'top-2 text-xs'
                                   : `
                                     top-1/2 -translate-y-1/2 text-base
-                                    text-(--color-text-gray)
+                                    text-text-gray
                                   `
                           }
                         `}
@@ -202,8 +225,8 @@ const FloatingTextarea = forwardRef<
                             `
                               ${
                                   val.length < maxLength
-                                      ? 'text-(--color-text-gray)'
-                                      : 'text-(--color-system-red)'
+                                      ? 'text-text-gray'
+                                      : 'text-system-red'
                               }
                             `,
                         )}
@@ -225,8 +248,8 @@ const FloatingTextarea = forwardRef<
                         color="neutral"
                         className={`
                           absolute top-1/2 right-2 flex h-4 w-4 -translate-y-1/2
-                          items-center justify-center rounded-full
-                          bg-(--color-text-gray) p-0 text-xs text-white
+                          items-center justify-center rounded-full bg-text-gray
+                          p-0 text-xs text-white-bg
                         `}
                     >
                         ×

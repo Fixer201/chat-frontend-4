@@ -61,6 +61,7 @@ export const ChatListItemDropdown = ({
                 maxWidth={350} // Максимальная ширина меню
             >
                 {/* Пункт "Добавить в контакты" - показывается только если контакт еще не в списке контактов */}
+                {/* Используем условный рендеринг && для предотвращения рендера при отсутствии обработчика */}
                 {!isInContacts && onAddToContacts && (
                     <Dropdown.Item
                         onSelect={() =>
@@ -95,6 +96,7 @@ export const ChatListItemDropdown = ({
                             onMenuItemClick(onMuteChat)
                         }
                         rightIcon={
+                            // Динамически меняем иконку в зависимости от состояния уведомлений
                             <Image
                                 src={
                                     notificationsEnabled
@@ -112,6 +114,7 @@ export const ChatListItemDropdown = ({
                             />
                         }
                     >
+                        {/* Динамически меняем текст в зависимости от состояния уведомлений */}
                         {notificationsEnabled
                             ? 'Отключить уведомления'
                             : 'Включить уведомления'}
@@ -125,6 +128,7 @@ export const ChatListItemDropdown = ({
                             onMenuItemClick(onFavoriteChat)
                         }
                         rightIcon={
+                            // Динамически меняем иконку в зависимости от состояния избранного
                             <Image
                                 src={
                                     isFavorite
@@ -142,6 +146,7 @@ export const ChatListItemDropdown = ({
                             />
                         }
                     >
+                        {/* Динамически меняем текст в зависимости от состояния избранного */}
                         {isFavorite
                             ? 'Открепить чат'
                             : 'Закрепить чат'}
@@ -149,6 +154,7 @@ export const ChatListItemDropdown = ({
                 )}
 
                 {/* Условный рендеринг: пункт "Пометить непрочитанным" или "Пометить прочитанным" в зависимости от состояния */}
+                {/* Используем тернарный оператор для выбора между двумя вариантами */}
                 {isChatRead
                     ? onMarkAsUnread && (
                           <Dropdown.Item
@@ -206,7 +212,7 @@ export const ChatListItemDropdown = ({
                 {/* Опасный пункт "Удалить чат" */}
                 {onDeleteChat && (
                     <Dropdown.Item
-                        danger // Специальный стиль для опасных действий
+                        danger // Специальный стиль для опасных действий (обычно красный цвет)
                         onSelect={() =>
                             onMenuItemClick(onDeleteChat)
                         }
