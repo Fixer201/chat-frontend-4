@@ -130,24 +130,21 @@ export default function CodeConfirmForm({
                 >
                     <div
                         className={`
-            absolute flex w-full flex-col items-center justify-between gap-6
+            absolute flex h-152 w-90 flex-col items-center justify-between
+              gap-6
           `}
                     >
-                        <div className="relative flex w-full items-center">
-                            <button
+                        <div className="relative flex h-17 w-90 items-center">
+                            <Image
+                                src="/images/login/back.svg"
+                                alt="Back"
+                                width={32}
+                                height={32}
+                                className="absolute top-0 left-0 cursor-pointer"
+                                loading="eager"
                                 onClick={onBack}
-                                className={`
-                absolute top-0 left-0 cursor-pointer
-              `}
-                            >
-                                <Image
-                                    src="/images/login/back.svg"
-                                    alt="Back"
-                                    width={32}
-                                    height={32}
-                                    loading="eager"
-                                />
-                            </button>
+                            />
+
                             <Image
                                 src="/images/login/Logo.svg"
                                 alt="Logo"

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import '@app/globals.css'
 import { useState } from 'react'
+import Cookies from 'js-cookie'
 
 export default function SuccessRegister() {
     const router = useRouter()
@@ -11,7 +12,8 @@ export default function SuccessRegister() {
 
     const refreshAccessToken = async () => {
         const refreshToken =
-            localStorage.getItem('refresh_token')
+            // localStorage.getItem('refresh_token')
+            Cookies.get('refresh_token')
         if (!refreshToken) {
             console.error('Refresh token не найден')
             return null
@@ -32,10 +34,13 @@ export default function SuccessRegister() {
             )
             if (response.ok) {
                 const data = await response.json()
-                localStorage.setItem(
-                    'access_token',
-                    data.access,
-                )
+                Cookies.set('access_token', data.access, {
+                    expires: 7,
+                })
+                // localStorage.setItem(
+                //     'access_token',
+                //     data.access,
+                // )
                 return data.access
             } else {
                 console.error(
@@ -51,7 +56,8 @@ export default function SuccessRegister() {
     }
     const fetchProfile = async () => {
         const accessToken =
-            localStorage.getItem('access_token')
+            // localStorage.getItem('access_token')
+            Cookies.get('access_token')
         if (!accessToken) {
             console.error('Access token не найден')
             return false
@@ -93,10 +99,16 @@ export default function SuccessRegister() {
             }
             if (response.ok) {
                 const profileData = await response.json()
-                localStorage.setItem(
+                // localStorage.setItem(
+                //     'user_profile',
+                //     JSON.stringify(profileData),
+                // )
+                Cookies.set(
                     'user_profile',
                     JSON.stringify(profileData),
-                ) // Сохраняем профиль
+                    { expires: 7 },
+                )
+                // Сохраняем профиль
                 console.log('профиль сохранен', profileData)
                 return true
             } else {

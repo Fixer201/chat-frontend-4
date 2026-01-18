@@ -19,6 +19,7 @@ export default function ContactsPage() {
             <div
                 className={`
                   hidden h-11/12 flex-1 rounded-md border border-gray-200
+                  bg-gray-main
                   md:block
                 `}
             >

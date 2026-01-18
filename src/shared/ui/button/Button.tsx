@@ -10,6 +10,7 @@ export type ButtonColor =
     | 'danger'
     | 'neutral'
     | 'disabled'
+    | 'light-gray'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant
@@ -43,6 +44,12 @@ const colorSchemeClasses: Record<
         outline:
             'text-[var(--color-text-black)] border-[var(--color-text-black)] hover:bg-[color-mix(in srgb, var(--color-text-black) 90%, white)] active:bg-[color-mix(in srgb, var(--color-text-black) 80%, black)] active:text-white cursor-pointer',
         ghost: 'bg-transparent text-[var(--color-text-black)] hover:text-[color-mix(in srgb, var(--color-text-black) 75%, white)] active:text-[color-mix(in srgb, var(--color-text-black) 85%, black)] cursor-pointer',
+    },
+    'light-gray': {
+        solid: 'bg-gray-300 text-white hover:bg-gray-400 active:bg-gray-500 cursor-pointer',
+        outline:
+            'text-gray-600 border-gray-300 hover:bg-gray-100 active:bg-gray-200 cursor-pointer',
+        ghost: 'bg-transparent text-gray-600 hover:text-gray-800 active:text-gray-900 cursor-pointer',
     },
 }
 
