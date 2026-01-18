@@ -161,7 +161,7 @@ export default function Modal({
                     >
                         <h2
                             className={cn(
-                                'm-0 text-lg font-medium text-[#1C1C1E]',
+                                'm-0 text-lg font-medium text-text-black',
                                 titleClassName,
                             )}
                         >
