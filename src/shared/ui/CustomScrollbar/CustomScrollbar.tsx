@@ -1,3 +1,4 @@
+// Компонент кастомного скроллбара с перетаскиваемым ползунком
 'use client'
 
 import {
@@ -12,16 +13,18 @@ import {
 import { cn } from '@shared/lib/utils'
 import customStyle from '@shared/ui/CustomScrollbar/CustomScrollbar.module.css'
 
+// Интерфейс пропсов компонента CustomScrollbar
 interface CustomScrollbarProps {
-    children: ReactNode
-    className?: string
-    contentClassName?: string
-    contentProps?: HTMLAttributes<HTMLDivElement>
-    style?: CSSProperties
-    contentStyle?: CSSProperties
-    autoHeight?: boolean
+    children: ReactNode // Дочерние элементы, которые будут внутри скролла
+    className?: string // Дополнительные классы для контейнера
+    contentClassName?: string // Дополнительные классы для содержимого
+    contentProps?: HTMLAttributes<HTMLDivElement> // Дополнительные пропсы для содержимого
+    style?: CSSProperties // Дополнительные стили для контейнера
+    contentStyle?: CSSProperties // Дополнительные стили для содержимого
+    autoHeight?: boolean // Автоматическая высота контейнера
 }
 
+// Компонент кастомного скроллбара с перетаскиваемым ползунком
 export function CustomScrollbar({
     children,
     className = '',
@@ -31,14 +34,15 @@ export function CustomScrollbar({
     contentStyle,
     autoHeight = false,
 }: CustomScrollbarProps) {
-    const contentRef = useRef<HTMLDivElement>(null)
-    const thumbRef = useRef<HTMLDivElement>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
-    const isDraggingRef = useRef(false)
-    const startYRef = useRef(0)
-    const startScrollTopRef = useRef(0)
+    // Рефы для элементов скроллбара
+    const contentRef = useRef<HTMLDivElement>(null) // Контентная область
+    const thumbRef = useRef<HTMLDivElement>(null) // Ползунок скроллбара
+    const containerRef = useRef<HTMLDivElement>(null) // Контейнер скроллбара
+    const isDraggingRef = useRef(false) // Флаг перетаскивания ползунка
+    const startYRef = useRef(0) // Начальная Y координата при перетаскивании
+    const startScrollTopRef = useRef(0) // Начальное значение scrollTop
 
-    // Функция обновления позиции ползунка
+    // Функция обновления позиции и размера ползунка
     const updateThumbPosition = useCallback(() => {
         const content = contentRef.current
         const thumb = thumbRef.current
@@ -49,17 +53,19 @@ export function CustomScrollbar({
         const { scrollTop, scrollHeight, clientHeight } =
             content
         const containerHeight = container.clientHeight
+
+        // Вычисляем высоту ползунка пропорционально видимой области
         const thumbHeight =
             containerHeight * (clientHeight / scrollHeight)
 
-        // Минимальная высота ползунка
+        // Минимальная высота ползунка (чтобы был виден)
         const minHeight = 20
         const finalThumbHeight = Math.max(
             thumbHeight,
             minHeight,
         )
 
-        // Позиция ползунка
+        // Вычисляем позицию ползунка пропорционально скроллу
         const maxScroll = scrollHeight - clientHeight
         const thumbTop =
             maxScroll > 0
@@ -67,11 +73,12 @@ export function CustomScrollbar({
                   (containerHeight - finalThumbHeight)
                 : 0
 
+        // Применяем вычисленные размеры и позицию
         thumb.style.height = `${finalThumbHeight}px`
         thumb.style.top = `${thumbTop}px`
     }, [])
 
-    // Обработчик начала перетаскивания
+    // Обработчик начала перетаскивания ползунка
     const handleThumbMouseDown = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault()
@@ -81,18 +88,19 @@ export function CustomScrollbar({
             const content = contentRef.current
             if (!thumb || !content) return
 
+            // Устанавливаем флаг перетаскивания и сохраняем начальные значения
             isDraggingRef.current = true
             startYRef.current = e.clientY
             startScrollTopRef.current = content.scrollTop
 
             // Добавляем стили для перетаскивания
             thumb.style.cursor = 'grabbing'
-            document.body.style.userSelect = 'none'
+            document.body.style.userSelect = 'none' // Отключаем выделение текста при перетаскивании
         },
         [],
     )
 
-    // Обработчик движения мыши при перетаскивании
+    // Обработчик движения мыши при перетаскивании ползунка
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDraggingRef.current) return
 
@@ -100,20 +108,19 @@ export function CustomScrollbar({
         const container = containerRef.current
         if (!content || !container) return
 
+        // Вычисляем смещение мыши от начальной точки
         const deltaY = e.clientY - startYRef.current
         const containerHeight = container.clientHeight
         const thumbHeight =
             thumbRef.current?.clientHeight || 20
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const trackHeight = containerHeight - thumbHeight
 
-        // Рассчитываем новый scrollTop
+        // Рассчитываем новый scrollTop на основе смещения мыши
         const scrollRatio =
             content.scrollHeight / containerHeight
         const newScrollTop =
             startScrollTopRef.current + deltaY * scrollRatio
 
-        // Ограничиваем значения
+        // Ограничиваем значения в пределах возможного скролла
         content.scrollTop = Math.max(
             0,
             Math.min(
@@ -123,27 +130,30 @@ export function CustomScrollbar({
         )
     }, [])
 
-    // Обработчик отпускания мыши
+    // Обработчик отпускания мыши (завершение перетаскивания)
     const handleMouseUp = useCallback(() => {
         if (!isDraggingRef.current) return
 
+        // Сбрасываем флаг перетаскивания
         isDraggingRef.current = false
         const thumb = thumbRef.current
         if (thumb) {
-            thumb.style.cursor = 'pointer'
+            thumb.style.cursor = 'pointer' // Возвращаем курсор
         }
-        document.body.style.userSelect = ''
+        document.body.style.userSelect = '' // Включаем выделение текста обратно
     }, [])
 
-    // Обработчик колеса мыши
+    // Обработчик колеса мыши для скролла
     const handleWheel = useCallback((e: WheelEvent) => {
         const content = contentRef.current
         if (!content) return
 
+        // Скроллим контент при прокрутке колеса
         content.scrollTop += e.deltaY
-        e.preventDefault()
+        e.preventDefault() // Предотвращаем скролл страницы
     }, [])
 
+    // Эффект для установки обработчиков событий
     useEffect(() => {
         const content = contentRef.current
         const thumb = thumbRef.current
@@ -151,14 +161,14 @@ export function CustomScrollbar({
 
         if (!content || !thumb || !container) return
 
-        // Добавляем обработчики событий
+        // Создаем обработчики
         const mouseMoveHandler = (e: MouseEvent) =>
             handleMouseMove(e)
         const mouseUpHandler = () => handleMouseUp()
         const wheelHandler = (e: WheelEvent) =>
             handleWheel(e)
 
-        // Подписываемся на события документа для drag
+        // Подписываемся на события документа для перетаскивания
         document.addEventListener(
             'mousemove',
             mouseMoveHandler,
@@ -170,7 +180,7 @@ export function CustomScrollbar({
             passive: false,
         })
 
-        // Ресайз обзервер для обновления при изменении размеров
+        // ResizeObserver для обновления при изменении размеров
         const resizeObserver = new ResizeObserver(() => {
             updateThumbPosition()
         })
@@ -181,9 +191,10 @@ export function CustomScrollbar({
         const scrollHandler = () => updateThumbPosition()
         content.addEventListener('scroll', scrollHandler)
 
-        // Инициализация
+        // Инициализация позиции ползунка
         updateThumbPosition()
 
+        // Очистка при размонтировании
         return () => {
             document.removeEventListener(
                 'mousemove',
@@ -223,6 +234,7 @@ export function CustomScrollbar({
             )}
             style={style}
         >
+            {/* Контейнер с контентом */}
             <div
                 ref={contentRef}
                 className={cn(
@@ -234,9 +246,12 @@ export function CustomScrollbar({
             >
                 {children}
             </div>
+
+            {/* Кастомный скроллбар */}
             <div
                 className={customStyle['custom-scrollbar']}
             >
+                {/* Трек скроллбара (фон) */}
                 <div
                     className={
                         customStyle[
@@ -244,6 +259,7 @@ export function CustomScrollbar({
                         ]
                     }
                 />
+                {/* Ползунок скроллбара (перетаскиваемая часть) */}
                 <div
                     ref={thumbRef}
                     className={
@@ -258,6 +274,6 @@ export function CustomScrollbar({
     )
 }
 
-//Использование
+// Использование
 //<CustomScrollbar>Компонент со скроллом</CustomScrollbar>
 //<CustomScrollbar><ChatList>{код}</ChatList></CustomScrollbar>

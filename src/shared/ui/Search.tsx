@@ -1,6 +1,5 @@
 'use client'
 import Image from 'next/image'
-import React from 'react'
 
 type SearchProps = {
     value: string
@@ -35,8 +34,7 @@ export default function Search({
             <div
                 className={`
                   relative flex h-11 w-full min-w-0 items-center gap-2
-                  rounded-lg border border-gray-300 bg-(--color-white-bg) px-3
-                  pr-10
+                  rounded-lg border border-gray-border bg-white-bg px-3 pr-10
                 `}
             >
                 {leftIconSrc && (
@@ -62,7 +60,7 @@ export default function Search({
                     aria-label={ariaLabel}
                     className={`
                       h-11 w-full min-w-0 bg-transparent py-2.5 text-sm
-                      placeholder:text-gray-400
+                      placeholder:text-text-gray
                       focus:border-transparent focus:outline-none
                       ${inputClassName}
                     `}
@@ -75,7 +73,7 @@ export default function Search({
                         className={`
                           absolute top-1/2 right-3 -translate-y-1/2 transform
                           rounded-full p-1 transition-all duration-200
-                          hover:bg-gray-100
+                          hover:bg-gray-light
                         `}
                         aria-label="Очистить поиск"
                     >
@@ -84,10 +82,6 @@ export default function Search({
                             alt="clear"
                             width={14}
                             height={14}
-                            style={{
-                                width: '14px',
-                                height: '14px',
-                            }}
                             className={`
                               opacity-60 transition-opacity
                               hover:opacity-100
