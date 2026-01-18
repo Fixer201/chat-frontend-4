@@ -144,7 +144,7 @@ export default function CreateChannelForm({
                     <div className="flex flex-col items-center">
                         <AvatarPicker
                             src={photoPreview} // Blob URL или null
-                            name={name || 'Группа'} // Fallback название (опечатка, должно быть 'Канал')
+                            name={name || 'Канал'} // Fallback название (опечатка, должно быть 'Канал')
                             onFile={setPhotoFile} // Колбэк для обновления состояния файла
                         />
                     </div>
