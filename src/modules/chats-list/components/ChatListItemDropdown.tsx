@@ -1,3 +1,4 @@
+// Выпадающее меню для элемента списка чатов (расширенная версия)
 'use client'
 
 import Dropdown from '@shared/ui/dropdown/Dropdown'
@@ -9,25 +10,27 @@ type ContextMenuPosition = Readonly<{
     left: number
 }>
 
+// Интерфейс пропсов компонента ChatListItemDropdown
 interface ChatListItemDropdownProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    position: ContextMenuPosition
-    onMuteChat?: () => void
-    onFavoriteChat?: () => void
-    onMarkAsRead?: () => void
-    onMarkAsUnread?: () => void
-    onDeleteChat?: () => void
-    onAddToContacts?: () => void
-    notificationsEnabled: boolean
-    isFavorite: boolean
-    isChatRead: boolean
-    isInContacts: boolean
-    onMenuItemClick: (handler?: () => void) => void
-    hoveredItem?: string | null
-    setHoveredItem?: (item: string | null) => void
+    open: boolean // Флаг открытия меню
+    onOpenChange: (open: boolean) => void // Обработчик изменения состояния открытия
+    position: ContextMenuPosition // Позиция меню на экране
+    onMuteChat?: () => void // Обработчик включения/выключения уведомлений
+    onFavoriteChat?: () => void // Обработчик добавления/удаления из избранного
+    onMarkAsRead?: () => void // Обработчик пометки как прочитанного
+    onMarkAsUnread?: () => void // Обработчик пометки как непрочитанного
+    onDeleteChat?: () => void // Обработчик удаления чата
+    onAddToContacts?: () => void // Обработчик добавления в контакты
+    notificationsEnabled: boolean // Флаг состояния уведомлений
+    isFavorite: boolean // Флаг избранного чата
+    isChatRead: boolean // Флаг прочитанности чата
+    isInContacts: boolean // Флаг нахождения в контактах
+    onMenuItemClick: (handler?: () => void) => void // Обработчик клика по пункту меню
+    hoveredItem?: string | null // На какой элемент наведен курсор
+    setHoveredItem?: (item: string | null) => void // Функция установки наведенного элемента
 }
 
+// Компонент выпадающего меню с действиями для элемента списка чатов
 export const ChatListItemDropdown = ({
     open,
     onOpenChange,
@@ -49,14 +52,16 @@ export const ChatListItemDropdown = ({
         <Dropdown
             open={open}
             onOpenChange={onOpenChange}
-            closeOnSelect={true}
+            closeOnSelect={true} // Закрывать меню после выбора пункта
         >
             <Dropdown.Content
-                manualPosition={position}
+                manualPosition={position} // Ручная установка позиции
                 width="auto"
-                minWidth={200}
-                maxWidth={350}
+                minWidth={200} // Минимальная ширина меню
+                maxWidth={350} // Максимальная ширина меню
             >
+                {/* Пункт "Добавить в контакты" - показывается только если контакт еще не в списке контактов */}
+                {/* Используем условный рендеринг && для предотвращения рендера при отсутствии обработчика */}
                 {!isInContacts && onAddToContacts && (
                     <Dropdown.Item
                         onSelect={() =>
@@ -84,12 +89,14 @@ export const ChatListItemDropdown = ({
                     </Dropdown.Item>
                 )}
 
+                {/* Пункт управления уведомлениями */}
                 {onMuteChat && (
                     <Dropdown.Item
                         onSelect={() =>
                             onMenuItemClick(onMuteChat)
                         }
                         rightIcon={
+                            // Динамически меняем иконку в зависимости от состояния уведомлений
                             <Image
                                 src={
                                     notificationsEnabled
@@ -107,18 +114,21 @@ export const ChatListItemDropdown = ({
                             />
                         }
                     >
+                        {/* Динамически меняем текст в зависимости от состояния уведомлений */}
                         {notificationsEnabled
                             ? 'Отключить уведомления'
                             : 'Включить уведомления'}
                     </Dropdown.Item>
                 )}
 
+                {/* Пункт добавления/удаления из избранного */}
                 {onFavoriteChat && (
                     <Dropdown.Item
                         onSelect={() =>
                             onMenuItemClick(onFavoriteChat)
                         }
                         rightIcon={
+                            // Динамически меняем иконку в зависимости от состояния избранного
                             <Image
                                 src={
                                     isFavorite
@@ -136,12 +146,15 @@ export const ChatListItemDropdown = ({
                             />
                         }
                     >
+                        {/* Динамически меняем текст в зависимости от состояния избранного */}
                         {isFavorite
                             ? 'Открепить чат'
                             : 'Закрепить чат'}
                     </Dropdown.Item>
                 )}
 
+                {/* Условный рендеринг: пункт "Пометить непрочитанным" или "Пометить прочитанным" в зависимости от состояния */}
+                {/* Используем тернарный оператор для выбора между двумя вариантами */}
                 {isChatRead
                     ? onMarkAsUnread && (
                           <Dropdown.Item
@@ -196,9 +209,10 @@ export const ChatListItemDropdown = ({
                           </Dropdown.Item>
                       )}
 
+                {/* Опасный пункт "Удалить чат" */}
                 {onDeleteChat && (
                     <Dropdown.Item
-                        danger
+                        danger // Специальный стиль для опасных действий (обычно красный цвет)
                         onSelect={() =>
                             onMenuItemClick(onDeleteChat)
                         }

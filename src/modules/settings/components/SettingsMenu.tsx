@@ -1,11 +1,11 @@
-/* eslint-disable better-tailwindcss/no-conflicting-classes */
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useCallback } from 'react'
+import Cookies from 'js-cookie'
 
 import ForwardIcon from '@public/icons/settings-sidebar/Forward.svg'
 import BlackListIcon from '@public/icons/settings-sidebar/BlackList.svg'
@@ -40,6 +40,7 @@ const menuItems = [
 ]
 
 export default function SettingsMenu() {
+    const router = useRouter()
     const pathname = usePathname()
     const {
         isOpen: isLogoutModalOpen,
@@ -54,8 +55,11 @@ export default function SettingsMenu() {
 
     const handleLogoutConfirm = useCallback(() => {
         // TODO: integrate real logout flow once backend is ready
+        Cookies.remove('access_token')
+        Cookies.remove('refresh_token')
+        router.push('/auth/register')
         closeLogoutModal()
-    }, [closeLogoutModal])
+    }, [closeLogoutModal, router])
 
     const handleDeleteConfirm = useCallback(() => {
         // TODO: integrate delete profile flow when backend is ready
@@ -156,7 +160,6 @@ export default function SettingsMenu() {
                                           gap-3 border-b border-app-divider p-4
                                           text-left text-base text-text-black
                                           transition-colors
-                                          hover:bg-(--color-accent-violet-ultra-light)
                                           hover:bg-accent-violet-ultra-light
                                         `,
                                         index !==
@@ -249,7 +252,7 @@ export default function SettingsMenu() {
                         label: 'Отмена',
                         variant: 'solid',
                         color: 'primary',
-                        onClick: closeDeleteModal,
+                        onClick: handleLogoutConfirm,
                     },
                 ]}
             />

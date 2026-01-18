@@ -1,3 +1,4 @@
+// Компонент состояния "Нет чатов" (пустой экран)
 'use client'
 
 import Image from 'next/image'
@@ -5,11 +6,14 @@ import { Button } from '@shared/ui/button/Button'
 import { cn } from '@shared/lib/utils'
 import customStyles from '@modules/chats-list/components/emptyChatsState/emptyChatsState.module.css'
 
+// Интерфейс пропсов компонента EmptyChatsState
 interface EmptyChatsStateProps {
-    className?: string
-    onStartChat?: () => void
+    className?: string // Дополнительные CSS классы для кастомизации стилей
+    onStartChat?: () => void // Обработчик клика по кнопке "Начать чат" - опциональный, так как компонент может использоваться без действия
 }
 
+// Компонент для отображения состояния, когда чатов нет
+// Используется как fallback UI в основном списке чатов
 export default function EmptyChatsState({
     className,
     onStartChat,
@@ -26,19 +30,20 @@ export default function EmptyChatsState({
         >
             <div
                 className={cn(
-                    customStyles['empty-chats-container'],
-                    'w-full max-w-full',
+                    customStyles['empty-chats-container'], // CSS модуль для изоляции стилей
+                    'w-full max-w-full', // Дополнительные инлайн стили
                     className,
                 )}
             >
-                {/* Картинка */}
+                {/* Иллюстрация */}
+                {/* Используем relative positioning для контейнера и fill для Image */}
                 <div className="relative h-50 w-50 shrink-0">
                     <Image
-                        src="/images/search/imgSearchWeb.svg"
-                        alt="Нет чатов"
-                        fill
-                        className="object-contain"
-                        sizes="200px"
+                        src="/images/search/imgSearchWeb.svg" // Путь к изображению из public директории
+                        alt="Нет чатов" // Alt текст для accessibility и SEO
+                        fill // Next.js Image prop - заполняет родительский контейнер
+                        className="object-contain" // Сохраняет пропорции изображения
+                        sizes="200px" // Информация для браузера о размерах изображения для оптимизации загрузки
                     />
                 </div>
 
@@ -54,13 +59,13 @@ export default function EmptyChatsState({
                             className={cn(
                                 customStyles[
                                     'empty-chats-title'
-                                ],
+                                ], // Стили из CSS модуля
                                 `
                                   text-center text-base leading-[130%]
                                   font-normal tracking-extra-tight
                                   text-text-gray
                                   sm:text-lg
-                                `,
+                                `, // Адаптивные стили для мобильных и десктоп
                             )}
                         >
                             У вас пока нет чатов
@@ -74,7 +79,7 @@ export default function EmptyChatsState({
                                 customStyles[
                                     'empty-chats-text'
                                 ],
-                                'text-center',
+                                'text-center', // Центрирование текста
                             )}
                         >
                             Начните общение и здесь всё
@@ -83,12 +88,13 @@ export default function EmptyChatsState({
                     </div>
 
                     {/* Кнопка "Начать чат" */}
+                    {/* margin-top 10 для визуального отделения от текста */}
                     <div className="mt-10 w-full px-1">
                         <Button
-                            variant="primary"
-                            size="lg"
-                            onClick={onStartChat}
-                            className="w-full"
+                            variant="primary" // Основной стиль кнопки
+                            size="lg" // Большой размер для лучшей кликабельности
+                            onClick={onStartChat} // Обработчик из пропсов
+                            className="w-full" // Занимает всю доступную ширину
                         >
                             Начать чат
                         </Button>

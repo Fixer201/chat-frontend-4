@@ -1,3 +1,4 @@
+// Компонент Dropdown (выпадающее меню) с поддержкой порталов и динамическим позиционированием
 'use client'
 
 import React, {
@@ -25,27 +26,31 @@ import { createPortal } from 'react-dom'
 import { cn } from '@shared/lib/utils'
 import styles from '@shared/ui/dropdown/Dropdown.module.css'
 
+// Тип позиционирования меню относительно триггера
 type Placement =
-    | 'bottom-start'
-    | 'bottom-end'
-    | 'top-start'
-    | 'top-end'
+    | 'bottom-start' // Снизу, по левому краю триггера
+    | 'bottom-end' // Снизу, по правому краю триггера
+    | 'top-start' // Сверху, по левому краю триггера
+    | 'top-end' // Сверху, по правому краю триггера
 
+// Контекст для передачи состояния Dropdown между компонентами
 interface DropdownContextValue {
-    isOpen: boolean
-    setOpen: (next: boolean) => void
+    isOpen: boolean // Флаг открытого состояния
+    setOpen: (next: boolean) => void // Функция изменения состояния
     // TODO: DON'T USE MutableRefObject HE WAS DEPRECATED
-    triggerRef: MutableRefObject<HTMLElement | null>
+    triggerRef: MutableRefObject<HTMLElement | null> // Реф на элемент-триггер
     // TODO: DON'T USE MutableRefObject HE WAS DEPRECATED
-    menuRef: MutableRefObject<HTMLDivElement | null>
-    placement: Placement
-    offset: number
-    closeOnSelect: boolean
+    menuRef: MutableRefObject<HTMLDivElement | null> // Реф на меню
+    placement: Placement // Позиционирование меню
+    offset: number // Отступ от триггера
+    closeOnSelect: boolean // Закрывать ли меню при выборе пункта
 }
 
+// Создание контекста
 const DropdownContext =
     createContext<DropdownContextValue | null>(null)
 
+// Хук для использования контекста Dropdown
 const useDropdownContext = () => {
     const context = useContext(DropdownContext)
     if (!context) {
@@ -56,6 +61,7 @@ const useDropdownContext = () => {
     return context
 }
 
+// Утилита для объединения нескольких рефов в один
 const mergeRefs = <T,>(
     ...refs: Array<Ref<T> | null | undefined>
 ) => {
@@ -71,16 +77,18 @@ const mergeRefs = <T,>(
     }
 }
 
+// Основные пропсы Dropdown компонента
 interface DropdownProps {
-    children: ReactNode
-    open?: boolean
-    defaultOpen?: boolean
-    onOpenChange?: (open: boolean) => void
-    placement?: Placement
-    offset?: number
-    closeOnSelect?: boolean
+    children: ReactNode // Дочерние компоненты
+    open?: boolean // Контролируемое состояние открытия
+    defaultOpen?: boolean // Начальное состояние по умолчанию
+    onOpenChange?: (open: boolean) => void // Обработчик изменения состояния
+    placement?: Placement // Позиционирование меню
+    offset?: number // Отступ от триггера
+    closeOnSelect?: boolean // Закрывать ли меню при выборе пункта
 }
 
+// Корневой компонент Dropdown
 function DropdownRoot({
     children,
     open,
@@ -90,16 +98,19 @@ function DropdownRoot({
     offset = 8,
     closeOnSelect = true,
 }: DropdownProps) {
+    // Определяем контролируемый или неконтролируемый режим
     const isControlled = typeof open === 'boolean'
     const [uncontrolledOpen, setUncontrolledOpen] =
         useState(defaultOpen ?? false)
     const triggerRef = useRef<HTMLElement | null>(null)
     const menuRef = useRef<HTMLDivElement | null>(null)
 
+    // Текущее состояние открытия
     const isOpen = isControlled
         ? Boolean(open)
         : uncontrolledOpen
 
+    // Функция изменения состояния
     const setOpen = useCallback(
         (next: boolean) => {
             if (!isControlled) {
@@ -109,6 +120,8 @@ function DropdownRoot({
         },
         [isControlled, onOpenChange],
     )
+
+    // Проверяем, есть ли компонент Trigger среди детей
     const hasTrigger = useMemo(() => {
         const childrenArray = Children.toArray(children)
         return childrenArray.some((child) => {
@@ -123,13 +136,14 @@ function DropdownRoot({
         })
     }, [children])
 
+    // Эффект для обработки кликов вне меню и клавиши Escape
     useEffect(() => {
         if (!isOpen) return
 
         const handleClickAway = (event: MouseEvent) => {
             const target = event.target as Node
 
-            // Check if click is outside both menu and trigger
+            // Проверяем, кликнули ли внутри меню или на триггере
             const clickedInsideMenu =
                 menuRef.current?.contains(target)
             const clickedOnTrigger =
@@ -140,6 +154,7 @@ function DropdownRoot({
                 return
             }
 
+            // Если клик был вне меню и триггера - закрываем меню
             setOpen(false)
         }
 
@@ -167,6 +182,7 @@ function DropdownRoot({
         }
     }, [isOpen, setOpen, hasTrigger])
 
+    // Мемоизируем значение контекста
     const value = useMemo<DropdownContextValue>(
         () => ({
             isOpen,
@@ -187,8 +203,9 @@ function DropdownRoot({
     )
 }
 
+// Компонент-триггер для открытия меню
 interface DropdownTriggerProps {
-    children: ReactElement
+    children: ReactElement // React элемент, который будет триггером
 }
 
 function DropdownTrigger({
@@ -213,6 +230,7 @@ function DropdownTrigger({
         [key: string]: unknown
     }
 
+    // Модифицируем пропсы дочернего элемента
     const newProps = {
         ref: mergeRefs<HTMLElement>(
             triggerRef,
@@ -221,11 +239,11 @@ function DropdownTrigger({
         onClick: (event: ReactMouseEvent<HTMLElement>) => {
             childProps.onClick?.(event)
             if (!event.defaultPrevented) {
-                setOpen(!isOpen)
+                setOpen(!isOpen) // Инвертируем состояние при клике
             }
         },
         'aria-haspopup': 'menu' as const,
-        'aria-expanded': isOpen,
+        'aria-expanded': isOpen, // Атрибут доступности
     }
 
     // Type assertion needed for cloneElement due to complex typing
@@ -233,17 +251,19 @@ function DropdownTrigger({
     return cloneElement(children, newProps as any)
 }
 
+// Компонент содержимого выпадающего меню
 interface DropdownContentProps extends HTMLAttributes<HTMLDivElement> {
-    width?: number | string
-    className?: string
-    children: ReactNode
-    items?: DropdownItemProps[]
+    width?: number | string // Ширина меню
+    className?: string // Дополнительные классы
+    children: ReactNode // Дочерние элементы (пункты меню)
+    items?: DropdownItemProps[] // Альтернативный способ передачи пунктов меню
     manualPosition?: {
+        // Ручная позиция (если не нужно автоматическое позиционирование)
         top: number
         left: number
     } | null
-    minWidth?: number | string
-    maxWidth?: number | string
+    minWidth?: number | string // Минимальная ширина
+    maxWidth?: number | string // Максимальная ширина
 }
 
 function DropdownContent({
@@ -265,11 +285,12 @@ function DropdownContent({
         offset,
     } = useDropdownContext()
     const [position, setPosition] = useState<CSSProperties>(
-        { opacity: 0 },
+        { opacity: 0 }, // Начальная позиция (скрыта)
     )
     const contentRef = useRef<HTMLDivElement>(null)
-    const hasMeasuredRef = useRef(false)
+    const hasMeasuredRef = useRef(false) // Флаг измерения ширины
 
+    // Функция чтения CSS переменных
     const readCssVar = (name: string, fallback: number) => {
         if (typeof window === 'undefined') return fallback
         try {
@@ -288,6 +309,7 @@ function DropdownContent({
         }
     }
 
+    // Определяем минимальную ширину
     const resolvedMinWidth = (() => {
         if (typeof minWidth === 'number') return minWidth
         if (
@@ -298,6 +320,7 @@ function DropdownContent({
         return readCssVar('--dropdown-min-width', 180)
     })()
 
+    // Определяем максимальную ширину
     const resolvedMaxWidth = (() => {
         if (typeof maxWidth === 'number') return maxWidth
         if (
@@ -308,9 +331,11 @@ function DropdownContent({
         return readCssVar('--dropdown-max-width', 400)
     })()
 
+    // Состояние для расчетной ширины (при auto ширине)
     const [calculatedWidth, setCalculatedWidth] =
         useState<number>(resolvedMinWidth)
 
+    // Эффект для автоматического позиционирования меню
     useLayoutEffect(() => {
         if (!isOpen || manualPosition) return
 
@@ -323,6 +348,7 @@ function DropdownContent({
             const menuRect =
                 menuRef.current.getBoundingClientRect()
 
+            // Вычисляем позицию в зависимости от placement
             let top =
                 triggerRect.bottom + offset + window.scrollY
             let left = triggerRect.left + window.scrollX
@@ -351,6 +377,7 @@ function DropdownContent({
 
         updatePosition()
 
+        // Обработчики для обновления позиции при ресайзе и скролле
         const handle = () => updatePosition()
         window.addEventListener('resize', handle)
         window.addEventListener('scroll', handle, true)
@@ -372,6 +399,7 @@ function DropdownContent({
         manualPosition,
     ])
 
+    // Функция измерения ширины меню на основе содержимого
     const measureDropdownWidth = useCallback(() => {
         const minW = resolvedMinWidth
         const maxW = resolvedMaxWidth
@@ -386,21 +414,23 @@ function DropdownContent({
 
         let maxItemWidth = 0
 
+        // Находим максимальную ширину среди пунктов меню
         itemElements.forEach((item) => {
             const el = item as HTMLElement
-            // Use scrollWidth to measure full content width including icons/padding
             const itemWidth =
                 el.scrollWidth ||
                 el.getBoundingClientRect().width
             maxItemWidth = Math.max(maxItemWidth, itemWidth)
         })
 
+        // Добавляем отступы и иконки
         const extra = readCssVar(
             '--dropdown-extra-padding',
             96,
         )
         const totalWidth = Math.ceil(maxItemWidth + extra)
 
+        // Ограничиваем минимальной и максимальной шириной
         let finalWidth = Math.max(minW, totalWidth)
         if (maxW && finalWidth > maxW) {
             finalWidth = maxW as number
@@ -409,27 +439,16 @@ function DropdownContent({
         return finalWidth
     }, [width, resolvedMinWidth, resolvedMaxWidth])
 
-    // Measure dropdown width synchronously before browser paints
-    // Uses useLayoutEffect instead of useEffect because:
-    // 1. DOM measurement must happen after layout calculation but before paint
-    // 2. setState inside useLayoutEffect is blocked by React until after measurement
-    // 3. Browser never repaints between initial render (width=0) and final render (width=measured)
-    // 4. This is the official React pattern for layout measurements (https://react.dev/reference/react/useLayoutEffect)
+    // Эффект для измерения ширины меню при открытии
     useLayoutEffect(() => {
         if (!isOpen || width !== 'auto') {
             return
         }
 
-        // Measure dropdown width only once when it opens
-        // Using ref flag to avoid re-measuring on every effect run
+        // Измеряем ширину только один раз при открытии
         if (!hasMeasuredRef.current) {
-            // Defer measurement to allow contentRef to be populated
             const timeoutId = setTimeout(() => {
                 const newWidth = measureDropdownWidth()
-                // This setState inside useLayoutEffect is VALID because:
-                // - It's a DOM measurement use case (documented in React docs)
-                // - No cascading renders: single useLayoutEffect → single setState → done
-                // - React batches this render with the layout measurement, browser doesn't paint between them
                 setCalculatedWidth(newWidth)
                 hasMeasuredRef.current = true
             }, 0)
@@ -437,16 +456,18 @@ function DropdownContent({
             return () => clearTimeout(timeoutId)
         }
 
-        // Cleanup: Reset measurement flag when dropdown closes so we measure again on next open
+        // Сбрасываем флаг при закрытии меню
         return () => {
             hasMeasuredRef.current = false
         }
     }, [isOpen, width, measureDropdownWidth])
 
+    // Если меню не открыто - ничего не рендерим
     if (!isOpen) {
         return null
     }
 
+    // Стили для меню
     const contentStyle: CSSProperties = manualPosition
         ? {
               width:
@@ -472,6 +493,7 @@ function DropdownContent({
               ...(style as CSSProperties),
           }
 
+    // Рендерим меню через портал в body для корректного позиционирования
     return createPortal(
         <div
             ref={menuRef}
@@ -484,6 +506,7 @@ function DropdownContent({
                 ref={contentRef}
                 className={styles.dropdownContent}
             >
+                {/* Рендерим пункты меню из пропса items или children */}
                 {items?.map((item, index) => (
                     <DropdownItem
                         key={`${item.label ?? index}-${index}`}
@@ -497,26 +520,28 @@ function DropdownContent({
     )
 }
 
+// Пропсы для пункта меню
 interface DropdownItemProps extends HTMLAttributes<HTMLButtonElement> {
-    label?: string
-    icon?: ReactNode
-    rightIcon?: ReactNode
-    danger?: boolean
-    disabled?: boolean
-    onSelect?: () => void
-    closeOnSelect?: boolean
+    label?: string // Текст пункта меню
+    icon?: ReactNode // Иконка слева
+    rightIcon?: ReactNode // Иконка справа
+    danger?: boolean // Опасный пункт (красный цвет)
+    disabled?: boolean // Заблокированный пункт
+    onSelect?: () => void // Обработчик выбора пункта
+    closeOnSelect?: boolean // Закрывать ли меню при выборе этого пункта
     onClick?: (
         event: React.MouseEvent<HTMLButtonElement>,
-    ) => void
+    ) => void // Обработчик клика
     onMouseEnter?: (
         event: React.MouseEvent<HTMLButtonElement>,
-    ) => void
+    ) => void // Обработчик наведения мыши
     onMouseLeave?: (
         event: React.MouseEvent<HTMLButtonElement>,
-    ) => void
-    hasDivider?: boolean
+    ) => void // Обработчик ухода мыши
+    hasDivider?: boolean // Разделитель перед пунктом
 }
 
+// Компонент пункта меню
 function DropdownItem({
     label,
     icon,
@@ -536,6 +561,7 @@ function DropdownItem({
     const { setOpen, closeOnSelect: contextCloseOnSelect } =
         useDropdownContext()
 
+    // Обработчик клика по пункту меню
     const handleClick = (
         event: React.MouseEvent<HTMLButtonElement>,
     ) => {
@@ -549,6 +575,7 @@ function DropdownItem({
 
         onSelect?.()
 
+        // Закрываем меню если нужно
         if (closeOnSelect ?? contextCloseOnSelect) {
             setOpen(false)
         }
@@ -556,9 +583,11 @@ function DropdownItem({
 
     return (
         <>
+            {/* Разделитель перед пунктом */}
             {hasDivider && (
                 <div className={styles.dropdownDivider} />
             )}
+            {/* Кнопка пункта меню */}
             <button
                 type="button"
                 role="menuitem"
@@ -579,9 +608,10 @@ function DropdownItem({
                 {...props}
             >
                 <span className={styles.dropdownItemText}>
-                    {label ?? children}
+                    {label ?? children} {/* Текст пункта */}
                 </span>
                 <div className={styles.dropdownItemIcons}>
+                    {/* Иконка слева */}
                     {icon && (
                         <span
                             className={styles.dropdownIcon}
@@ -590,6 +620,7 @@ function DropdownItem({
                         </span>
                     )}
                 </div>
+                {/* Иконка справа */}
                 {rightIcon && (
                     <span className={styles.dropdownIcon}>
                         {rightIcon}
@@ -600,6 +631,7 @@ function DropdownItem({
     )
 }
 
+// Собираем compound компонент
 const Dropdown = DropdownRoot as typeof DropdownRoot & {
     Trigger: typeof DropdownTrigger
     Content: typeof DropdownContent

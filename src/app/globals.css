@@ -9,16 +9,12 @@ body {
 }
 
 @theme inline {
-    --radius-sm: calc(var(--radius) - 4px);
-    /* 6px */
-    --radius-md: calc(var(--radius) - 2px);
-    /* 8px */
-    --radius-lg: var(--radius);
-    /* 10px */
-    --radius-xl: calc(var(--radius) + 4px);
-    /* 14px */
-    --radius-3xl: calc(var(--radius) + 10px);
-    /* 20px */
+    --radius-sm: calc(var(--radius) - 4px); /* 6px */
+    --radius-md: calc(var(--radius) - 2px); /* 8px */
+    --radius-lg: var(--radius); /* 10px */
+    --radius-xl: calc(var(--radius) + 4px); /* 14px */
+    --radius-3xl: calc(var(--radius) + 10px); /* 20px */
+    --screen-height-list: var(--chat-list-container-height);
     /* UI Component Colors */
     /* Custom App Colors - Primary */
     --color-white-bg: var(--app-white-bg);
@@ -81,8 +77,8 @@ body {
 }
 
 :root {
-    --radius: 0.625rem;
-    /* 10px */
+    --radius: 0.625rem; /* 10px */
+    --chat-list-container-height: calc(100vh - 112px);
     --chat-list-divider-left: calc(60px + 12px + 8px);
     --app-login-background: url(/images/login/Background.svg);
     --app-login-start: url(/images/login/StartPage.svg);
@@ -156,13 +152,20 @@ body {
     --dropdown-min-width: 180px;
     --dropdown-max-width: 400px;
     --dropdown-extra-padding: 96px;
-
-    /* Call Modal Window */
-    /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
-    --app-call-modal-red: hsla(359, 100%, 61%, 1);
-    /* Colors/Red */
-    --app-call-modal-green: hsla(135, 59%, 49%, 1);
-    /* Colors/Green */
+    --create-menu-width: 200px;
+    /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
+    --app-call-modal-red: hsla(
+        359,
+        100%,
+        61%,
+        1
+    ); /* Colors/Red */
+    --app-call-modal-green: hsla(
+        135,
+        59%,
+        49%,
+        1
+    ); /* Colors/Green */
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
     --app-call-timer-green: hsla(140, 100%, 37%, 1);

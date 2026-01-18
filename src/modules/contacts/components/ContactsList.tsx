@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
@@ -81,9 +80,17 @@ export default function ContactsList() {
         }
     }
 
+    // Функция для переключения режима удаления со сбросом выбранных контактов
+    const handleToggleDeleteMode = (mode: boolean) => {
+        setDeleteMode(mode)
+        if (mode) {
+            setSelectedContacts([])
+        }
+    }
+
     return (
         <>
-            <div className="flex h-1/12 min-h-15 items-center bg-(--color-gray-main) px-4">
+            <div className="mt-2 flex h-1/12 min-h-15 items-center px-4">
                 <Search
                     value={searchValue}
                     onChange={setSearchValue}
@@ -98,7 +105,9 @@ export default function ContactsList() {
                 filteredContacts.length > 0 && (
                     <ContactsDelete
                         deleteMode={deleteMode}
-                        onToggleDeleteMode={setDeleteMode}
+                        onToggleDeleteMode={
+                            handleToggleDeleteMode
+                        }
                         selectedContacts={selectedContacts}
                         onClearSelection={() =>
                             setSelectedContacts([])
@@ -107,13 +116,7 @@ export default function ContactsList() {
                 )}
 
             {/* контейнер контактов */}
-            <div
-                className={`
-              relative flex h-11/12 w-full flex-0 flex-col gap-4
-              overflow-hidden
-              hover:overflow-auto
-            `}
-            >
+            <div className="relative h-11/12 flex-1 overflow-y-auto">
                 <CustomScrollbar>
                     {filteredContacts &&
                     filteredContacts.length > 0 ? (
@@ -146,9 +149,9 @@ export default function ContactsList() {
 
                         <div
                             className={`
-                      flex h-full flex-col items-center justify-center p-4
-                      text-center
-                    `}
+                              flex h-full flex-col items-center justify-center
+                              p-4 text-center
+                            `}
                         >
                             <Image
                                 src="/images/search/imgSearchWeb.svg"
@@ -164,18 +167,18 @@ export default function ContactsList() {
                                 Поиск не дал результатов
                             </p>
                             <p className="text-sm text-text-gray">
-                                По вашему запросу ничего не
-                                найдено. <br /> Измените
-                                запрос и попробуйте снова
+                                Поиск не дал результатов.{' '}
+                                <br /> Измените запрос и
+                                попробуйте снова
                             </p>
                         </div>
                     ) : (
                         // блок для пустого списка контактов
                         <div
                             className={`
-                      flex h-full flex-col items-center justify-center p-4
-                      text-center
-                    `}
+                              flex h-full flex-col items-center justify-center
+                              p-4 text-center
+                            `}
                         >
                             <EmptySearchState />
                         </div>
@@ -187,11 +190,11 @@ export default function ContactsList() {
                             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                             <div
                                 className={`
-                          absolute right-0 bottom-0 left-0 z-10 flex h-20 w-full
-                          cursor-pointer items-center justify-center
-                          bg-(--color-gray-light) transition-colors
-                          hover:bg-(--color-accent-violet-light)
-                        `}
+                                  right-0 left-0 z-10 flex h-20 w-full
+                                  cursor-pointer items-center justify-center
+                                  bg-(--color-gray-light) transition-colors
+                                  hover:bg-(--color-accent-violet-light)
+                                `}
                                 onClick={handleOpenModal}
                                 role="button"
                                 aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
@@ -214,9 +217,10 @@ export default function ContactsList() {
                         !deleteMode && (
                             <div
                                 className={`
-                      flex h-9 w-full justify-between gap-1
-                      bg-(--color-gray-light) pt-2.5 pr-4 pb-2.5 pl-4
-                    `}
+                                  flex h-9 w-full justify-between gap-1
+                                  bg-(--color-gray-light) pt-2.5 pr-4 pb-2.5
+                                  pl-4
+                                `}
                             >
                                 <p>Пользователи А-чата</p>
                                 <Image
