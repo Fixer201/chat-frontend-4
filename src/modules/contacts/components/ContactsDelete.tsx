@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import Image from 'next/image'
 
@@ -61,6 +62,7 @@ export default function ContactsDelete({
                                 width: '24px',
                                 height: '24px',
                             }}
+                            className="cursor-pointer"
                         />
                     )}
                 </div>
@@ -81,6 +83,7 @@ export default function ContactsDelete({
                             width: '24px',
                             height: '24px',
                         }}
+                        className="cursor-pointer"
                         onClick={() =>
                             onToggleDeleteMode(true)
                         }

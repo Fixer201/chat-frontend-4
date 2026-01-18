@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 import { forwardRef } from 'react'
 import type { InputHTMLAttributes } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -6,6 +5,7 @@ import { twMerge } from 'tailwind-merge'
 export type InputBorderColor = 'gray' | 'violet' | 'red'
 export type InputTextColor = 'gray' | 'violet'
 export type InputSize = 'sm' | 'md' | 'lg'
+export type InputLabelColor = 'gray' | 'red'
 
 export interface InputProps extends Omit<
     InputHTMLAttributes<HTMLInputElement>,
@@ -15,6 +15,7 @@ export interface InputProps extends Omit<
     textColor?: InputTextColor
     inputSize?: InputSize
     label?: string
+    labelColor?: InputLabelColor
     className?: string
 }
 
@@ -39,6 +40,11 @@ const sizeClasses: Record<InputSize, string> = {
     lg: 'h-14 w-[360px] px-4 text-lg',
 }
 
+const labelColorClasses: Record<InputLabelColor, string> = {
+    gray: 'text-gray-600',
+    red: 'text-red-500',
+}
+
 export const Input = forwardRef<
     HTMLInputElement,
     InputProps
@@ -49,6 +55,7 @@ export const Input = forwardRef<
             textColor = 'gray',
             inputSize = 'md',
             label,
+            labelColor = 'gray',
             className,
             ...props
         },
@@ -66,9 +73,10 @@ export const Input = forwardRef<
             <div className="flex flex-col gap-1">
                 {label && (
                     <label
-                        className={`
-            h-4 w-full align-[1%] text-sm font-normal text-gray-600
-          `}
+                        className={twMerge(
+                            'h-4 w-full align-[1%] text-sm font-normal',
+                            labelColorClasses[labelColor],
+                        )}
                     >
                         {label}
                     </label>
@@ -84,6 +92,3 @@ export const Input = forwardRef<
 )
 
 Input.displayName = 'Input'
-
-// Примеры использования:
-// <Input label="Введите номер телефона" placeholder="Email" borderColor="violet" textColor="gray" inputSize="lg" />

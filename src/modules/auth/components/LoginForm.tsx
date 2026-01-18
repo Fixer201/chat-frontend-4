@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react'
 import CodeConfirmForm from './CodeConfirmForm'
 import RegisterForm from './RegisterForm'
 import SuccessRegister from './SuccessRegister'
+import Cookies from 'js-cookie'
 
 export default function LoginForm() {
     const router = useRouter()
@@ -168,14 +169,22 @@ export default function LoginForm() {
             )
             if (response.ok) {
                 // Сохраняем токены в localStorage
-                localStorage.setItem(
-                    'refresh_token',
-                    data.refresh,
-                )
-                localStorage.setItem(
-                    'access_token',
-                    data.access,
-                )
+                // localStorage.setItem(
+                //     'refresh_token',
+                //     data.refresh,
+                // )
+                // localStorage.setItem(
+                //     'access_token',
+                //     data.access,
+                // )
+                // Сохраняем токены в cookies (срок жизни 7 дней для access, 30 для refresh)
+                Cookies.set('access_token', data.access, {
+                    expires: 7,
+                })
+                Cookies.set('refresh_token', data.refresh, {
+                    expires: 30,
+                })
+                setShowLoginForm(true)
                 setShowLoginForm(true)
             } else {
                 setAttempts((prev) => prev + 1)
@@ -214,7 +223,8 @@ export default function LoginForm() {
         //     .find((row) => row.startsWith('csrftoken='))
         //     ?.split('=')[1]
         const accessToken =
-            localStorage.getItem('access_token')
+            // localStorage.getItem('access_token')
+            Cookies.get('access_token')
         const apiKey = process.env.NEXT_PUBLIC_API_KEY
         const url = apiKey
             ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/?api_key=${apiKey}`
@@ -411,7 +421,7 @@ export default function LoginForm() {
                                         color={
                                             isPhoneValid
                                                 ? 'primary'
-                                                : 'neutral'
+                                                : 'light-gray'
                                         }
                                         className={`w-full`}
                                         onClick={
