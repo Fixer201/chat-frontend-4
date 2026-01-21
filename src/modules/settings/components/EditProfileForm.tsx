@@ -2,12 +2,20 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ChangeEvent,
+} from 'react'
 
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import Input from '@shared/ui/input/Input'
 import { Button } from '@shared/ui/button/Button'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { DatePicker } from '@shared/ui/datePicker/DatePicker'
+import { AvatarCropper } from '@shared/ui/avatarCropper/AvatarCropper'
 
 const DEFAULT_BIRTHDAY = {
     day: 1,
@@ -15,8 +23,64 @@ const DEFAULT_BIRTHDAY = {
     year: 2000,
 }
 
+const DEFAULT_AVATAR_SRC =
+    '/images/chatHeader/userAvatar.svg'
+
 export default function EditProfileForm() {
     const router = useRouter()
+
+    const [isCropperOpen, setIsCropperOpen] =
+        useState(false)
+    const [selectedFile, setSelectedFile] =
+        useState<File | null>(null)
+    const [croppedBlob, setCroppedBlob] =
+        useState<Blob | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const avatarPreview = useMemo(() => {
+        if (!croppedBlob) {
+            return DEFAULT_AVATAR_SRC
+        }
+
+        return URL.createObjectURL(croppedBlob)
+    }, [croppedBlob])
+
+    useEffect(() => {
+        if (!croppedBlob) {
+            return undefined
+        }
+
+        const url = avatarPreview
+
+        return () => {
+            if (url.startsWith('blob:')) {
+                URL.revokeObjectURL(url)
+            }
+        }
+    }, [avatarPreview, croppedBlob])
+
+    const handleOpenFileDialog = () => {
+        fileInputRef.current?.click()
+    }
+
+    const handleFileInputChange = (
+        event: ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = event.target.files?.[0]
+
+        if (!file) return
+
+        setSelectedFile(file)
+        setIsCropperOpen(true)
+
+        // allow re-selecting the same file later
+        event.target.value = ''
+    }
+
+    const handleCropperClose = () => {
+        setIsCropperOpen(false)
+        setSelectedFile(null)
+    }
 
     return (
         <div
@@ -55,15 +119,17 @@ export default function EditProfileForm() {
                         <div
                             className={`
                               flex h-50 w-50 items-center justify-center
-                              rounded-full bg-accent-violet-light
-                              text-accent-violet-primary
+                              overflow-hidden rounded-full
+                              bg-accent-violet-light text-accent-violet-primary
                             `}
                         >
                             <Image
-                                src="/images/chatHeader/userAvatar.svg"
+                                src={avatarPreview}
                                 alt="Аватар пользователя"
                                 width={200}
                                 height={200}
+                                className="h-full w-full object-cover"
+                                unoptimized
                             />
                         </div>
                         <button
@@ -73,9 +139,19 @@ export default function EditProfileForm() {
                               transition-colors
                               hover:text-accent-violet-dark
                             `}
+                            onClick={handleOpenFileDialog}
+                            aria-label="Выбрать фотографию"
                         >
                             Выбрать фотографию
                         </button>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileInputChange}
+                        />
                     </div>
 
                     <form className="flex flex-1 flex-col gap-3">
@@ -160,6 +236,18 @@ export default function EditProfileForm() {
                     </form>
                 </div>
             </CustomScrollbar>
+
+            <AvatarCropper
+                isOpen={isCropperOpen}
+                imageFile={selectedFile ?? undefined}
+                onClose={handleCropperClose}
+                onFileChange={(file) =>
+                    setSelectedFile(file)
+                }
+                onConfirm={(blob) => {
+                    setCroppedBlob(blob)
+                }}
+            />
         </div>
     )
 }

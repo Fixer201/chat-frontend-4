@@ -1,3 +1,4 @@
+// Компонент элемента списка чатов
 'use client'
 
 import React, {
@@ -23,9 +24,10 @@ const STYLES = {
     container:
         'relative px-2 py-1 transition-all duration-200',
     divider:
-        'absolute right-4 bottom-0 left-(--chat-list-divider-left) h-px bg-(--color-black-alpha-20)',
+        'absolute right-4 bottom-0 left-(--chat-list-divider-left) h-px bg-black-alpha-20',
 } as const
 
+// Компонент элемента списка чатов с поддержкой рефов
 export const ChatListItem = forwardRef<
     HTMLDivElement,
     ChatListItemProps
@@ -48,16 +50,21 @@ export const ChatListItem = forwardRef<
         },
         ref,
     ) => {
+        // Состояние открытия/закрытия контекстного меню
         const [contextMenuOpen, setContextMenuOpen] =
             useState(false)
+        // Позиция контекстного меню на экране
         const [
             contextMenuPosition,
             setContextMenuPosition,
         ] = useState({ top: 0, left: 0 })
+        // Реф на контейнер элемента
         const containerRef = useRef<HTMLDivElement>(null)
+        // Состояние для отслеживания наведения на элементы меню
         const [hoveredItem, setHoveredItem] = useState<
             string | null
         >(null)
+        // Функция для объединения внешнего и внутреннего рефов
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const setRefs = useCallback(
             (node: HTMLDivElement | null) => {
@@ -70,6 +77,7 @@ export const ChatListItem = forwardRef<
             },
             [ref],
         )
+        // Обработчик открытия контекстного меню по правому клику
         const handleContextMenu = useCallback(
             (e: React.MouseEvent) => {
                 e.preventDefault()
@@ -82,6 +90,7 @@ export const ChatListItem = forwardRef<
             [],
         )
 
+        // Обработчик клика по пункту меню
         const handleMenuItemClick = useCallback(
             (handler?: () => void) => {
                 handler?.()
@@ -90,6 +99,7 @@ export const ChatListItem = forwardRef<
             [],
         )
 
+        // Обработчик нажатия клавиш (для доступности)
         const handleKeyDown = useCallback(
             (e: React.KeyboardEvent<HTMLDivElement>) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -134,14 +144,15 @@ export const ChatListItem = forwardRef<
                         `, // Базовые стили
                         selected
                             ? `
-                              bg-(--color-accent-violet-primary)
-                              hover:bg-(--color-accent-violet-primary)
+                              bg-accent-violet-primary
+                              hover:bg-accent-violet-primary
                             `
-                            : 'hover:bg-(--color-accent-violet-light)',
+                            : 'hover:bg-accent-violet-light',
                         'hover:rounded-lg',
                         selected && 'rounded-lg',
                     )}
                 />
+                {/* Выпадающее меню с действиями для чата */}
                 <ChatListItemDropdown
                     open={contextMenuOpen}
                     onOpenChange={setContextMenuOpen}
@@ -167,4 +178,5 @@ export const ChatListItem = forwardRef<
     },
 )
 
+// Отображаемое имя для компонента в React DevTools
 ChatListItem.displayName = 'ChatListItem'
