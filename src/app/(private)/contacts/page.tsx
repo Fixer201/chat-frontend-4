@@ -1,5 +1,5 @@
-import ContactRoom from '@modules/contacts/components/ContactRoom'
 import ContactsList from '@modules/contacts/components/ContactsList'
+import EmptyContactsState from '@modules/contacts/components/EmptyContactsState'
 
 export default function ContactsPage() {
     return (
@@ -23,8 +23,8 @@ export default function ContactsPage() {
                   md:block
                 `}
             >
-                {/* <EmptyChatState /> по умолчанию когда чат не выбран. Сейчас временно будет сразу отображаться чат */}
-                <ContactRoom />
+                <EmptyContactsState />
+                {/* <ChatRoom /> */}
             </div>
         </div>
     )

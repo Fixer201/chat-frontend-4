@@ -7,12 +7,19 @@ import { useEffect, useState } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import ContactsDelete from './ContactsDelete'
 import Modal from '@shared/ui/modal/Modal'
-import { removeContacts } from '@redux/slices/contactsSlice'
+import {
+    removeContacts,
+    setContacts,
+} from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
 import { ContactItem } from './ContactItem'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
+import { ApiContact, Contact } from '@shared/types/contact'
+import { useApiFetcher } from '@shared/hooks/useApiFetcher'
+import { Spinner } from '@shared/ui/Spinner'
+// import { ContactsListDB } from '@shared/config/constants'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -20,11 +27,11 @@ export default function ContactsList() {
     const [selectedContacts, setSelectedContacts] =
         useState<string[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [loading, setLoading] = useState(true)
     const dispatch = useDispatch()
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
-
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
     )
@@ -38,6 +45,54 @@ export default function ContactsList() {
             (contact) => `${contact.nickname}`,
         ],
     )
+    const fetchData = useApiFetcher()
+
+    useEffect(() => {
+        const loadContacts = async () => {
+            try {
+                const data = await fetchData(
+                    'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-list/',
+                    {
+                        method: 'GET',
+                    },
+                )
+                const contactsData: ApiContact[] =
+                    data.results || []
+                console.log('Ответ API:', contactsData)
+                const mappedContacts: Contact[] =
+                    contactsData.map(
+                        (item: ApiContact) => ({
+                            uid: item.uid,
+                            username: '',
+                            nickname: '',
+                            phone: item.phone,
+                            firstName: item.first_name,
+                            lastName: item.last_name,
+                            patronymic: '',
+                            avatar: item.avatar,
+                            avatarUrl: item.avatar_url,
+                            avatarWebp: item.avatar_webp,
+                            avatarWebpUrl:
+                                item.avatar_webp_url,
+                            additionalInformation: '',
+                            birthday: 0,
+                            chatId: 0,
+                            isOnline: item.is_online,
+                            wasOnlineAt: item.was_online_at,
+                        }),
+                    )
+                dispatch(setContacts(mappedContacts))
+            } catch (error) {
+                console.error(
+                    'Ошибка загрузки контактов:',
+                    error,
+                )
+            } finally {
+                setLoading(false)
+            }
+        }
+        loadContacts()
+    }, [dispatch, fetchData])
 
     // Сброс выделенного контакта при входе в режим удаления
     useEffect(() => {
@@ -86,6 +141,16 @@ export default function ContactsList() {
         if (mode) {
             setSelectedContacts([])
         }
+    }
+
+    if (loading) {
+        // Показать индикатор загрузки, пока данные не загружены
+        return (
+            <div className="flex h-full items-center justify-center">
+                <p>Загрузка контактов...</p>
+                <Spinner />
+            </div>
+        )
     }
 
     return (
@@ -146,31 +211,13 @@ export default function ContactsList() {
                         ))
                     ) : searchValue.trim() ? (
                         // блок для пустого поиска
-
                         <div
                             className={`
                               flex h-full flex-col items-center justify-center
                               p-4 text-center
                             `}
                         >
-                            <Image
-                                src="/images/search/imgSearchWeb.svg"
-                                alt="iconsSearch"
-                                width={200}
-                                height={200}
-                                style={{
-                                    width: '200px',
-                                    height: '200px',
-                                }}
-                            />
-                            <p className="mt-2 text-text-gray">
-                                Поиск не дал результатов
-                            </p>
-                            <p className="text-sm text-text-gray">
-                                Поиск не дал результатов.{' '}
-                                <br /> Измените запрос и
-                                попробуйте снова
-                            </p>
+                            <EmptySearchState />
                         </div>
                     ) : (
                         // блок для пустого списка контактов
@@ -180,7 +227,20 @@ export default function ContactsList() {
                               p-4 text-center
                             `}
                         >
-                            <EmptySearchState />
+                            <Image
+                                src="/images/search/nullContacts.svg"
+                                alt="iconsSearch"
+                                width={200}
+                                height={200}
+                                loading="eager"
+                                style={{
+                                    width: '200px',
+                                    height: '200px',
+                                }}
+                            />
+                            <p className="mt-2 text-text-gray">
+                                Список контактов пока пуст
+                            </p>
                         </div>
                     )}
 
@@ -228,6 +288,7 @@ export default function ContactsList() {
                                     alt="MainIconsWeb"
                                     width={24}
                                     height={24}
+                                    loading="eager"
                                     style={{
                                         width: '24px',
                                         height: '24px',

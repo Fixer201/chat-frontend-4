@@ -93,12 +93,16 @@ export const ContactAvatar = forwardRef<
                 `}
                 >
                     <Image
-                        src={src}
+                        src={
+                            src ||
+                            '/images/contacts/AvatarWeb1.png'
+                        } // заменить на дефолтный аватар
                         alt={alt ?? name}
                         fill
                         sizes={'40px'}
                         className={`
                       object-cover
+                      
                     `}
                     />
                 </div>

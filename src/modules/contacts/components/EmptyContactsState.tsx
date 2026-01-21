@@ -3,6 +3,7 @@
 export default function EmptyContactsState() {
     return (
         <div
+            // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
             className={`
               flex h-full items-center justify-center rounded-lg border-2
               border-gray-light bg-gray-light shadow-sm

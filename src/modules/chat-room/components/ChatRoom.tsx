@@ -10,7 +10,7 @@ export default function ChatRoom({
 }>) {
     return (
         <div className="flex h-full flex-col rounded-md bg-gray-light">
-            <ChatHeader chat={chat} />
+            <ChatHeader chat={chat || null} />
             <div className="flex-1 overflow-y-auto">
                 <MessagesList />
             </div>

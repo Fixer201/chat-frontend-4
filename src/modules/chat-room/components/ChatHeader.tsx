@@ -16,7 +16,6 @@ export default function ChatHeader({
         >
             <div className="flex items-center justify-between">
                 <div className="flex flex-row items-center gap-4">
-                    {/* User Icon */}
                     <Image
                         src={getAvatarSrc(chat.chat)}
                         width={40}
