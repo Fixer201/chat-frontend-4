@@ -346,11 +346,16 @@ export default function ChatsList({
                                                 src={
                                                     avatarSrc
                                                 }
-                                                name={`${chat.chat.firstName} ${chat.chat.lastName}`}
+                                                name={
+                                                    chat.name
+                                                }
                                                 messagePreview={
                                                     chat
                                                         .lastMessage
                                                         .content
+                                                }
+                                                chatType={
+                                                    chat.chatType
                                                 }
                                                 timestamp={formatLastSeen(
                                                     chat.lastActivityAt *

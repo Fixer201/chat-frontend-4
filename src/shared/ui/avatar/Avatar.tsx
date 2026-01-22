@@ -1,7 +1,16 @@
 'use client'
-import { ContactAvatar, ContactAvatarProps } from './components/ContactAvatar'
-import { SelectContactAvatar, SelectContactAvatarProps } from './components/SelectContactAvatar'
-import { ChatAvatar, ChatAvatarProps } from './components/chatAvatar/ChatAvatar'
+import {
+    ContactAvatar,
+    ContactAvatarProps,
+} from './components/ContactAvatar'
+import {
+    SelectContactAvatar,
+    SelectContactAvatarProps,
+} from './components/SelectContactAvatar'
+import {
+    ChatAvatar,
+    ChatAvatarProps,
+} from './components/chatAvatar/ChatAvatar'
 import { forwardRef } from 'react'
 import type { HTMLAttributes } from 'react'
 
@@ -10,8 +19,7 @@ export type AvatarMode =
     | 'select-contact'
     | 'chat'
 
-export interface AvatarProps
-    extends HTMLAttributes<HTMLDivElement> {
+export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
     src: string
     alt?: string
     name: string
@@ -25,37 +33,55 @@ export interface AvatarProps
     rightElement?: React.ReactNode
     className?: string
     notificationsEnabled?: boolean
+    chatType?:
+        | 'chat'
+        | 'public-group'
+        | 'private-group'
+        | 'public-channel'
+        | 'private-channel'
     wasOnlineAt?: number
     isSelected?: boolean
     onSelect?: () => void
     messageStatus?: 'sent' | 'delivered' | 'read' | null
-    isFavorite?:boolean
-    isChatRead?:boolean
+    isFavorite?: boolean
+    isChatRead?: boolean
 }
 
 export const Avatar = forwardRef<
     HTMLDivElement,
     AvatarProps
->(
-    (
-        {
-            mode = 'contact',
-            ...props
-        },
-        ref,
-    ) => {
-        switch (mode) {
-            case 'contact':
-                return <ContactAvatar ref={ref} {...props as ContactAvatarProps} />
-            case 'select-contact':
-                return <SelectContactAvatar ref={ref} {...props as SelectContactAvatarProps} />
-            case 'chat':
-                return <ChatAvatar ref={ref} {...props as ChatAvatarProps} />
-            default:
-                return <ContactAvatar ref={ref} {...props as ContactAvatarProps} />
-        }
+>(({ mode = 'contact', ...props }, ref) => {
+    switch (mode) {
+        case 'contact':
+            return (
+                <ContactAvatar
+                    ref={ref}
+                    {...(props as ContactAvatarProps)}
+                />
+            )
+        case 'select-contact':
+            return (
+                <SelectContactAvatar
+                    ref={ref}
+                    {...(props as SelectContactAvatarProps)}
+                />
+            )
+        case 'chat':
+            return (
+                <ChatAvatar
+                    ref={ref}
+                    {...(props as ChatAvatarProps)}
+                />
+            )
+        default:
+            return (
+                <ContactAvatar
+                    ref={ref}
+                    {...(props as ContactAvatarProps)}
+                />
+            )
     }
-)
+})
 
 Avatar.displayName = 'Avatar'
 

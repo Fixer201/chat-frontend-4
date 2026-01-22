@@ -23,7 +23,8 @@ export const generateAvatarUrl = (
 ): string => {
     // Fallback для недоступных источников
     // Возвращаем локальное изображение если источник указан как недоступный
-    if (source === 'недоступный_источник') {
+
+    if (/(useAvatar)/.test(source)) {
         return '/images/chatHeader/userAvatar.svg'
     }
     const seedStr = String(seed) // Приводим seed к строке для использования в URL
@@ -92,10 +93,23 @@ export const generateAvatarUrl = (
             const text = seedStr.charAt(0).toUpperCase() // Первая буква seed как текст
             return `https://via.placeholder.com/${width}x${height}/${color}/ffffff?text=${text}`
 
+        case AVATAR_SOURCES.UI_FACES:
+            // Генерируем детерминированный ID от 1 до 70
+            let facesHash = 0
+            for (let i = 0; i < seedStr.length; i++) {
+                facesHash =
+                    (facesHash << 5) -
+                    facesHash +
+                    seedStr.charCodeAt(i)
+                facesHash = facesHash & facesHash
+            }
+            const faceId = (Math.abs(facesHash) % 70) + 1
+            return `https://xsgames.co/randomusers/assets/avatars/${gender}/${faceId.toString().padStart(2, '0')}.jpg`
+
         default:
             // По умолчанию используем Picsum
             // Fallback на случай неизвестного источника
-            return `https://picsum.photos/seed/${seedStr}/${width}/${height}`
+            return '/images/chatHeader/userAvatar.svg'
     }
 }
 

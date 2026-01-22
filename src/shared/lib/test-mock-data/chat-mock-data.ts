@@ -66,6 +66,42 @@ export function generateLocalMockChatItems(
         'Lena',
         'Vlad',
     ]
+    // Массивы названий для групп и каналов
+    const groupNames = [
+        'Команда Разработки',
+        'Дизайн-Отдел',
+        'Продажи и Маркетинг',
+        'Поддержка Клиентов',
+        'Менеджмент',
+        'Коллектив Офиса',
+        'Совместные Проекты',
+        'Встречи и Обсуждения',
+        'Общий Чат Компании',
+        'Вне работы',
+        'Спортивные Увлечения',
+        'Творческая Лаборатория',
+        'ИТ-Поддержка',
+        'Обучение и Развитие',
+        'Корпоративные Мероприятия',
+    ]
+
+    const channelNames = [
+        'Новости Компании',
+        'Анонсы и Объявления',
+        'Технические Обновления',
+        'Мероприятия и Афиши',
+        'Важные Оперативные',
+        'Нормативные Документы',
+        'Отчеты и Статистика',
+        'Идеи и Предложения',
+        'Безопасность и Соблюдение',
+        'Инновации и Тренды',
+        'Истории Успеха',
+        'Образовательные Материалы',
+        'Карьерные Возможности',
+        'Корпоративная Культура',
+        'Партнерские Новости',
+    ]
     const messages = [
         'Привет! Как дела?',
         'Посмотри это видео, оно просто огонь!',
@@ -89,6 +125,52 @@ export function generateLocalMockChatItems(
     return Array(count)
         .fill(null) // Создаем массив из count элементов со значением null
         .map((_, index) => {
+            // Массив возможных типов чатов
+            const chatTypes = [
+                'chat',
+                'public-group',
+                'private-group',
+                'public-channel',
+                'private-channel',
+            ] as const // Используем as const для сохранения точного типа
+            // Выбор типа чата
+            const chatType =
+                chatTypes[index % chatTypes.length]
+
+            // Определение источника аватарки в зависимости от типа чата
+            let avatarSource: string
+
+            if (chatType === 'chat') {
+                // Для личных чатов - фото людей
+                avatarSource = AVATAR_SOURCES.RANDOM_USER
+            } else if (
+                chatType === 'public-group' ||
+                chatType === 'private-group'
+            ) {
+                // Для групп - абстрактные/стилизованные аватарки
+                // Можно использовать DiceBear для стилизованных или Unsplash для групповых фото
+                const groupAvatarSources = [
+                    AVATAR_SOURCES.RANDOM_USER,
+                    AVATAR_SOURCES.RANDOM_USER,
+                    AVATAR_SOURCES.RANDOM_USER,
+                ]
+                avatarSource =
+                    groupAvatarSources[
+                        index % groupAvatarSources.length
+                    ]
+            } else {
+                // Для каналов - тематические/информационные изображения
+                const channelAvatarSources = [
+                    AVATAR_SOURCES.RANDOM_USER,
+                    AVATAR_SOURCES.RANDOM_USER,
+                    AVATAR_SOURCES.RANDOM_USER,
+                ]
+                avatarSource =
+                    channelAvatarSources[
+                        index % channelAvatarSources.length
+                    ]
+            }
+
             // Выбор данных из массивов по кругу с помощью оператора %
             // index % firstNames.length гарантирует, что индексы будут циклически повторяться
             const firstName =
@@ -97,11 +179,39 @@ export function generateLocalMockChatItems(
                 lastNames[index % lastNames.length]
             const nickname =
                 nicknames[index % nicknames.length]
-            const username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`
+
+            // Определение username и name в зависимости от типа чата
+            let username: string
+            let chatName: string
+
+            if (chatType === 'chat') {
+                // Для личного чата - имя человека
+                chatName = `${firstName} ${lastName}`
+                username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`
+            } else if (
+                chatType === 'public-group' ||
+                chatType === 'private-group'
+            ) {
+                // Для групп - берем название из массива groupNames
+                const groupName =
+                    groupNames[index % groupNames.length]
+                chatName = groupName
+                username = `group_${index + 1}_${groupName.toLowerCase().replace(/ /g, '_')}`
+            } else {
+                // Для каналов - берем название из массива channelNames
+                const channelName =
+                    channelNames[
+                        index % channelNames.length
+                    ]
+                chatName = channelName
+                username = `channel_${index + 1}_${channelName.toLowerCase().replace(/ /g, '_')}`
+            }
+
             const message =
                 messages[index % messages.length]
 
             const baseId = (index + 1) * 100 // Создаем ID с шагом 100 для удобства отладки
+
             const avatarSeed = `avatar_${baseId}_${username}`
             const generators = [
                 'picsum',
@@ -119,14 +229,18 @@ export function generateLocalMockChatItems(
                 avatarSeed,
                 300,
                 300,
-                AVATAR_SOURCE,
+                chatType === 'chat'
+                    ? AVATAR_SOURCE
+                    : 'useAvatar',
             )
 
             const avatarWebpUrl = generateAvatarUrl(
                 avatarSeed + '_webp',
                 300,
                 300,
-                AVATAR_SOURCE,
+                chatType === 'chat'
+                    ? AVATAR_SOURCE
+                    : 'useAvatar',
             )
 
             // Генерация случайных временных меток для реалистичности
@@ -184,10 +298,8 @@ export function generateLocalMockChatItems(
                 new_file_count: Math.floor(
                     Math.random() * 5, // Случайное количество новых файлов (0-4)
                 ),
-                name: `${firstName} ${lastName}`,
-                chat_type: ['private', 'group', 'channel'][
-                    index % 3
-                ] as 'private' | 'group' | 'channel', // Циклически распределяем типы чатов
+                name: chatName,
+                chat_type: chatType,
                 chat_key: `chat_key_${index}`,
                 last_activity_at: lastActivityAt,
                 last_seen_message: {

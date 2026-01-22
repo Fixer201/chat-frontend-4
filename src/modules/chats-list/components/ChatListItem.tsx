@@ -42,6 +42,7 @@ export const ChatListItem = forwardRef<
             onAddToContacts,
             notificationsEnabled,
             isFavorite = false,
+            chatType,
             onMarkAsRead,
             onMarkAsUnread,
             isChatRead = true,
@@ -132,6 +133,7 @@ export const ChatListItem = forwardRef<
                     messageStatus={
                         avatarProps.messageStatus
                     }
+                    chatType={chatType}
                     isFavorite={isFavorite}
                     isChatRead={isChatRead}
                     notificationsEnabled={
