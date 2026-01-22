@@ -241,9 +241,9 @@ export default function ContactsList() {
                 filteredContacts.length > 0 && (
                     <div
                         className={`
-                  flex h-9 w-full justify-between gap-1
-                  bg-accent-violet-ultra-light pt-2.5 pr-4 pb-2.5 pl-4
-                `}
+                          flex h-9 w-full justify-between gap-1
+                          bg-accent-violet-ultra-light pt-2.5 pr-4 pb-2.5 pl-4
+                        `}
                     >
                         {deleteMode ? (
                             <>
@@ -354,18 +354,18 @@ export default function ContactsList() {
                     ) : searchValue.trim() ? (
                         <div
                             className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                              flex h-full flex-col items-center justify-center
+                              p-4 text-center
+                            `}
                         >
                             <EmptySearchState />
                         </div>
                     ) : (
                         <div
                             className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                              flex h-full flex-col items-center justify-center
+                              p-4 text-center
+                            `}
                         >
                             <Image
                                 src="/images/search/nullContacts.svg"
@@ -390,11 +390,11 @@ export default function ContactsList() {
                             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                             <div
                                 className={`
-                              right-0 left-0 z-10 flex h-20 w-full
-                              cursor-pointer items-center justify-center
-                              bg-(--color-gray-light) transition-colors
-                              hover:bg-(--color-accent-violet-light)
-                            `}
+                                  right-0 left-0 z-10 flex h-20 w-full
+                                  cursor-pointer items-center justify-center
+                                  bg-(--color-gray-light) transition-colors
+                                  hover:bg-(--color-accent-violet-light)
+                                `}
                                 onClick={handleOpenModal}
                                 role="button"
                                 aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
@@ -418,9 +418,10 @@ export default function ContactsList() {
                         <>
                             <div
                                 className={`
-                          flex h-9 w-full justify-center
-                          bg-accent-violet-ultra-light pt-2.5 pr-4 pb-2.5 pl-4
-                        `}
+                                  flex h-9 w-full justify-center
+                                  bg-accent-violet-ultra-light pt-2.5 pr-4
+                                  pb-2.5 pl-4
+                                `}
                             >
                                 <p>Пользователи А-чата</p>
                             </div>

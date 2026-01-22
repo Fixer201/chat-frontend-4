@@ -12,7 +12,6 @@ export default function ContactsSearch({
         <>
             <div className="flex h-19 w-full items-center gap-2.5 p-4">
                 <div
-                    // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                     className={`
                       relative flex h-11 w-full items-center gap-2 rounded-lg
                       border border-gray-300 bg-(--color-white-bg) px-3 pr-10
@@ -35,7 +34,6 @@ export default function ContactsSearch({
                         onChange={(e) =>
                             onSearchChange(e.target.value)
                         }
-                        // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                         className={`
                           h-11 w-full
                           focus:border-transparent focus:outline-none
@@ -48,7 +46,6 @@ export default function ContactsSearch({
                             onClick={() =>
                                 onSearchChange('')
                             }
-                            // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                             className={`
                               absolute top-1/2 right-3 -translate-y-1/2
                               transform cursor-pointer
