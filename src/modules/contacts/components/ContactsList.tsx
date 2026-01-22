@@ -54,6 +54,11 @@ export default function ContactsList() {
             (user) => `${user.nickname}`,
         ],
     )
+    // Функция для определения, является ли строка телефоном (простая проверка: только цифры и опционально +)
+    const isPhone = (str: string) => {
+        const cleaned = str.replace(/\s/g, '') // Убираем пробелы
+        return /^\+?\d+$/.test(cleaned)
+    }
     const fetchData = useApiFetcher()
 
     // Загрузка контактов (без изменений)
@@ -130,24 +135,32 @@ export default function ContactsList() {
                         uid: string
                         phone: string
                         is_online: boolean
-                    }) => ({
-                        uid: item.uid,
-                        username: '',
-                        nickname: '',
-                        phone: item.phone,
-                        firstName: item.phone, // тут надо поменять
-                        lastName: '',
-                        patronymic: '',
-                        avatar: '',
-                        avatarUrl: '',
-                        avatarWebp: '',
-                        avatarWebpUrl: '',
-                        additionalInformation: '',
-                        birthday: 0,
-                        chatId: 0,
-                        isOnline: item.is_online,
-                        wasOnlineAt: 0,
-                    }),
+                    }) => {
+                        const isSearchPhone =
+                            isPhone(searchValue)
+                        return {
+                            uid: item.uid,
+                            username: '',
+                            nickname: isSearchPhone
+                                ? ''
+                                : searchValue, // Никнейм только если поиск по нему
+                            phone: item.phone,
+                            firstName: isSearchPhone
+                                ? item.phone
+                                : searchValue, // Телефон для телефона, searchValue для никнейма
+                            lastName: '',
+                            patronymic: '',
+                            avatar: '',
+                            avatarUrl: '',
+                            avatarWebp: '',
+                            avatarWebpUrl: '',
+                            additionalInformation: '',
+                            birthday: 0,
+                            chatId: 0,
+                            isOnline: item.is_online,
+                            wasOnlineAt: 0,
+                        }
+                    },
                 )
                 setUsers(mappedUsers)
             } catch (error) {
@@ -351,7 +364,9 @@ export default function ContactsList() {
                                 }
                             />
                         ))
-                    ) : searchValue.trim() ? (
+                    ) : filteredContacts.length === 0 &&
+                      filteredUsers.length === 0 &&
+                      searchValue.trim() ? (
                         <div
                             className={`
                               flex h-full flex-col items-center justify-center

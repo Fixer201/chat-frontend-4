@@ -95,7 +95,7 @@ export const ContactAvatar = forwardRef<
                     <Image
                         src={
                             src ||
-                            '/images/contacts/AvatarWeb1.png'
+                            '/images/contacts/DefaultAvatar.svg'
                         } // заменить на дефолтный аватар
                         alt={alt ?? name}
                         fill
