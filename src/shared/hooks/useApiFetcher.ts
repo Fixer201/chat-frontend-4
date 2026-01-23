@@ -11,7 +11,7 @@ export const useApiFetcher = () => {
         const refreshToken = Cookies.get('refresh_token')
         if (!refreshToken) {
             console.error('Refresh token не найден')
-            return null
+            throw new Error('RefreshTokenNotFound') // Специальная ошибка для отсутствия refresh token
         }
 
         try {
@@ -33,6 +33,9 @@ export const useApiFetcher = () => {
                     expires: 7,
                 })
                 return data.access
+            } else if (response.status === 404) {
+                // Refresh token истек (404) — выбрасываем специальную ошибку
+                throw new Error('RefreshTokenExpired')
             } else {
                 console.error(
                     'Ошибка refresh token:',
@@ -42,7 +45,7 @@ export const useApiFetcher = () => {
             }
         } catch (err) {
             console.error('Ошибка refreshing token:', err)
-            return null
+            throw err // Пробрасываем ошибку дальше
         }
     }, [])
 
@@ -54,10 +57,9 @@ export const useApiFetcher = () => {
                 Cookies.get('X-CSRFTOKEN')
             if (!accessToken) {
                 console.error('Access token не найден')
-                throw new Error('Access token не найден')
+                throw new Error('AccessTokenNotFound')
             }
 
-            // Базовые заголовки
             const baseHeaders: Record<string, string> = {
                 accept: 'application/json',
                 Authorization: `Bearer ${accessToken}`,
@@ -71,9 +73,10 @@ export const useApiFetcher = () => {
 
             const headers: Record<string, string> = {
                 ...baseHeaders,
-                ...(options.headers as
-                    | Record<string, string>
-                    | undefined),
+                ...(options.headers as Record<
+                    string,
+                    string
+                >),
             }
 
             let response = await fetch(url, {
@@ -84,21 +87,26 @@ export const useApiFetcher = () => {
 
             if (response.status === 401) {
                 console.log('Token истек, обновление')
-                const newAccessToken =
-                    await refreshAccessToken()
-                if (newAccessToken) {
-                    response = await fetch(url, {
-                        ...options,
-                        headers: {
-                            ...headers,
-                            Authorization: `Bearer ${newAccessToken}`,
-                        },
-                        credentials: 'include',
-                    })
-                } else {
-                    throw new Error(
-                        'Не удалось обновить токен',
-                    )
+                try {
+                    const newAccessToken =
+                        await refreshAccessToken()
+                    if (newAccessToken) {
+                        response = await fetch(url, {
+                            ...options,
+                            headers: {
+                                ...headers,
+                                Authorization: `Bearer ${newAccessToken}`,
+                            },
+                            credentials: 'include',
+                        })
+                    } else {
+                        throw new Error(
+                            'Не удалось обновить токен',
+                        )
+                    }
+                } catch (refreshError) {
+                    // Если refresh не удался, пробрасываем ошибку
+                    throw refreshError
                 }
             }
 

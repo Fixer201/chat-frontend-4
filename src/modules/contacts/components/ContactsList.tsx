@@ -18,6 +18,7 @@ import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 import { ApiContact, Contact } from '@shared/types/contact'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import { Spinner } from '@shared/ui/Spinner'
+import { notFound } from 'next/navigation'
 
 export default function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -61,7 +62,7 @@ export default function ContactsList() {
     }
     const fetchData = useApiFetcher()
 
-    // Загрузка контактов (без изменений)
+    // Загрузка контактов
     useEffect(() => {
         const loadContacts = async () => {
             try {
@@ -97,11 +98,17 @@ export default function ContactsList() {
                         }),
                     )
                 dispatch(setContacts(mappedContacts))
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error(
                     'Ошибка загрузки контактов:',
                     error,
                 )
+                if (
+                    error instanceof Error &&
+                    error.message === 'RefreshTokenExpired'
+                ) {
+                    notFound() // Показать 404 страницу
+                }
             } finally {
                 setLoading(false)
             }
@@ -163,11 +170,17 @@ export default function ContactsList() {
                     },
                 )
                 setUsers(mappedUsers)
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error(
                     'Ошибка загрузки пользователей А-чата:',
                     error,
                 )
+                if (
+                    error instanceof Error &&
+                    error.message === 'RefreshTokenExpired'
+                ) {
+                    notFound() // Показать 404 страницу
+                }
                 setUsers([])
             }
         }
