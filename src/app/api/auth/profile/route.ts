@@ -2,22 +2,43 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json()
         const authHeader =
             request.headers.get('authorization')
+
+        const incomingContentType =
+            request.headers.get('content-type') || ''
+
+        const isMultipart = incomingContentType.includes(
+            'multipart/form-data',
+        )
+
+        let outboundBody: BodyInit
+        let outboundHeaders: Record<string, string> = {
+            accept: 'application/json',
+            ...(authHeader && {
+                Authorization: authHeader,
+            }),
+        }
+
+        if (isMultipart) {
+            const form = await request.formData()
+            outboundBody = form
+            // Let fetch set correct multipart boundary
+        } else {
+            const body = await request.json()
+            outboundBody = JSON.stringify(body)
+            outboundHeaders = {
+                ...outboundHeaders,
+                'Content-Type': 'application/json',
+            }
+        }
 
         const response = await fetch(
             'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/',
             {
                 method: 'POST',
-                headers: {
-                    accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    ...(authHeader && {
-                        Authorization: authHeader,
-                    }),
-                },
-                body: JSON.stringify(body),
+                headers: outboundHeaders,
+                body: outboundBody,
             },
         )
 
