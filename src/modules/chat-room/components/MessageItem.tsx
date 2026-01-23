@@ -2,26 +2,80 @@
 
 import { Message } from '@shared/types/message'
 import { useAppSelector } from '@redux/store'
+import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import SentIcon from '@public/images/messageStatus/sent.svg'
+import DeliveredIcon from '@public/images/messageStatus/delivered.svg'
+import ReadIcon from '@public/images/messageStatus/read.svg'
 
 interface MessageItemProps {
-    message: Message
+    readonly message: Message
+}
+
+type ReadStatus = 'sent' | 'delivered' | 'read'
+
+function getReadStatus(
+    message: Message,
+    isOwn: boolean,
+): ReadStatus | null {
+    if (!isOwn) return null
+
+    if (message.read_at) return 'read'
+    if (message.delivered_at) return 'delivered'
+
+    return 'sent'
+}
+
+function ReadCheckmark({
+    status,
+}: Readonly<{
+    status: ReadStatus | null
+}>) {
+    if (!status) return null
+
+    if (status === 'sent') {
+        return (
+            <SentIcon
+                width={18}
+                height={18}
+                className="fill-text-gray"
+            />
+        )
+    }
+
+    if (status === 'delivered') {
+        return (
+            <DeliveredIcon
+                width={18}
+                height={12}
+                className="fill-text-gray"
+            />
+        )
+    }
+
+    // Статус 'read' отображается акцентным цветом
+    return (
+        <ReadIcon
+            width={18}
+            height={11}
+            className="fill-accent-violet-primary"
+        />
+    )
 }
 
 export default function MessageItem({
     message,
 }: MessageItemProps) {
-    // получаем id текущего пользователя для проверки от кого пришло сообщение
     const currentUser = useAppSelector(
         (state) => state.user.currentUser,
-    )
+    ) as { id?: string } | null
 
-    // если отправленное сообщение принадлежит текущему пользователю -> true
-    // в остальных случаях false
-    const isOwn = message.from_user == currentUser?.id
+    // Фоллбэк на моковый ID пока не реализованы контакты на бэкенде
+    const currentUserId =
+        currentUser?.id || MOCK_CURRENT_USER_ID
 
-    console.log(currentUser)
+    const isOwn = message.from_user == currentUserId
+    const readStatus = getReadStatus(message, isOwn)
 
-    // Форматирование времени
     const formatTime = (timestamp?: number) => {
         if (!timestamp) return ''
         return new Date(
@@ -34,29 +88,54 @@ export default function MessageItem({
 
     return (
         <div
-            className={`
-              flex
-              ${isOwn ? 'justify-end' : 'justify-start'}
-            `}
+            className={
+                isOwn
+                    ? 'flex justify-end'
+                    : 'flex justify-start'
+            }
         >
             <div
-                className={`
-                  max-w-[70%] rounded-lg px-4 py-2
-                  ${
-                      isOwn
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-900'
-                  }
-                `}
+                style={{
+                    maxWidth: 'var(--message-max-width)',
+                }}
+                className={
+                    isOwn
+                        ? `
+                          rounded-lg bg-teal-secondary px-4 py-2 text-text-black
+                        `
+                        : `
+                          rounded-lg bg-message-bg-other px-4 py-2
+                          text-text-black
+                        `
+                }
             >
-                <p className="text-sm wrap-break-word whitespace-pre-wrap">
-                    {message.content}
-                </p>
-                {message.created_at && (
-                    <span className="mt-1 block text-xs opacity-70">
-                        {formatTime(message.created_at)}
-                    </span>
-                )}
+                <div className="flex items-end justify-between gap-2">
+                    <div
+                        className={`
+                          text-base font-normal wrap-break-word
+                          whitespace-pre-wrap
+                        `}
+                    >
+                        {message.content}
+                    </div>
+                    {message.created_at && (
+                        <div
+                            className={`
+                              flex shrink-0 items-center gap-1 text-sm
+                              whitespace-nowrap text-text-gray
+                            `}
+                        >
+                            <span>
+                                {formatTime(
+                                    message.created_at,
+                                )}
+                            </span>
+                            <ReadCheckmark
+                                status={readStatus}
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )

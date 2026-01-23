@@ -3,14 +3,20 @@
 import {
     useCallback,
     useLayoutEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react'
 
 import { Message } from '@shared/types/message'
 import { ConnectionStatus } from '@shared/types/webSocket'
+import { MOCK_MESSAGES } from '@shared/mocks/messages'
 
 const MAX_RECONNECT_ATTEMPTS = 3
+
+// TODO: Временный флаг для переключения между моковыми и реальными данными
+// Удалить после реализации контактов на бэкенде
+const USE_MOCK = true
 
 export function useWebSocketChat() {
     // Ссылка на websocket подключение
@@ -119,8 +125,19 @@ export function useWebSocketChat() {
         wsRef.current = socket
     }, [getAccessToken, onError])
 
-    // при монтировании компонента открываем ws соединение
+    // при монтировании компонента открываем ws соединение или загружаем моки
     useLayoutEffect(() => {
+        // Если используем моковые данные
+        if (USE_MOCK) {
+            console.log('🎭 Используются моковые данные')
+            queueMicrotask(() => {
+                setMessages(MOCK_MESSAGES)
+                setStatus('OPEN') // Имитируем успешное подключение
+            })
+            return
+        }
+
+        // Реальное WebSocket подключение
         reconnectRef.current = () => connectWebSocket()
 
         const token = localStorage.getItem('access_token')
@@ -140,7 +157,6 @@ export function useWebSocketChat() {
     const sendMessage = useCallback(
         ({
             toUserId,
-            chatKey,
             content,
             status,
             files,
@@ -178,10 +194,13 @@ export function useWebSocketChat() {
         [],
     )
 
-    return {
-        sendMessage,
-        messages,
-        status,
-        error,
-    }
+    return useMemo(
+        () => ({
+            sendMessage,
+            messages,
+            status,
+            error,
+        }),
+        [sendMessage, messages, status, error],
+    )
 }

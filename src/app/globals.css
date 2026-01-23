@@ -15,6 +15,7 @@ body {
     --radius-xl: calc(var(--radius) + 4px); /* 14px */
     --radius-3xl: calc(var(--radius) + 10px); /* 20px */
     --screen-height-list: var(--chat-list-container-height);
+    --message-max-width: 70%; /* Максимальная ширина сообщения */
     /* UI Component Colors */
     /* Custom App Colors - Primary */
     --color-white-bg: var(--app-white-bg);
@@ -48,6 +49,7 @@ body {
 
     /* Custom App Colors - User Message */
     --color-teal-secondary: var(--app-teal-secondary);
+    --color-message-bg-other: var(--app-message-bg-other);
 
     /* Custom App Colors - System */
     --color-system-red: var(--app-system-red);
@@ -133,6 +135,8 @@ body {
     /* User Message Color */
     --app-teal-secondary: hsla(170, 59%, 90%, 1);
     /* Complementary/Teal Secondary */
+    --app-message-bg-other: #eeeeee;
+    /* Gray tone/Gray - фон сообщений собеседника */
 
     /* System Colors */
     --app-system-red: #ff0000;
@@ -219,6 +223,8 @@ body {
     /* User Message Color */
     --app-teal-secondary: hsla(170, 59%, 90%, 1);
     /* Complementary/Teal Secondary */
+    --app-message-bg-other: #eeeeee;
+    /* Gray tone/Gray - фон сообщений собеседника */
 
     /* System Colors */
     --app-system-red: #ff0000;

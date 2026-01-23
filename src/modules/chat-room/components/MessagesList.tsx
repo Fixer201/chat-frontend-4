@@ -3,6 +3,10 @@
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
+import { useMemo } from 'react'
+
+// Флаг для отображения всех моковых сообщений независимо от chatKey
+const USE_MOCK = true // TODO: удалить после реализации контактов
 
 export default function MessagesList({
     chatKey,
@@ -12,8 +16,15 @@ export default function MessagesList({
     const { messages } = useWebSocket()
 
     // Фильтруем сообщения только для текущего чата
-    const chatMessages = messages.filter(
-        (msg) => msg.chatKey === chatKey,
+    // В режиме моков показываем все сообщения для демонстрации верстки
+    const chatMessages = useMemo(
+        () =>
+            USE_MOCK
+                ? messages
+                : messages.filter(
+                      (msg) => msg.chatKey === chatKey,
+                  ),
+        [messages, chatKey],
     )
 
     console.log(chatMessages)

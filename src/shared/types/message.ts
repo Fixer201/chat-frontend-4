@@ -18,9 +18,15 @@ export type Message = {
     content: string // текст сообщения
     status: string // publish/draft
     from_user?: string // от кого сообщение (приходит от сервера)
-    created_at?: number // timestamp создания
-    updated_at?: number // timestamp обновления
-    files?: MessageFile[]
-    repliedMessages?: RepliedMessage[]
-    forwardedMessages?: ForwardedMessage[]
+    created_at?: number // timestamp создания (unix timestamp в секундах)
+    updated_at?: number // timestamp обновления (unix timestamp в секундах)
+
+    // Статусы прочтения (для своих сообщений)
+    delivered_at?: number // timestamp доставки (unix timestamp в секундах)
+    read_at?: number // timestamp прочтения (unix timestamp в секундах)
+
+    // Вложения и связанные сообщения
+    files?: MessageFile[] // прикрепленные файлы
+    repliedMessages?: RepliedMessage[] // ответы на другие сообщения
+    forwardedMessages?: ForwardedMessage[] // пересланные сообщения
 }
