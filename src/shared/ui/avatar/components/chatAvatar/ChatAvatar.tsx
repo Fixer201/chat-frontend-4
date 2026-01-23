@@ -113,6 +113,8 @@ export const ChatAvatar = forwardRef<
                         width={60}
                         height={60}
                         className="object-cover" // object-cover заполняет контейнер с сохранением пропорций
+                        // Добавляем unoptimized для локальных SVG, если нужно
+                        unoptimized={src.endsWith('.svg')}
                     />
                 </div>
 

@@ -1,4 +1,4 @@
-// Кастомный хук useChats для удобной работы с состоянием чатов
+// @shared/hooks/useChats.ts
 import { useCallback } from 'react'
 import {
     useAppDispatch,
@@ -16,8 +16,12 @@ import {
     markAsDeleted,
     addToContacts,
     resetChatSettings,
+    createGroup as createGroupAction,
+    createChannel as createChannelAction,
 } from '../../redux/slices/chatsSlice'
 import { ChatItem, ChatSettings } from '../types/chat'
+import { Contact } from '../types/contact'
+import { onNextProps } from '../types/createGroup'
 
 // Хук для работы с чатами, предоставляет удобные методы и доступ к состоянию
 // Абстрагирует работу с Redux, предоставляя простой API для компонентов
@@ -162,8 +166,30 @@ export const useChats = () => {
                 },
             }
         },
-        [items, chatSettings],
-    ) // Зависимости: функция изменится при изменении items или chatSettings
+        [items, chatSettings], // Зависимости: функция изменится при изменении items или chatSettings
+    )
+
+    // НОВЫЕ ФУНКЦИИ ДЛЯ СОЗДАНИЯ ГРУПП И КАНАЛОВ
+    const createGroup = useCallback(
+        (groupData: onNextProps, members: Contact[]) => {
+            return dispatch(
+                createGroupAction({ groupData, members }),
+            )
+        },
+        [dispatch],
+    )
+
+    const createChannel = useCallback(
+        (channelData: onNextProps, members: Contact[]) => {
+            return dispatch(
+                createChannelAction({
+                    channelData,
+                    members,
+                }),
+            )
+        },
+        [dispatch],
+    )
 
     // Возвращаемые методы и данные
     // Предоставляет компонентам простой API для работы с чатами
@@ -186,5 +212,8 @@ export const useChats = () => {
         resetChatSettings: resetAllChatSettings,
         getChatSettings,
         getChatWithSettings,
+        // Новые методы
+        createGroup,
+        createChannel,
     }
 }

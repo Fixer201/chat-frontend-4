@@ -1,7 +1,8 @@
-// Redux slice для управления состоянием чатов
+// @redux/slices/chatsSlice.ts - добавим логирование в обработчики
 import {
     createSlice,
     PayloadAction,
+    ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
 import {
     ChatItem,
@@ -12,34 +13,230 @@ import {
     handleFetchChats,
     fetchChats,
 } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
+import {
+    createGroup,
+    createChannel,
+} from '@redux/extraReducers/chat-extraReducers/createChatExtraRed'
 
-// Начальное состояние для чатов
-// Определяет структуру состояния и начальные значения
 const initialState: ChatsState = {
-    items: [], // Массив чатов - инициализируем пустым массивом
-    loading: false, // Флаг загрузки - false по умолчанию
-    error: null, // Ошибка загрузки - null по умолчанию
-    selectedChatId: null, // ID выбранного чата - null если ни один не выбран
-    chatSettings: {}, // Настройки для каждого чата (ключ - ID чата) - пустой объект
+    items: [],
+    loading: false,
+    error: null,
+    selectedChatId: null,
+    chatSettings: {},
 }
 
-// Создание slice для чатов с помощью Redux Toolkit
-// Slice включает редьюсеры и action creators
+const getDefaultSettings = (
+    chat?: ChatItem,
+): ChatSettings => ({
+    isFavorite: chat?.isFavorite || false,
+    isChatRead: chat?.newMessageCount === 0,
+    notificationsEnabled: chat?.notifications ?? true,
+    isDeleted: false,
+    originalUnreadCount: chat?.newMessageCount || 0,
+})
+
+// Обработчики для createGroup и createChannel
+const handleCreateChat = (
+    builder: ActionReducerMapBuilder<ChatsState>,
+) => {
+    builder
+        .addCase(createGroup.pending, (state) => {
+            state.loading = true
+            state.error = null
+            console.log('🔄 Redux: createGroup.pending')
+        })
+        .addCase(createGroup.fulfilled, (state, action) => {
+            state.loading = false
+            state.error = null
+
+            console.log('✅ Redux: createGroup.fulfilled', {
+                chatId: action.payload.chat.id,
+                name: action.payload.chat.name,
+                type: action.payload.chat.chatType,
+                currentItemsCount: state.items.length,
+                settings: action.payload.settings,
+            })
+
+            // Проверяем, нет ли уже чата с таким ID
+            const existingIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+
+            if (existingIndex === -1) {
+                // Добавляем созданную группу в начало списка
+                state.items.unshift(action.payload.chat)
+                console.log('📥 Группа добавлена в items')
+            } else {
+                // Если уже есть, обновляем
+                state.items[existingIndex] =
+                    action.payload.chat
+                console.log(
+                    '⚠️ Группа уже существует, обновлена',
+                )
+            }
+
+            // Добавляем настройки для группы
+            if (
+                !state.chatSettings[action.payload.chat.id]
+            ) {
+                state.chatSettings[action.payload.chat.id] =
+                    action.payload.settings
+                console.log(
+                    '⚙️ Настройки группы добавлены в chatSettings',
+                )
+            } else {
+                console.log(
+                    '⚙️ Настройки группы уже существуют',
+                )
+            }
+
+            // Обновляем настройки в объекте чата для совместимости
+            const chatIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    action.payload.settings
+                console.log(
+                    '📝 Настройки добавлены в объект чата',
+                )
+            }
+
+            // Автоматически выбираем созданную группу
+            state.selectedChatId = action.payload.chat.id
+            console.log(
+                '🎯 Группа выбрана, ID:',
+                action.payload.chat.id,
+            )
+
+            console.log('📊 Итоговое состояние:', {
+                itemsCount: state.items.length,
+                chatSettingsCount: Object.keys(
+                    state.chatSettings,
+                ).length,
+                selectedChatId: state.selectedChatId,
+            })
+        })
+        .addCase(createGroup.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload as string
+            console.error(
+                '❌ Redux: createGroup.rejected:',
+                action.payload,
+            )
+        })
+
+    builder
+        .addCase(createChannel.pending, (state) => {
+            state.loading = true
+            state.error = null
+            console.log('🔄 Redux: createChannel.pending')
+        })
+        .addCase(
+            createChannel.fulfilled,
+            (state, action) => {
+                state.loading = false
+                state.error = null
+
+                console.log(
+                    '✅ Redux: createChannel.fulfilled',
+                    {
+                        chatId: action.payload.chat.id,
+                        name: action.payload.chat.name,
+                        type: action.payload.chat.chatType,
+                        currentItemsCount:
+                            state.items.length,
+                        settings: action.payload.settings,
+                    },
+                )
+
+                const existingIndex = state.items.findIndex(
+                    (chat) =>
+                        chat.id === action.payload.chat.id,
+                )
+
+                if (existingIndex === -1) {
+                    state.items.unshift(action.payload.chat)
+                    console.log('📥 Канал добавлен в items')
+                } else {
+                    state.items[existingIndex] =
+                        action.payload.chat
+                    console.log(
+                        '⚠️ Канал уже существует, обновлен',
+                    )
+                }
+
+                if (
+                    !state.chatSettings[
+                        action.payload.chat.id
+                    ]
+                ) {
+                    state.chatSettings[
+                        action.payload.chat.id
+                    ] = action.payload.settings
+                    console.log(
+                        '⚙️ Настройки канала добавлены в chatSettings',
+                    )
+                } else {
+                    console.log(
+                        '⚙️ Настройки канала уже существуют',
+                    )
+                }
+
+                const chatIndex = state.items.findIndex(
+                    (chat) =>
+                        chat.id === action.payload.chat.id,
+                )
+                if (chatIndex !== -1) {
+                    state.items[chatIndex].settings =
+                        action.payload.settings
+                    console.log(
+                        '📝 Настройки добавлены в объект чата',
+                    )
+                }
+
+                state.selectedChatId =
+                    action.payload.chat.id
+                console.log(
+                    '🎯 Канал выбран, ID:',
+                    action.payload.chat.id,
+                )
+
+                console.log('📊 Итоговое состояние:', {
+                    itemsCount: state.items.length,
+                    chatSettingsCount: Object.keys(
+                        state.chatSettings,
+                    ).length,
+                    selectedChatId: state.selectedChatId,
+                })
+            },
+        )
+        .addCase(
+            createChannel.rejected,
+            (state, action) => {
+                state.loading = false
+                state.error = action.payload as string
+                console.error(
+                    '❌ Redux: createChannel.rejected:',
+                    action.payload,
+                )
+            },
+        )
+}
+
 const chatsSlice = createSlice({
-    name: 'chats', // Имя slice, используется в DevTools и для создания action types
+    name: 'chats',
     initialState,
     reducers: {
-        // Установка выбранного чата
-        // Принимает number | null - позволяет как выбрать чат, так и снять выбор
         setSelectedChat: (
             state,
             action: PayloadAction<number | null>,
         ) => {
-            state.selectedChatId = action.payload // Просто заменяем значение
+            state.selectedChatId = action.payload
         },
-
-        // Обновление данных конкретного чата
-        // Находит чат по ID и заменяет его новыми данными
         updateChat: (
             state,
             action: PayloadAction<ChatItem>,
@@ -48,12 +245,9 @@ const chatsSlice = createSlice({
                 (chat) => chat.id === action.payload.id,
             )
             if (index !== -1) {
-                state.items[index] = action.payload // Заменяем весь объект чата
+                state.items[index] = action.payload
             }
         },
-
-        // Обновление настроек конкретного чата
-        // Принимает chatId и partial объект настроек для мерджа
         updateChatSettings: (
             state,
             action: PayloadAction<{
@@ -63,176 +257,187 @@ const chatsSlice = createSlice({
         ) => {
             const { chatId, settings } = action.payload
 
-            // Если настройки для этого чата еще не существуют, создаем их
-            // Это ленивая инициализация - создаем объект настроек только когда он нужен
-            if (!state.chatSettings[chatId]) {
-                const chat = state.items.find(
-                    (c) => c.id === chatId,
-                )
-                state.chatSettings[chatId] = {
-                    isFavorite: chat?.isFavorite || false, // Берем значение из чата или false
-                    isChatRead: chat?.newMessageCount === 0, // Чат прочитан если нет новых сообщений
-                    notificationsEnabled:
-                        chat?.notifications ?? true, // nullish coalescing - true если null/undefined
-                    isDeleted: false,
-                    originalUnreadCount:
-                        chat?.newMessageCount || 0,
-                }
+            const currentChatSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(
+                      state.items.find(
+                          (c) => c.id === chatId,
+                      ),
+                  )
+
+            const updatedSettings: ChatSettings = {
+                ...currentChatSettings,
+                ...settings,
             }
 
-            // Обновляем настройки мерджем существующих с новыми
-            // Используем spread оператор для поверхностного копирования
-            state.chatSettings[chatId] = {
-                ...state.chatSettings[chatId],
-                ...settings, // Новые настройки перезаписывают старые
-            }
+            state.chatSettings[chatId] = updatedSettings
 
-            // Обновляем также в items для совместимости со старым кодом
-            // Это дублирование данных нужно для компонентов, которые работают с items напрямую
             const chatIndex = state.items.findIndex(
                 (c) => c.id === chatId,
             )
-            if (
-                chatIndex !== -1 &&
-                state.items[chatIndex].settings
-            ) {
-                state.items[chatIndex].settings = {
-                    ...state.items[chatIndex].settings!,
-                    ...settings,
-                }
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Переключение избранного статуса чата
-        // Инвертирует текущее значение isFavorite
         toggleFavorite: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                // Если настройки уже существуют - просто инвертируем isFavorite
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isFavorite: !currentSettings.isFavorite,
-                }
-            } else {
-                // Если настроек нет - создаем их с isFavorite: true
-                const chat = state.items.find(
-                    (c) => c.id === chatId,
-                )
-                state.chatSettings[chatId] = {
-                    isFavorite: true, // При первом добавлении в избранное ставим true
-                    isChatRead: chat?.newMessageCount === 0,
-                    notificationsEnabled:
-                        chat?.notifications ?? true,
-                    isDeleted: false,
-                    originalUnreadCount:
-                        chat?.newMessageCount || 0,
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isFavorite: !currentSettings.isFavorite,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Переключение состояния уведомлений
-        // Инвертирует notificationsEnabled
         toggleNotifications: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    notificationsEnabled:
-                        !currentSettings.notificationsEnabled,
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                notificationsEnabled:
+                    !currentSettings.notificationsEnabled,
             }
-            // Если настроек нет - ничего не делаем, так как нечего инвертировать
-        },
 
-        // Пометка чата как прочитанного
-        // Устанавливает isChatRead: true и сохраняет originalUnreadCount
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
+            }
+        },
         markAsRead: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isChatRead: true,
-                    originalUnreadCount:
-                        currentSettings.originalUnreadCount >
-                        0
-                            ? currentSettings.originalUnreadCount
-                            : 0, // Сохраняем оригинальное значение если > 0
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isChatRead: true,
+                originalUnreadCount:
+                    currentSettings.originalUnreadCount > 0
+                        ? currentSettings.originalUnreadCount
+                        : 0,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Пометка чата как непрочитанного
-        // Устанавливает isChatRead: false и сбрасывает счетчик
         markAsUnread: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isChatRead: false,
-                    originalUnreadCount: 0, // Сбрасываем счетчик при пометке как непрочитанного
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isChatRead: false,
+                originalUnreadCount: 0,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Пометка чата как удаленного
-        // Не удаляет чат из items, а только помечает isDeleted: true
-        // Это "soft delete" - данные сохраняются, но не отображаются
         markAsDeleted: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isDeleted: true,
-                }
-            } else {
-                // Если настроек нет - создаем их с isDeleted: true
-                const chat = state.items.find(
-                    (c) => c.id === chatId,
-                )
-                state.chatSettings[chatId] = {
-                    isFavorite: false, // Удаленный чат не может быть избранным
-                    isChatRead: chat?.newMessageCount === 0,
-                    notificationsEnabled:
-                        chat?.notifications ?? true,
-                    isDeleted: true, // Основной флаг удаления
-                    originalUnreadCount:
-                        chat?.newMessageCount || 0,
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isDeleted: true,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Добавление чата в контакты
-        // Обновляет isInContacts в основном объекте чата
         addToContacts: (
             state,
             action: PayloadAction<number>,
@@ -244,26 +449,52 @@ const chatsSlice = createSlice({
 
             if (chatIndex !== -1) {
                 state.items[chatIndex].chat.isInContacts =
-                    true // Прямое обновление вложенного свойства
+                    true
+            }
+        },
+        resetChatSettings: (state) => {
+            state.chatSettings = {}
+        },
+
+        addChat: (
+            state,
+            action: PayloadAction<ChatItem>,
+        ) => {
+            const existingIndex = state.items.findIndex(
+                (chat) => chat.id === action.payload.id,
+            )
+
+            if (existingIndex === -1) {
+                state.items.unshift(action.payload)
+            } else {
+                state.items[existingIndex] = action.payload
             }
         },
 
-        // Сброс всех настроек чатов
-        // Очищает весь объект chatSettings
-        resetChatSettings: (state) => {
-            state.chatSettings = {} // Присваиваем пустой объект
+        // Добавим reducer для отладки - вывод состояния
+        debugState: (state) => {
+            console.log('🐛 Redux Debug State:', {
+                itemsCount: state.items.length,
+                items: state.items.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    type: item.chatType,
+                })),
+                chatSettingsCount: Object.keys(
+                    state.chatSettings,
+                ).length,
+                chatSettings: state.chatSettings,
+                selectedChatId: state.selectedChatId,
+            })
         },
     },
-    // Обработчики для асинхронных действий (загрузка чатов)
-    // extraReducers позволяет обрабатывать actions из других slice или thunk actions
     extraReducers: (builder) => {
-        handleFetchChats(builder, initialState) // Выносим логику в отдельную функцию для чистоты кода
+        handleFetchChats(builder, initialState)
+        handleCreateChat(builder)
     },
 })
-// Экспорт асинхронного thunk для загрузки чатов
-export { fetchChats }
-// Экспорт всех action creators
-// Redux Toolkit автоматически создает action creators для каждого reducer
+
+export { fetchChats, createGroup, createChannel }
 export const {
     setSelectedChat,
     updateChat,
@@ -275,6 +506,7 @@ export const {
     markAsDeleted,
     addToContacts,
     resetChatSettings,
+    addChat,
+    debugState, // Экспортируем новый action
 } = chatsSlice.actions
-// Экспорт reducer
 export default chatsSlice.reducer

@@ -1,7 +1,9 @@
-import { ChatType } from './chat'
+// @shared/types/chat.ts
+
+//import { ChatType } from './chat'
 
 import { AvatarProps } from '@shared/ui/avatar/Avatar'
-//для хранения настроек чата в Redux
+
 export interface ChatSettings {
     isFavorite: boolean
     isChatRead: boolean
@@ -9,7 +11,7 @@ export interface ChatSettings {
     isDeleted: boolean
     originalUnreadCount: number
 }
-// варианты представления аватара пользователя
+
 export type ChatAvatar = {
     avatarWebpUrl?: string | null
     avatarUrl?: string | null
@@ -17,7 +19,25 @@ export type ChatAvatar = {
     avatar?: string | null
 }
 
-// Тип для UI - все поля camelCase, все вложено в один интерфейс
+export interface FileInfo {
+    id: number
+    uid: string
+    file: string
+    fileUrl: string
+    fileWebp: string
+    fileWebpUrl: string
+    fileType: string
+    new: boolean
+    createdAt: number
+    updatedAt: number
+}
+
+export interface Participant {
+    uid: string
+    fullName: string
+}
+
+// Полный UI тип для чатов с API полями
 export interface ChatItem {
     id: number
     chat: {
@@ -35,10 +55,13 @@ export interface ChatItem {
         wasOnlineAt: number
         isInContacts: boolean
     }
+    isActive: boolean
     isFavorite: boolean
     notifications: boolean
+    index: number
+    messageCount: number
+    fileCount: number
     newMessageCount: number
-    newFileCount: number
     name: string
     chatType:
         | 'chat'
@@ -47,7 +70,12 @@ export interface ChatItem {
         | 'public-channel'
         | 'private-channel'
     chatKey: string
-    lastActivityAt: number
+    description?: string
+    createdBy?: string
+    ownerFullName?: string
+    participants?: Participant[]
+    createdAt: string
+    updatedAt: string
     lastSeenMessage: {
         id: number
         uid: string
@@ -61,12 +89,15 @@ export interface ChatItem {
         uid: string
         fromUser: string
         content: string
+        filesList?: FileInfo[]
         filesSummary: {
             types: string[]
             count: number
         }
         hasRepliedMessage: boolean
         hasForwardedMessage: boolean
+        repliedMessages?: number[]
+        forwardedMessages?: number[]
         new: boolean
         createdAt: number
         updatedAt: number
@@ -83,7 +114,7 @@ export interface ChatsState {
     chatSettings: Record<string, ChatSettings>
 }
 
-// Тип для API данных (snake_case)
+// Полный API тип (snake_case)
 export interface ApiChatItem {
     id: number
     chat: {
@@ -101,19 +132,32 @@ export interface ApiChatItem {
         was_online_at: number
         is_in_contacts: boolean
     }
+    is_active: boolean
     is_favorite: boolean
     notifications: boolean
-    new_message_count: number
+    index: number
+    message_count: number
+    file_count: number
     new_file_count: number
-    name: string
-    chat_type:
-        | 'chat'
-        | 'public-group'
-        | 'private-group'
-        | 'public-channel'
-        | 'private-channel'
-    chat_key: string
-    last_activity_at: number
+    new_message_count: number
+    last_message: {
+        id: number
+        uid: string
+        from_user: string
+        content: string
+        files_list?: FileInfoApi[]
+        files_summary: {
+            types: string[]
+            count: number
+        }
+        has_replied_message: boolean
+        has_forwarded_message: boolean
+        replied_messages?: number[]
+        forwarded_messages?: number[]
+        new: boolean
+        created_at: number
+        updated_at: number
+    }
     last_seen_message: {
         id: number
         uid: string
@@ -122,21 +166,40 @@ export interface ApiChatItem {
         id: number
         uid: string
     }
-    last_message: {
-        id: number
-        uid: string
-        from_user: string
-        content: string
-        files_summary: {
-            types: string[]
-            count: number
-        }
-        has_replied_message: boolean
-        has_forwarded_message: boolean
-        new: boolean
-        created_at: number
-        updated_at: number
-    }
+    name: string
+    chat_type:
+        | 'chat'
+        | 'public-group'
+        | 'private-group'
+        | 'public-channel'
+        | 'private-channel'
+    chat_key: string
+    description?: string
+    created_by?: string
+    owner_full_name?: string
+    participants?: ParticipantApi[]
+    created_at: string
+    updated_at: string
+    last_activity_at: number
+}
+
+// API типы для вложенных объектов
+export interface FileInfoApi {
+    id: number
+    uid: string
+    file: string
+    file_url: string
+    file_webp: string
+    file_webp_url: string
+    file_type: string
+    new: boolean
+    created_at: number
+    updated_at: number
+}
+
+export interface ParticipantApi {
+    uid: string
+    full_name: string
 }
 
 export interface ChatListItemProps extends Omit<
@@ -162,6 +225,3 @@ export interface ChatListItemProps extends Omit<
     onAddToContacts?: () => void
     isInContacts?: boolean
 }
-
-// Тип для моковых данных (частичный)
-export type MockChatData = Partial<ApiChatItem>[]

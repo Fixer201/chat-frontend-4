@@ -1,5 +1,4 @@
-// Компонент списка участников для создания группы
-// src/modules/chat-room/components/GroupMembersList.tsx
+// GroupMembersList.tsx
 'use client'
 
 import { Button } from '@shared/ui/button/Button'
@@ -15,9 +14,11 @@ import { onNextProps } from '@shared/types/createGroup'
 
 // Интерфейс пропсов компонента GroupMembersList
 interface GroupMembersListProps {
-    groupData: onNextProps // Принимаем все данные о группе (название, описание, тип, фото)
-    onBack: () => void // Обработчик возврата к форме создания группы
-    onFinish: (selectedContacts: Contact[]) => void // Обработчик завершения создания группы с выбранными контактами
+    groupData: onNextProps
+    onBack: () => void
+    onFinish: (selectedContacts: Contact[]) => void
+    isCreating?: boolean
+    error?: string | null
 }
 
 // Компонент для выбора участников при создании группы
@@ -25,17 +26,15 @@ export default function GroupMembersList({
     groupData,
     onBack,
     onFinish,
+    isCreating = false,
+    error = null,
 }: GroupMembersListProps) {
     // Состояние для хранения ID выбранных контактов
-    // Используем массив строк (uid) вместо полных объектов для оптимизации
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
 
-    // Хук useDispatch для отправки actions в Redux store
     const dispatch = useDispatch()
 
-    // Получение данных из Redux store с помощью useSelector
-    // useSelector подписывает компонент на изменения в store и вызывает ререндер при изменении
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -43,36 +42,26 @@ export default function GroupMembersList({
         (state: RootState) => state.contacts.list,
     )
 
-    // Обработчик выбора/отмены выбора контакта
-    // Принимает uid контакта и добавляет/удаляет его из массива selectedContactIds
     const handleSelectContact = (uid: string) => {
-        setSelectedContactIds(
-            (prev) =>
-                prev.includes(uid)
-                    ? prev.filter((id) => id !== uid) // Удаляем если уже выбран (toggle off)
-                    : [...prev, uid], // Добавляем если не выбран (toggle on)
+        setSelectedContactIds((prev) =>
+            prev.includes(uid)
+                ? prev.filter((id) => id !== uid)
+                : [...prev, uid],
         )
     }
 
-    // Получаем полные объекты контактов по выбранным ID
-    // Фильтруем массив contactsList, оставляя только контакты с uid из selectedContactIds
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
 
-    const { name } = groupData // Деструктурируем название группы из данных формы
+    const { name } = groupData
 
-    // Обработчик установки выбранного контакта в Redux
-    // Отправляет action setContacts с uid выбранного контакта
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
-    // Обработчик завершения выбора участников
-    // Собирает все данные и передает их родительскому компоненту
     const handleFinishClick = () => {
-        // Вызываем родительский обработчик с выбранными контактами
         onFinish(selectedContacts)
     }
 
@@ -109,8 +98,16 @@ export default function GroupMembersList({
                 </h2>
             </div>
 
+            {/* Отображение ошибки */}
+            {error && (
+                <div className="mx-4 mt-4 rounded-md bg-red-50 p-3">
+                    <p className="text-sm text-red-800">
+                        {error}
+                    </p>
+                </div>
+            )}
+
             {/* Список контактов для выбора участников */}
-            {/* cn используется для условного объединения классов */}
             <div
                 className={cn(
                     `
@@ -142,7 +139,7 @@ export default function GroupMembersList({
             >
                 <Button
                     onClick={handleFinishClick}
-                    disabled={!name.trim()} // Кнопка активна только если есть название группы
+                    disabled={!name.trim() || isCreating} // Добавляем isCreating в disabled
                     variant="solid"
                     size="md"
                     className={`
@@ -150,9 +147,34 @@ export default function GroupMembersList({
                       disabled:cursor-not-allowed disabled:opacity-50
                     `}
                 >
-                    <span className="text-base font-medium">
-                        Далее
-                    </span>
+                    {isCreating ? (
+                        <span className="flex items-center gap-2">
+                            <svg
+                                className="h-5 w-5 animate-spin"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    fill="none"
+                                />
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                            </svg>
+                            Создание...
+                        </span>
+                    ) : (
+                        <span className="text-base font-medium">
+                            Создать группу
+                        </span>
+                    )}
                 </Button>
             </div>
         </div>

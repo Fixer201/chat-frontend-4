@@ -21,96 +21,36 @@ export const generateAvatarUrl = (
     height: number = 300,
     source: string = DEFAULT_AVATAR_SOURCE,
 ): string => {
-    // Fallback для недоступных источников
-    // Возвращаем локальное изображение если источник указан как недоступный
+    // Всегда возвращаем локальную заглушку для безопасности
+    // Используем seed для определения типа чата и выбора соответствующей иконки
 
-    if (/(useAvatar)/.test(source)) {
+    const seedStr = String(seed)
+
+    // Определяем тип по seed
+    if (seedStr.includes('group_')) {
         return '/images/chatHeader/userAvatar.svg'
-    }
-    const seedStr = String(seed) // Приводим seed к строке для использования в URL
-
-    // switch statement для выбора генератора URL в зависимости от источника
-    // Каждый источник имеет свой формат URL и параметры
-    switch (source) {
-        case AVATAR_SOURCES.PISSUM:
-            // Picsum Photos - сервис случайных изображений
-            // seed обеспечивает одинаковое изображение для одного и того же seed
-            return `https://picsum.photos/seed/${seedStr}/${width}/${height}?grayscale`
-
-        case AVATAR_SOURCES.UNSPLASH:
-            // Unsplash - стоковые фотографии высокого качества
-            // &sig=${seedStr} добавляет подпись для кэширования
-            return `https://source.unsplash.com/random/${width}x${height}/?person,portrait&sig=${seedStr}`
-
-        case AVATAR_SOURCES.DICEBEAR:
-            // DiceBear - генератор стилизованных аватаров
-            // SVG векторные изображения, хорошо масштабируются
-            return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seedStr}&size=${width}`
-
-        case AVATAR_SOURCES.RANDOM_USER:
-            // Random User - реалистичные фотографии людей
-            // Детерминированный выбор фотографии на основе хэша от seed
+    } else if (seedStr.includes('channel_')) {
+        return '/images/chatHeader/userAvatar.svg'
+    } else if (source === AVATAR_SOURCES.RANDOM_USER) {
+        // Только для randomuser.me (если он разрешен в next.config.js)
+        try {
             let hash = 0
             for (let i = 0; i < seedStr.length; i++) {
-                // Простой хэш-алгоритм для преобразования строки в число
                 hash =
                     seedStr.charCodeAt(i) +
                     ((hash << 5) - hash)
             }
-            const index = Math.abs(hash) % 100 // Индекс от 0 до 99
-            const gender = hash % 2 === 0 ? 'men' : 'women' // Определяем пол по четности хэша
+            const index = Math.abs(hash) % 100
+            const gender = hash % 2 === 0 ? 'men' : 'women'
             return `https://randomuser.me/api/portraits/${gender}/${index}.jpg`
-
-        case AVATAR_SOURCES.FLICKR:
-            // Lorem Flickr - тематические изображения
-            const categories = [
-                'person',
-                'portrait',
-                'face',
-                'people',
-            ]
-            const category =
-                categories[
-                    seedStr.length % categories.length
-                ] // Выбор категории по длине seed
-            return `https://loremflickr.com/${width}/${height}/${category}`
-
-        case AVATAR_SOURCES.ROBOHASH:
-            // RoboHash - генерация уникальных роботов/монстров
-            return `https://robohash.org/${seedStr}?size=${width}x${height}`
-
-        case AVATAR_SOURCES.PLACEHOLDER:
-            // Placeholder - простые цветные плейсхолдеры с текстом
-            const colors = [
-                '3498db',
-                '2ecc71',
-                'e74c3c',
-                'f39c12',
-                '9b59b6',
-            ]
-            const color =
-                colors[seedStr.length % colors.length] // Выбор цвета по длине seed
-            const text = seedStr.charAt(0).toUpperCase() // Первая буква seed как текст
-            return `https://via.placeholder.com/${width}x${height}/${color}/ffffff?text=${text}`
-
-        case AVATAR_SOURCES.UI_FACES:
-            // Генерируем детерминированный ID от 1 до 70
-            let facesHash = 0
-            for (let i = 0; i < seedStr.length; i++) {
-                facesHash =
-                    (facesHash << 5) -
-                    facesHash +
-                    seedStr.charCodeAt(i)
-                facesHash = facesHash & facesHash
-            }
-            const faceId = (Math.abs(facesHash) % 70) + 1
-            return `https://xsgames.co/randomusers/assets/avatars/${gender}/${faceId.toString().padStart(2, '0')}.jpg`
-
-        default:
-            // По умолчанию используем Picsum
-            // Fallback на случай неизвестного источника
+        } catch {
+            // Fallback на локальную
             return '/images/chatHeader/userAvatar.svg'
+        }
     }
+
+    // Для всех остальных случаев - локальная заглушка
+    return '/images/chatHeader/userAvatar.svg'
 }
 
 /**

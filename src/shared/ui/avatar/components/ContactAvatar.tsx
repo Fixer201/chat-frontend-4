@@ -111,14 +111,12 @@ export const ContactAvatar = forwardRef<
                         <div className="flex items-center gap-2">
                             <p
                                 className={cn(
-                                    `
-                                      truncate text-base font-medium
-                                    `,
-                                    isHighlighted
+                                    'truncate text-base font-medium',
+                                    isHighlighted &&
+                                        mode !==
+                                            'select-contact'
                                         ? 'text-(--color-white-bg)'
-                                        : `
-                                      text-(--color-text-black)
-                                    `,
+                                        : 'text-(--color-text-black)',
                                 )}
                             >
                                 {name}
@@ -128,15 +126,13 @@ export const ContactAvatar = forwardRef<
                         {secondaryText && (
                             <p
                                 className={cn(
-                                    `
-                                      truncate text-sm
-                                    `,
-                                    isHighlighted
+                                    'truncate text-sm',
+                                    isHighlighted &&
+                                        mode !==
+                                            'select-contact'
                                         ? 'text-(--color-white-bg)'
                                         : isOnline
-                                          ? `
-                                              text-(--color-accent-violet-primary)
-                                            `
+                                          ? 'text-(--color-accent-violet-primary)'
                                           : 'text-(--color-text-black)',
                                 )}
                             >
@@ -159,14 +155,12 @@ export const ContactAvatar = forwardRef<
                                 {timestamp && (
                                     <span
                                         className={cn(
-                                            `
-                                              text-xs whitespace-nowrap
-                                            `,
-                                            isHighlighted
+                                            'text-xs whitespace-nowrap',
+                                            isHighlighted &&
+                                                mode !==
+                                                    'select-contact'
                                                 ? 'text-(--color-white-bg)'
-                                                : `
-                                              text-(--color-text-black)
-                                            `,
+                                                : 'text-(--color-text-black)',
                                         )}
                                     >
                                         {timestamp}
