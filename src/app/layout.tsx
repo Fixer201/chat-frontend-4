@@ -20,7 +20,9 @@ export default function RootLayout({
                   h-full
                 `}
             >
-                <main className={'h-full'}>{children}</main>
+                <main className={'h-full overflow-hidden'}>
+                    {children}
+                </main>
             </body>
         </html>
     )

@@ -34,7 +34,7 @@ export default function MessagesList({
             role="log"
             aria-label="История сообщений"
             aria-live="polite"
-            className="flex h-full w-full flex-col overflow-y-auto"
+            className="flex h-full w-full flex-col"
         >
             {chatMessages.length === 0 ? (
                 <div

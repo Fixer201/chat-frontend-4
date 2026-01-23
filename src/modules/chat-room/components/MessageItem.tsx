@@ -36,7 +36,7 @@ function ReadCheckmark({
         return (
             <SentIcon
                 width={18}
-                height={18}
+                height={16}
                 className="fill-text-gray"
             />
         )

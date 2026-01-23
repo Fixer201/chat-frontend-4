@@ -141,7 +141,6 @@ export function useWebSocketChat() {
         reconnectRef.current = () => connectWebSocket()
 
         const token = localStorage.getItem('access_token')
-
         if (token) {
             queueMicrotask(() => {
                 connectWebSocket()
