@@ -35,6 +35,7 @@ export default function ChannelMembersList({
 
     const dispatch = useDispatch()
 
+    // Получение данных из Redux store
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -42,6 +43,7 @@ export default function ChannelMembersList({
         (state: RootState) => state.contacts.list,
     )
 
+    // Обработчик выбора/отмены выбора контакта
     const handleSelectContact = (uid: string) => {
         setSelectedContactIds((prev) =>
             prev.includes(uid)
@@ -50,6 +52,7 @@ export default function ChannelMembersList({
         )
     }
 
+    // Фильтрация выбранных контактов по их ID
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
@@ -57,10 +60,12 @@ export default function ChannelMembersList({
 
     const { name } = channelData
 
+    // Обработчик установки выбранного контакта в Redux
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
+    // Обработчик завершения выбора участников
     const handleFinishClick = () => {
         onFinish(selectedContacts)
     }
@@ -70,9 +75,9 @@ export default function ChannelMembersList({
             {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-6 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-6 py-4
+            `}
             >
                 <Button
                     onClick={onBack}
@@ -89,14 +94,14 @@ export default function ChannelMembersList({
                 </Button>
                 <h2
                     className={`
-                      text-lg font-medium tracking-extra-tight text-text-black
-                    `}
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
                 >
                     Пригласить участников
                 </h2>
             </div>
 
-            {/* Отображение ошибки */}
+            {/* Отображение ошибки создания канала */}
             {error && (
                 <div className="mx-4 mt-4 rounded-md bg-red-50 p-3">
                     <p className="text-sm text-red-800">
@@ -117,6 +122,7 @@ export default function ChannelMembersList({
                     'max-h-(--screen-height-list)',
                 )}
             >
+                {/* Компонент списка контактов с возможностью выбора */}
                 <ContactsListInvitation
                     selectedContacts={selectedContactIds}
                     handleSelectContact={
@@ -130,7 +136,7 @@ export default function ChannelMembersList({
                 />
             </div>
 
-            {/* Кнопка завершения выбора участников */}
+            {/* Кнопка завершения выбора участников и создания канала */}
             <div className="flex items-center justify-center px-4 pt-4 pb-8">
                 <Button
                     onClick={handleFinishClick}

@@ -31,6 +31,8 @@ export default function ChatsList({
     onCreateChannel,
 }: ChatsListProps) {
     const router = useRouter()
+
+    // Состояния для управления UI
     const [searchValue, setSearchValue] = useState('')
     const [deleteModalOpen, setDeleteModalOpen] =
         useState(false)
@@ -44,6 +46,7 @@ export default function ChatsList({
         name: string
     } | null>(null)
 
+    // Хук для работы с чатами
     const {
         chats,
         loading,
@@ -61,25 +64,12 @@ export default function ChatsList({
         createChannel,
     } = useChats()
 
-    // Добавим отладочное логирование
-    useEffect(() => {
-        console.log('🔍 ChatsList - текущие чаты:', {
-            totalChats: chats?.length || 0,
-            chats: chats?.map((chat) => ({
-                id: chat.id,
-                name: chat.name,
-                type: chat.chatType,
-                isDeleted: chatSettings[chat.id]?.isDeleted,
-                hasSettings: !!chatSettings[chat.id],
-            })),
-            chatSettingsKeys: Object.keys(chatSettings),
-        })
-    }, [chats, chatSettings])
-
+    // Навигация к странице контактов
     const handleStartChat = useCallback(() => {
         router.push('/contacts')
     }, [router])
 
+    // Статусы сообщений для отображения в списке чатов
     const messageStatuses: (
         | 'sent'
         | 'delivered'
@@ -87,22 +77,13 @@ export default function ChatsList({
         | null
     )[] = ['sent', 'delivered', 'read', null]
 
-    // ВАЖНО: Проблема может быть здесь в фильтрации!
+    // Фильтрация чатов - исключаем удаленные
     const filteredChats =
         chats?.filter(
             (chat) => !chatSettings[chat.id]?.isDeleted,
         ) || []
 
-    // Добавим логирование для каждого чата
-    filteredChats.forEach((chat) => {
-        const settings = chatSettings[chat.id]
-        console.log(`🔍 Чат ${chat.id} "${chat.name}":`, {
-            isDeleted: settings?.isDeleted,
-            hasSettings: !!settings,
-            chatType: chat.chatType,
-        })
-    })
-
+    // Поиск по чатам с использованием хука useSearch
     const { filteredValue } = useSearch(
         filteredChats,
         searchValue,
@@ -116,6 +97,7 @@ export default function ChatsList({
         ],
     )
 
+    // Сортировка чатов: избранные в начале списка
     const sortedChats = [...(filteredValue || [])].sort(
         (a, b) => {
             const aIsFavorite =
@@ -128,11 +110,7 @@ export default function ChatsList({
         },
     )
 
-    console.log('🔍 ChatsList - отсортированные чаты:', {
-        sortedCount: sortedChats.length,
-        sortedNames: sortedChats.map((c) => c.name),
-    })
-
+    // Выбор/отмена выбора чата
     const toSelectChat = (id: number): void => {
         if (id === selectedChatId) {
             selectChat(null)
@@ -141,6 +119,7 @@ export default function ChatsList({
         }
     }
 
+    // Обработчик нажатия кнопки удаления чата
     const handleDeleteClick = useCallback(
         (chatId: number, chatName: string) => {
             setChatToDelete({ id: chatId, name: chatName })
@@ -149,16 +128,18 @@ export default function ChatsList({
         [],
     )
 
+    // Подтверждение удаления чата
     const handleDeleteConfirm = useCallback(async () => {
         if (!chatToDelete || isDeleting) return
 
         setIsDeleting(true)
 
         try {
+            // Имитация задержки для UX
             await new Promise<void>((resolve) =>
                 setTimeout(resolve, 1000),
             )
-            console.log('Удалить чат:', chatToDelete.id)
+
             deleteChat(chatToDelete.id)
             setDeleteModalOpen(false)
             setChatToDelete(null)
@@ -167,20 +148,18 @@ export default function ChatsList({
                 error instanceof Error
                     ? error.message
                     : 'Неизвестная ошибка при удалении чата'
-            console.error(
-                'Ошибка при удалении:',
-                errorMessage,
-            )
         } finally {
             setIsDeleting(false)
         }
     }, [chatToDelete, isDeleting, deleteChat])
 
+    // Отмена удаления чата
     const handleDeleteCancel = useCallback(() => {
         setDeleteModalOpen(false)
         setChatToDelete(null)
     }, [])
 
+    // Добавление контакта в список контактов
     const handleAddToContacts = useCallback(
         (
             chatId: number,
@@ -195,10 +174,12 @@ export default function ChatsList({
         [addToContacts],
     )
 
+    // Закрытие тоста об успешном добавлении
     const handleSuccessToastClose = useCallback(() => {
         setSuccessToastOpen(false)
     }, [])
 
+    // Определение необходимости показа состояния пустого поиска
     const showEmptySearchState = useMemo(() => {
         return (
             searchValue.trim() !== '' &&
@@ -207,6 +188,7 @@ export default function ChatsList({
         )
     }, [searchValue, filteredValue])
 
+    // Определение необходимости показа состояния отсутствия чатов
     const showEmptyChatsState = useMemo(() => {
         return (
             !loading &&
@@ -257,16 +239,16 @@ export default function ChatsList({
                     ) : showEmptySearchState ? (
                         <div
                             className={`
-                              flex flex-1 items-center justify-center p-4
-                            `}
+                          flex flex-1 items-center justify-center p-4
+                        `}
                         >
                             <EmptySearchState />
                         </div>
                     ) : showEmptyChatsState ? (
                         <div
                             className={`
-                              flex flex-1 items-center justify-center p-4
-                            `}
+                          flex flex-1 items-center justify-center p-4
+                        `}
                         >
                             <EmptyChatsState
                                 onStartChat={
@@ -303,15 +285,14 @@ export default function ChatsList({
                                                     0,
                                             }
 
+                                        // Пропускаем удаленные чаты
                                         if (
                                             settings.isDeleted
                                         ) {
-                                            console.log(
-                                                `❌ Пропускаем удаленный чат ${chat.id}`,
-                                            )
                                             return null
                                         }
 
+                                        // Расчет количества непрочитанных сообщений
                                         let badgeCount:
                                             | number
                                             | undefined =
@@ -327,13 +308,15 @@ export default function ChatsList({
                                                     : 0
                                         }
 
-                                        // Определяем URL аватарки
+                                        // Определение URL аватарки с fallback
                                         let avatarSrc =
                                             chat.chat
                                                 .avatarUrl ||
                                             chat.chat
                                                 .avatar ||
                                             '/images/chatHeader/userAvatar.svg'
+
+                                        // Формирование превью сообщения в зависимости от типа чата
                                         let messagePreview =
                                             ''
                                         if (
@@ -341,7 +324,7 @@ export default function ChatsList({
                                                 'group',
                                             )
                                         ) {
-                                            // Для групп: 'пользователь от которого последнее сообщение: последнее сообщение пользователя группы'
+                                            // Для групп: отображаем отправителя и сообщение
                                             const senderName =
                                                 chat
                                                     .lastMessage
@@ -353,19 +336,20 @@ export default function ChatsList({
                                                 'channel',
                                             )
                                         ) {
-                                            // Для каналов: описание канала
+                                            // Для каналов: отображаем описание канала
                                             messagePreview =
                                                 chat.description ||
                                                 ''
                                         } else {
-                                            // Для чатов: последнее сообщение
+                                            // Для личных чатов: отображаем текст последнего сообщения
                                             messagePreview =
                                                 chat
                                                     .lastMessage
                                                     .content ||
                                                 ''
                                         }
-                                        // Проверяем, валидный ли URL (добавим дополнительную проверку)
+
+                                        // Проверка валидности URL аватарки
                                         if (
                                             !avatarSrc ||
                                             avatarSrc.trim() ===
@@ -377,28 +361,12 @@ export default function ChatsList({
                                                     'randomuser.me',
                                                 ))
                                         ) {
-                                            // Если это внешний URL, который не randomuser.me, используем локальную
-                                            if (
-                                                chat.chatType.includes(
-                                                    'group',
-                                                )
-                                            ) {
-                                                avatarSrc =
-                                                    '/images/chatHeader/userAvatar.svg'
-                                            } else if (
-                                                chat.chatType.includes(
-                                                    'channel',
-                                                )
-                                            ) {
-                                                avatarSrc =
-                                                    '/images/chatHeader/userAvatar.svg'
-                                            } else {
-                                                avatarSrc =
-                                                    '/images/chatHeader/userAvatar.svg'
-                                            }
+                                            // Используем стандартную аватарку для некорректных URL
+                                            avatarSrc =
+                                                '/images/chatHeader/userAvatar.svg'
                                         }
 
-                                        // Для групп и каналов можно использовать специальные иконки
+                                        // Использование специальных иконок для групп и каналов
                                         if (
                                             chat.chatType.includes(
                                                 'group',
@@ -527,6 +495,7 @@ export default function ChatsList({
                 </div>
             </div>
 
+            {/* Модальное окно подтверждения удаления чата */}
             <ChatDeleteModal
                 open={deleteModalOpen}
                 onClose={handleDeleteCancel}
@@ -534,6 +503,7 @@ export default function ChatsList({
                 chatName={chatToDelete?.name || ''}
             />
 
+            {/* Тост об успешном добавлении в контакты */}
             <ChatSuccessToast
                 open={successToastOpen}
                 onClose={handleSuccessToastClose}

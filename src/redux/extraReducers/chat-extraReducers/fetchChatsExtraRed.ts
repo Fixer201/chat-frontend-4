@@ -1,4 +1,3 @@
-// @redux/extraReducers/chat-extraReducers/fetchChatsExtraRed.ts
 import {
     createAsyncThunk,
     PayloadAction,
@@ -12,7 +11,7 @@ import {
     ApiChatItem,
 } from '@shared/types/chat'
 
-// Тип для настроек чата, которые добавляются после трансформации
+// Расширенный тип чата с настройками
 interface ChatItemWithSettings extends Omit<
     ChatItem,
     'settings'
@@ -26,7 +25,7 @@ interface ChatItemWithSettings extends Omit<
     }
 }
 
-// Вспомогательная функция для создания настроек чата на основе API данных
+// Создание настроек чата на основе данных из API
 const createChatSettings = (apiChatItem: ApiChatItem) => ({
     isFavorite: apiChatItem.is_favorite || false,
     isChatRead: apiChatItem.new_message_count === 0,
@@ -35,14 +34,16 @@ const createChatSettings = (apiChatItem: ApiChatItem) => ({
     originalUnreadCount: apiChatItem.new_message_count || 0,
 })
 
-// Асинхронный thunk для загрузки чатов
+// Асинхронный thunk для загрузки чатов с сервера
 export const fetchChats = createAsyncThunk(
     'chats/fetchChats',
     async (count: number = 15, { rejectWithValue }) => {
         try {
+            // Генерация моковых данных (в реальном приложении здесь был бы API запрос)
             const mockData =
                 generateLocalMockChatItems(count)
 
+            // Фильтрация валидных данных
             const validData = mockData.filter(
                 (item): item is ApiChatItem =>
                     item !== null &&
@@ -51,6 +52,7 @@ export const fetchChats = createAsyncThunk(
                     item.chat !== undefined,
             )
 
+            // Трансформация API данных в формат приложения с добавлением настроек
             const transformedChats = validData.map(
                 (item) => {
                     const transformedItem =
@@ -72,16 +74,18 @@ export const fetchChats = createAsyncThunk(
     },
 )
 
-// Обработчики для этого thunk (extraReducers)
+// Обработчики состояний для thunk'а загрузки чатов
 export const handleFetchChats = (
     builder: ActionReducerMapBuilder<ChatsState>,
     initialState: ChatsState,
 ) => {
     builder
+        // Обработка состояния загрузки
         .addCase(fetchChats.pending, (state) => {
             state.loading = true
             state.error = null
         })
+        // Обработка успешной загрузки чатов
         .addCase(
             fetchChats.fulfilled,
             (
@@ -92,11 +96,13 @@ export const handleFetchChats = (
             ) => {
                 state.loading = false
 
+                // Разделение данных чата и настроек для хранения в разных структурах
                 state.items = action.payload.map((chat) => {
                     const { settings, ...chatData } = chat
                     return chatData
                 })
 
+                // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {
                     if (
                         chat.settings &&
@@ -108,6 +114,7 @@ export const handleFetchChats = (
                 })
             },
         )
+        // Обработка ошибки загрузки
         .addCase(fetchChats.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload as string

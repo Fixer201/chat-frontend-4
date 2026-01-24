@@ -1,3 +1,4 @@
+// CreateChannelForm.tsx
 'use client'
 
 import { useEffect, useMemo, useState, useRef } from 'react'
@@ -17,17 +18,17 @@ interface CreateChannelFormProps {
     initialData: onNextProps | null
 }
 
-// Вынесем options за пределы компонента
+// Опции для выбора типа канала
 const channelOptions = [
     {
         value: 'public',
         optionName: 'Публичный',
-        optionDescription: `Публичный канал можно найти через поиск. Подписаться на него может любой пользователь`,
+        optionDescription: `Публичный канал можно найти через поиск. Подписаться на него может любой пользователь`,
     },
     {
         value: 'private',
         optionName: 'Частный',
-        optionDescription: `В частный канал можно попасть только по приглашению или пригласительной ссылке`,
+        optionDescription: `В частный канал можно попасть только по приглашению или пригласительной ссылке`,
     },
 ]
 
@@ -36,8 +37,10 @@ export default function CreateChannelForm({
     onNext,
     initialData,
 }: CreateChannelFormProps) {
+    // Ref для отслеживания первого рендера компонента
     const isFirstRender = useRef(true)
 
+    // Функция для получения начального значения типа канала из initialData
     const getInitialOption = () => {
         if (initialData?.type) {
             const foundOption = channelOptions.find(
@@ -59,25 +62,10 @@ export default function CreateChannelForm({
         }
     }
 
+    // Состояния формы
     const [photoFile, setPhotoFile] = useState<File | null>(
         initialData?.photo || null,
     )
-
-    const photoPreview = useMemo(
-        () =>
-            photoFile
-                ? URL.createObjectURL(photoFile)
-                : null,
-        [photoFile],
-    )
-
-    useEffect(() => {
-        return () => {
-            if (photoPreview)
-                URL.revokeObjectURL(photoPreview)
-        }
-    }, [photoPreview])
-
     const [name, setName] = useState(
         initialData?.name || '',
     )
@@ -87,16 +75,30 @@ export default function CreateChannelForm({
     const [choosenOption, setChoosenOption] =
         useState<GroupTypeOptionProps>(getInitialOption())
 
+    // Создание предпросмотра аватарки из выбранного файла
+    const photoPreview = useMemo(
+        () =>
+            photoFile
+                ? URL.createObjectURL(photoFile)
+                : null,
+        [photoFile],
+    )
+
+    // Очистка URL объекта при размонтировании компонента
+    useEffect(() => {
+        return () => {
+            if (photoPreview)
+                URL.revokeObjectURL(photoPreview)
+        }
+    }, [photoPreview])
+
+    // Обновление состояния формы при изменении initialData
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false
             return
         }
 
-        console.log(
-            '🔄 Обновление формы канала из initialData:',
-            initialData,
-        )
         if (initialData) {
             const updateTimer = setTimeout(() => {
                 setName(initialData.name || '')
@@ -137,15 +139,18 @@ export default function CreateChannelForm({
         }
     }, [initialData])
 
+    // Обработчик изменения типа канала
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
         setChoosenOption((prev) => ({ ...prev, ...option }))
     }
 
+    // Обработчик отправки формы
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Валидация обязательных полей
         if (
             !name.trim() ||
             !description.trim() ||
@@ -153,6 +158,7 @@ export default function CreateChannelForm({
         )
             return
 
+        // Передача данных в родительский компонент
         onNext({
             name: name.trim(),
             description: description.trim(),
@@ -165,9 +171,9 @@ export default function CreateChannelForm({
         <div className="flex h-full flex-col rounded-md bg-gray-main">
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-6 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-6 py-4
+            `}
             >
                 <Button
                     onClick={onBack}
@@ -184,8 +190,8 @@ export default function CreateChannelForm({
                 </Button>
                 <h2
                     className={`
-                      text-lg font-medium tracking-extra-tight text-text-black
-                    `}
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
                 >
                     Создать канал
                 </h2>

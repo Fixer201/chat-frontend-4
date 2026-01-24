@@ -1,3 +1,4 @@
+// CreateGroupForm.tsx
 'use client'
 
 import { useEffect, useMemo, useState, useRef } from 'react'
@@ -17,23 +18,17 @@ interface CreateGroupFormProps {
     initialData: onNextProps | null
 }
 
-// Вынесем options за пределы компонента, чтобы избежать пересоздания
+// Опции для выбора типа группы
 const groupOptions = [
     {
         value: 'open',
         optionName: 'Открытая',
-        optionDescription: `Открытую группу можно найти
-                      через поиск. Присоединиться
-                      к ней может любой
-                      пользователь`,
+        optionDescription: `Открытую группу можно найти через поиск. Присоединиться к ней может любой пользователь`,
     },
     {
         value: 'closed',
         optionName: 'Закрытая',
-        optionDescription: `В закрытую группу можно
-                      попасть только
-                      по приглашению
-                      или пригласительной ссылке`,
+        optionDescription: `В закрытую группу можно попасть только по приглашению или пригласительной ссылке`,
     },
 ]
 
@@ -42,10 +37,10 @@ export default function CreateGroupForm({
     onNext,
     initialData,
 }: CreateGroupFormProps) {
-    // Используем useRef для отслеживания первого рендера
+    // Ref для отслеживания первого рендера компонента
     const isFirstRender = useRef(true)
 
-    // Находим начальное значение типа из initialData
+    // Функция для получения начального значения типа группы из initialData
     const getInitialOption = () => {
         if (initialData?.type) {
             const foundOption = groupOptions.find(
@@ -67,11 +62,10 @@ export default function CreateGroupForm({
         }
     }
 
-    // Инициализируем состояния значениями из initialData
+    // Состояния формы
     const [photoFile, setPhotoFile] = useState<File | null>(
         initialData?.photo || null,
     )
-
     const [name, setName] = useState(
         initialData?.name || '',
     )
@@ -81,48 +75,36 @@ export default function CreateGroupForm({
     const [choosenOption, setChoosenOption] =
         useState<GroupTypeOptionProps>(getInitialOption())
 
-    // Мемоизированное значение для предпросмотра аватарки
+    // Создание предпросмотра аватарки из выбранного файла
     const photoPreview = useMemo(() => {
-        console.log('📸 Обновление photoPreview:', {
-            hasPhotoFile: !!photoFile,
-            photoFileName: photoFile?.name,
-            photoFileSize: photoFile?.size,
-        })
         return photoFile
             ? URL.createObjectURL(photoFile)
             : null
     }, [photoFile])
 
-    // Эффект для очистки URL при размонтировании
+    // Очистка URL объекта при размонтировании компонента
     useEffect(() => {
         return () => {
-            console.log('🧹 Очистка photoPreview URL')
             if (photoPreview) {
                 URL.revokeObjectURL(photoPreview)
             }
         }
     }, [photoPreview])
 
-    // Эффект для обновления состояния при изменении initialData (кроме первого рендера)
+    // Обновление состояния формы при изменении initialData
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false
             return
         }
 
-        console.log(
-            '🔄 Обновление формы из initialData:',
-            initialData,
-        )
         if (initialData) {
-            // Используем setTimeout для асинхронного обновления состояния
             const updateTimer = setTimeout(() => {
                 setName(initialData.name || '')
                 setDescription(
                     initialData.description || '',
                 )
 
-                // ВАЖНО: не перезаписываем photoFile, если он уже есть и initialData.photo = null
                 if (initialData.photo !== undefined) {
                     setPhotoFile(initialData.photo)
                 }
@@ -141,7 +123,6 @@ export default function CreateGroupForm({
 
             return () => clearTimeout(updateTimer)
         } else {
-            // Если initialData null, сбрасываем форму
             const resetTimer = setTimeout(() => {
                 setName('')
                 setDescription('')
@@ -157,15 +138,18 @@ export default function CreateGroupForm({
         }
     }, [initialData])
 
+    // Обработчик изменения типа группы
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
         setChoosenOption((prev) => ({ ...prev, ...option }))
     }
 
+    // Обработчик отправки формы
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Валидация обязательных полей
         if (
             !name.trim() ||
             !description.trim() ||
@@ -173,15 +157,7 @@ export default function CreateGroupForm({
         )
             return
 
-        console.log('📤 Отправка данных группы:', {
-            name: name.trim(),
-            description: description.trim(),
-            type: choosenOption.value,
-            photoFile: photoFile,
-            photoPreview: photoPreview,
-            photoFileName: photoFile?.name,
-        })
-
+        // Передача данных в родительский компонент
         onNext({
             name: name.trim(),
             description: description.trim(),
@@ -190,12 +166,8 @@ export default function CreateGroupForm({
         })
     }
 
+    // Обработчик выбора файла для аватарки
     const handleFileSelect = (file: File | null) => {
-        console.log('🖼️ Файл выбран:', {
-            fileName: file?.name,
-            fileSize: file?.size,
-            fileType: file?.type,
-        })
         setPhotoFile(file)
     }
 
@@ -203,9 +175,9 @@ export default function CreateGroupForm({
         <div className="flex h-full flex-col rounded-md bg-gray-main">
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-6 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-6 py-4
+            `}
             >
                 <Button
                     onClick={onBack}

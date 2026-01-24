@@ -35,6 +35,7 @@ export default function GroupMembersList({
 
     const dispatch = useDispatch()
 
+    // Получение данных из Redux store
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -42,6 +43,7 @@ export default function GroupMembersList({
         (state: RootState) => state.contacts.list,
     )
 
+    // Обработчик выбора/отмены выбора контакта
     const handleSelectContact = (uid: string) => {
         setSelectedContactIds((prev) =>
             prev.includes(uid)
@@ -50,6 +52,7 @@ export default function GroupMembersList({
         )
     }
 
+    // Фильтрация выбранных контактов по их ID
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
@@ -57,24 +60,24 @@ export default function GroupMembersList({
 
     const { name } = groupData
 
+    // Обработчик установки выбранного контакта в Redux
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
+    // Обработчик завершения выбора участников
     const handleFinishClick = () => {
         onFinish(selectedContacts)
     }
 
     return (
-        <div
-            className={`flex h-full min-h-0 flex-col rounded-md bg-gray-main`}
-        >
+        <div className="flex h-full min-h-0 flex-col rounded-md bg-gray-main">
             {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-6 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-6 py-4
+            `}
             >
                 <Button
                     onClick={onBack}
@@ -91,14 +94,14 @@ export default function GroupMembersList({
                 </Button>
                 <h2
                     className={`
-                      text-lg font-medium tracking-extra-tight text-text-black
-                    `}
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
                 >
                     Пригласить участников
                 </h2>
             </div>
 
-            {/* Отображение ошибки */}
+            {/* Отображение ошибки создания группы */}
             {error && (
                 <div className="mx-4 mt-4 rounded-md bg-red-50 p-3">
                     <p className="text-sm text-red-800">
@@ -116,10 +119,10 @@ export default function GroupMembersList({
                       md:w-80
                       lg:w-96
                     `,
-                    `max-h-(--screen-height-list)`,
+                    'max-h-(--screen-height-list)',
                 )}
             >
-                {/* Компонент списка контактов для выбора участников */}
+                {/* Компонент списка контактов с возможностью выбора */}
                 <ContactsListInvitation
                     selectedContacts={selectedContactIds}
                     handleSelectContact={
@@ -133,13 +136,11 @@ export default function GroupMembersList({
                 />
             </div>
 
-            {/* Кнопка завершения выбора участников */}
-            <div
-                className={`flex items-center justify-center px-4 pt-4 pb-8`}
-            >
+            {/* Кнопка завершения выбора участников и создания группы */}
+            <div className="flex items-center justify-center px-4 pt-4 pb-8">
                 <Button
                     onClick={handleFinishClick}
-                    disabled={!name.trim() || isCreating} // Добавляем isCreating в disabled
+                    disabled={!name.trim() || isCreating}
                     variant="solid"
                     size="md"
                     className={`

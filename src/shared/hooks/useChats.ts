@@ -23,38 +23,32 @@ import { ChatItem, ChatSettings } from '../types/chat'
 import { Contact } from '../types/contact'
 import { onNextProps } from '../types/createGroup'
 
-// Хук для работы с чатами, предоставляет удобные методы и доступ к состоянию
-// Абстрагирует работу с Redux, предоставляя простой API для компонентов
+// Кастомный хук для работы с чатами
+// Абстрагирует взаимодействие с Redux store, предоставляя простой API для компонентов
 export const useChats = () => {
-    // useAppDispatch - типизированная версия useDispatch для TypeScript
     const dispatch = useAppDispatch()
 
-    // Селекторы для получения данных из Redux store
-    // useAppSelector подписывает хук на изменения в store
+    // Селекторы для получения данных из состояния чатов
     const {
-        items, // Массив чатов
-        loading, // Флаг загрузки
-        error, // Ошибка
-        selectedChatId, // ID выбранного чата
-        chatSettings, // Настройки чатов
-    } = useAppSelector(
-        (state) => state.chats, // Селектор всего slice чатов
-    )
+        items,
+        loading,
+        error,
+        selectedChatId,
+        chatSettings,
+    } = useAppSelector((state) => state.chats)
 
-    // Загрузка чатов
-    // useCallback мемоизирует функцию, предотвращая создание новой при каждом рендере
-    // [dispatch] в зависимостях - функция изменится только если изменится dispatch (никогда)
+    // Загрузка списка чатов
     const loadChats = useCallback(
         (count: number = 20) => {
-            dispatch(fetchChats(count)) // Диспатчим thunk action
+            dispatch(fetchChats(count))
         },
         [dispatch],
     )
 
-    // Выбор чата
+    // Выбор чата по ID
     const selectChat = useCallback(
         (chatId: number | null) => {
-            dispatch(setSelectedChat(chatId)) // Простой action без асинхронной логики
+            dispatch(setSelectedChat(chatId))
         },
         [dispatch],
     )
@@ -68,7 +62,6 @@ export const useChats = () => {
     )
 
     // Обновление настроек чата
-    // Принимает chatId и partial объект настроек
     const updateChatSettingsData = useCallback(
         (
             chatId: number,
@@ -81,7 +74,7 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Переключение избранного статуса
+    // Переключение статуса "Избранное"
     const toggleFavoriteChat = useCallback(
         (chatId: number) => {
             dispatch(toggleFavorite(chatId))
@@ -89,7 +82,7 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Переключение уведомлений
+    // Переключение настроек уведомлений
     const toggleChatNotifications = useCallback(
         (chatId: number) => {
             dispatch(toggleNotifications(chatId))
@@ -97,7 +90,7 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Пометка как прочитанного
+    // Пометка чата как прочитанного
     const markChatAsRead = useCallback(
         (chatId: number) => {
             dispatch(markAsRead(chatId))
@@ -105,7 +98,7 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Пометка как непрочитанного
+    // Пометка чата как непрочитанного
     const markChatAsUnread = useCallback(
         (chatId: number) => {
             dispatch(markAsUnread(chatId))
@@ -113,15 +106,15 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Удаление чата (помечаем как удаленный)
+    // Мягкое удаление чата (помечаем как удаленный)
     const deleteChat = useCallback(
         (chatId: number) => {
-            dispatch(markAsDeleted(chatId)) // Soft delete - не удаляет из хранилища
+            dispatch(markAsDeleted(chatId))
         },
         [dispatch],
     )
 
-    // Добавление в контакты
+    // Добавление чата в список контактов
     const addChatToContacts = useCallback(
         (chatId: number) => {
             dispatch(addToContacts(chatId))
@@ -129,33 +122,30 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Сброс всех настроек
+    // Сброс всех настроек чатов
     const resetAllChatSettings = useCallback(() => {
         dispatch(resetChatSettings())
     }, [dispatch])
 
     // Получение настроек конкретного чата
-    // useCallback с [chatSettings] - функция пересоздается при изменении chatSettings
     const getChatSettings = useCallback(
         (chatId: number): ChatSettings | undefined => {
-            return chatSettings[chatId] // Простое обращение к объекту по ключу
+            return chatSettings[chatId]
         },
         [chatSettings],
     )
 
-    // Получение чата с его настройками
-    // Объединяет данные чата из items и настройки из chatSettings
+    // Получение полной информации о чате с его настройками
     const getChatWithSettings = useCallback(
         (chatId: number) => {
             const chat = items.find((c) => c.id === chatId)
             const settings = chatSettings[chatId]
 
-            if (!chat) return null // Если чат не найден - возвращаем null
+            if (!chat) return null
 
             return {
-                ...chat, // Все данные чата
+                ...chat,
                 settings: settings || {
-                    // Настройки или fallback объект
                     isFavorite: chat.isFavorite || false,
                     isChatRead: chat.newMessageCount === 0,
                     notificationsEnabled:
@@ -166,10 +156,10 @@ export const useChats = () => {
                 },
             }
         },
-        [items, chatSettings], // Зависимости: функция изменится при изменении items или chatSettings
+        [items, chatSettings],
     )
 
-    // НОВЫЕ ФУНКЦИИ ДЛЯ СОЗДАНИЯ ГРУПП И КАНАЛОВ
+    // Создание новой группы
     const createGroup = useCallback(
         (groupData: onNextProps, members: Contact[]) => {
             return dispatch(
@@ -179,6 +169,7 @@ export const useChats = () => {
         [dispatch],
     )
 
+    // Создание нового канала
     const createChannel = useCallback(
         (channelData: onNextProps, members: Contact[]) => {
             return dispatch(
@@ -191,10 +182,9 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Возвращаемые методы и данные
-    // Предоставляет компонентам простой API для работы с чатами
+    // Возвращаемый объект с методами и данными
     return {
-        chats: items, // Переименовываем для лучшей семантики
+        chats: items,
         loading,
         error,
         selectedChatId,
@@ -212,7 +202,6 @@ export const useChats = () => {
         resetChatSettings: resetAllChatSettings,
         getChatSettings,
         getChatWithSettings,
-        // Новые методы
         createGroup,
         createChannel,
     }

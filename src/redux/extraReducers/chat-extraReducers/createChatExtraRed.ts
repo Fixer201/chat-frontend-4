@@ -1,4 +1,3 @@
-// @redux/extraReducers/chat-extraReducers/createChatExtraRed.ts
 import {
     createAsyncThunk,
     ActionReducerMapBuilder,
@@ -13,6 +12,7 @@ import {
 import { Contact } from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
 
+// Типы для payload при создании группы и канала
 interface CreateGroupPayload {
     groupData: onNextProps
     members: Contact[]
@@ -23,6 +23,7 @@ interface CreateChannelPayload {
     members: Contact[]
 }
 
+// Тип для возвращаемого значения thunk'ов создания чата
 interface ChatWithSettings {
     chat: ChatItem
     settings: {
@@ -34,13 +35,13 @@ interface ChatWithSettings {
     }
 }
 
-// 1. Определяем тип Participant
+// Тип участника чата
 interface Participant {
     uid: string
     full_name: string
 }
 
-// 2. Функция преобразования Contact в Participant
+// Преобразование объекта Contact в Participant для API
 const contactToParticipant = (
     contact: Contact,
 ): Participant => ({
@@ -52,25 +53,20 @@ const contactToParticipant = (
         'Участник',
 })
 
-// Функция для создания URL из File (для предпросмотра)
+// Создание временного URL для файла с изображением
 const createPhotoUrl = (
     photo: File | null,
 ): string | null => {
     if (!photo) return null
 
     try {
-        // Создаем временный URL для файла
         return URL.createObjectURL(photo)
     } catch (error) {
-        console.error(
-            'Ошибка создания URL для фото:',
-            error,
-        )
         return null
     }
 }
 
-// Функция преобразования API ответа в ChatItem с использованием generateLocalMockChatItems
+// Создание моковых данных чата на основе переданных параметров
 const createMockChatFromResponse = (
     name: string,
     description: string,
@@ -85,20 +81,19 @@ const createMockChatFromResponse = (
     const mockChats = generateLocalMockChatItems(1)
     const baseMockChat = mockChats[0]
 
-    // Генерируем уникальный ID на основе текущего времени и случайного числа
+    // Генерация уникального ID для нового чата
     const uniqueId =
         Math.floor(Date.now() / 1000) * 1000 +
         Math.floor(Math.random() * 1000)
-    // 3. Простое преобразование members в participants
+
+    // Преобразование контактов в участников чата
     const participants: Participant[] = members.map(
         contactToParticipant,
     )
 
-    // Используем фото URL если есть, иначе генерируем аватар на основе имени
+    // Определение URL аватарки с fallback на стандартные иконки
     let avatarUrl = photoUrl
-
     if (!avatarUrl) {
-        // Для групп и каналов используем соответствующие локальные иконки
         if (chatType.includes('group')) {
             avatarUrl = '/images/chatHeader/userAvatar.svg'
         } else if (chatType.includes('channel')) {
@@ -109,6 +104,7 @@ const createMockChatFromResponse = (
     }
     const avatarWebpUrl = avatarUrl
 
+    // Создание базового объекта чата, если нет моковых данных
     if (!baseMockChat) {
         const now = Math.floor(Date.now() / 1000)
 
@@ -160,7 +156,7 @@ const createMockChatFromResponse = (
                 uid: '',
                 from_user: 'Вы',
                 content:
-                    participants.length > 0 // ← ИСПРАВЛЕНО: используем participants вместо members
+                    participants.length > 0
                         ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
                         : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
                 files_summary: {
@@ -176,6 +172,7 @@ const createMockChatFromResponse = (
         }
     }
 
+    // Модификация существующих моковых данных
     const modifiedMockChat: ApiChatItem = {
         ...baseMockChat,
         id: uniqueId,
@@ -189,8 +186,8 @@ const createMockChatFromResponse = (
                 avatarWebpUrl ||
                 baseMockChat.chat.avatar_webp_url,
         },
-        description: description, // ← ДОБАВЛЕНО: передаем описание
-        participants: participants, // ← ДОБАВЛЕНО
+        description: description,
+        participants: participants,
         last_message: {
             ...baseMockChat.last_message,
             content:
@@ -203,7 +200,7 @@ const createMockChatFromResponse = (
     return modifiedMockChat
 }
 
-// Thunk для создания группы с явными типами для rejectWithValue
+// Thunk для создания группы с обработкой ошибок через rejectWithValue
 export const createGroup = createAsyncThunk<
     ChatWithSettings,
     CreateGroupPayload,
@@ -212,14 +209,15 @@ export const createGroup = createAsyncThunk<
     'chats/createGroup',
     async ({ groupData, members }, { rejectWithValue }) => {
         try {
+            // Определение типа чата на основе выбранного типа группы
             const chatType =
                 groupData.type === 'open'
                     ? 'public-group'
                     : 'private-group'
 
-            // Создаем URL для фото
             const photoUrl = createPhotoUrl(groupData.photo)
 
+            // Создание моковых данных для нового чата
             const mockData = createMockChatFromResponse(
                 groupData.name,
                 groupData.description,
@@ -228,9 +226,11 @@ export const createGroup = createAsyncThunk<
                 members,
             )
 
+            // Трансформация API данных в формат приложения
             const transformedData =
                 transformFromApi<ApiChatItem>(mockData)
 
+            // Дополнение данных чата
             const enhancedChat: ChatItem = {
                 ...transformedData,
                 chat: {
@@ -259,7 +259,7 @@ export const createGroup = createAsyncThunk<
     },
 )
 
-// Thunk для создания канала с явными типами для rejectWithValue
+// Thunk для создания канала с обработкой ошибок через rejectWithValue
 export const createChannel = createAsyncThunk<
     ChatWithSettings,
     CreateChannelPayload,
@@ -271,12 +271,12 @@ export const createChannel = createAsyncThunk<
         { rejectWithValue },
     ) => {
         try {
+            // Определение типа чата на основе выбранного типа канала
             const chatType =
                 channelData.type === 'public'
                     ? 'public-channel'
                     : 'private-channel'
 
-            // Создаем URL для фото
             const photoUrl = createPhotoUrl(
                 channelData.photo,
             )
@@ -320,47 +320,43 @@ export const createChannel = createAsyncThunk<
     },
 )
 
-// Обработчики для createGroup и createChannel (вынесены из слайса)
+// Обработчики состояний для thunk'ов создания чатов
 export const handleCreateChat = (
     builder: ActionReducerMapBuilder<ChatsState>,
 ) => {
     builder
+        // Обработка состояния загрузки при создании группы
         .addCase(createGroup.pending, (state) => {
             state.loading = true
             state.error = null
         })
+        // Обработка успешного создания группы
         .addCase(createGroup.fulfilled, (state, action) => {
             state.loading = false
             state.error = null
 
-            // Проверяем, нет ли уже чата с таким ID
+            // Проверка на существование чата с таким ID
             const existingIndex = state.items.findIndex(
                 (chat) =>
                     chat.id === action.payload.chat.id,
             )
 
             if (existingIndex === -1) {
-                // Добавляем созданную группу в начало списка
                 state.items.unshift(action.payload.chat)
             } else {
-                // Если уже есть, обновляем
                 state.items[existingIndex] =
                     action.payload.chat
             }
 
-            // Добавляем настройки для группы
+            // Добавление настроек для нового чата
             if (
                 !state.chatSettings[action.payload.chat.id]
             ) {
                 state.chatSettings[action.payload.chat.id] =
                     action.payload.settings
-            } else {
-                console.log(
-                    '⚙️ Настройки группы уже существуют',
-                )
             }
 
-            // Обновляем настройки в объекте чата для совместимости
+            // Обновление настроек в объекте чата для обратной совместимости
             const chatIndex = state.items.findIndex(
                 (chat) =>
                     chat.id === action.payload.chat.id,
@@ -370,17 +366,20 @@ export const handleCreateChat = (
                     action.payload.settings
             }
 
-            // Автоматически выбираем созданную группу
+            // Автоматический выбор созданного чата
             state.selectedChatId = action.payload.chat.id
         })
+        // Обработка ошибки при создании группы
         .addCase(createGroup.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload as string
         })
+        // Обработка состояния загрузки при создании канала
         .addCase(createChannel.pending, (state) => {
             state.loading = true
             state.error = null
         })
+        // Обработка успешного создания канала
         .addCase(
             createChannel.fulfilled,
             (state, action) => {
@@ -394,7 +393,6 @@ export const handleCreateChat = (
 
                 if (existingIndex === -1) {
                     state.items.unshift(action.payload.chat)
-                    console.log('📥 Канал добавлен в items')
                 } else {
                     state.items[existingIndex] =
                         action.payload.chat
@@ -408,10 +406,6 @@ export const handleCreateChat = (
                     state.chatSettings[
                         action.payload.chat.id
                     ] = action.payload.settings
-                } else {
-                    console.log(
-                        '⚙️ Настройки канала уже существуют',
-                    )
                 }
 
                 const chatIndex = state.items.findIndex(
@@ -427,6 +421,7 @@ export const handleCreateChat = (
                     action.payload.chat.id
             },
         )
+        // Обработка ошибки при создании канала
         .addCase(
             createChannel.rejected,
             (state, action) => {

@@ -11,6 +11,7 @@ import { onNextProps } from '@shared/types/createGroup'
 import { Contact } from '@shared/types/contact'
 import { useChats } from '@shared/hooks/useChats'
 
+// Типы для представлений компонента
 type View =
     | 'chats'
     | 'create-group'
@@ -19,8 +20,11 @@ type View =
     | 'channel-members'
 
 export default function ChatsListWrapper() {
+    // Хуки для работы с чатами
     const { createGroup, createChannel, loadChats } =
         useChats()
+
+    // Состояния для управления представлениями и данными
     const [currentView, setCurrentView] =
         useState<View>('chats')
     const [groupData, setGroupData] =
@@ -33,43 +37,50 @@ export default function ChatsListWrapper() {
     const [createError, setCreateError] = useState<
         string | null
     >(null)
-    const [chatsListKey, setChatsListKey] = useState(0) // Ключ для принудительного обновления ChatsList
 
-    // Загружаем чаты при монтировании
+    // Ключ для принудительного обновления ChatsList при создании нового чата
+    const [chatsListKey, setChatsListKey] = useState(0)
+
+    // Загрузка чатов при монтировании компонента
     useEffect(() => {
         loadChats(15)
     }, [loadChats])
 
-    // Обработчики навигации
+    // Обработчик перехода к созданию группы
     const handleCreateGroup = () => {
         setCurrentView('create-group')
         setCreateError(null)
     }
 
+    // Обработчик возврата из формы создания группы
     const handleBackFromCreateGroup = () => {
         setCurrentView('chats')
         setGroupData(null)
         setCreateError(null)
-        setChatsListKey((prev) => prev + 1) // Принудительное обновление
+        setChatsListKey((prev) => prev + 1) // Принудительное обновление списка чатов
     }
 
+    // Обработчик возврата из списка участников группы
     const handleBackFromGroupMembers = () => {
         setCurrentView('create-group')
         setCreateError(null)
     }
 
+    // Обработчик перехода к созданию канала
     const handleCreateChannel = () => {
         setCurrentView('create-channel')
         setCreateError(null)
     }
 
+    // Обработчик возврата из формы создания канала
     const handleBackFromCreateChannel = () => {
         setCurrentView('chats')
         setChannelData(null)
         setCreateError(null)
-        setChatsListKey((prev) => prev + 1) // Принудительное обновление
+        setChatsListKey((prev) => prev + 1) // Принудительное обновление списка чатов
     }
 
+    // Обработчик перехода от создания группы к выбору участников
     const handleNextFromCreateGroup = (
         payload: onNextProps | string,
     ) => {
@@ -86,6 +97,7 @@ export default function ChatsListWrapper() {
         setCurrentView('group-members')
     }
 
+    // Обработчик перехода от создания канала к выбору участников
     const handleNextFromCreateChannel = (
         payload: string | onNextProps,
     ) => {
@@ -102,37 +114,29 @@ export default function ChatsListWrapper() {
         setCurrentView('channel-members')
     }
 
+    // Обработчик возврата из списка участников канала
     const handleBackFromChannelMembers = () => {
         setCurrentView('create-channel')
         setCreateError(null)
     }
 
-    // Обработчик завершения создания группы
+    // Создание группы с выбранными участниками
     const handleFinishGroupCreation = async (
         contacts: Contact[],
     ) => {
         if (!groupData) return
-
-        console.log('🚀 Начало создания группы:', {
-            name: groupData.name,
-            contactsCount: contacts.length,
-        })
 
         setIsCreating(true)
         setCreateError(null)
         setSelectedContacts(contacts)
 
         try {
-            console.log(
-                '📤 Вызов createGroup с данными:',
-                groupData,
-            )
             const result = await createGroup(
                 groupData,
                 contacts,
             ).unwrap()
 
-            // Показываем успешное сообщение
+            // Формирование строки с именами участников для отображения
             const memberNames = contacts
                 .map(
                     (contact) =>
@@ -150,25 +154,16 @@ export default function ChatsListWrapper() {
                     `Группа успешно создана и добавлена в список чатов!`,
             )
 
-            // Сбрасываем состояния и возвращаемся к списку чатов
+            // Сброс состояний и возврат к списку чатов
             setCurrentView('chats')
             setGroupData(null)
             setSelectedContacts([])
-            setChatsListKey((prev) => prev + 1) // ОЧЕНЬ ВАЖНО: принудительное обновление
-
-            console.log(
-                '🔄 Возврат к списку чатов, ключ обновлен:',
-                chatsListKey + 1,
-            )
+            setChatsListKey((prev) => prev + 1)
         } catch (error) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : 'Неизвестная ошибка при создании группы'
-            console.error(
-                '❌ Ошибка при создании группы:',
-                error,
-            )
             setCreateError(errorMessage)
             alert(
                 `Ошибка при создании группы: ${errorMessage}`,
@@ -178,36 +173,21 @@ export default function ChatsListWrapper() {
         }
     }
 
-    // Обработчик завершения создания канала
+    // Создание канала с выбранными участниками
     const handleFinishChannelCreation = async (
         contacts: Contact[],
     ) => {
         if (!channelData) return
-
-        console.log('🚀 Начало создания канала:', {
-            name: channelData.name,
-            contactsCount: contacts.length,
-        })
 
         setIsCreating(true)
         setCreateError(null)
         setSelectedContacts(contacts)
 
         try {
-            console.log(
-                '📤 Вызов createChannel с данными:',
-                channelData,
-            )
             const result = await createChannel(
                 channelData,
                 contacts,
             ).unwrap()
-
-            console.log('✅ Канал создан в Redux:', {
-                id: result.chat.id,
-                name: result.chat.name,
-                type: result.chat.chatType,
-            })
 
             const memberNames = contacts
                 .map(
@@ -229,21 +209,12 @@ export default function ChatsListWrapper() {
             setCurrentView('chats')
             setChannelData(null)
             setSelectedContacts([])
-            setChatsListKey((prev) => prev + 1) // ОЧЕНЬ ВАЖНО: принудительное обновление
-
-            console.log(
-                '🔄 Возврат к списку чатов, ключ обновлен:',
-                chatsListKey + 1,
-            )
+            setChatsListKey((prev) => prev + 1)
         } catch (error) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : 'Неизвестная ошибка при создании канала'
-            console.error(
-                '❌ Ошибка при создании канала:',
-                error,
-            )
             setCreateError(errorMessage)
             alert(
                 `Ошибка при создании канала: ${errorMessage}`,
@@ -253,12 +224,12 @@ export default function ChatsListWrapper() {
         }
     }
 
-    // Рендерим соответствующий компонент
+    // Рендеринг соответствующего компонента в зависимости от текущего представления
     switch (currentView) {
         case 'chats':
             return (
                 <ChatsList
-                    key={`chats-list-${chatsListKey}`} // Ключ для принудительного обновления
+                    key={`chats-list-${chatsListKey}`}
                     onCreateGroup={handleCreateGroup}
                     onCreateChannel={handleCreateChannel}
                 />
