@@ -27,8 +27,6 @@ export default function MessagesList({
         [messages, chatKey],
     )
 
-    console.log(chatMessages)
-
     return (
         <section
             role="log"
