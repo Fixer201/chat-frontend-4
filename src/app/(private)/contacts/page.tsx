@@ -6,9 +6,10 @@ export default function ContactsPage() {
         <div className="flex h-screen max-w-full gap-6">
             {/* Левая колонка - список контактов */}
             <div
+                // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                 className={`
-                  h-11/12 w-full rounded-md border border-app-divider
-                  bg-gray-main
+                  h-11/12 w-full overflow-hidden rounded-md border
+                  border-app-divider bg-gray-main
                   md:w-80
                   lg:w-96
                 `}
@@ -18,6 +19,7 @@ export default function ContactsPage() {
 
             {/* Правая колонка - пустой state (скрыт на mobile) */}
             <div
+                // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                 className={`
                   hidden h-11/12 flex-1 rounded-md border border-app-divider
                   md:block

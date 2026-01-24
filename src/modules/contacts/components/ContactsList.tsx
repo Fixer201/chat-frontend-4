@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 import { RootState } from '@redux/store'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import Modal from '@shared/ui/modal/Modal'
 import {
@@ -20,7 +20,7 @@ import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import { Spinner } from '@shared/ui/Spinner'
 import { notFound } from 'next/navigation'
 
-export default function ContactsList() {
+export default memo(function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
     const [deleteMode, setDeleteMode] = useState(false)
     const [selectedContacts, setSelectedContacts] =
@@ -438,22 +438,22 @@ export default function ContactsList() {
                                 </p>
                             </div>
                         )}
-                </CustomScrollbar>
-
-                {/* Блок пользователей А-чата */}
-                {filteredUsers &&
-                    filteredUsers.length > 0 && (
-                        <>
-                            <div
-                                className={`
+                    {/* Блок пользователей А-чата */}
+                    {filteredUsers &&
+                        filteredUsers.length > 0 && (
+                            <>
+                                <div
+                                    className={`
                                   flex h-9 w-full justify-center
                                   bg-accent-violet-ultra-light pt-2.5 pr-4
                                   pb-2.5 pl-4
                                 `}
-                            >
-                                <p>Пользователи А-чата</p>
-                            </div>
-                            <CustomScrollbar>
+                                >
+                                    <p>
+                                        Пользователи А-чата
+                                    </p>
+                                </div>
+
                                 {filteredUsers.map(
                                     (user) => (
                                         <ContactItem
@@ -482,9 +482,9 @@ export default function ContactsList() {
                                         />
                                     ),
                                 )}
-                            </CustomScrollbar>
-                        </>
-                    )}
+                            </>
+                        )}
+                </CustomScrollbar>
             </div>
 
             {/* Модальное окно для удаления контактов */}
@@ -512,4 +512,4 @@ export default function ContactsList() {
             />
         </>
     )
-}
+})

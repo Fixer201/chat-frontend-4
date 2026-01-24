@@ -6,6 +6,7 @@ import TrpcProvider from '@shared/api/trpc/provider'
 import AppShell from '@modules/core/components/AppShell'
 import { Spinner } from '@shared/ui/Spinner'
 import { NotFoundView } from '@modules/core/components/NotFoundView'
+import '@app/globals.css'
 
 export default function PrivateLayout({
     children,
