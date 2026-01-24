@@ -132,12 +132,6 @@ export default function ChatsListWrapper() {
                 contacts,
             ).unwrap()
 
-            console.log('✅ Группа создана в Redux:', {
-                id: result.chat.id,
-                name: result.chat.name,
-                type: result.chat.chatType,
-            })
-
             // Показываем успешное сообщение
             const memberNames = contacts
                 .map(
@@ -275,6 +269,7 @@ export default function ChatsListWrapper() {
                 <CreateGroupForm
                     onBack={handleBackFromCreateGroup}
                     onNext={handleNextFromCreateGroup}
+                    initialData={groupData}
                 />
             )
 
@@ -306,6 +301,7 @@ export default function ChatsListWrapper() {
                 <CreateChannelForm
                     onBack={handleBackFromCreateChannel}
                     onNext={handleNextFromCreateChannel}
+                    initialData={channelData}
                 />
             )
 

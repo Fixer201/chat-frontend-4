@@ -245,9 +245,7 @@ export default function ChatsList({
                 <div
                     className={cn(
                         'min-h-0 flex-1 overflow-auto',
-                        `
-                  max-h-(--screen-112)
-                `,
+                        `max-h-(--screen-112)`,
                     )}
                 >
                     {loading ? (
@@ -259,16 +257,16 @@ export default function ChatsList({
                     ) : showEmptySearchState ? (
                         <div
                             className={`
-                          flex flex-1 items-center justify-center p-4
-                        `}
+                              flex flex-1 items-center justify-center p-4
+                            `}
                         >
                             <EmptySearchState />
                         </div>
                     ) : showEmptyChatsState ? (
                         <div
                             className={`
-                          flex flex-1 items-center justify-center p-4
-                        `}
+                              flex flex-1 items-center justify-center p-4
+                            `}
                         >
                             <EmptyChatsState
                                 onStartChat={

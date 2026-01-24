@@ -89,8 +89,8 @@ export default function ChannelMembersList({
                 </Button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-extra-tight text-text-black
-                `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     Пригласить участников
                 </h2>

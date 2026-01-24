@@ -1,5 +1,6 @@
-// Форма создания нового канала (похожа на форму создания группы)
-import { useEffect, useMemo, useState } from 'react'
+'use client'
+
+import { useEffect, useMemo, useState, useRef } from 'react'
 import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
 import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
 import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
@@ -10,102 +11,158 @@ import {
     onNextProps,
 } from '@shared/types/createGroup'
 
-// Интерфейс пропсов компонента CreateChannelForm
 interface CreateChannelFormProps {
-    onBack: () => void // Обработчик возврата к предыдущему экрану
-    onNext: (data: onNextProps | string) => void // Обработчик перехода к следующему шагу
+    onBack: () => void
+    onNext: (data: onNextProps | string) => void
+    initialData: onNextProps | null
 }
 
-// Компонент формы создания нового канала (структурно идентичен CreateGroupForm)
-// Дублирование кода оправдано тем, что в будущем формы могут развиваться по-разному
+// Вынесем options за пределы компонента
+const channelOptions = [
+    {
+        value: 'public',
+        optionName: 'Публичный',
+        optionDescription: `Публичный канал можно найти через поиск. Подписаться на него может любой пользователь`,
+    },
+    {
+        value: 'private',
+        optionName: 'Частный',
+        optionDescription: `В частный канал можно попасть только по приглашению или пригласительной ссылке`,
+    },
+]
+
 export default function CreateChannelForm({
     onBack,
     onNext,
+    initialData,
 }: CreateChannelFormProps) {
-    // Состояние для файла аватарки канала
-    const [photoFile, setPhotoFile] = useState<File | null>(
-        null,
-    )
+    const isFirstRender = useRef(true)
 
-    // Мемоизированное значение для предпросмотра аватарки
-    const photoPreview = useMemo(
-        () =>
-            photoFile
-                ? URL.createObjectURL(photoFile) // Создаем Blob URL для отображения выбранного файла
-                : null,
-        [photoFile], // Пересчет только при изменении photoFile
-    )
-
-    // Эффект для очистки URL при размонтировании
-    // Важно для предотвращения утечек памяти в браузере
-    useEffect(() => {
-        return () => {
-            if (photoPreview)
-                URL.revokeObjectURL(photoPreview) // Освобождаем память от Blob URL
+    const getInitialOption = () => {
+        if (initialData?.type) {
+            const foundOption = channelOptions.find(
+                (option) =>
+                    option.value === initialData.type,
+            )
+            return (
+                foundOption || {
+                    value: '',
+                    optionName: '',
+                    optionDescription: '',
+                }
+            )
         }
-    }, [photoPreview]) // Зависимость от photoPreview
-
-    // Состояния для полей формы
-    const [name, setName] = useState('') // Название канала
-    const [description, setDescription] = useState('') // Описание канала
-
-    // Опции для выбора типа канала (отличаются от групповых)
-    // Значения 'public' и 'private' соответствуют бэкенд-логике
-    const options = [
-        {
-            value: 'public',
-            optionName: 'Публичный',
-            optionDescription: `Публичный канал можно найти через поиск. Подписаться на него может любой пользователь`,
-        },
-        {
-            value: 'private',
-            optionName: 'Частный',
-            optionDescription: `В частный канал можно попасть только по приглашению или пригласительной ссылке`,
-        },
-    ]
-
-    // Состояние для выбранного типа канала
-    const [choosenOption, setChoosenOption] =
-        useState<GroupTypeOptionProps>({
+        return {
             value: '',
             optionName: '',
             optionDescription: '',
-        })
+        }
+    }
 
-    // Обработчик изменения типа канала
+    const [photoFile, setPhotoFile] = useState<File | null>(
+        initialData?.photo || null,
+    )
+
+    const photoPreview = useMemo(
+        () =>
+            photoFile
+                ? URL.createObjectURL(photoFile)
+                : null,
+        [photoFile],
+    )
+
+    useEffect(() => {
+        return () => {
+            if (photoPreview)
+                URL.revokeObjectURL(photoPreview)
+        }
+    }, [photoPreview])
+
+    const [name, setName] = useState(
+        initialData?.name || '',
+    )
+    const [description, setDescription] = useState(
+        initialData?.description || '',
+    )
+    const [choosenOption, setChoosenOption] =
+        useState<GroupTypeOptionProps>(getInitialOption())
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false
+            return
+        }
+
+        console.log(
+            '🔄 Обновление формы канала из initialData:',
+            initialData,
+        )
+        if (initialData) {
+            const updateTimer = setTimeout(() => {
+                setName(initialData.name || '')
+                setDescription(
+                    initialData.description || '',
+                )
+
+                if (initialData.photo !== undefined) {
+                    setPhotoFile(initialData.photo)
+                }
+
+                if (initialData.type) {
+                    const foundOption = channelOptions.find(
+                        (option) =>
+                            option.value ===
+                            initialData.type,
+                    )
+                    if (foundOption) {
+                        setChoosenOption(foundOption)
+                    }
+                }
+            }, 0)
+
+            return () => clearTimeout(updateTimer)
+        } else {
+            const resetTimer = setTimeout(() => {
+                setName('')
+                setDescription('')
+                setPhotoFile(null)
+                setChoosenOption({
+                    value: '',
+                    optionName: '',
+                    optionDescription: '',
+                })
+            }, 0)
+
+            return () => clearTimeout(resetTimer)
+        }
+    }, [initialData])
+
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
-        setChoosenOption((prev) => ({ ...prev, ...option })) // Мерджим новое значение с текущим состоянием
+        setChoosenOption((prev) => ({ ...prev, ...option }))
     }
 
-    // Обработчик отправки формы
     const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault() // Предотвращаем перезагрузку страницы
+        e.preventDefault()
 
-        // Валидация обязательных полей
-        // Проверяем, что все поля заполнены (после удаления пробелов)
         if (
             !name.trim() ||
             !description.trim() ||
             !choosenOption.value
         )
-            return // Если какое-то поле пустое - не продолжаем
+            return
 
-        // Передаем данные родительскому компоненту
         onNext({
-            name: name.trim(), // Убираем лишние пробелы
+            name: name.trim(),
             description: description.trim(),
             type: choosenOption.value,
-            photo: photoFile, // Может быть null
+            photo: photoFile,
         })
     }
 
     return (
-        <div
-            className={`flex h-full flex-col rounded-md bg-gray-main`}
-        >
-            {/* Шапка формы с кнопкой назад и заголовком */}
+        <div className="flex h-full flex-col rounded-md bg-gray-main">
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -134,22 +191,19 @@ export default function CreateChannelForm({
                 </h2>
             </div>
 
-            {/* Основное содержимое формы */}
             <div className="flex flex-1 justify-center p-4">
                 <form
                     onSubmit={onSubmit}
                     className="w-full max-w-82 space-y-4"
                 >
-                    {/* Выбор аватарки канала */}
                     <div className="flex flex-col items-center">
                         <AvatarPicker
-                            src={photoPreview} // Blob URL или null
-                            name={name || 'Канал'} // Fallback название (опечатка, должно быть 'Канал')
-                            onFile={setPhotoFile} // Колбэк для обновления состояния файла
+                            src={photoPreview}
+                            name={name || 'Канал'}
+                            onFile={setPhotoFile}
                         />
                     </div>
 
-                    {/* Поля ввода названия и описания */}
                     <div className="w-full">
                         <div className="flex w-full flex-col">
                             <FloatingTextarea
@@ -181,19 +235,17 @@ export default function CreateChannelForm({
                         </div>
                     </div>
 
-                    {/* Выбор типа канала */}
                     <div>
                         <GroupTypeSelect
-                            selectLabel="Тип канала" // Отличается от "Тип группы"
+                            selectLabel="Тип канала"
                             value={choosenOption.value}
-                            options={options} // Другие опции для каналов
+                            options={channelOptions}
                             onChange={(option) =>
                                 handleChangeOption(option)
                             }
                         />
                     </div>
 
-                    {/* Кнопка отправки формы */}
                     <div className="flex justify-center">
                         <Button
                             type="submit"
