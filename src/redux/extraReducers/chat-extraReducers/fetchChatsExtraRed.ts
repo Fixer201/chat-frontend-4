@@ -1,4 +1,4 @@
-// Redux extraReducers для обработки асинхронной загрузки чатов
+// @redux/extraReducers/chat-extraReducers/fetchChatsExtraRed.ts
 import {
     createAsyncThunk,
     PayloadAction,
@@ -36,17 +36,13 @@ const createChatSettings = (apiChatItem: ApiChatItem) => ({
 })
 
 // Асинхронный thunk для загрузки чатов
-// createAsyncThunk автоматически создает action types: chats/fetchChats/pending, /fulfilled, /rejected
 export const fetchChats = createAsyncThunk(
-    'chats/fetchChats', // Префикс для action types
+    'chats/fetchChats',
     async (count: number = 15, { rejectWithValue }) => {
         try {
-            // Получаем моковые данные (в реальном приложении здесь был бы API-запрос)
-            // generateLocalMockChatItems создает массив тестовых данных для разработки
             const mockData =
                 generateLocalMockChatItems(count)
 
-            // Фильтруем валидные данные - убираем null/undefined значения
             const validData = mockData.filter(
                 (item): item is ApiChatItem =>
                     item !== null &&
@@ -55,14 +51,11 @@ export const fetchChats = createAsyncThunk(
                     item.chat !== undefined,
             )
 
-            // Трансформируем данные и добавляем настройки
             const transformedChats = validData.map(
                 (item) => {
-                    // Используем универсальную функцию трансформации
                     const transformedItem =
                         transformFromApi<ApiChatItem>(item)
 
-                    // Добавляем настройки чата
                     return {
                         ...transformedItem,
                         settings: createChatSettings(item),
@@ -70,11 +63,8 @@ export const fetchChats = createAsyncThunk(
                 },
             )
 
-            // Возвращаем трансформированные данные с настройками
             return transformedChats
         } catch {
-            // Обработка ошибок
-            // rejectWithValue позволяет передать кастомное значение при rejection
             return rejectWithValue(
                 'Не удалось загрузить чаты',
             )
@@ -83,19 +73,15 @@ export const fetchChats = createAsyncThunk(
 )
 
 // Обработчики для этого thunk (extraReducers)
-// Вынесены в отдельную функцию для лучшей организации кода и переиспользования
 export const handleFetchChats = (
-    builder: ActionReducerMapBuilder<ChatsState>, // Типизированный builder от Redux Toolkit
-    initialState: ChatsState, // Начальное состояние для сброса при ошибке
+    builder: ActionReducerMapBuilder<ChatsState>,
+    initialState: ChatsState,
 ) => {
     builder
-        // Обработка начала загрузки
-        // Устанавливаем loading: true и сбрасываем ошибку
         .addCase(fetchChats.pending, (state) => {
             state.loading = true
             state.error = null
         })
-        // Обработка успешной загрузки
         .addCase(
             fetchChats.fulfilled,
             (
@@ -106,14 +92,11 @@ export const handleFetchChats = (
             ) => {
                 state.loading = false
 
-                // Сохраняем загруженные чаты
                 state.items = action.payload.map((chat) => {
-                    // Извлекаем только данные чата без настроек
                     const { settings, ...chatData } = chat
                     return chatData
                 })
 
-                // Инициализируем настройки для каждого загруженного чата
                 action.payload.forEach((chat) => {
                     if (
                         chat.settings &&
@@ -125,10 +108,9 @@ export const handleFetchChats = (
                 })
             },
         )
-        // Обработка ошибки загрузки
         .addCase(fetchChats.rejected, (state, action) => {
             state.loading = false
-            state.error = action.payload as string // Сохраняем сообщение об ошибке
-            state.chatSettings = initialState.chatSettings // Сбрасываем настройки к начальному состоянию
+            state.error = action.payload as string
+            state.chatSettings = initialState.chatSettings
         })
 }

@@ -70,9 +70,9 @@ export default function ChannelMembersList({
             {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
-        flex items-center justify-start gap-3 rounded-t-md border-b
-        border-app-divider bg-gray-main px-6 py-4
-      `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <Button
                     onClick={onBack}
@@ -80,14 +80,18 @@ export default function ChannelMembersList({
                     variant="ghost"
                     size="sm"
                     className={`
-            flex items-center justify-center rounded-full text-text-black
-            transition-colors
-            hover:bg-accent-violet-ultra-light
-          `}
+                      flex items-center justify-center rounded-full
+                      text-text-black transition-colors
+                      hover:bg-accent-violet-ultra-light
+                    `}
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
                 </Button>
-                <h2 className="text-lg font-medium tracking-extra-tight text-text-black">
+                <h2
+                    className={`
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
+                >
                     Пригласить участников
                 </h2>
             </div>
@@ -105,11 +109,11 @@ export default function ChannelMembersList({
             <div
                 className={cn(
                     `
-            min-h-0 w-full flex-1 rounded-md border border-app-divider
-            bg-gray-main
-            md:w-80
-            lg:w-96
-          `,
+                      min-h-0 w-full flex-1 rounded-md border border-app-divider
+                      bg-gray-main
+                      md:w-80
+                      lg:w-96
+                    `,
                     'max-h-(--screen-height-list)',
                 )}
             >
@@ -134,9 +138,9 @@ export default function ChannelMembersList({
                     variant="solid"
                     size="md"
                     className={`
-            h-14 w-full max-w-82 rounded-md
-            disabled:cursor-not-allowed disabled:opacity-50
-          `}
+                      h-14 w-full max-w-82 rounded-md
+                      disabled:cursor-not-allowed disabled:opacity-50
+                    `}
                 >
                     {isCreating ? (
                         <span className="flex items-center gap-2">

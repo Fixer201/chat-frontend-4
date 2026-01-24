@@ -1,8 +1,15 @@
 // @redux/extraReducers/chat-extraReducers/createChatExtraRed.ts
-import { createAsyncThunk } from '@reduxjs/toolkit'
+import {
+    createAsyncThunk,
+    ActionReducerMapBuilder,
+} from '@reduxjs/toolkit'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
 import { transformFromApi } from '@shared/lib/transformChatData'
-import { ApiChatItem, ChatItem } from '@shared/types/chat'
+import {
+    ApiChatItem,
+    ChatItem,
+    ChatsState,
+} from '@shared/types/chat'
 import { Contact } from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
 
@@ -312,3 +319,119 @@ export const createChannel = createAsyncThunk<
         }
     },
 )
+
+// Обработчики для createGroup и createChannel (вынесены из слайса)
+export const handleCreateChat = (
+    builder: ActionReducerMapBuilder<ChatsState>,
+) => {
+    builder
+        .addCase(createGroup.pending, (state) => {
+            state.loading = true
+            state.error = null
+        })
+        .addCase(createGroup.fulfilled, (state, action) => {
+            state.loading = false
+            state.error = null
+
+            // Проверяем, нет ли уже чата с таким ID
+            const existingIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+
+            if (existingIndex === -1) {
+                // Добавляем созданную группу в начало списка
+                state.items.unshift(action.payload.chat)
+            } else {
+                // Если уже есть, обновляем
+                state.items[existingIndex] =
+                    action.payload.chat
+            }
+
+            // Добавляем настройки для группы
+            if (
+                !state.chatSettings[action.payload.chat.id]
+            ) {
+                state.chatSettings[action.payload.chat.id] =
+                    action.payload.settings
+            } else {
+                console.log(
+                    '⚙️ Настройки группы уже существуют',
+                )
+            }
+
+            // Обновляем настройки в объекте чата для совместимости
+            const chatIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    action.payload.settings
+            }
+
+            // Автоматически выбираем созданную группу
+            state.selectedChatId = action.payload.chat.id
+        })
+        .addCase(createGroup.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload as string
+        })
+        .addCase(createChannel.pending, (state) => {
+            state.loading = true
+            state.error = null
+        })
+        .addCase(
+            createChannel.fulfilled,
+            (state, action) => {
+                state.loading = false
+                state.error = null
+
+                const existingIndex = state.items.findIndex(
+                    (chat) =>
+                        chat.id === action.payload.chat.id,
+                )
+
+                if (existingIndex === -1) {
+                    state.items.unshift(action.payload.chat)
+                    console.log('📥 Канал добавлен в items')
+                } else {
+                    state.items[existingIndex] =
+                        action.payload.chat
+                }
+
+                if (
+                    !state.chatSettings[
+                        action.payload.chat.id
+                    ]
+                ) {
+                    state.chatSettings[
+                        action.payload.chat.id
+                    ] = action.payload.settings
+                } else {
+                    console.log(
+                        '⚙️ Настройки канала уже существуют',
+                    )
+                }
+
+                const chatIndex = state.items.findIndex(
+                    (chat) =>
+                        chat.id === action.payload.chat.id,
+                )
+                if (chatIndex !== -1) {
+                    state.items[chatIndex].settings =
+                        action.payload.settings
+                }
+
+                state.selectedChatId =
+                    action.payload.chat.id
+            },
+        )
+        .addCase(
+            createChannel.rejected,
+            (state, action) => {
+                state.loading = false
+                state.error = action.payload as string
+            },
+        )
+}

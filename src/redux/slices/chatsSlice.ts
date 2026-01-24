@@ -1,8 +1,7 @@
-// @redux/slices/chatsSlice.ts - добавим логирование в обработчики
+// @redux/slices/chatsSlice.ts
 import {
     createSlice,
     PayloadAction,
-    ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
 import {
     ChatItem,
@@ -16,6 +15,7 @@ import {
 import {
     createGroup,
     createChannel,
+    handleCreateChat,
 } from '@redux/extraReducers/chat-extraReducers/createChatExtraRed'
 
 const initialState: ChatsState = {
@@ -35,197 +35,6 @@ const getDefaultSettings = (
     isDeleted: false,
     originalUnreadCount: chat?.newMessageCount || 0,
 })
-
-// Обработчики для createGroup и createChannel
-const handleCreateChat = (
-    builder: ActionReducerMapBuilder<ChatsState>,
-) => {
-    builder
-        .addCase(createGroup.pending, (state) => {
-            state.loading = true
-            state.error = null
-            console.log('🔄 Redux: createGroup.pending')
-        })
-        .addCase(createGroup.fulfilled, (state, action) => {
-            state.loading = false
-            state.error = null
-
-            console.log('✅ Redux: createGroup.fulfilled', {
-                chatId: action.payload.chat.id,
-                name: action.payload.chat.name,
-                type: action.payload.chat.chatType,
-                currentItemsCount: state.items.length,
-                settings: action.payload.settings,
-            })
-
-            // Проверяем, нет ли уже чата с таким ID
-            const existingIndex = state.items.findIndex(
-                (chat) =>
-                    chat.id === action.payload.chat.id,
-            )
-
-            if (existingIndex === -1) {
-                // Добавляем созданную группу в начало списка
-                state.items.unshift(action.payload.chat)
-                console.log('📥 Группа добавлена в items')
-            } else {
-                // Если уже есть, обновляем
-                state.items[existingIndex] =
-                    action.payload.chat
-                console.log(
-                    '⚠️ Группа уже существует, обновлена',
-                )
-            }
-
-            // Добавляем настройки для группы
-            if (
-                !state.chatSettings[action.payload.chat.id]
-            ) {
-                state.chatSettings[action.payload.chat.id] =
-                    action.payload.settings
-                console.log(
-                    '⚙️ Настройки группы добавлены в chatSettings',
-                )
-            } else {
-                console.log(
-                    '⚙️ Настройки группы уже существуют',
-                )
-            }
-
-            // Обновляем настройки в объекте чата для совместимости
-            const chatIndex = state.items.findIndex(
-                (chat) =>
-                    chat.id === action.payload.chat.id,
-            )
-            if (chatIndex !== -1) {
-                state.items[chatIndex].settings =
-                    action.payload.settings
-                console.log(
-                    '📝 Настройки добавлены в объект чата',
-                )
-            }
-
-            // Автоматически выбираем созданную группу
-            state.selectedChatId = action.payload.chat.id
-            console.log(
-                '🎯 Группа выбрана, ID:',
-                action.payload.chat.id,
-            )
-
-            console.log('📊 Итоговое состояние:', {
-                itemsCount: state.items.length,
-                chatSettingsCount: Object.keys(
-                    state.chatSettings,
-                ).length,
-                selectedChatId: state.selectedChatId,
-            })
-        })
-        .addCase(createGroup.rejected, (state, action) => {
-            state.loading = false
-            state.error = action.payload as string
-            console.error(
-                '❌ Redux: createGroup.rejected:',
-                action.payload,
-            )
-        })
-
-    builder
-        .addCase(createChannel.pending, (state) => {
-            state.loading = true
-            state.error = null
-            console.log('🔄 Redux: createChannel.pending')
-        })
-        .addCase(
-            createChannel.fulfilled,
-            (state, action) => {
-                state.loading = false
-                state.error = null
-
-                console.log(
-                    '✅ Redux: createChannel.fulfilled',
-                    {
-                        chatId: action.payload.chat.id,
-                        name: action.payload.chat.name,
-                        type: action.payload.chat.chatType,
-                        currentItemsCount:
-                            state.items.length,
-                        settings: action.payload.settings,
-                    },
-                )
-
-                const existingIndex = state.items.findIndex(
-                    (chat) =>
-                        chat.id === action.payload.chat.id,
-                )
-
-                if (existingIndex === -1) {
-                    state.items.unshift(action.payload.chat)
-                    console.log('📥 Канал добавлен в items')
-                } else {
-                    state.items[existingIndex] =
-                        action.payload.chat
-                    console.log(
-                        '⚠️ Канал уже существует, обновлен',
-                    )
-                }
-
-                if (
-                    !state.chatSettings[
-                        action.payload.chat.id
-                    ]
-                ) {
-                    state.chatSettings[
-                        action.payload.chat.id
-                    ] = action.payload.settings
-                    console.log(
-                        '⚙️ Настройки канала добавлены в chatSettings',
-                    )
-                } else {
-                    console.log(
-                        '⚙️ Настройки канала уже существуют',
-                    )
-                }
-
-                const chatIndex = state.items.findIndex(
-                    (chat) =>
-                        chat.id === action.payload.chat.id,
-                )
-                if (chatIndex !== -1) {
-                    state.items[chatIndex].settings =
-                        action.payload.settings
-                    console.log(
-                        '📝 Настройки добавлены в объект чата',
-                    )
-                }
-
-                state.selectedChatId =
-                    action.payload.chat.id
-                console.log(
-                    '🎯 Канал выбран, ID:',
-                    action.payload.chat.id,
-                )
-
-                console.log('📊 Итоговое состояние:', {
-                    itemsCount: state.items.length,
-                    chatSettingsCount: Object.keys(
-                        state.chatSettings,
-                    ).length,
-                    selectedChatId: state.selectedChatId,
-                })
-            },
-        )
-        .addCase(
-            createChannel.rejected,
-            (state, action) => {
-                state.loading = false
-                state.error = action.payload as string
-                console.error(
-                    '❌ Redux: createChannel.rejected:',
-                    action.payload,
-                )
-            },
-        )
-}
 
 const chatsSlice = createSlice({
     name: 'chats',
@@ -455,7 +264,6 @@ const chatsSlice = createSlice({
         resetChatSettings: (state) => {
             state.chatSettings = {}
         },
-
         addChat: (
             state,
             action: PayloadAction<ChatItem>,
@@ -470,8 +278,6 @@ const chatsSlice = createSlice({
                 state.items[existingIndex] = action.payload
             }
         },
-
-        // Добавим reducer для отладки - вывод состояния
         debugState: (state) => {
             console.log('🐛 Redux Debug State:', {
                 itemsCount: state.items.length,
@@ -489,6 +295,7 @@ const chatsSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
+        // Используем вынесенные обработчики
         handleFetchChats(builder, initialState)
         handleCreateChat(builder)
     },
@@ -507,6 +314,6 @@ export const {
     addToContacts,
     resetChatSettings,
     addChat,
-    debugState, // Экспортируем новый action
+    debugState,
 } = chatsSlice.actions
 export default chatsSlice.reducer
