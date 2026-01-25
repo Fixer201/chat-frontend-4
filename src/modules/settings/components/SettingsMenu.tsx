@@ -4,7 +4,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 
 import ForwardIcon from '@public/icons/settings-sidebar/Forward.svg'
@@ -16,6 +16,7 @@ import DeleteIcon from '@public/icons/settings-sidebar/Delete.svg'
 
 import { cn } from '@shared/lib/utils'
 import { useDisclosure } from '@shared/hooks/useDisclosure'
+import { useProfile } from '@shared/hooks/useProfile'
 import Modal from '@shared/ui/modal/Modal'
 
 import EditProfileForm from './EditProfileForm'
@@ -39,9 +40,20 @@ const menuItems = [
     },
 ]
 
+// Запасной аватар — когда нет никакой картинки от бекенда
+const DEFAULT_AVATAR_SRC =
+    '/images/chatHeader/userAvatar.svg'
+
 export default function SettingsMenu() {
     const router = useRouter()
     const pathname = usePathname()
+    const { profile, loading } = useProfile()
+    // Локальные стейты для удаления аккаунта (мягкое удаление через бэк)
+    const [deleteError, setDeleteError] = useState<
+        string | null
+    >(null)
+    const [deleteLoading, setDeleteLoading] =
+        useState(false)
     const {
         isOpen: isLogoutModalOpen,
         onOpen: openLogoutModal,
@@ -61,10 +73,133 @@ export default function SettingsMenu() {
         closeLogoutModal()
     }, [closeLogoutModal, router])
 
-    const handleDeleteConfirm = useCallback(() => {
-        // TODO: integrate delete profile flow when backend is ready
-        closeDeleteModal()
-    }, [closeDeleteModal])
+    // Удаление профиля: шлём DELETE на прокси, чистим токены и редиректим
+    // Подтверждение удаления профиля: мягкое удаление на бэке + чистка токенов
+    const handleDeleteConfirm = useCallback(async () => {
+        if (deleteLoading) return
+
+        const accessToken = Cookies.get('access_token')
+        const targetUid =
+            (profile as { uid?: string })?.uid ||
+            (profile as { id?: number })?.id
+
+        if (!targetUid) {
+            setDeleteError(
+                'Нет идентификатора пользователя',
+            )
+            return
+        }
+
+        setDeleteError(null)
+        setDeleteLoading(true)
+
+        try {
+            // Бьём в наш Next.js API-роут, который проксирует запрос на реальный бэк
+            const response = await fetch(
+                `/api/auth/profile/${targetUid}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: accessToken
+                            ? `Bearer ${accessToken}`
+                            : '',
+                    },
+                },
+            )
+
+            // Ответ может быть пустым — читаем текст, а потом пробуем распарсить как JSON
+            const rawText = await response.text()
+            let data: Record<string, unknown> = {}
+            try {
+                data = rawText ? JSON.parse(rawText) : {}
+            } catch (e) {
+                console.warn(
+                    'Delete profile: response is not JSON',
+                    rawText,
+                    e,
+                )
+            }
+
+            // Любой не-2xx — показываем сообщение пользователю
+            if (!response.ok) {
+                const message =
+                    (data?.detail as string) ||
+                    (data?.error as string) ||
+                    `Ошибка удаления ${response.status}`
+                setDeleteError(message)
+                return
+            }
+
+            // Soft delete done: clear tokens and redirect
+            Cookies.remove('access_token')
+            Cookies.remove('refresh_token')
+            closeDeleteModal()
+            router.push('/auth/register')
+        } catch (err) {
+            console.error('Delete profile error', err)
+            setDeleteError('Ошибка сети при удалении')
+        } finally {
+            setDeleteLoading(false)
+        }
+    }, [closeDeleteModal, deleteLoading, profile, router])
+
+    useEffect(() => {
+        if (profile) {
+            console.log('Settings profile data:', profile)
+        }
+    }, [profile])
+
+    const displayName = [
+        profile?.first_name,
+        profile?.last_name,
+    ]
+        .filter(Boolean)
+        .join(' ')
+
+    const displayPhone = profile?.phone ?? ''
+
+    const displayNickname = profile?.nickname
+        ? `@${profile.nickname}`
+        : ''
+
+    const isProfilePending = loading && !profile
+
+    // Приоритеты аватарки: прямой URL от бекенда > avatar_webp_url > avatar (ссылку или путь дополняем корнем)
+    const profileAvatarSrc = (() => {
+        if (!profile) return null
+
+        const directUrl =
+            (
+                profile as {
+                    avatar_url?: string
+                    avatar_webp_url?: string
+                }
+            ).avatar_url ||
+            (
+                profile as {
+                    avatar_url?: string
+                    avatar_webp_url?: string
+                }
+            ).avatar_webp_url
+        if (directUrl) return directUrl as string
+
+        const rawAvatar = (
+            profile as {
+                avatar?: string
+            }
+        ).avatar as string | undefined
+        if (rawAvatar) {
+            if (rawAvatar.startsWith('http')) {
+                return rawAvatar
+            }
+            if (rawAvatar.startsWith('/')) {
+                return rawAvatar
+            }
+            return `/${rawAvatar}`
+        }
+
+        return null
+    })()
     const asideClass = cn(
         'h-11/12 w-full rounded-md border border-app-divider bg-gray-main',
         'md:w-80',
@@ -86,7 +221,6 @@ export default function SettingsMenu() {
             </aside>
         )
     }
-
     return (
         <aside className={asideClass}>
             <div className="flex h-full w-full flex-col rounded-md bg-gray-main">
@@ -115,10 +249,15 @@ export default function SettingsMenu() {
                             `}
                         >
                             <Image
-                                src="/images/chatHeader/userAvatar.svg"
+                                src={
+                                    profileAvatarSrc ||
+                                    DEFAULT_AVATAR_SRC
+                                }
                                 alt="Аватар пользователя"
                                 width={80}
                                 height={80}
+                                className="h-full w-full object-cover"
+                                unoptimized
                             />
                         </div>
                         <div className="flex flex-col">
@@ -128,13 +267,19 @@ export default function SettingsMenu() {
                                   text-text-black
                                 `}
                             >
-                                Сергей Иванов
+                                {isProfilePending
+                                    ? 'Загрузка...'
+                                    : displayName}
                             </span>
                             <span className="text-sm text-text-black">
-                                +7 921 7797979
+                                {isProfilePending
+                                    ? '—'
+                                    : displayPhone}
                             </span>
                             <span className="text-sm text-text-black">
-                                @bond777
+                                {isProfilePending
+                                    ? '—'
+                                    : displayNickname}
                             </span>
                         </div>
                     </div>
@@ -238,12 +383,17 @@ export default function SettingsMenu() {
                 onClose={closeDeleteModal}
                 title="Удаление профиля"
                 titleAlign="left"
-                description="Это действие необратимо. Все данные будут удалены без возможности восстановления."
+                description={
+                    deleteError ??
+                    'Это действие необратимо. Все данные будут удалены без возможности восстановления.'
+                }
                 descriptionColor="muted"
                 blurBackground
                 buttons={[
                     {
-                        label: 'Удалить',
+                        label: deleteLoading
+                            ? 'Удаление...'
+                            : 'Удалить',
                         variant: 'ghost',
                         color: 'danger',
                         onClick: handleDeleteConfirm,
@@ -252,7 +402,7 @@ export default function SettingsMenu() {
                         label: 'Отмена',
                         variant: 'solid',
                         color: 'primary',
-                        onClick: handleLogoutConfirm,
+                        onClick: closeDeleteModal,
                     },
                 ]}
             />
