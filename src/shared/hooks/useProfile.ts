@@ -74,7 +74,33 @@ async function refreshAccessToken() {
     return null
 }
 
+// Единая точка, которая следит за валидностью токена: шлём запрос с текущим access,
+// при 401 пытаемся обновить и повторяем один раз. Возвращаем финальный Response.
+async function fetchProfileWithTokenCheck() {
+    const initialToken = Cookies.get('access_token')
+
+    let response = await getWithAuth(
+        '/api/auth/profile',
+        initialToken,
+    )
+
+    if (response.status === 401) {
+        const refreshed = await refreshAccessToken()
+        if (refreshed) {
+            response = await getWithAuth(
+                '/api/auth/profile',
+                refreshed,
+            )
+        }
+    }
+
+    return response
+}
+
 export function useProfile(): ProfileState {
+    // Контракт хука: отдаёт профиль, флаги загрузки/ошибок и refetch.
+    // Стратегия: (1) мгновенно пробуем взять кеш из localStorage; (2) в фоне тянем актуальные
+    // данные с бэка с обновлением токена при 401; (3) кешируем свежий ответ для следующих заходов.
     const [profile, setProfile] =
         useState<UserProfile | null>(null)
     const [loading, setLoading] = useState(true)
@@ -105,23 +131,9 @@ export function useProfile(): ProfileState {
         setError(null)
 
         try {
-            // Берём токен из cookies. Если его нет, пытаемся получить новый через refresh ниже.
-            const accessToken = Cookies.get('access_token')
-            let response = await getWithAuth(
-                '/api/auth/profile',
-                accessToken,
-            )
-
-            // Если токен протух — обновляем и повторяем запрос один раз.
-            if (response.status === 401) {
-                const refreshed = await refreshAccessToken()
-                if (refreshed) {
-                    response = await getWithAuth(
-                        '/api/auth/profile',
-                        refreshed,
-                    )
-                }
-            }
+            // Запрашиваем профиль через helper, который сам обновит токен при 401
+            const response =
+                await fetchProfileWithTokenCheck()
 
             // Логическая ошибка (403/404/500 и т.п.) — показываем пользователю и чистим стейт.
             if (!response.ok) {
@@ -159,6 +171,7 @@ export function useProfile(): ProfileState {
     }, [])
 
     useEffect(() => {
+        // Сначала пытаемся отрисовать из кеша, затем подтягиваем актуальные данные из сети
         hydrateFromCache()
         void fetchProfile()
     }, [fetchProfile, hydrateFromCache])
