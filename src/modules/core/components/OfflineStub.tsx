@@ -2,10 +2,12 @@
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import '@app/globals.css'
+import { useRouter } from 'next/navigation'
 
 export function OfflineStub() {
+    const router = useRouter()
     const handleReloadClick = () => {
-        window.location.reload() // Перезагружает страницу, чтобы проверить соединение
+        router.refresh() // Перезагружает страницу, чтобы проверить соединение
     }
 
     return (

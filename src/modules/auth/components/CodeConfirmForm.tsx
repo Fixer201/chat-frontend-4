@@ -308,7 +308,7 @@ export default function CodeConfirmForm({
                                     )}
                                 </div>
                                 {error && (
-                                    <span className="text-red-500">
+                                    <span className="text-(--color-system-red)">
                                         {error}
                                     </span>
                                 )}

@@ -19,7 +19,6 @@ export function NotFoundView() {
                 width={486}
                 height={368}
                 loading="eager"
-                objectFit="contain"
             />
             <div className="mt-8 flex flex-col items-center gap-6">
                 <span className="text-center text-lg text-text-black">
