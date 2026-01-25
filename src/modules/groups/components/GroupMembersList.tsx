@@ -75,9 +75,9 @@ export default function GroupMembersList({
             {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
-              flex items-center justify-start gap-3 rounded-t-md border-b
-              border-app-divider bg-gray-main px-6 py-4
-            `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <Button
                     onClick={onBack}
@@ -94,8 +94,8 @@ export default function GroupMembersList({
                 </Button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-extra-tight text-text-black
-                `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     Пригласить участников
                 </h2>
@@ -103,8 +103,8 @@ export default function GroupMembersList({
 
             {/* Отображение ошибки создания группы */}
             {error && (
-                <div className="mx-4 mt-4 rounded-md bg-red-50 p-3">
-                    <p className="text-sm text-red-800">
+                <div className="mx-4 mt-4 rounded-md bg-system-red-surface p-3">
+                    <p className="text-sm text-system-red">
                         {error}
                     </p>
                 </div>

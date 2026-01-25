@@ -175,9 +175,9 @@ export default function CreateGroupForm({
         <div className="flex h-full flex-col rounded-md bg-gray-main">
             <div
                 className={`
-              flex items-center justify-start gap-3 rounded-t-md border-b
-              border-app-divider bg-gray-main px-6 py-4
-            `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <Button
                     onClick={onBack}
@@ -194,8 +194,8 @@ export default function CreateGroupForm({
                 </Button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-extra-tight text-text-black
-                `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     Создать группу
                 </h2>
