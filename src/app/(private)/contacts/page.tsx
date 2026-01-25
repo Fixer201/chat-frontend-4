@@ -1,5 +1,5 @@
-import ContactRoom from '@modules/contacts/components/ContactRoom'
 import ContactsList from '@modules/contacts/components/ContactsList'
+import EmptyContactsState from '@modules/contacts/components/EmptyContactsState'
 
 export default function ContactsPage() {
     return (
@@ -7,8 +7,8 @@ export default function ContactsPage() {
             {/* Левая колонка - список контактов */}
             <div
                 className={`
-                  h-11/12 w-full rounded-md border border-app-divider
-                  bg-gray-main
+                  h-(--screen-height-list) w-full overflow-hidden rounded-md
+                  border border-app-divider bg-gray-main
                   md:w-80
                   lg:w-96
                 `}
@@ -19,12 +19,13 @@ export default function ContactsPage() {
             {/* Правая колонка - пустой state (скрыт на mobile) */}
             <div
                 className={`
-                  hidden h-11/12 flex-1 rounded-md border border-app-divider
+                  hidden h-(--screen-height-list) flex-1 rounded-md border
+                  border-app-divider
                   md:block
                 `}
             >
-                {/* <EmptyChatState /> по умолчанию когда чат не выбран. Сейчас временно будет сразу отображаться чат */}
-                <ContactRoom />
+                <EmptyContactsState />
+                {/* <ChatRoom /> */}
             </div>
         </div>
     )

@@ -2,18 +2,18 @@
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 
 interface RegisterFormProps {
     phoneNumber: string
     onSubmit: (data: {
         name: string
         nickname: string
-    }) => void
+    }) => Promise<void>
     onBack: () => void
 }
 
-export default function RegisterForm({
+const RegisterForm = memo(function RegisterForm({
     onSubmit,
     onBack,
 }: RegisterFormProps) {
@@ -23,11 +23,15 @@ export default function RegisterForm({
     const [nicknameError, setNicknameError] = useState('')
     const [nicknameUniqueError, setNicknameUniqueError] =
         useState('')
+    const [isServerError, setIsServerError] =
+        useState(false) // Флаг для ошибки от сервера
     const [debouncedNickname, setDebouncedNickname] =
         useState('')
+    const [lastCheckedNickname, setLastCheckedNickname] =
+        useState('') // Для отслеживания последнего проверенного nickname
     const nameValidationRegex = /^[а-яА-Яa-zA-Z\s\-]*$/
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const nicknameValidationRegex = /^[a-zA-Z0-9._]*$/
+    const nicknameValidationRegex = /^[а-яА-Яa-zA-Z0-9._]*$/
 
     // Debouncing для nickname
     useEffect(() => {
@@ -41,7 +45,10 @@ export default function RegisterForm({
     useEffect(() => {
         if (
             debouncedNickname &&
-            nicknameValidationRegex.test(debouncedNickname)
+            nicknameValidationRegex.test(
+                debouncedNickname,
+            ) &&
+            debouncedNickname !== lastCheckedNickname
         ) {
             const checkUnique = async () => {
                 try {
@@ -52,26 +59,27 @@ export default function RegisterForm({
                         response.ok ||
                         response.status === 400
                     ) {
-                        // Обрабатываем 200 OK и 400 Bad Request одинаково: парсим тело на ошибки
                         const data = await response.json()
                         if (
                             data.nickname &&
                             Array.isArray(data.nickname) &&
                             data.nickname.length > 0
                         ) {
-                            // Устанавливаем ошибку на основе ответа бэка (первое сообщение из массива)
-                            // Или жестко задаём ваше сообщение, если хотите унифицировать
                             setNicknameUniqueError(
-                                'данный никнейм занят другим пользователем',
+                                'Этот никнейм занят другим пользователем',
                             )
                         } else {
-                            // Если ошибок нет, сбрасываем
-                            setNicknameUniqueError('')
+                            setNicknameUniqueError('') // Сбрасываем ошибку только если уникален
                         }
+                        setLastCheckedNickname(
+                            debouncedNickname,
+                        ) // Обновляем последний проверенный
                     } else {
-                        // Для других не-OK статусов (например, 500)
                         setNicknameUniqueError(
                             'Не удалось проверить уникальность никнейма',
+                        )
+                        setLastCheckedNickname(
+                            debouncedNickname,
                         )
                     }
                 } catch (error) {
@@ -82,53 +90,99 @@ export default function RegisterForm({
                     setNicknameUniqueError(
                         'Не удалось проверить уникальность никнейма',
                     )
+                    setLastCheckedNickname(
+                        debouncedNickname,
+                    )
                 }
             }
             checkUnique()
-        } else {
-            setNicknameUniqueError('')
         }
-    }, [debouncedNickname, nicknameValidationRegex])
+    }, [
+        debouncedNickname,
+        nicknameValidationRegex,
+        lastCheckedNickname,
+    ])
+
+    const validateInput = (
+        value: string,
+        regex: RegExp,
+        maxLength: number,
+        errorMsg: string,
+    ): string => {
+        if (value.length > maxLength) return ''
+        return regex.test(value) ? '' : errorMsg
+    }
 
     const handleNameChange = (
         e: React.ChangeEvent<HTMLInputElement>,
     ) => {
         const value = e.target.value
-        if (value.length > 30) return
-        if (nameValidationRegex.test(value)) {
-            setName(value)
-            setNameError('')
-        } else {
-            setNameError(
-                'используйте только буквы, пробел или тире',
-            )
-        }
+        const error = validateInput(
+            value,
+            nameValidationRegex,
+            30,
+            'Используйте только буквы, пробел или тире',
+        )
+        setName(value)
+        setNameError(error)
     }
 
     const handleNicknameChange = (
         e: React.ChangeEvent<HTMLInputElement>,
     ) => {
         const value = e.target.value
-        if (value.length > 30) return
-        if (nicknameValidationRegex.test(value)) {
-            setNickname(value)
-            setNicknameError('')
-        } else {
-            setNicknameError(
-                'используйте только буквы, цифры, точку или подчеркивание',
-            )
+        const error = validateInput(
+            value,
+            nicknameValidationRegex,
+            30,
+            'Используйте только буквы, цифры, точку или подчеркивание',
+        )
+        setNickname(value)
+        setNicknameError(error)
+        setNicknameUniqueError('')
+
+        if (isServerError) {
+            setIsServerError(false)
         }
     }
 
-    const handleSubmit = () => {
-        if (
-            name &&
-            nickname &&
-            !nameError &&
-            !nicknameError &&
-            !nicknameUniqueError
+    const handleSubmit = async () => {
+        let hasErrors = false
+        if (!name.trim()) {
+            setNameError('Заполните поле')
+            hasErrors = true
+        } else if (!nameValidationRegex.test(name)) {
+            setNameError(
+                'Используйте только буквы, пробел или тире',
+            )
+            hasErrors = true
+        }
+        if (!nickname.trim()) {
+            setNicknameError('Заполните поле')
+            hasErrors = true
+        } else if (
+            !nicknameValidationRegex.test(nickname)
         ) {
-            onSubmit({ name, nickname })
+            setNicknameError(
+                'Используйте только буквы, цифры, точку или подчеркивание',
+            )
+            hasErrors = true
+        }
+        if (nicknameUniqueError) {
+            hasErrors = true
+        }
+        if (!hasErrors) {
+            try {
+                await onSubmit({ name, nickname })
+            } catch (error: unknown) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Неизвестная ошибка'
+                // Устанавливаем ошибку от сервера
+                setIsServerError(true)
+                setNicknameUniqueError(errorMessage)
+            }
         }
     }
 
@@ -142,6 +196,10 @@ export default function RegisterForm({
             setNicknameError('Заполните поле')
         }
     }
+
+    // const handleDownload = () => {
+    //     window.open('/contract.docx', '_blank');
+    // };
 
     return (
         <div className="flex min-h-screen items-center justify-center">
@@ -245,7 +303,6 @@ export default function RegisterForm({
                                             : 'gray'
                                     }
                                     labelColor={
-                                        // Новый проп: красный если ошибка
                                         nameError
                                             ? 'red'
                                             : 'gray'
@@ -280,7 +337,6 @@ export default function RegisterForm({
                                             : 'gray'
                                     }
                                     labelColor={
-                                        // Новый проп: красный если ошибка
                                         nicknameUniqueError ||
                                         nicknameError
                                             ? 'red'
@@ -332,4 +388,6 @@ export default function RegisterForm({
             </div>
         </div>
     )
-}
+})
+
+export default RegisterForm

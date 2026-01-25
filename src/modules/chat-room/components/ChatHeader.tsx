@@ -1,13 +1,25 @@
 import Image from 'next/image'
 import { ChatItem } from '@shared/types/chat'
-import { formatLastSeen } from '@shared/lib/formatLastSeen'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
+import { useEffect, useState } from 'react'
+import { getStatusText } from '@shared/lib/getStatusText'
 
 export default function ChatHeader({
     chat,
 }: Readonly<{
     chat: ChatItem
 }>) {
+    const [secondaryText, setSecondaryText] = useState('')
+    useEffect(() => {
+        // Вычисляем secondaryText на клиенте после гидрации для избежания mismatch.
+        // getStatusText() использует getContactWebStatus(), который зависит от new Date(),
+        // поэтому значение будет разным на сервере (SSR) и клиенте.
+        // useEffect гарантирует, что вычисление происходит ТОЛЬКО после гидрации.
+        const text = getStatusText(chat.chat, '')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSecondaryText(text)
+    }, [chat])
+
     return (
         <section
             className={`
@@ -16,7 +28,6 @@ export default function ChatHeader({
         >
             <div className="flex items-center justify-between">
                 <div className="flex flex-row items-center gap-4">
-                    {/* User Icon */}
                     <Image
                         src={getAvatarSrc(chat.chat)}
                         width={40}
@@ -37,9 +48,7 @@ export default function ChatHeader({
                             {chat.chat.lastName}
                         </h2>
                         <p className="text-sm text-text-gray">
-                            {formatLastSeen(
-                                chat.lastActivityAt * 1000,
-                            ) || 'был(а) давно'}
+                            {secondaryText}
                         </p>
                     </div>
                 </div>

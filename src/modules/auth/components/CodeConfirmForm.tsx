@@ -308,7 +308,7 @@ export default function CodeConfirmForm({
                                     )}
                                 </div>
                                 {error && (
-                                    <span className="text-red-500">
+                                    <span className="text-(--color-system-red)">
                                         {error}
                                     </span>
                                 )}
@@ -332,7 +332,7 @@ export default function CodeConfirmForm({
                                 {canResend && (
                                     <div className="flex flex-col items-center gap-2">
                                         <span
-                                            className="cursor-pointer text-center text-lg font-bold text-red-500"
+                                            className="cursor-pointer text-center text-lg font-bold text-(--color-system-red)"
                                             onClick={
                                                 handleResendCode
                                             }

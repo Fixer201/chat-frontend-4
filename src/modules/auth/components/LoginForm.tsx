@@ -263,13 +263,15 @@ export default function LoginForm() {
             if (response.ok) {
                 setShowSuccessRegister(true) // показать SuccessRegister
             } else {
-                setError(
-                    'Ошибка регистрации. Попробуйте позже.',
-                )
+                const errorMessage =
+                    responseData.nickname?.[0] ||
+                    'Ошибка регистрации. Попробуйте позже.'
+                throw new Error(errorMessage)
             }
         } catch (err) {
-            setError('Ошибка сети. Проверьте подключение.')
-            console.error('Profile error:', err)
+            // setError('Ошибка сети. Проверьте подключение.')
+            // console.error('Profile error:', err)
+            throw err
         } finally {
             setLoading(false)
         }

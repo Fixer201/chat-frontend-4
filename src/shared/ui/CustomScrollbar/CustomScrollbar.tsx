@@ -111,6 +111,7 @@ export function CustomScrollbar({
         // Вычисляем смещение мыши от начальной точки
         const deltaY = e.clientY - startYRef.current
         const containerHeight = container.clientHeight
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const thumbHeight =
             thumbRef.current?.clientHeight || 20
 
