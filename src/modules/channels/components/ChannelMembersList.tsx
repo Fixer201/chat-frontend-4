@@ -1,6 +1,6 @@
-// Компонент списка участников для создания канала
 // src/modules/chat-room/components/ChannelMembersList.tsx
 'use client'
+
 import { Button } from '@shared/ui/button/Button'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import ContactsListInvitation from '@modules/contacts/components/ContactsListInvitation'
@@ -14,28 +14,28 @@ import { onNextProps } from '@shared/types/createGroup'
 
 // Интерфейс пропсов компонента ChannelMembersList
 interface ChannelMembersListProps {
-    channelData: onNextProps // Принимаем все данные о канале
-    onBack: () => void // Обработчик возврата к форме создания канала
-    onFinish: (selectedContacts: Contact[]) => void // Обработчик завершения создания канала
+    channelData: onNextProps
+    onBack: () => void
+    onFinish: (selectedContacts: Contact[]) => void
+    isCreating?: boolean
+    error?: string | null
 }
 
-// Компонент для выбора участников при создании канала (структурно идентичен GroupMembersList)
-// Дублирование кода позволяет в будущем разнести логику групп и каналов
+// Компонент для выбора участников при создании канала
 export default function ChannelMembersList({
     channelData,
     onBack,
     onFinish,
+    isCreating = false,
+    error = null,
 }: ChannelMembersListProps) {
     // Состояние для хранения ID выбранных контактов
-    // Локальное состояние компонента, не сохраняется в Redux
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
 
-    // Хук для отправки actions в Redux store
     const dispatch = useDispatch()
 
     // Получение данных из Redux store
-    // useSelector подписывается на изменения в store и вызывает ререндер при изменении данных
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -44,42 +44,34 @@ export default function ChannelMembersList({
     )
 
     // Обработчик выбора/отмены выбора контакта
-    // Реализует toggle логику: если uid уже в массиве - удаляем, если нет - добавляем
     const handleSelectContact = (uid: string) => {
-        setSelectedContactIds(
-            (prev) =>
-                prev.includes(uid)
-                    ? prev.filter((id) => id !== uid) // Удаляем из массива
-                    : [...prev, uid], // Добавляем в массив
+        setSelectedContactIds((prev) =>
+            prev.includes(uid)
+                ? prev.filter((id) => id !== uid)
+                : [...prev, uid],
         )
     }
 
-    // Получаем полные объекты контактов по выбранным ID
-    // Преобразуем массив uid в массив полных объектов Contact
+    // Фильтрация выбранных контактов по их ID
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
 
-    const { name } = channelData // Деструктурируем название канала из данных формы
+    const { name } = channelData
 
     // Обработчик установки выбранного контакта в Redux
-    // Отправляет action для обновления глобального состояния выбранного контакта
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
     // Обработчик завершения выбора участников
-    // Вызывается при клике на кнопку "Далее"
     const handleFinishClick = () => {
-        // Вызываем родительский обработчик с выбранными контактами
         onFinish(selectedContacts)
     }
 
     return (
-        <div
-            className={`flex h-full min-h-0 flex-col rounded-md bg-gray-main`}
-        >
+        <div className="flex h-full min-h-0 flex-col rounded-md bg-gray-main">
             {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
@@ -109,6 +101,15 @@ export default function ChannelMembersList({
                 </h2>
             </div>
 
+            {/* Отображение ошибки создания канала */}
+            {error && (
+                <div className="mx-4 mt-4 rounded-md bg-system-red-surface p-3">
+                    <p className="text-sm text-system-red">
+                        {error}
+                    </p>
+                </div>
+            )}
+
             {/* Список контактов для выбора участников */}
             <div
                 className={cn(
@@ -118,10 +119,10 @@ export default function ChannelMembersList({
                       md:w-80
                       lg:w-96
                     `,
-                    `max-h-(--screen-height-list)`, // CSS custom property для ограничения высоты
+                    'max-h-(--screen-height-list)',
                 )}
             >
-                {/* Переиспользуемый компонент списка контактов */}
+                {/* Компонент списка контактов с возможностью выбора */}
                 <ContactsListInvitation
                     selectedContacts={selectedContactIds}
                     handleSelectContact={
@@ -135,13 +136,11 @@ export default function ChannelMembersList({
                 />
             </div>
 
-            {/* Кнопка завершения выбора участников */}
-            <div
-                className={`flex items-center justify-center px-4 pt-4 pb-8`}
-            >
+            {/* Кнопка завершения выбора участников и создания канала */}
+            <div className="flex items-center justify-center px-4 pt-4 pb-8">
                 <Button
                     onClick={handleFinishClick}
-                    disabled={!name.trim()} // Кнопка активна только если есть название канала
+                    disabled={!name.trim() || isCreating}
                     variant="solid"
                     size="md"
                     className={`
@@ -149,9 +148,34 @@ export default function ChannelMembersList({
                       disabled:cursor-not-allowed disabled:opacity-50
                     `}
                 >
-                    <span className="text-base font-medium">
-                        Далее
-                    </span>
+                    {isCreating ? (
+                        <span className="flex items-center gap-2">
+                            <svg
+                                className="h-5 w-5 animate-spin"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    fill="none"
+                                />
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                            </svg>
+                            Создание...
+                        </span>
+                    ) : (
+                        <span className="text-base font-medium">
+                            Создать канал
+                        </span>
+                    )}
                 </Button>
             </div>
         </div>

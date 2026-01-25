@@ -36,6 +36,14 @@ export const ContactItemInvitation: React.FC<
         setSecondaryText(text)
     }, [contact, searchValue])
 
+    const handleClick = () => {
+        if (selectedMode) {
+            onSelectContact(contact.uid)
+        } else {
+            onSetSelectedContact(contact.uid)
+        }
+    }
+
     return (
         <ContactAvatar
             src={`/images/contacts/${contact?.avatarUrl}`}
@@ -45,10 +53,7 @@ export const ContactItemInvitation: React.FC<
             }
             isOnline={contact.isOnline}
             statusText={secondaryText}
-            onClick={() =>
-                !selectedMode &&
-                onSetSelectedContact(contact.uid)
-            }
+            onClick={handleClick}
             selected={contact.uid === selectedUid}
             onSelect={
                 selectedMode
@@ -60,6 +65,8 @@ export const ContactItemInvitation: React.FC<
                     ? selectedContacts.includes(contact.uid)
                     : false
             }
+            // Для режима select-contact инвертация текста не нужна
+            invertTextOnHighlight={!selectedMode}
         />
     )
 }

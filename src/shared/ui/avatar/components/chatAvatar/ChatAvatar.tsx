@@ -19,6 +19,12 @@ export interface ChatAvatarProps extends HTMLAttributes<HTMLDivElement> {
     rightElement?: ReactNode // Дополнительный элемент справа - например, кнопка меню
     className?: string // Дополнительные CSS классы для кастомизации
     notificationsEnabled?: boolean // Флаг включенных уведомлений - показывает/скрывает иконку уведомлений
+    chatType?:
+        | 'chat'
+        | 'public-group'
+        | 'private-group'
+        | 'public-channel'
+        | 'private-channel'
     messageStatus?: 'sent' | 'delivered' | 'read' | null // Статус последнего сообщения
     isFavorite?: boolean // Флаг избранного чата - показывает иконку закрепления
     isChatRead?: boolean // Флаг прочитанности - влияет на отображение бейджа
@@ -43,6 +49,7 @@ export const ChatAvatar = forwardRef<
             rightElement,
             className,
             notificationsEnabled,
+            chatType,
             messageStatus,
             isFavorite,
             isChatRead,
@@ -106,6 +113,8 @@ export const ChatAvatar = forwardRef<
                         width={60}
                         height={60}
                         className="object-cover" // object-cover заполняет контейнер с сохранением пропорций
+                        // Добавляем unoptimized для локальных SVG, если нужно
+                        unoptimized={src.endsWith('.svg')}
                     />
                 </div>
 

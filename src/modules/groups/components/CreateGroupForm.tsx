@@ -1,5 +1,7 @@
-// Форма создания новой группы
-import { useEffect, useMemo, useState } from 'react'
+// CreateGroupForm.tsx
+'use client'
+
+import { useEffect, useMemo, useState, useRef } from 'react'
 import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
 import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
 import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
@@ -10,115 +12,167 @@ import {
     onNextProps,
 } from '@shared/types/createGroup'
 
-// Интерфейс пропсов компонента CreateGroupForm
 interface CreateGroupFormProps {
-    onBack: () => void // Обработчик возврата к предыдущему экрану - вызывается при клике на кнопку "Назад"
-    onNext: (data: onNextProps | string) => void // Обработчик перехода к следующему шагу (с данными формы или строкой названия)
-    // Поддерживает два формата данных для обратной совместимости со старым кодом
+    onBack: () => void
+    onNext: (data: onNextProps | string) => void
+    initialData: onNextProps | null
 }
 
-// Компонент формы создания новой группы
+// Опции для выбора типа группы
+const groupOptions = [
+    {
+        value: 'open',
+        optionName: 'Открытая',
+        optionDescription: `Открытую группу можно найти через поиск. Присоединиться к ней может любой пользователь`,
+    },
+    {
+        value: 'closed',
+        optionName: 'Закрытая',
+        optionDescription: `В закрытую группу можно попасть только по приглашению или пригласительной ссылке`,
+    },
+]
+
 export default function CreateGroupForm({
     onBack,
     onNext,
+    initialData,
 }: CreateGroupFormProps) {
-    // Состояние для файла аватарки группы
-    // Используем useState с типом File | null, так как аватар может отсутствовать
-    const [photoFile, setPhotoFile] = useState<File | null>(
-        null,
-    )
+    // Ref для отслеживания первого рендера компонента
+    const isFirstRender = useRef(true)
 
-    // Мемоизированное значение для предпросмотра аватарки
-    // useMemo используется для оптимизации - URL.createObjectURL создается только при изменении photoFile
-    const photoPreview = useMemo(
-        () =>
-            photoFile
-                ? URL.createObjectURL(photoFile) // Создаем Blob URL для предпросмотра выбранного файла
-                : null, // Если файла нет - возвращаем null
-        [photoFile], // Пересчет только при изменении photoFile
-    )
-
-    // Эффект для очистки URL при размонтировании компонента или изменении photoPreview
-    // URL.createObjectURL создает URL, который занимает память в браузере
-    useEffect(() => {
-        return () => {
-            if (photoPreview)
-                URL.revokeObjectURL(photoPreview) // Освобождаем память, удаляя Blob URL
+    // Функция для получения начального значения типа группы из initialData
+    const getInitialOption = () => {
+        if (initialData?.type) {
+            const foundOption = groupOptions.find(
+                (option) =>
+                    option.value === initialData.type,
+            )
+            return (
+                foundOption || {
+                    value: '',
+                    optionName: '',
+                    optionDescription: '',
+                }
+            )
         }
-    }, [photoPreview]) // Зависимость от photoPreview - очищаем при изменении или размонтировании
-
-    // Состояния для полей формы
-    const [name, setName] = useState('') // Название группы - инициализируем пустой строкой
-    const [description, setDescription] = useState('') // Описание группы
-
-    // Опции для выбора типа группы
-    // Массив объектов с фиксированными значениями - не изменяется между рендерами
-    const options = [
-        {
-            value: 'open',
-            optionName: 'Открытая',
-            optionDescription: `Открытую группу можно найти
-                                через поиск. Присоединиться
-                                к ней может любой
-                                пользователь`,
-        },
-        {
-            value: 'closed',
-            optionName: 'Закрытая',
-            optionDescription: `В закрытую группу можно
-                                попасть только
-                                по приглашению
-                                или пригласительной ссылке`,
-        },
-    ]
-
-    // Состояние для выбранного типа группы
-    // Инициализируем пустым объектом с полями-заглушками
-    const [choosenOption, setChoosenOption] =
-        useState<GroupTypeOptionProps>({
+        return {
             value: '',
             optionName: '',
             optionDescription: '',
-        })
+        }
+    }
+
+    // Состояния формы
+    const [photoFile, setPhotoFile] = useState<File | null>(
+        initialData?.photo || null,
+    )
+    const [name, setName] = useState(
+        initialData?.name || '',
+    )
+    const [description, setDescription] = useState(
+        initialData?.description || '',
+    )
+    const [choosenOption, setChoosenOption] =
+        useState<GroupTypeOptionProps>(getInitialOption())
+
+    // Создание предпросмотра аватарки из выбранного файла
+    const photoPreview = useMemo(() => {
+        return photoFile
+            ? URL.createObjectURL(photoFile)
+            : null
+    }, [photoFile])
+
+    // Очистка URL объекта при размонтировании компонента
+    useEffect(() => {
+        return () => {
+            if (photoPreview) {
+                URL.revokeObjectURL(photoPreview)
+            }
+        }
+    }, [photoPreview])
+
+    // Обновление состояния формы при изменении initialData
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false
+            return
+        }
+
+        if (initialData) {
+            const updateTimer = setTimeout(() => {
+                setName(initialData.name || '')
+                setDescription(
+                    initialData.description || '',
+                )
+
+                if (initialData.photo !== undefined) {
+                    setPhotoFile(initialData.photo)
+                }
+
+                if (initialData.type) {
+                    const foundOption = groupOptions.find(
+                        (option) =>
+                            option.value ===
+                            initialData.type,
+                    )
+                    if (foundOption) {
+                        setChoosenOption(foundOption)
+                    }
+                }
+            }, 0)
+
+            return () => clearTimeout(updateTimer)
+        } else {
+            const resetTimer = setTimeout(() => {
+                setName('')
+                setDescription('')
+                setPhotoFile(null)
+                setChoosenOption({
+                    value: '',
+                    optionName: '',
+                    optionDescription: '',
+                })
+            }, 0)
+
+            return () => clearTimeout(resetTimer)
+        }
+    }, [initialData])
 
     // Обработчик изменения типа группы
-    // Принимает частичный объект option и объединяет его с текущим состоянием
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
-        setChoosenOption((prev) => ({ ...prev, ...option })) // Мерджим предыдущее состояние с новыми значениями
+        setChoosenOption((prev) => ({ ...prev, ...option }))
     }
 
     // Обработчик отправки формы
-    // Вызывается при submit формы (клик на кнопку или Enter в поле ввода)
     const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault() // Предотвращаем стандартное поведение формы (перезагрузку страницы)
+        e.preventDefault()
 
-        // Валидация: все обязательные поля должны быть заполнены
-        // trim() удаляет пробелы в начале и конце строки
+        // Валидация обязательных полей
         if (
             !name.trim() ||
             !description.trim() ||
             !choosenOption.value
         )
-            return // Если какое-то поле пустое - прерываем выполнение
+            return
 
-        // Передаем данные родительскому компоненту
-        // Собираем все данные формы в объект onNextProps
+        // Передача данных в родительский компонент
         onNext({
-            name: name.trim(), // Убираем лишние пробелы
+            name: name.trim(),
             description: description.trim(),
             type: choosenOption.value,
-            photo: photoFile, // Может быть null если пользователь не выбрал фото
+            photo: photoFile,
         })
     }
 
+    // Обработчик выбора файла для аватарки
+    const handleFileSelect = (file: File | null) => {
+        setPhotoFile(file)
+    }
+
     return (
-        <div
-            className={`flex h-full flex-col rounded-md bg-gray-main`}
-        >
-            {/* Шапка формы с кнопкой назад и заголовком */}
-            {/* Используем flex для горизонтального выравнивания элементов */}
+        <div className="flex h-full flex-col rounded-md bg-gray-main">
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -136,7 +190,6 @@ export default function CreateGroupForm({
                       hover:bg-accent-violet-ultra-light
                     `}
                 >
-                    {/* SVG иконка импортированная как React компонент */}
                     <BackIcon className="mx-1 cursor-pointer" />
                 </Button>
                 <h2
@@ -148,23 +201,19 @@ export default function CreateGroupForm({
                 </h2>
             </div>
 
-            {/* Основное содержимое формы */}
-            {/* flex-1 позволяет форме занимать все доступное пространство */}
             <div className="flex flex-1 justify-center p-4">
                 <form
                     onSubmit={onSubmit}
                     className="w-full max-w-82 space-y-4"
                 >
-                    {/* Выбор аватарки группы */}
                     <div className="flex flex-col items-center">
                         <AvatarPicker
-                            src={photoPreview} // Blob URL для предпросмотра
-                            name={name || 'Группа'} // Fallback название если поле пустое
-                            onFile={setPhotoFile} // Колбэк для обновления photoFile
+                            src={photoPreview}
+                            name={name || 'Группа'}
+                            onFile={handleFileSelect}
                         />
                     </div>
 
-                    {/* Поля ввода названия и описания */}
                     <div className="w-full">
                         <div className="flex w-full flex-col">
                             <FloatingTextarea
@@ -196,22 +245,20 @@ export default function CreateGroupForm({
                         </div>
                     </div>
 
-                    {/* Выбор типа группы */}
                     <div>
                         <GroupTypeSelect
                             selectLabel="Тип группы"
                             value={choosenOption.value}
-                            options={options}
+                            options={groupOptions}
                             onChange={(option) =>
                                 handleChangeOption(option)
                             }
                         />
                     </div>
 
-                    {/* Кнопка отправки формы */}
                     <div className="flex justify-center">
                         <Button
-                            type="submit" // type="submit" активирует отправку формы при клике
+                            type="submit"
                             disabled={
                                 !name.trim() ||
                                 !description.trim() ||

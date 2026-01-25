@@ -1,42 +1,72 @@
-// Redux extraReducers для обработки асинхронной загрузки чатов
 import {
     createAsyncThunk,
     PayloadAction,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
-import { transformChatListFromApi } from '@shared/lib/transformChatData'
-import { ChatItem, ChatsState } from '@shared/types/chat'
+import { transformFromApi } from '@shared/lib/transformChatData'
+import {
+    ChatItem,
+    ChatsState,
+    ApiChatItem,
+} from '@shared/types/chat'
 
-// Асинхронный thunk для загрузки чатов
-// createAsyncThunk автоматически создает action types: chats/fetchChats/pending, /fulfilled, /rejected
+// Расширенный тип чата с настройками
+interface ChatItemWithSettings extends Omit<
+    ChatItem,
+    'settings'
+> {
+    settings: {
+        isFavorite: boolean
+        isChatRead: boolean
+        notificationsEnabled: boolean
+        isDeleted: boolean
+        originalUnreadCount: number
+    }
+}
+
+// Создание настроек чата на основе данных из API
+const createChatSettings = (apiChatItem: ApiChatItem) => ({
+    isFavorite: apiChatItem.is_favorite || false,
+    isChatRead: apiChatItem.new_message_count === 0,
+    notificationsEnabled: apiChatItem.notifications ?? true,
+    isDeleted: false,
+    originalUnreadCount: apiChatItem.new_message_count || 0,
+})
+
+// Асинхронный thunk для загрузки чатов с сервера
 export const fetchChats = createAsyncThunk(
-    'chats/fetchChats', // Префикс для action types
+    'chats/fetchChats',
     async (count: number = 15, { rejectWithValue }) => {
         try {
-            // Получаем моковые данные (в реальном приложении здесь был бы API-запрос)
-            // generateLocalMockChatItems создает массив тестовых данных для разработки
+            // Генерация моковых данных (в реальном приложении здесь был бы API запрос)
             const mockData =
                 generateLocalMockChatItems(count)
 
-            // Преобразуем в camelCase для UI
-            // Фильтруем валидные данные - убираем null/undefined значения
+            // Фильтрация валидных данных
             const validData = mockData.filter(
-                (item): item is Required<typeof item> =>
+                (item): item is ApiChatItem =>
                     item !== null &&
                     item !== undefined &&
                     item.id !== undefined &&
                     item.chat !== undefined,
-            ) as unknown as Parameters<
-                typeof transformChatListFromApi
-            >[0]
+            )
 
-            // Возвращаем трансформированные данные
-            // transformChatListFromApi конвертирует snake_case API формата в camelCase UI формата
-            return transformChatListFromApi(validData)
+            // Трансформация API данных в формат приложения с добавлением настроек
+            const transformedChats = validData.map(
+                (item) => {
+                    const transformedItem =
+                        transformFromApi<ApiChatItem>(item)
+
+                    return {
+                        ...transformedItem,
+                        settings: createChatSettings(item),
+                    } as ChatItemWithSettings
+                },
+            )
+
+            return transformedChats
         } catch {
-            // Обработка ошибок
-            // rejectWithValue позволяет передать кастомное значение при rejection
             return rejectWithValue(
                 'Не удалось загрузить чаты',
             )
@@ -44,41 +74,42 @@ export const fetchChats = createAsyncThunk(
     },
 )
 
-// Обработчики для этого thunk (extraReducers)
-// Вынесены в отдельную функцию для лучшей организации кода и переиспользования
+// Обработчики состояний для thunk'а загрузки чатов
 export const handleFetchChats = (
-    builder: ActionReducerMapBuilder<ChatsState>, // Типизированный builder от Redux Toolkit
-    initialState: ChatsState, // Начальное состояние для сброса при ошибке
+    builder: ActionReducerMapBuilder<ChatsState>,
+    initialState: ChatsState,
 ) => {
     builder
-        // Обработка начала загрузки
-        // Устанавливаем loading: true и сбрасываем ошибку
+        // Обработка состояния загрузки
         .addCase(fetchChats.pending, (state) => {
             state.loading = true
             state.error = null
         })
-        // Обработка успешной загрузки
+        // Обработка успешной загрузки чатов
         .addCase(
             fetchChats.fulfilled,
-            (state, action: PayloadAction<ChatItem[]>) => {
+            (
+                state,
+                action: PayloadAction<
+                    ChatItemWithSettings[]
+                >,
+            ) => {
                 state.loading = false
-                state.items = action.payload // Сохраняем загруженные чаты
 
-                // Инициализируем настройки для каждого загруженного чата
-                // Проходим по всем чатам и создаем объект настроек если его нет
+                // Разделение данных чата и настроек для хранения в разных структурах
+                state.items = action.payload.map((chat) => {
+                    const { settings, ...chatData } = chat
+                    return chatData
+                })
+
+                // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {
-                    if (!state.chatSettings[chat.id]) {
-                        state.chatSettings[chat.id] = {
-                            isFavorite:
-                                chat.isFavorite || false,
-                            isChatRead:
-                                chat.newMessageCount === 0,
-                            notificationsEnabled:
-                                chat.notifications ?? true,
-                            isDeleted: false,
-                            originalUnreadCount:
-                                chat.newMessageCount || 0,
-                        }
+                    if (
+                        chat.settings &&
+                        !state.chatSettings[chat.id]
+                    ) {
+                        state.chatSettings[chat.id] =
+                            chat.settings
                     }
                 })
             },
@@ -86,7 +117,7 @@ export const handleFetchChats = (
         // Обработка ошибки загрузки
         .addCase(fetchChats.rejected, (state, action) => {
             state.loading = false
-            state.error = action.payload as string // Сохраняем сообщение об ошибке
-            state.chatSettings = initialState.chatSettings // Сбрасываем настройки к начальному состоянию
+            state.error = action.payload as string
+            state.chatSettings = initialState.chatSettings
         })
 }

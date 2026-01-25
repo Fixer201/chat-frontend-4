@@ -14,6 +14,7 @@ export const AVATAR_SOURCES = {
     FLICKR: 'flickr',
     ROBOHASH: 'robohash',
     PLACEHOLDER: 'placeholder',
+    UI_FACES: 'uifaces',
 } as const
 
 // Тип для источника аватарки

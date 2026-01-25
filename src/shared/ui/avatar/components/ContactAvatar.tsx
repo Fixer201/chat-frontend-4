@@ -25,6 +25,7 @@ export interface ContactAvatarProps extends HTMLAttributes<HTMLDivElement> {
     notificationsEnabled?: boolean
     onSelect?: () => void
     isSelected?: boolean
+    invertTextOnHighlight?: boolean
 }
 
 const rowBaseClasses =
@@ -49,6 +50,7 @@ export const ContactAvatar = forwardRef<
             className,
             onSelect,
             isSelected,
+            invertTextOnHighlight = true,
             ...props
         },
         ref,
@@ -67,8 +69,20 @@ export const ContactAvatar = forwardRef<
             selected ||
             (mode === 'select-contact' && isSelected)
 
+        // Определяем, нужно ли инвертировать текст при выделении
+        // По умолчанию true для обычного режима, false для режима выбора
+        const shouldInvertText =
+            invertTextOnHighlight && isHighlighted
+
+        const handleSelectClick = (e: React.MouseEvent) => {
+            e.stopPropagation()
+            onSelect?.()
+        }
         const handleSelectKeyDown = createButtonKeyHandler(
-            () => onSelect?.(),
+            (e: React.KeyboardEvent) => {
+                e.stopPropagation()
+                onSelect?.()
+            },
         )
 
         return (
@@ -115,14 +129,10 @@ export const ContactAvatar = forwardRef<
                         <div className="flex items-center gap-2">
                             <p
                                 className={cn(
-                                    `
-                                      truncate text-base font-medium
-                                    `,
-                                    isHighlighted
+                                    'truncate text-base font-medium',
+                                    shouldInvertText
                                         ? 'text-(--color-white-bg)'
-                                        : `
-                                      text-(--color-text-black)
-                                    `,
+                                        : 'text-(--color-text-black)',
                                 )}
                             >
                                 {name}
@@ -132,15 +142,11 @@ export const ContactAvatar = forwardRef<
                         {secondaryText && (
                             <p
                                 className={cn(
-                                    `
-                                      truncate text-sm
-                                    `,
-                                    isHighlighted
+                                    'truncate text-sm',
+                                    shouldInvertText
                                         ? 'text-(--color-white-bg)'
                                         : isOnline
-                                          ? `
-                                              text-(--color-accent-violet-primary)
-                                            `
+                                          ? 'text-(--color-accent-violet-primary)'
                                           : 'text-(--color-text-black)',
                                 )}
                             >
@@ -163,14 +169,10 @@ export const ContactAvatar = forwardRef<
                                 {timestamp && (
                                     <span
                                         className={cn(
-                                            `
-                                              text-xs whitespace-nowrap
-                                            `,
-                                            isHighlighted
+                                            'text-xs whitespace-nowrap',
+                                            shouldInvertText
                                                 ? 'text-(--color-white-bg)'
-                                                : `
-                                              text-(--color-text-black)
-                                            `,
+                                                : 'text-(--color-text-black)',
                                         )}
                                     >
                                         {timestamp}
@@ -211,10 +213,7 @@ export const ContactAvatar = forwardRef<
                                           border-(--color-accent-violet-primary)
                                         `,
                                 )}
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    onSelect?.()
-                                }}
+                                onClick={handleSelectClick}
                                 onKeyDown={
                                     handleSelectKeyDown
                                 }
@@ -232,7 +231,7 @@ export const ContactAvatar = forwardRef<
                                         alt="selected"
                                         width={24}
                                         height={24}
-                                        onClick={onSelect}
+                                        onClick={handleSelectClick}
                                     />
                                 )}
                             </span>

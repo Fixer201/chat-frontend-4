@@ -66,6 +66,42 @@ export function generateLocalMockChatItems(
         'Lena',
         'Vlad',
     ]
+    // Массивы названий для групп и каналов
+    const groupNames = [
+        'Команда Разработки',
+        'Дизайн-Отдел',
+        'Продажи и Маркетинг',
+        'Поддержка Клиентов',
+        'Менеджмент',
+        'Коллектив Офиса',
+        'Совместные Проекты',
+        'Встречи и Обсуждения',
+        'Общий Чат Компании',
+        'Вне работы',
+        'Спортивные Увлечения',
+        'Творческая Лаборатория',
+        'ИТ-Поддержка',
+        'Обучение и Развитие',
+        'Корпоративные Мероприятия',
+    ]
+
+    const channelNames = [
+        'Новости Компании',
+        'Анонсы и Объявления',
+        'Технические Обновления',
+        'Мероприятия и Афиши',
+        'Важные Оперативные',
+        'Нормативные Документы',
+        'Отчеты и Статистика',
+        'Идеи и Предложения',
+        'Безопасность и Соблюдение',
+        'Инновации и Тренды',
+        'Истории Успеха',
+        'Образовательные Материалы',
+        'Карьерные Возможности',
+        'Корпоративная Культура',
+        'Партнерские Новости',
+    ]
     const messages = [
         'Привет! Как дела?',
         'Посмотри это видео, оно просто огонь!',
@@ -89,105 +125,188 @@ export function generateLocalMockChatItems(
     return Array(count)
         .fill(null) // Создаем массив из count элементов со значением null
         .map((_, index) => {
-            // Выбор данных из массивов по кругу с помощью оператора %
-            // index % firstNames.length гарантирует, что индексы будут циклически повторяться
+            // Массив возможных типов чатов
+            const chatTypes = [
+                'chat',
+                'public-group',
+                'private-group',
+                'public-channel',
+                'private-channel',
+            ] as const // Используем as const для сохранения точного типа
+
+            let chatType: (typeof chatTypes)[number]
+            const randomValue = Math.random()
+
+            if (randomValue < 0.7) {
+                // 70% - личные чаты
+                chatType = 'chat'
+            } else if (randomValue < 0.9) {
+                // 20% - группы (между 0.7 и 0.9)
+                // Равномерно распределяем между публичными и приватными группами
+                chatType =
+                    Math.random() > 0.5
+                        ? 'public-group'
+                        : 'private-group'
+            } else {
+                // 10% - каналы (между 0.9 и 1.0)
+                // Равномерно распределяем между публичными и приватными каналами
+                chatType =
+                    Math.random() > 0.5
+                        ? 'public-channel'
+                        : 'private-channel'
+            }
+
+            // Определяем источник аватарки - теперь только локальные
+            let avatarSource =
+                '/images/chatHeader/userAvatar.svg'
+
+            // Для личных чатов можно оставить детерминированный выбор по индексу
             const firstName =
                 firstNames[index % firstNames.length]
             const lastName =
                 lastNames[index % lastNames.length]
             const nickname =
                 nicknames[index % nicknames.length]
-            const username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`
+
+            let username: string
+            let chatName: string
+            let avatarSeed: string
             const message =
                 messages[index % messages.length]
+            const baseId = (index + 1) * 100
+            if (chatType === 'chat') {
+                // Для личного чата - имя человека
+                chatName = `${firstName} ${lastName}`
+                username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`
+                avatarSeed = `avatar_${baseId}_${username}`
+                const chatAvatarUrl = generateAvatarUrl(
+                    avatarSeed,
+                    300,
+                    300,
+                    chatType === 'chat'
+                        ? AVATAR_SOURCE
+                        : 'useAvatar',
+                )
+                avatarSource = chatAvatarUrl
+            } else if (chatType.includes('group')) {
+                // Для групп - берем название из массива groupNames
+                const groupName =
+                    groupNames[index % groupNames.length]
+                chatName = groupName
+                username = `group_${index + 1}_${groupName.toLowerCase().replace(/ /g, '_')}`
+                // Для групп используем групповую иконку
+                avatarSource =
+                    '/images/chatHeader/userAvatar.svg'
+            } else {
+                // Для каналов - берем название из массива channelNames
+                const channelName =
+                    channelNames[
+                        index % channelNames.length
+                    ]
+                chatName = channelName
+                username = `channel_${index + 1}_${channelName.toLowerCase().replace(/ /g, '_')}`
+                // Для каналов используем канальную иконку
+                avatarSource =
+                    '/images/chatHeader/userAvatar.svg'
+            }
 
-            const baseId = (index + 1) * 100 // Создаем ID с шагом 100 для удобства отладки
-            const avatarSeed = `avatar_${baseId}_${username}`
-            const generators = [
-                'picsum',
-                'unsplash',
-                'ui-faces',
-                'random-user',
-                'robohash',
-            ] as const
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const generatorIndex = index % generators.length
+            // Всегда используем локальные аватарки
+            const avatarUrl = avatarSource
+            const avatarWebpUrl = avatarSource
 
-            // Генерация URL аватарок с помощью вспомогательной функции
-            // generateAvatarUrl создает детерминированные URL на основе seed
-            const avatarUrl = generateAvatarUrl(
-                avatarSeed,
-                300,
-                300,
-                AVATAR_SOURCE,
-            )
-
-            const avatarWebpUrl = generateAvatarUrl(
-                avatarSeed + '_webp',
-                300,
-                300,
-                AVATAR_SOURCE,
-            )
-
-            // Генерация случайных временных меток для реалистичности
+            // Генерация случайных временных меток
             const randomSecondsAgo = Math.floor(
-                Math.random() * thirtyDaysInSeconds, // Случайное число секунд от 0 до 30 дней
+                Math.random() * thirtyDaysInSeconds,
             )
             const wasOnlineAt =
-                nowInSeconds - randomSecondsAgo // Время последнего онлайна
+                nowInSeconds - randomSecondsAgo
 
             const sevenDaysInSeconds = 7 * 24 * 60 * 60
             const recentSecondsAgo = Math.floor(
                 Math.random() * sevenDaysInSeconds,
             )
             const lastActivityAt =
-                nowInSeconds - recentSecondsAgo // Время последней активности
+                nowInSeconds - recentSecondsAgo
 
             const oneDayInSeconds = 24 * 60 * 60
             const messageSecondsAgo = Math.floor(
                 Math.random() * oneDayInSeconds,
             )
             const messageCreatedAt =
-                lastActivityAt - messageSecondsAgo // Время создания сообщения
+                lastActivityAt - messageSecondsAgo
 
             const fiveMinutesAgo = nowInSeconds - 300
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const isOnline =
                 wasOnlineAt >= fiveMinutesAgo
-                    ? Math.random() > 0.3 // 70% шанс быть онлайн если был онлайн недавно
-                    : Math.random() > 0.8 // 20% шанс быть онлайн если давно не было
+                    ? Math.random() > 0.3
+                    : Math.random() > 0.8
 
-            // Формирование объекта чата в формате API (snake_case)
-            // Все поля соответствуют ApiChatItem интерфейсу
+            // Формирование объекта чата
             const chatItem: ApiChatItem = {
                 id: baseId,
                 chat: {
-                    uid: `uuid-${index}-${Math.random().toString(36).substring(2, 10)}`, // Генерация уникального UUID
+                    uid: `uuid-${index}-${Math.random().toString(36).substring(2, 10)}`,
                     username: username,
                     nickname: nickname,
                     first_name: firstName,
                     last_name: lastName,
-                    avatar: `avatar_${index}.jpg`,
+                    avatar: avatarSource.replace(
+                        '/images/chatHeader/',
+                        '',
+                    ),
                     avatar_url: avatarUrl,
-                    avatar_webp: `avatar_${index}.webp`,
+                    avatar_webp: avatarSource
+                        .replace('/images/chatHeader/', '')
+                        .replace('.svg', '.webp'),
                     avatar_webp_url: avatarWebpUrl,
-                    is_blocked: index % 10 === 0, // Каждый 10-й чат заблокирован
-                    is_online: index % 3 === 0, // Каждый 3-й онлайн
+                    is_blocked: index % 10 === 0,
+                    is_online: isOnline,
                     was_online_at: wasOnlineAt,
-                    is_in_contacts: index % 4 !== 0, // 75% контактов в списке контактов
+                    is_in_contacts: index % 4 !== 0,
                 },
-                is_favorite: index % 6 === 0, // Каждый 6-й в избранном
-                notifications: Math.random() > 0.5, // Случайные уведомления
+                is_active: index % 2 === 0,
+                is_favorite: index % 6 === 0,
+                notifications: Math.random() > 0.5,
+                index: index,
+                message_count: Math.floor(
+                    Math.random() * 10,
+                ),
+                file_count: Math.floor(Math.random() * 5),
                 new_message_count: Math.floor(
-                    Math.random() * 10, // Случайное количество новых сообщений (0-9)
+                    Math.random() * 10,
                 ),
                 new_file_count: Math.floor(
-                    Math.random() * 5, // Случайное количество новых файлов (0-4)
+                    Math.random() * 5,
                 ),
-                name: `${firstName} ${lastName}`,
-                chat_type: ['private', 'group', 'channel'][
-                    index % 3
-                ] as 'private' | 'group' | 'channel', // Циклически распределяем типы чатов
+                description: chatType.includes('channel')
+                    ? `Канал о ${chatName.toLowerCase()}`
+                    : undefined,
+                created_by:
+                    chatType !== 'chat'
+                        ? 'system'
+                        : undefined,
+                owner_full_name:
+                    chatType !== 'chat'
+                        ? 'Администратор'
+                        : undefined,
+                participants:
+                    chatType !== 'chat'
+                        ? [
+                              {
+                                  uid: 'user1',
+                                  full_name: 'Иван Иванов',
+                              },
+                              {
+                                  uid: 'user2',
+                                  full_name:
+                                      'Мария Петрова',
+                              },
+                          ]
+                        : undefined,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                name: chatName,
+                chat_type: chatType,
                 chat_key: `chat_key_${index}`,
                 last_activity_at: lastActivityAt,
                 last_seen_message: {
@@ -201,26 +320,29 @@ export function generateLocalMockChatItems(
                 last_message: {
                     id: baseId + 1,
                     uid: `msg_${baseId + 1}`,
-                    from_user: `uuid-${index}`,
+                    from_user:
+                        chatType === 'chat'
+                            ? `uuid-${index}`
+                            : 'Вы',
                     content: message,
                     files_summary: {
                         types:
                             Math.random() > 0.5
                                 ? ['image']
-                                : ['document'], // Случайный тип файлов
+                                : ['document'],
                         count: Math.floor(
                             Math.random() * 5,
                         ),
                     },
                     has_replied_message:
-                        Math.random() > 0.7, // 30% шанс иметь ответ
+                        Math.random() > 0.7,
                     has_forwarded_message:
-                        Math.random() > 0.8, // 20% шанс быть пересланным
-                    new: Math.random() > 0.5, // 50% шанс быть новым
+                        Math.random() > 0.8,
+                    new: Math.random() > 0.5,
                     created_at: messageCreatedAt,
                     updated_at:
                         messageCreatedAt +
-                        Math.floor(Math.random() * 60), // + до 60 секунд для updated_at
+                        Math.floor(Math.random() * 60),
                 },
             }
             return chatItem

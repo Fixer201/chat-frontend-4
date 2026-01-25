@@ -1,4 +1,4 @@
-// Redux slice для управления состоянием чатов
+// @redux/slices/chatsSlice.ts
 import {
     createSlice,
     PayloadAction,
@@ -12,34 +12,45 @@ import {
     handleFetchChats,
     fetchChats,
 } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
+import {
+    createGroup,
+    createChannel,
+    handleCreateChat,
+} from '@redux/extraReducers/chat-extraReducers/createChatExtraRed'
 
-// Начальное состояние для чатов
-// Определяет структуру состояния и начальные значения
+// Начальное состояние slice чатов
 const initialState: ChatsState = {
-    items: [], // Массив чатов - инициализируем пустым массивом
-    loading: false, // Флаг загрузки - false по умолчанию
-    error: null, // Ошибка загрузки - null по умолчанию
-    selectedChatId: null, // ID выбранного чата - null если ни один не выбран
-    chatSettings: {}, // Настройки для каждого чата (ключ - ID чата) - пустой объект
+    items: [], // Список чатов
+    loading: false, // Флаг загрузки
+    error: null, // Ошибки
+    selectedChatId: null, // ID выбранного чата
+    chatSettings: {}, // Настройки для каждого чата
 }
 
-// Создание slice для чатов с помощью Redux Toolkit
-// Slice включает редьюсеры и action creators
+// Функция для получения настроек по умолчанию для чата
+const getDefaultSettings = (
+    chat?: ChatItem,
+): ChatSettings => ({
+    isFavorite: chat?.isFavorite || false,
+    isChatRead: chat?.newMessageCount === 0,
+    notificationsEnabled: chat?.notifications ?? true,
+    isDeleted: false,
+    originalUnreadCount: chat?.newMessageCount || 0,
+})
+
+// Создание slice для управления состоянием чатов
 const chatsSlice = createSlice({
-    name: 'chats', // Имя slice, используется в DevTools и для создания action types
+    name: 'chats',
     initialState,
     reducers: {
         // Установка выбранного чата
-        // Принимает number | null - позволяет как выбрать чат, так и снять выбор
         setSelectedChat: (
             state,
             action: PayloadAction<number | null>,
         ) => {
-            state.selectedChatId = action.payload // Просто заменяем значение
+            state.selectedChatId = action.payload
         },
-
-        // Обновление данных конкретного чата
-        // Находит чат по ID и заменяет его новыми данными
+        // Обновление данных чата
         updateChat: (
             state,
             action: PayloadAction<ChatItem>,
@@ -48,12 +59,10 @@ const chatsSlice = createSlice({
                 (chat) => chat.id === action.payload.id,
             )
             if (index !== -1) {
-                state.items[index] = action.payload // Заменяем весь объект чата
+                state.items[index] = action.payload
             }
         },
-
         // Обновление настроек конкретного чата
-        // Принимает chatId и partial объект настроек для мерджа
         updateChatSettings: (
             state,
             action: PayloadAction<{
@@ -63,176 +72,196 @@ const chatsSlice = createSlice({
         ) => {
             const { chatId, settings } = action.payload
 
-            // Если настройки для этого чата еще не существуют, создаем их
-            // Это ленивая инициализация - создаем объект настроек только когда он нужен
-            if (!state.chatSettings[chatId]) {
-                const chat = state.items.find(
-                    (c) => c.id === chatId,
-                )
-                state.chatSettings[chatId] = {
-                    isFavorite: chat?.isFavorite || false, // Берем значение из чата или false
-                    isChatRead: chat?.newMessageCount === 0, // Чат прочитан если нет новых сообщений
-                    notificationsEnabled:
-                        chat?.notifications ?? true, // nullish coalescing - true если null/undefined
-                    isDeleted: false,
-                    originalUnreadCount:
-                        chat?.newMessageCount || 0,
-                }
+            // Получение текущих настроек или создание настроек по умолчанию
+            const currentChatSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(
+                      state.items.find(
+                          (c) => c.id === chatId,
+                      ),
+                  )
+
+            // Объединение текущих настроек с новыми
+            const updatedSettings: ChatSettings = {
+                ...currentChatSettings,
+                ...settings,
             }
 
-            // Обновляем настройки мерджем существующих с новыми
-            // Используем spread оператор для поверхностного копирования
-            state.chatSettings[chatId] = {
-                ...state.chatSettings[chatId],
-                ...settings, // Новые настройки перезаписывают старые
-            }
+            state.chatSettings[chatId] = updatedSettings
 
-            // Обновляем также в items для совместимости со старым кодом
-            // Это дублирование данных нужно для компонентов, которые работают с items напрямую
+            // Обновление настроек в основном массиве чатов для обратной совместимости
             const chatIndex = state.items.findIndex(
                 (c) => c.id === chatId,
             )
-            if (
-                chatIndex !== -1 &&
-                state.items[chatIndex].settings
-            ) {
-                state.items[chatIndex].settings = {
-                    ...state.items[chatIndex].settings!,
-                    ...settings,
-                }
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Переключение избранного статуса чата
-        // Инвертирует текущее значение isFavorite
+        // Переключение статуса "Избранное" для чата
         toggleFavorite: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                // Если настройки уже существуют - просто инвертируем isFavorite
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isFavorite: !currentSettings.isFavorite,
-                }
-            } else {
-                // Если настроек нет - создаем их с isFavorite: true
-                const chat = state.items.find(
-                    (c) => c.id === chatId,
-                )
-                state.chatSettings[chatId] = {
-                    isFavorite: true, // При первом добавлении в избранное ставим true
-                    isChatRead: chat?.newMessageCount === 0,
-                    notificationsEnabled:
-                        chat?.notifications ?? true,
-                    isDeleted: false,
-                    originalUnreadCount:
-                        chat?.newMessageCount || 0,
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isFavorite: !currentSettings.isFavorite,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Переключение состояния уведомлений
-        // Инвертирует notificationsEnabled
+        // Переключение уведомлений для чата
         toggleNotifications: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    notificationsEnabled:
-                        !currentSettings.notificationsEnabled,
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                notificationsEnabled:
+                    !currentSettings.notificationsEnabled,
             }
-            // Если настроек нет - ничего не делаем, так как нечего инвертировать
-        },
 
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
+            }
+        },
         // Пометка чата как прочитанного
-        // Устанавливает isChatRead: true и сохраняет originalUnreadCount
         markAsRead: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isChatRead: true,
-                    originalUnreadCount:
-                        currentSettings.originalUnreadCount >
-                        0
-                            ? currentSettings.originalUnreadCount
-                            : 0, // Сохраняем оригинальное значение если > 0
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isChatRead: true,
+                originalUnreadCount:
+                    currentSettings.originalUnreadCount > 0
+                        ? currentSettings.originalUnreadCount
+                        : 0,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
         // Пометка чата как непрочитанного
-        // Устанавливает isChatRead: false и сбрасывает счетчик
         markAsUnread: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isChatRead: false,
-                    originalUnreadCount: 0, // Сбрасываем счетчик при пометке как непрочитанного
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isChatRead: false,
+                originalUnreadCount: 0,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
-        // Пометка чата как удаленного
-        // Не удаляет чат из items, а только помечает isDeleted: true
-        // Это "soft delete" - данные сохраняются, но не отображаются
+        // Пометка чата как удаленного (soft delete)
         markAsDeleted: (
             state,
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
-            const currentSettings =
-                state.chatSettings[chatId]
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
 
-            if (currentSettings) {
-                state.chatSettings[chatId] = {
-                    ...currentSettings,
-                    isDeleted: true,
-                }
-            } else {
-                // Если настроек нет - создаем их с isDeleted: true
-                const chat = state.items.find(
-                    (c) => c.id === chatId,
-                )
-                state.chatSettings[chatId] = {
-                    isFavorite: false, // Удаленный чат не может быть избранным
-                    isChatRead: chat?.newMessageCount === 0,
-                    notificationsEnabled:
-                        chat?.notifications ?? true,
-                    isDeleted: true, // Основной флаг удаления
-                    originalUnreadCount:
-                        chat?.newMessageCount || 0,
-                }
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isDeleted: true,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
             }
         },
-
         // Добавление чата в контакты
-        // Обновляет isInContacts в основном объекте чата
         addToContacts: (
             state,
             action: PayloadAction<number>,
@@ -244,26 +273,42 @@ const chatsSlice = createSlice({
 
             if (chatIndex !== -1) {
                 state.items[chatIndex].chat.isInContacts =
-                    true // Прямое обновление вложенного свойства
+                    true
             }
         },
-
         // Сброс всех настроек чатов
-        // Очищает весь объект chatSettings
         resetChatSettings: (state) => {
-            state.chatSettings = {} // Присваиваем пустой объект
+            state.chatSettings = {}
+        },
+        // Добавление нового чата в список
+        addChat: (
+            state,
+            action: PayloadAction<ChatItem>,
+        ) => {
+            const existingIndex = state.items.findIndex(
+                (chat) => chat.id === action.payload.id,
+            )
+
+            if (existingIndex === -1) {
+                state.items.unshift(action.payload)
+            } else {
+                state.items[existingIndex] = action.payload
+            }
+        },
+        // Action для отладки состояния (в продакшене следует удалить)
+        debugState: (state) => {
+            // Отладочная информация о состоянии
         },
     },
-    // Обработчики для асинхронных действий (загрузка чатов)
-    // extraReducers позволяет обрабатывать actions из других slice или thunk actions
+    // Подключение обработчиков для асинхронных thunk'ов
     extraReducers: (builder) => {
-        handleFetchChats(builder, initialState) // Выносим логику в отдельную функцию для чистоты кода
+        handleFetchChats(builder, initialState)
+        handleCreateChat(builder)
     },
 })
-// Экспорт асинхронного thunk для загрузки чатов
-export { fetchChats }
-// Экспорт всех action creators
-// Redux Toolkit автоматически создает action creators для каждого reducer
+
+// Экспорт thunk'ов и actions
+export { fetchChats, createGroup, createChannel }
 export const {
     setSelectedChat,
     updateChat,
@@ -275,6 +320,7 @@ export const {
     markAsDeleted,
     addToContacts,
     resetChatSettings,
+    addChat,
+    debugState,
 } = chatsSlice.actions
-// Экспорт reducer
 export default chatsSlice.reducer

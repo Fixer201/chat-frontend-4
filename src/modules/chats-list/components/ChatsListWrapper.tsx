@@ -1,8 +1,7 @@
+// ChatsListWrapper.tsx
 'use client'
-// Указываем, что компонент является клиентским (использует хуки React)
-// Это необходимо для Next.js, чтобы компонент рендерился только на клиенте
-// Импортируем компоненты для различных представлений
-import { useState } from 'react'
+
+import { useState, useEffect } from 'react'
 import ChatsList from './ChatsList'
 import CreateGroupForm from '@modules/groups/components/CreateGroupForm'
 import GroupMembersList from '@modules/groups/components/GroupMembersList'
@@ -10,9 +9,9 @@ import ChannelMembersList from '@modules/channels/components/ChannelMembersList'
 import CreateChannelForm from '@modules/channels/components/CreateChannelForm'
 import { onNextProps } from '@shared/types/createGroup'
 import { Contact } from '@shared/types/contact'
+import { useChats } from '@shared/hooks/useChats'
 
-// Определяем типы возможных представлений (экранов) внутри компонента
-// Используем union type для type safety - TypeScript будет проверять, что мы обрабатываем все возможные варианты
+// Типы для представлений компонента
 type View =
     | 'chats'
     | 'create-group'
@@ -20,18 +19,16 @@ type View =
     | 'create-channel'
     | 'channel-members'
 
-// Основной компонент-обертка для управления отображением списка чатов и форм создания групп/каналов
-// Работает как конечный автомат состояний (state machine) - управляет переходами между разными view
 export default function ChatsListWrapper() {
-    // Состояние для текущего активного представления (экрана)
-    // Используем useState с явным указанием типа для предотвращения ошибок
+    // Хуки для работы с чатами
+    const { createGroup, createChannel, loadChats } =
+        useChats()
+
+    // Состояния для управления представлениями и данными
     const [currentView, setCurrentView] =
         useState<View>('chats')
-    // Состояние для хранения данных создаваемой группы
-    // Используем null как начальное значение, так как данные могут отсутствовать
     const [groupData, setGroupData] =
         useState<onNextProps | null>(null)
-    // Состояние для хранения данных создаваемого канала
     const [channelData, setChannelData] =
         useState<onNextProps | null>(null)
     // Состояние для хранения выбранных контактов (участников группы/канала)
@@ -39,50 +36,60 @@ export default function ChatsListWrapper() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedContacts, setSelectedContacts] =
         useState<Contact[]>([])
+    const [isCreating, setIsCreating] = useState(false)
+    const [createError, setCreateError] = useState<
+        string | null
+    >(null)
 
-    // Обработчики для группы
-    // Обработчик перехода к форме создания группы
-    // Просто меняем состояние view, не сбрасывая другие состояния для сохранения данных при возврате
+    // Ключ для принудительного обновления ChatsList при создании нового чата
+    const [chatsListKey, setChatsListKey] = useState(0)
+
+    // Загрузка чатов при монтировании компонента
+    useEffect(() => {
+        loadChats(15)
+    }, [loadChats])
+
+    // Обработчик перехода к созданию группы
     const handleCreateGroup = () => {
         setCurrentView('create-group')
+        setCreateError(null)
     }
 
-    // Обработчик возврата из формы создания группы к списку чатов
-    // Сбрасываем данные группы при возврате, так как пользователь отменил создание
+    // Обработчик возврата из формы создания группы
     const handleBackFromCreateGroup = () => {
         setCurrentView('chats')
         setGroupData(null)
+        setCreateError(null)
+        setChatsListKey((prev) => prev + 1) // Принудительное обновление списка чатов
     }
 
-    // Обработчик возврата из списка участников группы к форме создания группы
-    // Не сбрасываем groupData, чтобы пользователь мог вернуться и изменить настройки
+    // Обработчик возврата из списка участников группы
     const handleBackFromGroupMembers = () => {
         setCurrentView('create-group')
+        setCreateError(null)
     }
 
-    // Обработчики для канала
-    // Обработчик перехода к форме создания канала
+    // Обработчик перехода к созданию канала
     const handleCreateChannel = () => {
         setCurrentView('create-channel')
+        setCreateError(null)
     }
-    // Обработчик возврата из формы создания канала к списку чатов
+
+    // Обработчик возврата из формы создания канала
     const handleBackFromCreateChannel = () => {
         setCurrentView('chats')
         setChannelData(null)
+        setCreateError(null)
+        setChatsListKey((prev) => prev + 1) // Принудительное обновление списка чатов
     }
-    // Обработчик перехода от формы создания группы к выбору участников
-    // Принимает либо строку (для обратной совместимости), либо объект с данными группы
-    // Используем type guard (typeof payload === 'object') для определения типа данных
+
+    // Обработчик перехода от создания группы к выбору участников
     const handleNextFromCreateGroup = (
         payload: onNextProps | string,
     ) => {
         if (typeof payload === 'object') {
-            // Сохраняем все данные группы из формы
-            // payload содержит name, description, type, photo
             setGroupData(payload)
         } else {
-            // Для обратной совместимости со старым кодом, который передавал только строку
-            // Создаем минимальный объект с данными
             setGroupData({
                 name: payload,
                 description: '',
@@ -90,11 +97,10 @@ export default function ChatsListWrapper() {
                 photo: null,
             })
         }
-        // Переключаемся на экран выбора участников
         setCurrentView('group-members')
     }
-    // Обработчик перехода от формы создания канала к выбору участников
-    // Аналогичен handleNextFromCreateGroup, но для каналов
+
+    // Обработчик перехода от создания канала к выбору участников
     const handleNextFromCreateChannel = (
         payload: string | onNextProps,
     ) => {
@@ -108,140 +114,149 @@ export default function ChatsListWrapper() {
                 photo: null,
             })
         }
-
         setCurrentView('channel-members')
     }
-    // Обработчик возврата из списка участников канала к форме создания канала
+
+    // Обработчик возврата из списка участников канала
     const handleBackFromChannelMembers = () => {
         setCurrentView('create-channel')
+        setCreateError(null)
     }
-    // Обработчик завершения создания группы
-    // Принимает массив выбранных контактов
-    // Этот обработчик собирает все данные и "отправляет" их (пока в alert)
-    const handleFinishGroupCreation = (
+
+    // Создание группы с выбранными участниками
+    const handleFinishGroupCreation = async (
         contacts: Contact[],
     ) => {
-        // Сохраняем выбранные контакты в состояние (хотя уже переданы как аргумент)
-        // Это нужно для сброса состояния позже
+        if (!groupData) return
+
+        setIsCreating(true)
+        setCreateError(null)
         setSelectedContacts(contacts)
 
-        // Собираем все данные для создания группы
-        // Используем non-null assertion (!) так как уверены, что groupData не null на этом этапе
-        const groupInfo = {
-            ...groupData!, // Все данные из формы
-            members: contacts, // Выбранные участники
-            membersCount: contacts.length, // Количество участников для быстрого доступа
-        }
+        try {
+            const result = await createGroup(
+                groupData,
+                contacts,
+            ).unwrap()
 
-        // Формируем имена участников для отображения в alert
-        const memberNames = contacts
-            .map(
-                (contact) =>
-                    `${contact.firstName} ${contact.lastName}`,
+            // Формирование строки с именами участников для отображения
+            const memberNames = contacts
+                .map(
+                    (contact) =>
+                        `${contact.firstName} ${contact.lastName}`,
+                )
+                .join(', ')
+
+            alert(
+                `Создана группа:\n\n` +
+                    `Название: ${groupData.name}\n` +
+                    `Описание: ${groupData.description}\n` +
+                    `Тип: ${groupData.type}\n` +
+                    `Фото: ${groupData.photo ? 'Есть' : 'Нет'}\n` +
+                    `Участники (${contacts.length}): ${memberNames}\n\n` +
+                    `Группа успешно создана и добавлена в список чатов!`,
             )
-            .join(', ')
-        // Показываем алерт со всеми данными (временное решение для демонстрации)
-        // В реальном приложении здесь был бы API вызов
-        alert(
-            `Создана группа:\n\n` +
-                `Название: ${groupData?.name}\n` +
-                `Описание: ${groupData?.description}\n` +
-                `Тип: ${groupData?.type}\n` +
-                `Фото: ${groupData?.photo ? 'Есть' : 'Нет'}\n` +
-                `Участники (${contacts.length}): ${memberNames}\n\n` +
-                `Объект данных для отправки на сервер:\n` +
-                JSON.stringify(groupInfo, null, 2),
-        )
 
-        // Здесь можно добавить API вызов для создания группы
-        // console.log используется для отладки в dev-режиме
-        console.log(
-            'Данные для создания группы:',
-            groupInfo,
-        )
-
-        // Сбрасываем все состояния к начальным значениям
-        // Это важно для корректной работы при повторном создании группы
-        setCurrentView('chats')
-        setGroupData(null)
-        setSelectedContacts([])
+            // Сброс состояний и возврат к списку чатов
+            setCurrentView('chats')
+            setGroupData(null)
+            setSelectedContacts([])
+            setChatsListKey((prev) => prev + 1)
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Неизвестная ошибка при создании группы'
+            setCreateError(errorMessage)
+            alert(
+                `Ошибка при создании группы: ${errorMessage}`,
+            )
+        } finally {
+            setIsCreating(false)
+        }
     }
 
-    // Обработчик завершения создания канала
-    // Аналогичен handleFinishGroupCreation, но для каналов
-    const handleFinishChannelCreation = (
+    // Создание канала с выбранными участниками
+    const handleFinishChannelCreation = async (
         contacts: Contact[],
     ) => {
-        // Собираем все данные для создания группы
-        const channelInfo = {
-            ...channelData!,
-            members: contacts,
-            membersCount: contacts.length,
-        }
+        if (!channelData) return
 
-        // Показываем алерт со всеми данными
-        const memberNames = contacts
-            .map(
-                (contact) =>
-                    `${contact.firstName} ${contact.lastName}`,
+        setIsCreating(true)
+        setCreateError(null)
+        setSelectedContacts(contacts)
+
+        try {
+            const result = await createChannel(
+                channelData,
+                contacts,
+            ).unwrap()
+
+            const memberNames = contacts
+                .map(
+                    (contact) =>
+                        `${contact.firstName} ${contact.lastName}`,
+                )
+                .join(', ')
+
+            alert(
+                `Создан канал:\n\n` +
+                    `Название: ${channelData.name}\n` +
+                    `Описание: ${channelData.description}\n` +
+                    `Тип: ${channelData.type}\n` +
+                    `Фото: ${channelData.photo ? 'Есть' : 'Нет'}\n` +
+                    `Участники (${contacts.length}): ${memberNames}\n\n` +
+                    `Канал успешно создан и добавлен в список чатов!`,
             )
-            .join(', ')
 
-        alert(
-            `Создан канал:\n\n` +
-                `Название: ${channelData?.name}\n` +
-                `Описание: ${channelData?.description}\n` +
-                `Тип: ${channelData?.type}\n` +
-                `Фото: ${channelData?.photo ? 'Есть' : 'Нет'}\n` +
-                `Участники (${contacts.length}): ${memberNames}\n\n` +
-                `Объект данных для отправки на сервер:\n` +
-                JSON.stringify(channelInfo, null, 2),
-        )
-
-        // Здесь можно добавить API вызов для создания группы
-        console.log(
-            'Данные для создания группы:',
-            channelInfo,
-        )
-        // Сбрасываем состояния
-        setCurrentView('chats')
-        setChannelData(null)
-        setSelectedContacts([])
+            setCurrentView('chats')
+            setChannelData(null)
+            setSelectedContacts([])
+            setChatsListKey((prev) => prev + 1)
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Неизвестная ошибка при создании канала'
+            setCreateError(errorMessage)
+            alert(
+                `Ошибка при создании канала: ${errorMessage}`,
+            )
+        } finally {
+            setIsCreating(false)
+        }
     }
 
-    // Рендерим соответствующий компонент в зависимости от текущего представления
-    // Используем switch statement для явного определения всех возможных состояний
-    // TypeScript будет проверять, что мы обработали все варианты из типа View
+    // Рендеринг соответствующего компонента в зависимости от текущего представления
     switch (currentView) {
         case 'chats':
-            // Основной экран со списком чатов
             return (
                 <ChatsList
+                    key={`chats-list-${chatsListKey}`}
                     onCreateGroup={handleCreateGroup}
                     onCreateChannel={handleCreateChannel}
                 />
             )
 
         case 'create-group':
-            // Форма создания группы
             return (
                 <CreateGroupForm
                     onBack={handleBackFromCreateGroup}
                     onNext={handleNextFromCreateGroup}
+                    initialData={groupData}
                 />
             )
 
         case 'group-members':
-            // Проверяем, что данные группы существуют перед рендером списка участников
-            // Это защита от рендера с неполными данными
             return groupData ? (
                 <GroupMembersList
-                    groupData={groupData} // Передаем все данные группы
+                    groupData={groupData}
                     onBack={handleBackFromGroupMembers}
                     onFinish={handleFinishGroupCreation}
+                    isCreating={isCreating}
+                    error={createError}
                 />
             ) : (
-                // Fallback UI на случай ошибки (данные не найдены)
                 <div className="p-4">
                     <p>Ошибка: данные группы не найдены</p>
                     <button
@@ -260,6 +275,7 @@ export default function ChatsListWrapper() {
                 <CreateChannelForm
                     onBack={handleBackFromCreateChannel}
                     onNext={handleNextFromCreateChannel}
+                    initialData={channelData}
                 />
             )
 
@@ -269,6 +285,8 @@ export default function ChatsListWrapper() {
                     channelData={channelData}
                     onBack={handleBackFromChannelMembers}
                     onFinish={handleFinishChannelCreation}
+                    isCreating={isCreating}
+                    error={createError}
                 />
             ) : (
                 <div className="p-4">
@@ -287,10 +305,9 @@ export default function ChatsListWrapper() {
             )
 
         default:
-            // Fallback на случай, если currentView имеет неожиданное значение
-            // Возвращаем основной экран для безопасности
             return (
                 <ChatsList
+                    key={`chats-list-default-${chatsListKey}`}
                     onCreateGroup={handleCreateGroup}
                     onCreateChannel={handleCreateChannel}
                 />

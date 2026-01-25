@@ -1,5 +1,5 @@
+// ChatsList.tsx
 'use client'
-// Компонент списка чатов
 import {
     useCallback,
     useEffect,
@@ -19,73 +19,57 @@ import { useRouter } from 'next/navigation'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
-// Интерфейс пропсов компонента ChatsList
+import { Contact } from '@shared/types/contact'
+
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
 }
-// Основной компонент списка чатов
+
 export default function ChatsList({
     onCreateGroup,
     onCreateChannel,
 }: ChatsListProps) {
-    // useRouter для навигации между страницами
-    // В отличие от useNavigate в React Router, next/navigation использует useRouter
     const router = useRouter()
-    // Состояние для значения поиска
-    // Используем useState, а не useRef, потому что изменение должно вызывать ререндер
+
+    // Состояния для управления UI
     const [searchValue, setSearchValue] = useState('')
-    // Состояние для отображения модального окна удаления чата
-    // Boolean состояние для управления видимостью модалки
     const [deleteModalOpen, setDeleteModalOpen] =
         useState(false)
-    // Состояние для отслеживания процесса удаления (загрузки)
-    // Нужно для блокировки UI во время асинхронной операции
     const [isDeleting, setIsDeleting] = useState(false)
-    // Состояние для отображения тоста об успешном добавлении в контакты
     const [successToastOpen, setSuccessToastOpen] =
         useState(false)
-    // Состояние для хранения имени добавленного контакта (для тоста)
-    // Храним строку, чтобы показать в тосте, какой именно контакт добавлен
     const [addedContactName, setAddedContactName] =
         useState('')
-    // Состояние для хранения информации о чате, который планируется удалить
-    // Хранит объект {id, name} для отображения в модальном окне подтверждения
     const [chatToDelete, setChatToDelete] = useState<{
         id: number
         name: string
     } | null>(null)
-    // Используем кастомный хук useChats для управления состоянием чатов
-    // Этот хук абстрагирует работу с Redux и предоставляет простой API
+
+    // Хук для работы с чатами
     const {
-        chats, // Массив чатов из Redux store, через хук useChats
-        loading, // Флаг загрузки из Redux store, через хук useChats
-        loadChats, // Функция загрузки чатов (thunk action), через хук useChats
-        chatSettings, // Настройки для каждого чата (избранное, уведомления и т.д.)
-        toggleFavorite: handleFavoriteChat, // Функция прикрепления/открепления
-        toggleNotifications: handleMuteChat, // Функция включения/выключения уведомлений
-        markAsRead: handleMarkAsRead, // Функция пометки как прочитанного
-        markAsUnread: handleMarkAsUnread, // Функция пометки как непрочитанного
-        deleteChat, // Функция удаления чата
-        addToContacts, // Функция добавления в контакты
-        selectedChatId, // ID выбранного чата
-        selectChat, // Функция выбора чата
+        chats,
+        loading,
+        loadChats,
+        chatSettings,
+        toggleFavorite: handleFavoriteChat,
+        toggleNotifications: handleMuteChat,
+        markAsRead: handleMarkAsRead,
+        markAsUnread: handleMarkAsUnread,
+        deleteChat,
+        addToContacts,
+        selectedChatId,
+        selectChat,
+        createGroup,
+        createChannel,
     } = useChats()
 
-    // useEffect для загрузки чатов при монтировании компонента
-    // Используем loadChats как зависимость, но он мемоизирован в хуке useChats
-    useEffect(() => {
-        loadChats(15) // Загружаем 15 чатов при первом рендере
-    }, [loadChats]) // loadChats стабильна благодаря useCallback в хуке useChats
-
-    // useCallback для мемоизации обработчика начала нового чата
-    // Зависимость [router] - функция изменится только если изменится router
+    // Навигация к странице контактов
     const handleStartChat = useCallback(() => {
         router.push('/contacts')
     }, [router])
 
-    // Массив статусов сообщений для демонстрационных целей
-    // В реальном приложении получается с сервера для каждого сообщения
+    // Статусы сообщений для отображения в списке чатов
     const messageStatuses: (
         | 'sent'
         | 'delivered'
@@ -93,93 +77,89 @@ export default function ChatsList({
         | null
     )[] = ['sent', 'delivered', 'read', null]
 
-    // Используем хук useSearch для фильтрации чатов по строке поиска
-    // Хук возвращает отфильтрованный массив на основе searchValue
-    const { filteredValue } = useSearch(
+    // Фильтрация чатов - исключаем удаленные
+    const filteredChats =
         chats?.filter(
-            (chat) => !chatSettings[chat.id]?.isDeleted, // Исключаем удаленные чаты из поиска
-        ) || [], // fallback на пустой массив если chats undefined
+            (chat) => !chatSettings[chat.id]?.isDeleted,
+        ) || []
+
+    // Поиск по чатам с использованием хука useSearch
+    const { filteredValue } = useSearch(
+        filteredChats,
         searchValue,
         [
-            'chat.firstName', // Поиск по имени вложенного объекта
+            'chat.firstName',
             'chat.lastName',
             (chat) =>
-                `${chat.chat.firstName} ${chat.chat.lastName}`, // Поиск по полному имени (функция)
-            'lastMessage.content', // Поиск по тексту последнего сообщения
+                `${chat.chat.firstName} ${chat.chat.lastName}`,
+            'lastMessage.content',
+            'name',
         ],
     )
 
-    // Сортируем чаты: избранные в начале списка
-    // Используем spread оператор [...filteredValue] чтобы не мутировать оригинальный массив
-    const sortedChats = [...filteredValue].sort((a, b) => {
-        const aIsFavorite =
-            chatSettings[a.id]?.isFavorite || false
-        const bIsFavorite =
-            chatSettings[b.id]?.isFavorite || false
-        // Избранные чаты должны быть первыми (-1 означает, что a идет перед b)
-        if (aIsFavorite && !bIsFavorite) return -1
-        if (!aIsFavorite && bIsFavorite) return 1
-        return 0 // Если оба избранные или оба не избранные - сохраняем порядок
-    })
+    // Сортировка чатов: избранные в начале списка
+    const sortedChats = [...(filteredValue || [])].sort(
+        (a, b) => {
+            const aIsFavorite =
+                chatSettings[a.id]?.isFavorite || false
+            const bIsFavorite =
+                chatSettings[b.id]?.isFavorite || false
+            if (aIsFavorite && !bIsFavorite) return -1
+            if (!aIsFavorite && bIsFavorite) return 1
+            return 0
+        },
+    )
 
-    // Функция выбора чата по клику
-    // useCallback не используется, так как функция простая и не передается как prop
+    // Выбор/отмена выбора чата
     const toSelectChat = (id: number): void => {
         if (id === selectedChatId) {
-            selectChat(null) // Если чат уже выбран, снимаем выбор
+            selectChat(null)
         } else {
-            selectChat(id) // Иначе выбираем чат
+            selectChat(id)
         }
     }
 
-    // useCallback для обработчика клика по кнопке удаления чата
-    // Мемоизация нужна, так как функция передается как prop в ChatListItem
-    // и может вызывать лишние ререндеры дочерних компонентов без мемоизации
+    // Обработчик нажатия кнопки удаления чата
     const handleDeleteClick = useCallback(
         (chatId: number, chatName: string) => {
-            // Сохраняем информацию о чате для модального окна
             setChatToDelete({ id: chatId, name: chatName })
-            setDeleteModalOpen(true) // Открываем модальное окно
+            setDeleteModalOpen(true)
         },
         [],
     )
 
-    // useCallback для обработчика подтверждения удаления чата
-    // Асинхронная функция для имитации API запроса
+    // Подтверждение удаления чата
     const handleDeleteConfirm = useCallback(async () => {
-        if (!chatToDelete || isDeleting) return // Защита от повторных вызовов
+        if (!chatToDelete || isDeleting) return
 
         setIsDeleting(true)
 
         try {
-            // Имитация задержки при удалении (в реальном приложении здесь был бы API-запрос)
-            // Используем Promise для асинхронной задержки
-            await new Promise((resolve) =>
+            // Имитация задержки для UX
+            await new Promise<void>((resolve) =>
                 setTimeout(resolve, 1000),
             )
 
-            console.log('Удалить чат:', chatToDelete.id)
-            // Вызываем функцию удаления из хука useChats
-            // В реальном приложении здесь был бы dispatch Redux action
-            deleteChat(chatToDelete.id) // Вызываем функцию удаления из хука useChats
-            // Закрываем модальное окно и сбрасываем состояние
+            deleteChat(chatToDelete.id)
             setDeleteModalOpen(false)
             setChatToDelete(null)
         } catch (error) {
-            console.error('Ошибка при удалении:', error)
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Неизвестная ошибка при удалении чата'
         } finally {
-            // Снимаем блокировку в любом случае (успех или ошибка)
             setIsDeleting(false)
         }
-    }, [chatToDelete, isDeleting, deleteChat]) // Зависимости: функция изменится если изменится chatToDelete, isDeleting или deleteChat
+    }, [chatToDelete, isDeleting, deleteChat])
 
-    // Обработчик отмены удаления чата
+    // Отмена удаления чата
     const handleDeleteCancel = useCallback(() => {
         setDeleteModalOpen(false)
-        setChatToDelete(null) // Важно сбросить chatToDelete, чтобы при следующем открытии не было старого значения
-    }, []) // Без зависимостей - функция стабильна
+        setChatToDelete(null)
+    }, [])
 
-    // Обработчик добавления чата в контакты
+    // Добавление контакта в список контактов
     const handleAddToContacts = useCallback(
         (
             chatId: number,
@@ -187,49 +167,45 @@ export default function ChatsList({
             lastName: string,
         ) => {
             const fullName = `${firstName} ${lastName}`
-            setAddedContactName(fullName) // Сохраняем имя для отображения в тосте
-            addToContacts(chatId) // Вызываем функцию добавления из хука useChats
-            setSuccessToastOpen(true) // Показываем тост об успехе
+            setAddedContactName(fullName)
+            addToContacts(chatId)
+            setSuccessToastOpen(true)
         },
-        [addToContacts], // addToContacts стабильна благодаря useCallback в хуке useChats
+        [addToContacts],
     )
 
-    // Обработчик закрытия тоста об успешном добавлении
+    // Закрытие тоста об успешном добавлении
     const handleSuccessToastClose = useCallback(() => {
         setSuccessToastOpen(false)
-    }, []) // Без зависимостей
+    }, [])
 
-    // useMemo для вычисления, нужно ли показывать состояние пустого поиска
-    // Вычисление мемоизируется и пересчитывается только при изменении searchValue или filteredValue
+    // Определение необходимости показа состояния пустого поиска
     const showEmptySearchState = useMemo(() => {
         return (
-            searchValue.trim() !== '' && // Поиск не пустой
+            searchValue.trim() !== '' &&
             filteredValue &&
-            filteredValue.length === 0 // И ничего не найдено
+            filteredValue.length === 0
         )
-    }, [searchValue, filteredValue]) // Пересчет только при изменении этих значений
+    }, [searchValue, filteredValue])
 
-    // Мемоизированное значение: нужно ли показывать состояние отсутствия чатов
+    // Определение необходимости показа состояния отсутствия чатов
     const showEmptyChatsState = useMemo(() => {
         return (
-            !loading && // Загрузка завершена
+            !loading &&
             chats &&
-            chats.length === 0 && // Чатов нет
-            searchValue.trim() === '' // Поиск не выполняется
+            chats.length === 0 &&
+            searchValue.trim() === ''
         )
-    }, [loading, chats, searchValue]) // Оптимизация: избегаем повторных вычислений при каждом рендере
+    }, [loading, chats, searchValue])
 
-    // Рендер компонента
     return (
         <>
             <div className="flex h-(--screen-height-list) min-h-0 flex-col">
                 {/* Верхняя панель с поиском и кнопкой создания */}
-                <div
-                    className={`flex h-19 w-full items-center gap-2.5 p-4`}
-                >
+                <div className="flex h-19 w-full items-center gap-2.5 p-4">
                     <Search
                         value={searchValue}
-                        onChange={setSearchValue} // Передаем setter функцию напрямую
+                        onChange={setSearchValue}
                         placeholder={'Поиск'}
                         clearIconSrc="/images/search/closeSearch.svg"
                         showClearButton={true}
@@ -246,24 +222,21 @@ export default function ChatsList({
                         }
                     />
                 </div>
+
                 {/* Основная область со списком чатов */}
                 <div
                     className={cn(
-                        `min-h-0 flex-1 overflow-auto`,
+                        'min-h-0 flex-1 overflow-auto',
                         `max-h-(--screen-112)`,
                     )}
                 >
-                    {/* Если идет загрузка, показываем индикатор */}
                     {loading ? (
-                        <div
-                            className={`flex h-full items-center justify-center`}
-                        >
+                        <div className="flex h-full items-center justify-center">
                             <div className="text-text-gray">
                                 Загрузка...
                             </div>
                         </div>
                     ) : showEmptySearchState ? (
-                        // Если поиск не дал результатов
                         <div
                             className={`
                               flex flex-1 items-center justify-center p-4
@@ -272,7 +245,6 @@ export default function ChatsList({
                             <EmptySearchState />
                         </div>
                     ) : showEmptyChatsState ? (
-                        // Если чатов вообще нет
                         <div
                             className={`
                               flex flex-1 items-center justify-center p-4
@@ -285,12 +257,10 @@ export default function ChatsList({
                             />
                         </div>
                     ) : (
-                        // Отображаем список чатов с кастомным скроллбаром
                         <CustomScrollbar>
                             <div className="flex flex-col">
                                 {sortedChats?.map(
                                     (chat, index) => {
-                                        // Получаем настройки для текущего чата
                                         const settings =
                                             chatSettings[
                                                 chat.id
@@ -314,12 +284,15 @@ export default function ChatsList({
                                                     chat.newMessageCount ||
                                                     0,
                                             }
+
                                         // Пропускаем удаленные чаты
                                         if (
                                             settings.isDeleted
-                                        )
+                                        ) {
                                             return null
-                                        // Рассчитываем количество непрочитанных для бейджа
+                                        }
+
+                                        // Расчет количества непрочитанных сообщений
                                         let badgeCount:
                                             | number
                                             | undefined =
@@ -334,28 +307,112 @@ export default function ChatsList({
                                                     ? settings.originalUnreadCount
                                                     : 0
                                         }
-                                        // Определяем URL аватарки, используя fallback при отсутствии
-                                        const avatarSrc =
-                                            chat.chat.avatarUrl?.trim()
-                                                ? chat.chat
-                                                      .avatarUrl
-                                                : '/images/chatHeader/userAvatar.svg'
-                                        // Рендерим элемент списка чатов
+
+                                        // Определение URL аватарки с fallback
+                                        let avatarSrc =
+                                            chat.chat
+                                                .avatarUrl ||
+                                            chat.chat
+                                                .avatar ||
+                                            '/images/chatHeader/userAvatar.svg'
+
+                                        // Формирование превью сообщения в зависимости от типа чата
+                                        let messagePreview =
+                                            ''
+                                        if (
+                                            chat.chatType.includes(
+                                                'group',
+                                            )
+                                        ) {
+                                            // Для групп: отображаем отправителя и сообщение
+                                            const senderName =
+                                                chat
+                                                    .lastMessage
+                                                    .fromUser ||
+                                                'Пользователь'
+                                            messagePreview = `${senderName}: ${chat.lastMessage.content}`
+                                        } else if (
+                                            chat.chatType.includes(
+                                                'channel',
+                                            )
+                                        ) {
+                                            // Для каналов: отображаем описание канала
+                                            messagePreview =
+                                                chat.description ||
+                                                ''
+                                        } else {
+                                            // Для личных чатов: отображаем текст последнего сообщения
+                                            messagePreview =
+                                                chat
+                                                    .lastMessage
+                                                    .content ||
+                                                ''
+                                        }
+
+                                        // Проверка валидности URL аватарки
+                                        if (
+                                            !avatarSrc ||
+                                            avatarSrc.trim() ===
+                                                '' ||
+                                            (avatarSrc.startsWith(
+                                                'http',
+                                            ) &&
+                                                !avatarSrc.includes(
+                                                    'randomuser.me',
+                                                ))
+                                        ) {
+                                            // Используем стандартную аватарку для некорректных URL
+                                            avatarSrc =
+                                                '/images/chatHeader/userAvatar.svg'
+                                        }
+
+                                        // Использование специальных иконок для групп и каналов
+                                        if (
+                                            chat.chatType.includes(
+                                                'group',
+                                            ) &&
+                                            avatarSrc ===
+                                                '/images/chatHeader/userAvatar.svg'
+                                        ) {
+                                            avatarSrc =
+                                                '/images/chatHeader/userAvatar.svg'
+                                        } else if (
+                                            chat.chatType.includes(
+                                                'channel',
+                                            ) &&
+                                            avatarSrc ===
+                                                '/images/chatHeader/userAvatar.svg'
+                                        ) {
+                                            avatarSrc =
+                                                '/images/chatHeader/userAvatar.svg'
+                                        }
+
                                         return (
                                             <ChatListItem
                                                 src={
                                                     avatarSrc
                                                 }
-                                                name={`${chat.chat.firstName} ${chat.chat.lastName}`}
-                                                messagePreview={
-                                                    chat
-                                                        .lastMessage
-                                                        .content
+                                                name={
+                                                    chat.name
                                                 }
-                                                timestamp={formatLastSeen(
-                                                    chat.lastActivityAt *
-                                                        1000,
-                                                )}
+                                                messagePreview={
+                                                    messagePreview
+                                                }
+                                                chatType={
+                                                    chat.chatType
+                                                }
+                                                timestamp={
+                                                    chat
+                                                        .chat
+                                                        .isOnline
+                                                        ? ''
+                                                        : formatLastSeen(
+                                                              chat
+                                                                  .chat
+                                                                  .wasOnlineAt *
+                                                                  1000,
+                                                          )
+                                                }
                                                 unreadCount={
                                                     badgeCount
                                                 }
@@ -437,14 +494,15 @@ export default function ChatsList({
                     )}
                 </div>
             </div>
+
             {/* Модальное окно подтверждения удаления чата */}
-            {/* Рендерится всегда, но управляется пропом open */}
             <ChatDeleteModal
                 open={deleteModalOpen}
                 onClose={handleDeleteCancel}
                 onConfirm={handleDeleteConfirm}
                 chatName={chatToDelete?.name || ''}
             />
+
             {/* Тост об успешном добавлении в контакты */}
             <ChatSuccessToast
                 open={successToastOpen}
