@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 
 export type UserProfile = {
@@ -28,6 +28,8 @@ type ProfileState = {
     refetch: () => Promise<void>
 }
 
+// Универсальный POST-запрос с авторизацией. Бек ожидает POST даже для чтения профиля,
+// поэтому отправляем пустой JSON, чтобы не ломать контракт.
 async function getWithAuth(
     path: string,
     accessToken?: string,
@@ -47,6 +49,8 @@ async function getWithAuth(
     })
 }
 
+// Обновляем access токен через refresh в cookies. Возвращаем строку токена или null,
+// если refresh отсутствует или запрос неуспешен.
 async function refreshAccessToken() {
     const refreshToken = Cookies.get('refresh_token')
     if (!refreshToken) return null
@@ -76,7 +80,8 @@ export function useProfile(): ProfileState {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // Быстрая отрисовка: пробуем поднять профиль из localStorage, пока идёт сетевой запрос
+    // Быстрая отрисовка: пробуем поднять профиль из localStorage, пока идёт сетевой запрос.
+    // Не блокируем сетевой вызов, а лишь уменьшаем время до первой отрисовки.
     const hydrateFromCache = useCallback(() => {
         try {
             const cached =
@@ -100,12 +105,14 @@ export function useProfile(): ProfileState {
         setError(null)
 
         try {
+            // Берём токен из cookies. Если его нет, пытаемся получить новый через refresh ниже.
             const accessToken = Cookies.get('access_token')
             let response = await getWithAuth(
                 '/api/auth/profile',
                 accessToken,
             )
 
+            // Если токен протух — обновляем и повторяем запрос один раз.
             if (response.status === 401) {
                 const refreshed = await refreshAccessToken()
                 if (refreshed) {
@@ -116,6 +123,7 @@ export function useProfile(): ProfileState {
                 }
             }
 
+            // Логическая ошибка (403/404/500 и т.п.) — показываем пользователю и чистим стейт.
             if (!response.ok) {
                 setError('Не удалось загрузить профиль')
                 setProfile(null)
@@ -126,7 +134,8 @@ export function useProfile(): ProfileState {
             setProfile(data ?? null)
 
             try {
-                // Кладём свежие данные в кеш, чтобы следующий заход был мгновенным
+                // Кладём свежие данные в кеш, чтобы следующий заход был мгновенным.
+                // В Safari в приватном режиме localStorage может бросить ошибку — поэтому try/catch.
                 if (typeof window !== 'undefined' && data) {
                     localStorage.setItem(
                         'profile_cache',
@@ -140,6 +149,7 @@ export function useProfile(): ProfileState {
                 )
             }
         } catch (err) {
+            // Сетевые/неожиданные ошибки. Показываем общий текст, чтобы не раскрывать детали.
             console.error('Profile fetch error', err)
             setError('Ошибка сети')
             setProfile(null)

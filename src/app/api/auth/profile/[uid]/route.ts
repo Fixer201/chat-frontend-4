@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Прокси для мягкого удаления профиля по UID через бэкенд
+// Прокси для мягкого удаления профиля по UID через бэкенд.
+// Задача: принять DELETE с фронта, пробросить на API и вернуть ответ как есть.
 export async function DELETE(
     request: NextRequest,
     context: { params: Promise<{ uid: string }> },
@@ -16,6 +17,7 @@ export async function DELETE(
     }
 
     try {
+        // Проксируем Authorization, чтобы бэк мог идентифицировать пользователя
         const authHeader =
             request.headers.get('authorization')
 
@@ -46,6 +48,7 @@ export async function DELETE(
             data = { status: response.status }
         }
 
+        // Возвращаем те же статус-коды и тело, что пришли с бэка, чтобы фронт получал реальный результат
         return NextResponse.json(data, {
             status: response.status,
         })

@@ -40,6 +40,7 @@ const menuItems = [
     },
 ]
 
+// Запасной аватар — когда нет никакой картинки от бекенда
 const DEFAULT_AVATAR_SRC =
     '/images/chatHeader/userAvatar.svg'
 
@@ -73,6 +74,7 @@ export default function SettingsMenu() {
     }, [closeLogoutModal, router])
 
     // Удаление профиля: шлём DELETE на прокси, чистим токены и редиректим
+    // Подтверждение удаления профиля: мягкое удаление на бэке + чистка токенов
     const handleDeleteConfirm = useCallback(async () => {
         if (deleteLoading) return
 
@@ -92,6 +94,7 @@ export default function SettingsMenu() {
         setDeleteLoading(true)
 
         try {
+            // Бьём в наш Next.js API-роут, который проксирует запрос на реальный бэк
             const response = await fetch(
                 `/api/auth/profile/${targetUid}`,
                 {
@@ -104,6 +107,7 @@ export default function SettingsMenu() {
                 },
             )
 
+            // Ответ может быть пустым — читаем текст, а потом пробуем распарсить как JSON
             const rawText = await response.text()
             let data: Record<string, unknown> = {}
             try {
@@ -116,6 +120,7 @@ export default function SettingsMenu() {
                 )
             }
 
+            // Любой не-2xx — показываем сообщение пользователю
             if (!response.ok) {
                 const message =
                     (data?.detail as string) ||
@@ -159,6 +164,7 @@ export default function SettingsMenu() {
 
     const isProfilePending = loading && !profile
 
+    // Приоритеты аватарки: прямой URL от бекенда > avatar_webp_url > avatar (ссылку или путь дополняем корнем)
     const profileAvatarSrc = (() => {
         if (!profile) return null
 
