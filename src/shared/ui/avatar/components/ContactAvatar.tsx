@@ -93,12 +93,16 @@ export const ContactAvatar = forwardRef<
                 `}
                 >
                     <Image
-                        src={src}
+                        src={
+                            src ||
+                            '/images/contacts/DefaultAvatar.svg'
+                        } // заменить на дефолтный аватар
                         alt={alt ?? name}
                         fill
                         sizes={'40px'}
                         className={`
                       object-cover
+                      
                     `}
                     />
                 </div>
@@ -193,8 +197,9 @@ export const ContactAvatar = forwardRef<
                             <span
                                 className={cn(
                                     `
-                                      flex h-6 w-6 items-center justify-center
-                                      rounded-full border-2
+                                      flex h-6 w-6 cursor-pointer
+                                      items-center justify-center rounded-full
+                                      border-2 transition-colors
                                     `,
                                     isHighlighted ||
                                         isSelected
@@ -206,7 +211,10 @@ export const ContactAvatar = forwardRef<
                                           border-(--color-accent-violet-primary)
                                         `,
                                 )}
-                                onClick={onSelect}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onSelect?.()
+                                }}
                                 onKeyDown={
                                     handleSelectKeyDown
                                 }
@@ -222,8 +230,8 @@ export const ContactAvatar = forwardRef<
                                     <Image
                                         src="/images/Check.svg"
                                         alt="selected"
-                                        width={20}
-                                        height={20}
+                                        width={24}
+                                        height={24}
                                         onClick={onSelect}
                                     />
                                 )}

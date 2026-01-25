@@ -36,6 +36,7 @@ export default function ChatsListWrapper() {
         useState<onNextProps | null>(null)
     // Состояние для хранения выбранных контактов (участников группы/канала)
     // Используем массив объектов Contact для хранения полной информации о контактах
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedContacts, setSelectedContacts] =
         useState<Contact[]>([])
 
