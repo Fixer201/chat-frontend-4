@@ -17,11 +17,23 @@ export interface AvatarCropperProps {
     isOpen: boolean
     imageFile?: File | null
     onClose: () => void
-    onConfirm: (image: Blob) => void
+    onConfirm: (
+        // Меняем сигнатуру
+        image: Blob,
+        cropParams?: {
+            // Добавляем второй параметр
+            crop: { x: number; y: number }
+            zoom: number
+            croppedAreaPixels: Area | null
+        },
+    ) => void
     onFileChange?: (file: File) => void
     minZoom?: number
     maxZoom?: number
     initialZoom?: number
+    // Добавляем новые пропсы для сохраненного состояния
+    initialCrop?: { x: number; y: number } // Сохраненное положение кадрирования
+    initialCroppedAreaPixels?: Area // Сохраненная область кадрирования
 }
 
 const confirmButtonClass = cn(
@@ -40,6 +52,9 @@ export function AvatarCropper({
     minZoom = 1,
     maxZoom = 3,
     initialZoom = 1.2,
+    // Добавляем новые пропсы с дефолтными значениями
+    initialCrop = { x: 0, y: 0 },
+    initialCroppedAreaPixels,
 }: AvatarCropperProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -56,6 +71,8 @@ export function AvatarCropper({
     } = useAvatarCropper({
         imageFile,
         initialZoom,
+        initialCrop, // Передаем начальное положение кадрирования
+        initialCroppedAreaPixels, // Передаем начальную область кадрирования
     })
 
     const handleClose = useCallback(() => {
@@ -88,7 +105,12 @@ export function AvatarCropper({
                 imageSrc,
                 croppedAreaPixels as Area,
             )
-            onConfirm(blob)
+            // Передаем не только blob, но и текущие параметры кадрирования
+            onConfirm(blob, {
+                crop, // текущее положение
+                zoom, // текущий зум
+                croppedAreaPixels, // текущая область кадрирования
+            })
             handleClose()
         } catch (error) {
             // В продакшене можно добавить toast/логирование
@@ -100,6 +122,8 @@ export function AvatarCropper({
         handleClose,
         imageSrc,
         onConfirm,
+        crop, // Добавляем в зависимости
+        zoom, // Добавляем в зависимости
     ])
 
     const openFileDialog = useCallback(() => {
@@ -116,7 +140,7 @@ export function AvatarCropper({
             blurBackground
             closeOnOverlayClick
             className={cn(
-                'relative w-full max-w-[30rem] rounded-lg bg-white',
+                'relative w-full max-w-120 rounded-lg bg-white',
                 'px-6',
                 'sm:px-8',
             )}
