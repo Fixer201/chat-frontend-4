@@ -78,11 +78,12 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
                   ${
                       canClickImage
                           ? `
-                    cursor-pointer transition-all
-                    hover:opacity-90
-                    focus:ring-2 focus:ring-(--color-accent-violet-primary)
-                    focus:outline-none
-                  `
+                            cursor-pointer transition-all
+                            hover:opacity-90
+                            focus:ring-2
+                            focus:ring-(--color-accent-violet-primary)
+                            focus:outline-none
+                          `
                           : ''
                   }
                 `}

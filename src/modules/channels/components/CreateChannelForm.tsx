@@ -1,16 +1,33 @@
 // CreateChannelForm.tsx
 'use client'
 
-import { useEffect, useMemo, useState, useRef } from 'react'
+import {
+    useEffect,
+    useState,
+    useRef,
+    useCallback,
+} from 'react'
 import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
 import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
+import { AvatarCropper } from '@shared/ui/avatarCropper/AvatarCropper'
 import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
 import { Button } from '@shared/ui/button/Button'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import {
     GroupTypeOptionProps,
     onNextProps,
+    CropParams,
 } from '@shared/types/createGroup'
+import { Area } from 'react-easy-crop'
+
+// Интерфейс для внутреннего состояния кадрирования
+interface CropState {
+    crop: { x: number; y: number }
+    zoom: number
+    croppedAreaPixels: Area | null
+    croppedBlob: Blob | null
+    originalFile: File | null
+}
 
 interface CreateChannelFormProps {
     onBack: () => void
@@ -37,32 +54,25 @@ export default function CreateChannelForm({
     onNext,
     initialData,
 }: CreateChannelFormProps) {
-    // Ref для отслеживания первого рендера компонента
     const isFirstRender = useRef(true)
+    const previousPreviewRef = useRef<string | null>(null)
 
-    // Функция для получения начального значения типа канала из initialData
-    const getInitialOption = () => {
-        if (initialData?.type) {
-            const foundOption = channelOptions.find(
-                (option) =>
-                    option.value === initialData.type,
-            )
-            return (
-                foundOption || {
-                    value: '',
-                    optionName: '',
-                    optionDescription: '',
-                }
-            )
-        }
-        return {
-            value: '',
-            optionName: '',
-            optionDescription: '',
-        }
-    }
+    // Состояния для кадрирования
+    const [isCropperOpen, setIsCropperOpen] =
+        useState(false)
+    const [selectedFile, setSelectedFile] =
+        useState<File | null>(null)
 
-    // Состояния формы
+    // Полное состояние кадрирования для сохранения
+    const [cropState, setCropState] = useState<CropState>({
+        crop: { x: 0, y: 0 },
+        zoom: 1.2,
+        croppedAreaPixels: null,
+        croppedBlob: null,
+        originalFile: null,
+    })
+
+    // Остальные состояния
     const [photoFile, setPhotoFile] = useState<File | null>(
         initialData?.photo || null,
     )
@@ -73,29 +83,303 @@ export default function CreateChannelForm({
         initialData?.description || '',
     )
     const [choosenOption, setChoosenOption] =
-        useState<GroupTypeOptionProps>(getInitialOption())
+        useState<GroupTypeOptionProps>(() => {
+            const getInitialOption = () => {
+                if (initialData?.type) {
+                    const foundOption = channelOptions.find(
+                        (option) =>
+                            option.value ===
+                            initialData.type,
+                    )
+                    return (
+                        foundOption || {
+                            value: '',
+                            optionName: '',
+                            optionDescription: '',
+                        }
+                    )
+                }
+                return {
+                    value: '',
+                    optionName: '',
+                    optionDescription: '',
+                }
+            }
+            return getInitialOption()
+        })
 
-    // Создание предпросмотра аватарки из выбранного файла
-    const photoPreview = useMemo(
-        () =>
-            photoFile
-                ? URL.createObjectURL(photoFile)
-                : null,
-        [photoFile],
+    // Состояние для preview URL
+    const [photoPreview, setPhotoPreview] = useState<
+        string | null
+    >(null)
+
+    // Определяем, есть ли изображение (не дефолтное)
+    const hasImage = Boolean(
+        photoPreview &&
+        !photoPreview.includes('userAvatar.svg'),
     )
 
-    // Очистка URL объекта при размонтировании компонента
+    // Создание preview URL с использованием useEffect
     useEffect(() => {
-        return () => {
-            if (photoPreview)
-                URL.revokeObjectURL(photoPreview)
-        }
-    }, [photoPreview])
+        let isMounted = true
+        let animationFrameId: number | null = null
 
-    // Обновление состояния формы при изменении initialData
+        // Очищаем предыдущий preview URL
+        if (previousPreviewRef.current) {
+            URL.revokeObjectURL(previousPreviewRef.current)
+        }
+
+        let newPreview: string | null = null
+
+        if (cropState.croppedBlob) {
+            newPreview = URL.createObjectURL(
+                cropState.croppedBlob,
+            )
+        } else if (cropState.originalFile) {
+            newPreview = URL.createObjectURL(
+                cropState.originalFile,
+            )
+        } else if (photoFile) {
+            newPreview = URL.createObjectURL(photoFile)
+        } else {
+            // Используем дефолтное изображение
+            newPreview = '/images/chatHeader/userAvatar.svg'
+        }
+
+        // Сохраняем новый preview в ref
+        previousPreviewRef.current = newPreview
+
+        // Откладываем обновление состояния до следующего кадра анимации
+        animationFrameId = requestAnimationFrame(() => {
+            if (isMounted) {
+                setPhotoPreview(newPreview)
+            }
+        })
+
+        // Очистка при размонтировании
+        return () => {
+            isMounted = false
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId)
+            }
+
+            if (
+                previousPreviewRef.current &&
+                previousPreviewRef.current.startsWith(
+                    'blob:',
+                )
+            ) {
+                URL.revokeObjectURL(
+                    previousPreviewRef.current,
+                )
+                previousPreviewRef.current = null
+            }
+        }
+    }, [
+        cropState.croppedBlob,
+        cropState.originalFile,
+        photoFile,
+    ])
+
+    // Восстановление состояния из initialData при первом рендере
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false
+
+            // Используем setTimeout для асинхронного восстановления состояния
+            setTimeout(() => {
+                if (initialData) {
+                    setName(initialData.name || '')
+                    setDescription(
+                        initialData.description || '',
+                    )
+
+                    // Восстанавливаем состояние кадрирования если есть параметры
+                    if (initialData.photo) {
+                        setPhotoFile(initialData.photo)
+
+                        // Восстанавливаем cropState если есть параметры кадрирования
+                        if (initialData.cropParams) {
+                            setCropState({
+                                crop: initialData.cropParams
+                                    .crop || { x: 0, y: 0 },
+                                zoom:
+                                    initialData.cropParams
+                                        .zoom || 1.2,
+                                croppedAreaPixels:
+                                    initialData.cropParams
+                                        .croppedAreaPixels ||
+                                    null,
+                                croppedBlob: null,
+                                originalFile:
+                                    initialData.photo,
+                            })
+                        } else {
+                            setCropState((prev) => ({
+                                ...prev,
+                                originalFile:
+                                    initialData.photo,
+                            }))
+                        }
+                    }
+
+                    // Восстанавливаем выбранную опцию
+                    if (initialData.type) {
+                        const foundOption =
+                            channelOptions.find(
+                                (option) =>
+                                    option.value ===
+                                    initialData.type,
+                            )
+                        if (foundOption) {
+                            setChoosenOption(foundOption)
+                        }
+                    }
+                }
+            }, 0)
+        }
+    }, [initialData])
+
+    // Обработчик выбора файла из AvatarPicker (по кнопке)
+    const handleFileSelect = useCallback(
+        (file: File | null) => {
+            if (file) {
+                // Сохраняем файл как originalFile в cropState
+                setCropState((prev) => ({
+                    ...prev,
+                    originalFile: file,
+                    croppedBlob: null,
+                    croppedAreaPixels: null,
+                }))
+                setSelectedFile(file)
+                setPhotoFile(file)
+                // НЕ открываем кадрирование! Только сохраняем файл
+            } else {
+                // Сброс аватарки
+                setPhotoFile(null)
+                setSelectedFile(null)
+                setCropState({
+                    crop: { x: 0, y: 0 },
+                    zoom: 1.2,
+                    croppedAreaPixels: null,
+                    croppedBlob: null,
+                    originalFile: null,
+                })
+            }
+        },
+        [],
+    )
+
+    // Обработчик клика по изображению в AvatarPicker
+    const handleImageClick = useCallback(() => {
+        // Открываем кадрирование только если есть изображение
+        if (hasImage) {
+            // Используем originalFile для кадрирования
+            if (cropState.originalFile) {
+                setSelectedFile(cropState.originalFile)
+            } else if (photoFile) {
+                setSelectedFile(photoFile)
+            }
+            setIsCropperOpen(true)
+        }
+    }, [hasImage, cropState.originalFile, photoFile])
+
+    // Обработчик закрытия кадрирования
+    const handleCropperClose = useCallback(() => {
+        setIsCropperOpen(false)
+    }, [])
+
+    // Обработчик подтверждения кадрирования
+    const handleCropperConfirm = useCallback(
+        (
+            blob: Blob,
+            cropParams?: {
+                crop: { x: number; y: number }
+                zoom: number
+                croppedAreaPixels: Area | null
+            },
+        ) => {
+            // Конвертируем Blob в File для сохранения
+            const fileName =
+                selectedFile?.name || 'channel-avatar.png'
+            const fileType =
+                blob.type ||
+                selectedFile?.type ||
+                'image/png'
+            const file = new File([blob], fileName, {
+                type: fileType,
+            })
+
+            // Сохраняем полное состояние кадрирования
+            setCropState((prev) => ({
+                ...prev,
+                croppedBlob: blob,
+                ...(cropParams || {
+                    crop: prev.crop,
+                    zoom: prev.zoom,
+                    croppedAreaPixels:
+                        prev.croppedAreaPixels,
+                }),
+            }))
+
+            setPhotoFile(file)
+            setIsCropperOpen(false)
+        },
+        [selectedFile],
+    )
+
+    // Обработчик изменения файла в кадрировании (загрузка нового)
+    const handleCropperFileChange = useCallback(
+        (file: File) => {
+            setSelectedFile(file)
+            // Сохраняем как originalFile и сбрасываем предыдущее кадрирование
+            setCropState((prev) => ({
+                ...prev,
+                originalFile: file,
+                croppedBlob: null,
+                croppedAreaPixels: null,
+            }))
+        },
+        [],
+    )
+
+    // Обработчик отправки формы
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+
+        // Валидация обязательных полей
+        if (
+            !name.trim() ||
+            !description.trim() ||
+            !choosenOption.value
+        )
+            return
+
+        // Создаем объект CropParams для передачи
+        const cropParams: CropParams = {
+            crop: cropState.crop,
+            zoom: cropState.zoom,
+            croppedAreaPixels: cropState.croppedAreaPixels,
+        }
+
+        // Передача данных в родительский компонент
+        onNext({
+            name: name.trim(),
+            description: description.trim(),
+            type: choosenOption.value,
+            photo: photoFile,
+            cropParams:
+                cropState.croppedBlob ||
+                cropState.originalFile
+                    ? cropParams
+                    : undefined,
+        })
+    }
+
+    // Обновление состояния формы при изменении initialData (после первого рендера)
+    useEffect(() => {
+        if (isFirstRender.current) {
             return
         }
 
@@ -106,8 +390,38 @@ export default function CreateChannelForm({
                     initialData.description || '',
                 )
 
-                if (initialData.photo !== undefined) {
+                if (
+                    initialData.photo !== undefined &&
+                    initialData.photo
+                ) {
                     setPhotoFile(initialData.photo)
+                    // Если есть photo, устанавливаем его как originalFile
+                    setCropState((prev) => ({
+                        ...prev,
+                        originalFile:
+                            initialData.photo as File,
+                        ...(initialData.cropParams
+                            ? {
+                                  crop: initialData
+                                      .cropParams.crop,
+                                  zoom: initialData
+                                      .cropParams.zoom,
+                                  croppedAreaPixels:
+                                      initialData.cropParams
+                                          .croppedAreaPixels,
+                              }
+                            : {}),
+                    }))
+                } else if (initialData.photo === null) {
+                    // Если photo явно null, сбрасываем
+                    setPhotoFile(null)
+                    setCropState({
+                        crop: { x: 0, y: 0 },
+                        zoom: 1.2,
+                        croppedAreaPixels: null,
+                        croppedBlob: null,
+                        originalFile: null,
+                    })
                 }
 
                 if (initialData.type) {
@@ -128,6 +442,14 @@ export default function CreateChannelForm({
                 setName('')
                 setDescription('')
                 setPhotoFile(null)
+                setSelectedFile(null)
+                setCropState({
+                    crop: { x: 0, y: 0 },
+                    zoom: 1.2,
+                    croppedAreaPixels: null,
+                    croppedBlob: null,
+                    originalFile: null,
+                })
                 setChoosenOption({
                     value: '',
                     optionName: '',
@@ -144,27 +466,6 @@ export default function CreateChannelForm({
         option: GroupTypeOptionProps,
     ) => {
         setChoosenOption((prev) => ({ ...prev, ...option }))
-    }
-
-    // Обработчик отправки формы
-    const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-
-        // Валидация обязательных полей
-        if (
-            !name.trim() ||
-            !description.trim() ||
-            !choosenOption.value
-        )
-            return
-
-        // Передача данных в родительский компонент
-        onNext({
-            name: name.trim(),
-            description: description.trim(),
-            type: choosenOption.value,
-            photo: photoFile,
-        })
     }
 
     return (
@@ -206,7 +507,8 @@ export default function CreateChannelForm({
                         <AvatarPicker
                             src={photoPreview}
                             name={name || 'Канал'}
-                            onFile={setPhotoFile}
+                            onFile={handleFileSelect}
+                            onImageClick={handleImageClick}
                         />
                     </div>
 
@@ -274,6 +576,22 @@ export default function CreateChannelForm({
                     </div>
                 </form>
             </div>
+
+            {/* Модальное окно кадрирования с передачей сохраненных параметров */}
+            <AvatarCropper
+                isOpen={isCropperOpen}
+                imageFile={selectedFile ?? undefined}
+                onClose={handleCropperClose}
+                onFileChange={handleCropperFileChange}
+                onConfirm={handleCropperConfirm}
+                initialCrop={cropState.crop}
+                initialZoom={cropState.zoom}
+                initialCroppedAreaPixels={
+                    cropState.croppedAreaPixels || undefined
+                }
+                minZoom={1}
+                maxZoom={3}
+            />
         </div>
     )
 }
