@@ -37,10 +37,10 @@ export default function GroupMembersList({
 
     // Получение данных из Redux store
     const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContact.uid,
+        (state: RootState) => state.SelectedContactTemp.uid,
     )
     const contactsList = useSelector(
-        (state: RootState) => state.contacts.list,
+        (state: RootState) => state.contactsTemp.list,
     )
 
     // Обработчик выбора/отмены выбора контакта
