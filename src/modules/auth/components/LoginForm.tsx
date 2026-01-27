@@ -389,7 +389,7 @@ export default function LoginForm() {
                     >
                         <div
                             className={`
-              absolute flex h-152 w-90 flex-col items-center justify-between
+              absolute flex flex-col items-center justify-between
               gap-6
             `}
                         >

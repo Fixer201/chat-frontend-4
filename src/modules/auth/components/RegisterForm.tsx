@@ -30,9 +30,12 @@ const RegisterForm = memo(function RegisterForm({
     const [lastCheckedNickname, setLastCheckedNickname] =
         useState('') // Для отслеживания последнего проверенного nickname
     const nameValidationRegex = /^[а-яА-Яa-zA-Z\s\-]*$/
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const nicknameValidationRegex = /^[a-zA-Z0-9._]*$/
+    const [isNameFocused, setIsNameFocused] =
+        useState(false) // состояние для фокуса имени
+    const [isNicknameFocused, setIsNicknameFocused] =
+        useState(false) // состояние для фокуса никнейма
 
     // Debouncing для nickname
     useEffect(() => {
@@ -228,8 +231,8 @@ const RegisterForm = memo(function RegisterForm({
                 >
                     <div
                         className={`
-                          absolute flex h-152 w-90 flex-col items-center
-                          justify-between gap-6
+                          absolute flex flex-col items-center justify-between
+                          gap-6
                         `}
                     >
                         <div className="relative flex h-17 w-90 items-center">
@@ -291,6 +294,11 @@ const RegisterForm = memo(function RegisterForm({
                                     onChange={
                                         handleNameChange
                                     }
+                                    onFocus={() =>
+                                        setIsNameFocused(
+                                            true,
+                                        )
+                                    }
                                     onBlur={handleNameBlur}
                                     inputSize="lg"
                                     color={
@@ -301,7 +309,9 @@ const RegisterForm = memo(function RegisterForm({
                                     borderColor={
                                         nameError
                                             ? 'red'
-                                            : 'gray'
+                                            : isNameFocused
+                                              ? 'violet'
+                                              : 'gray'
                                     }
                                     labelColor={
                                         nameError
@@ -321,6 +331,11 @@ const RegisterForm = memo(function RegisterForm({
                                     onChange={
                                         handleNicknameChange
                                     }
+                                    onFocus={() =>
+                                        setIsNicknameFocused(
+                                            true,
+                                        )
+                                    }
                                     onBlur={
                                         handleNicknameBlur
                                     }
@@ -335,7 +350,9 @@ const RegisterForm = memo(function RegisterForm({
                                         nicknameUniqueError ||
                                         nicknameError
                                             ? 'red'
-                                            : 'gray'
+                                            : isNicknameFocused
+                                              ? 'violet'
+                                              : 'gray'
                                     }
                                     labelColor={
                                         nicknameUniqueError ||

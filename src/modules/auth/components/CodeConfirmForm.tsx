@@ -130,7 +130,7 @@ export default function CodeConfirmForm({
                 >
                     <div
                         className={`
-            absolute flex h-152 w-90 flex-col items-center justify-between
+            absolute flex flex-col items-center justify-between
               gap-6
           `}
                     >
@@ -159,17 +159,17 @@ export default function CodeConfirmForm({
 
                         <div
                             className={`
-              flex w-full flex-col items-center justify-between gap-6
+              flex h-126 w-90 flex-col items-center justify-between gap-6
             `}
                         >
-                            <div className="flex w-full items-center justify-center">
+                            <div className="flex w-90 items-center justify-center">
                                 <p className="text-center text-[32px] font-bold">
                                     Подтвердите вход
                                 </p>
                             </div>
                             <div
                                 className={`
-                flex w-90 flex-col items-center justify-between gap-6
+                flex h-112 w-90 flex-col items-center justify-between gap-6
               `}
                             >
                                 <span className="text-center text-lg">
@@ -359,8 +359,23 @@ export default function CodeConfirmForm({
                                 )}
                                 <span
                                     className={`
-                  text-center text-lg font-bold text-accent-violet-primary
+                  cursor-pointer text-center text-lg font-bold text-accent-violet-primary hover:underline
                 `}
+                                    onClick={
+                                        handleResendCode
+                                    }
+                                    onKeyDown={(e) => {
+                                        if (
+                                            e.key ===
+                                                'Enter' ||
+                                            e.key === ' '
+                                        ) {
+                                            e.preventDefault()
+                                            handleResendCode()
+                                        }
+                                    }}
+                                    tabIndex={0}
+                                    role="button"
                                 >
                                     Не приходит код?
                                 </span>
