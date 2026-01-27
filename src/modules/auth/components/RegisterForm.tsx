@@ -198,9 +198,9 @@ const RegisterForm = memo(function RegisterForm({
         }
     }
 
-    // const handleDownload = () => {
-    //     window.open('/contract.docx', '_blank');
-    // };
+    const handleDownload = () => {
+        window.open('/contract.pdf', '_blank')
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center">
@@ -345,14 +345,33 @@ const RegisterForm = memo(function RegisterForm({
                                     }
                                 />
 
-                                <span className="text-[14px]">
+                                <span
+                                    className={`text-[14px]`}
+                                >
                                     Нажимая на
                                     &quot;Зарегистрироваться&quot;,
                                     вы соглашаетесь с{' '}
                                     <span
                                         className={`
+                                          cursor-pointer
                                           text-(--color-accent-violet-primary)
+                                          hover:underline
                                         `}
+                                        onClick={
+                                            handleDownload
+                                        }
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key ===
+                                                    'Enter' ||
+                                                e.key ===
+                                                    ' '
+                                            ) {
+                                                handleDownload()
+                                            }
+                                        }}
                                     >
                                         Пользовательским
                                         соглашением
