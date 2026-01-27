@@ -136,6 +136,58 @@ export default function LoginForm() {
         }
     }
 
+    // Функция для проверки профиля и навигации
+    const checkProfileAndNavigate = async () => {
+        const accessToken = Cookies.get('access_token')
+        if (!accessToken) {
+            console.error('Access token не найден')
+            setShowLoginForm(true) // Если токена нет, показать регистрацию
+            return
+        }
+        try {
+            const response = await fetch(
+                '/api/auth/profile',
+                {
+                    method: 'POST', // Измените на GET для получения профиля
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({}), // Пустое тело для проверки
+                },
+            )
+
+            if (response.ok) {
+                const profileData = await response.json()
+
+                // Проверка на заполненность профиля (is_filled из API)
+                if (profileData && profileData.is_filled) {
+                    // Профиль заполнен — переход на контакты (вход)
+                    Cookies.set(
+                        'user_profile',
+                        JSON.stringify(profileData),
+                        { expires: 7 },
+                    )
+                    router.push('/contacts')
+                } else {
+                    // Профиль не заполнен — показать регистрацию
+                    setShowLoginForm(true)
+                }
+            } else if (response.status === 404) {
+                setShowLoginForm(true) // Профиль не найден (404)
+            } else {
+                console.error(
+                    'Ошибка получения профиля:',
+                    response.status,
+                )
+                setShowLoginForm(true) // В случае других ошибок — регистрация
+            }
+        } catch (err) {
+            console.error('Ошибка проверки профиля:', err)
+            setShowLoginForm(true) // Ошибка сети — регистрация
+        }
+    }
+
     // функция верификации кода и получения токенов
     const handleVerifyCode = async (code: string) => {
         if (isBlocked) return
@@ -168,15 +220,6 @@ export default function LoginForm() {
                 data,
             )
             if (response.ok) {
-                // Сохраняем токены в localStorage
-                // localStorage.setItem(
-                //     'refresh_token',
-                //     data.refresh,
-                // )
-                // localStorage.setItem(
-                //     'access_token',
-                //     data.access,
-                // )
                 // Сохраняем токены в cookies (срок жизни 7 дней для access, 30 для refresh)
                 Cookies.set('access_token', data.access, {
                     expires: 7,
@@ -184,8 +227,8 @@ export default function LoginForm() {
                 Cookies.set('refresh_token', data.refresh, {
                     expires: 30,
                 })
-                setShowLoginForm(true)
-                setShowLoginForm(true)
+                // Проверяем профиль и навигируем
+                await checkProfileAndNavigate()
             } else {
                 setAttempts((prev) => prev + 1)
                 if (attempts + 1 >= 5) {
@@ -269,8 +312,6 @@ export default function LoginForm() {
                 throw new Error(errorMessage)
             }
         } catch (err) {
-            // setError('Ошибка сети. Проверьте подключение.')
-            // console.error('Profile error:', err)
             throw err
         } finally {
             setLoading(false)

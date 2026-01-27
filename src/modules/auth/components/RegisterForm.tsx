@@ -30,8 +30,9 @@ const RegisterForm = memo(function RegisterForm({
     const [lastCheckedNickname, setLastCheckedNickname] =
         useState('') // Для отслеживания последнего проверенного nickname
     const nameValidationRegex = /^[а-яА-Яa-zA-Z\s\-]*$/
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const nicknameValidationRegex = /^[а-яА-Яa-zA-Z0-9._]*$/
+    const nicknameValidationRegex = /^[a-zA-Z0-9._]*$/
 
     // Debouncing для nickname
     useEffect(() => {

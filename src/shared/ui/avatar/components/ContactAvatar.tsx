@@ -4,7 +4,7 @@ import { Badge } from '@shared/ui/badge/Badge'
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
 import { forwardRef } from 'react'
-import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
+// import { createButtonKeyHandler } from '@shared/lib/keyboard-handlers'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 export type AvatarMode = 'contact' | 'select-contact'
@@ -78,12 +78,12 @@ export const ContactAvatar = forwardRef<
             e.stopPropagation()
             onSelect?.()
         }
-        const handleSelectKeyDown = createButtonKeyHandler(
-            (e: React.KeyboardEvent) => {
-                e.stopPropagation()
-                onSelect?.()
-            },
-        )
+        const handleSelectKeyDown = (
+            e: React.KeyboardEvent,
+        ) => {
+            e.stopPropagation()
+            onSelect?.()
+        }
 
         return (
             <div
@@ -231,7 +231,9 @@ export const ContactAvatar = forwardRef<
                                         alt="selected"
                                         width={24}
                                         height={24}
-                                        onClick={handleSelectClick}
+                                        onClick={
+                                            handleSelectClick
+                                        }
                                     />
                                 )}
                             </span>
