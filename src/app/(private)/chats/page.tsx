@@ -7,7 +7,8 @@ import { useEffect } from 'react'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 
 export default function ChatsPage() {
-    const { chats, selectedChatId, loadChats } = useChats()
+    const { chats, selectedChatId, loadChats, selectChat } =
+        useChats()
 
     useEffect(() => {
         loadChats(15)
@@ -18,30 +19,56 @@ export default function ChatsPage() {
         (chat) => chat.id === selectedChatId,
     )
 
+    // Mobile: show chat full-screen if selected, otherwise show sidebar
+    // Desktop: always show both
+    const showChatOnMobile = !!selectedChat
+
     return (
-        <div className="flex h-screen max-w-full gap-6">
+        <div
+            className={`
+          flex h-full w-full gap-2
+          md:gap-6
+        `}
+        >
             {/* Левая колонка - список чатов */}
             <div
                 className={`
                   w-full rounded-md border border-app-divider bg-gray-main
                   md:w-80
                   lg:w-96
+                  ${
+                      showChatOnMobile
+                          ? `
+                    hidden
+                    md:block
+                  `
+                          : 'block'
+                  }
                 `}
             >
                 {/* Обертка для списка чатов и форм создания групп/каналов */}
                 <ChatsListWrapper />
             </div>
 
-            {/* Правая колонка - пустой state (скрыт на mobile) */}
+            {/* Правая колонка - чат или пустой state */}
             <div
                 className={`
-                  hidden flex-1 rounded-md border border-app-divider
-                  bg-gray-main
-                  md:block
+                  flex-1 rounded-md border border-app-divider bg-gray-main
+                  ${
+                      showChatOnMobile
+                          ? 'block'
+                          : `
+                    hidden
+                    md:block
+                  `
+                  }
                 `}
             >
                 {selectedChat ? (
-                    <ChatRoom chat={selectedChat} />
+                    <ChatRoom
+                        chat={selectedChat}
+                        onBack={() => selectChat(null)}
+                    />
                 ) : (
                     <EmptyChatState />
                 )}

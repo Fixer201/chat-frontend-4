@@ -201,7 +201,7 @@ export default function SettingsMenu() {
         return null
     })()
     const asideClass = cn(
-        'h-11/12 w-full rounded-md border border-app-divider bg-gray-main',
+        'h-full w-full rounded-md border border-app-divider bg-gray-main',
         'md:w-80',
         'lg:w-96',
     )

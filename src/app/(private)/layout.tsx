@@ -7,6 +7,7 @@ import AppShell from '@modules/core/components/AppShell'
 import { Spinner } from '@shared/ui/Spinner'
 import { NotFoundView } from '@modules/core/components/NotFoundView'
 import '@app/globals.css'
+import { WebSocketProvider } from '@shared/context/websocketContext'
 
 export default function PrivateLayout({
     children,
@@ -36,7 +37,9 @@ export default function PrivateLayout({
     return (
         <ReduxProvider>
             <TrpcProvider>
-                <AppShell>{children}</AppShell>
+                <WebSocketProvider>
+                    <AppShell>{children}</AppShell>
+                </WebSocketProvider>
             </TrpcProvider>
         </ReduxProvider>
     )

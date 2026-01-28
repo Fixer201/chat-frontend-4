@@ -12,12 +12,17 @@ export default function SettingsLayout({
     children,
 }: SettingsLayoutProps) {
     return (
-        <div className="flex h-screen max-w-full gap-6">
+        <div
+            className={`
+          flex h-full w-full gap-2
+          md:gap-6
+        `}
+        >
             <SettingsMenu />
 
             <section
                 className={`
-                  hidden h-11/12 flex-1
+                  hidden flex-1
                   md:block
                 `}
             >

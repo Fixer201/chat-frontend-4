@@ -47,8 +47,8 @@ export default function MessagesList({
                         height="200"
                         width="200"
                         src="/img_frog_Web.svg"
-                        alt="Иллюстрация пустого чата"
-                        aria-hidden="false"
+                        alt=""
+                        aria-hidden="true"
                     />
                     <p className="text-lg font-medium">
                         Сообщений пока нет

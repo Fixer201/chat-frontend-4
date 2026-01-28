@@ -107,28 +107,37 @@ export default function MessageComposer({
         <div
             className={`
               flex h-fit max-h-[472] items-end justify-between rounded-b-md
-              border-t border-gray-border bg-gray-light px-4 py-3
+              border-t border-gray-border bg-gray-light px-2 py-3
+              md:px-4
             `}
         >
             {/* Attachment Icon */}
-            <Image
-                width={25}
-                height={25}
-                src="/icons/messageComposer/Paperclip.svg"
-                alt="paperclip icon"
-                className="mb-3 cursor-pointer"
-                role="button"
-            />
+            <button
+                aria-label="Attach file"
+                type="button"
+                className="mb-3"
+            >
+                <Image
+                    width={25}
+                    height={25}
+                    src="/icons/messageComposer/Paperclip.svg"
+                    alt=""
+                    className="cursor-pointer"
+                />
+            </button>
 
             {/* Message input field */}
             <div
                 className={`
-                  relative mx-2 flex h-full max-h-96 w-full items-center
+                  relative mx-1 flex h-full max-h-96 w-full items-center
                   justify-between rounded-3xl bg-white-bg px-2 py-3
+                  md:mx-2
                 `}
             >
                 <textarea
                     ref={textareaRef}
+                    name="message"
+                    aria-label="Message input"
                     placeholder="Сообщение"
                     value={inputValue}
                     onKeyDown={handleKeyDown}
@@ -144,25 +153,25 @@ export default function MessageComposer({
                 />
 
                 {/* Emoji picker trigger */}
-                <div
-                    role="button"
+                <button
+                    type="button"
+                    aria-label="Open emoji picker"
                     className="absolute right-4 bottom-2 mb-1.5"
                     onMouseEnter={handleEmojiPickerOpen}
                     onMouseLeave={handleEmojiPickerClose}
+                    onFocus={handleEmojiPickerOpen}
+                    onBlur={handleEmojiPickerClose}
                 >
                     <Smile
                         width={20}
                         height={20}
                         src="/icons/messageComposer/Smile.svg"
-                        alt="smile icon for emojies"
+                        alt=""
                         className={cn(
                             'cursor-pointer fill-text-gray',
                             isEmojiPickerOpen &&
                                 'fill-accent-violet-primary',
                         )}
-                        onMouseEnter={() =>
-                            setIsEmojiPickerOpen(true)
-                        }
                     />
                     {isEmojiPickerOpen && (
                         <div className="absolute right-0 bottom-full z-50 mb-2">
@@ -179,24 +188,36 @@ export default function MessageComposer({
                             />
                         </div>
                     )}
-                </div>
+                </button>
             </div>
 
             {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
-            <button className="relative mb-2 h-8 w-8">
+            <button
+                type="button"
+                aria-label={
+                    inputValue.length > 0
+                        ? 'Send message'
+                        : 'Record voice message'
+                }
+                onClick={
+                    inputValue.length > 0
+                        ? handleSendMessage
+                        : undefined
+                }
+                className="relative mb-2 h-8 w-8"
+            >
                 {inputValue.length > 0 ? (
                     <Image
-                        onClick={handleSendMessage}
                         fill
                         src="/icons/messageComposer/SendMessage.svg"
-                        alt="send message button"
+                        alt=""
                         className="cursor-pointer object-contain"
                     />
                 ) : (
                     <Image
                         fill
                         src="/icons/messageComposer/Microphone.svg"
-                        alt="microphone icon for send voice message"
+                        alt=""
                         className="cursor-pointer object-contain"
                     />
                 )}
