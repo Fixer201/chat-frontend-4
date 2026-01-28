@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
+import Modal from '@shared/ui/modal/Modal'
+import { Button } from '@shared/ui/button/Button'
+import SupportRequestForm from './SupportRequestForm'
 
 interface CodeConfirmFormProps {
     phoneNumber: string
@@ -42,6 +45,12 @@ export default function CodeConfirmForm({
     const [timeLeft, setTimeLeft] = useState(60) // Таймер 60 сек
     const [canResend, setCanResend] = useState(false) // Флаг для показа "Отправить новый код"
     const [showTooltip, setShowTooltip] = useState(false)
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    // const [showCodeForm, setShowCodeForm] = useState(false)
+    const [
+        showSupportRequestForm,
+        setShowSupportRequestForm,
+    ] = useState(false)
 
     // Таймер для ввода кода
     useEffect(() => {
@@ -96,6 +105,18 @@ export default function CodeConfirmForm({
         onResendCode()
     }
 
+    // открытие модального окна
+    const handleOpenModal = () => {
+        setIsModalOpen(true)
+    }
+
+    // закрытие модального окна
+    const handleCloseModal = () => {
+        setIsModalOpen(false)
+    }
+
+    // const handleBackToForm = () => setShowCodeForm(false)
+
     // Таймер блокировки
     useEffect(() => {
         if (blockTime > 0) {
@@ -103,6 +124,15 @@ export default function CodeConfirmForm({
             return () => clearInterval(timer)
         }
     }, [blockTime])
+
+    if (showSupportRequestForm) {
+        return (
+            <SupportRequestForm
+                phoneNumber={phoneNumber}
+                onBack={handleCloseModal}
+            />
+        )
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center">
@@ -362,7 +392,7 @@ export default function CodeConfirmForm({
                   cursor-pointer text-center text-lg font-bold text-accent-violet-primary hover:underline
                 `}
                                     onClick={
-                                        handleResendCode
+                                        handleOpenModal
                                     }
                                     onKeyDown={(e) => {
                                         if (
@@ -384,6 +414,40 @@ export default function CodeConfirmForm({
                     </div>
                 </div>
             </div>
+            <Modal
+                open={isModalOpen}
+                onClose={handleCloseModal}
+                title=""
+                descriptionColor="muted"
+                titleAlign="center"
+            >
+                <div
+                    className={`text-center text-lg text-[24px] font-bold`}
+                >
+                    Срок действия кода истек
+                </div>
+
+                <Button
+                    variant="solid"
+                    size="lg"
+                    color={'primary'}
+                    className={`w-full`}
+                    onClick={() => {
+                        setShowSupportRequestForm(true)
+                    }}
+                >
+                    Обратиться в поддержку
+                </Button>
+                <Button
+                    variant="outline"
+                    size="lg"
+                    color={'primary'}
+                    className={`w-full`}
+                    onClick={handleCloseModal}
+                >
+                    Назад
+                </Button>
+            </Modal>
         </div>
     )
 }

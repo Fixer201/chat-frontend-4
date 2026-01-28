@@ -439,6 +439,11 @@ export default function LoginForm() {
                                                       ? 'Измените номер'
                                                       : 'Введите номер телефона'
                                             }
+                                            labelColor={
+                                                showError
+                                                    ? 'red'
+                                                    : 'gray'
+                                            }
                                             placeholder="+7 900 000 00 00"
                                             borderColor={
                                                 showError
@@ -469,6 +474,9 @@ export default function LoginForm() {
                                         className={`w-full`}
                                         onClick={
                                             handleOpenModal
+                                        }
+                                        disabled={
+                                            !!showError
                                         }
                                     >
                                         Далее
