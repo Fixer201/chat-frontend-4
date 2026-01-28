@@ -6,9 +6,12 @@ import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
 import SentIcon from '@public/images/messageStatus/sent.svg'
 import DeliveredIcon from '@public/images/messageStatus/delivered.svg'
 import ReadIcon from '@public/images/messageStatus/read.svg'
+import { MessageContextMenu } from './MessageContextMenu'
+import { useState } from 'react'
 
 interface MessageItemProps {
     readonly message: Message
+    readonly onEdit?: (message: Message) => void
 }
 
 type ReadStatus = 'sent' | 'delivered' | 'read'
@@ -64,6 +67,7 @@ function ReadCheckmark({
 
 export default function MessageItem({
     message,
+    onEdit,
 }: MessageItemProps) {
     const currentUser = useAppSelector(
         (state) => state.user.currentUser,
@@ -76,6 +80,11 @@ export default function MessageItem({
     const isOwn = message.from_user == currentUserId
     const readStatus = getReadStatus(message, isOwn)
 
+    const [contextMenuOpen, setContextMenuOpen] =
+        useState(false)
+    const [contextMenuPosition, setContextMenuPosition] =
+        useState({ top: 0, left: 0 })
+
     const formatTime = (timestamp?: number) => {
         if (!timestamp) return ''
         return new Date(
@@ -86,57 +95,104 @@ export default function MessageItem({
         })
     }
 
+    const handleContextMenu = (
+        e: React.MouseEvent<HTMLDivElement>,
+    ) => {
+        e.preventDefault()
+        setContextMenuPosition({
+            top: e.clientY,
+            left: e.clientX,
+        })
+        setContextMenuOpen(true)
+    }
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(message.content)
+    }
+
+    const handleEdit = () => {
+        onEdit?.(message)
+    }
+
+    const handleMenuItemClick = (handler?: () => void) => {
+        handler?.()
+        setContextMenuOpen(false)
+    }
+
     return (
-        <div
-            className={
-                isOwn
-                    ? 'flex justify-end'
-                    : 'flex justify-start'
-            }
-        >
+        <>
             <div
-                style={{
-                    maxWidth: 'var(--message-max-width)',
-                }}
                 className={
                     isOwn
-                        ? `
-                          rounded-lg bg-teal-secondary px-4 py-2 text-text-black
-                        `
-                        : `
-                          rounded-lg bg-message-bg-other px-4 py-2
-                          text-text-black
-                        `
+                        ? 'flex justify-end'
+                        : 'flex justify-start'
                 }
             >
-                <div className="flex items-end justify-between gap-2">
-                    <div
-                        className={`
-                          text-base font-normal wrap-break-word
-                          whitespace-pre-wrap
-                        `}
-                    >
-                        {message.content}
-                    </div>
-                    {message.created_at && (
+                <div
+                    onContextMenu={handleContextMenu}
+                    style={{
+                        maxWidth:
+                            'var(--message-max-width)',
+                    }}
+                    className={
+                        isOwn
+                            ? `
+                              cursor-context-menu rounded-lg bg-teal-secondary
+                              px-4 py-2 text-text-black
+                            `
+                            : `
+                              cursor-context-menu rounded-lg bg-message-bg-other
+                              px-4 py-2 text-text-black
+                            `
+                    }
+                >
+                    <div className="flex items-end justify-between gap-2">
                         <div
                             className={`
-                              flex shrink-0 items-center gap-1 text-sm
-                              whitespace-nowrap text-text-gray
+                              text-base font-normal wrap-break-word
+                              whitespace-pre-wrap
                             `}
                         >
-                            <span>
-                                {formatTime(
-                                    message.created_at,
+                            {message.content}
+                            {message.updated_at &&
+                                message.updated_at !==
+                                    message.created_at && (
+                                    <span
+                                        className={`ml-1 text-xs text-text-gray`}
+                                    >
+                                        (изменено)
+                                    </span>
                                 )}
-                            </span>
-                            <ReadCheckmark
-                                status={readStatus}
-                            />
                         </div>
-                    )}
+                        {message.created_at && (
+                            <div
+                                className={`
+                                  flex shrink-0 items-center gap-1 text-sm
+                                  whitespace-nowrap text-text-gray
+                                `}
+                            >
+                                <span>
+                                    {formatTime(
+                                        message.created_at,
+                                    )}
+                                </span>
+                                <ReadCheckmark
+                                    status={readStatus}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+            <MessageContextMenu
+                open={contextMenuOpen}
+                onOpenChange={setContextMenuOpen}
+                position={contextMenuPosition}
+                isOwnMessage={isOwn}
+                onCopy={handleCopy}
+                onEdit={isOwn ? handleEdit : undefined}
+                onMenuItemClick={handleMenuItemClick}
+            />
+        </>
     )
 }

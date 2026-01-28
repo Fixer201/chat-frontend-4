@@ -2,14 +2,17 @@
 
 import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
 import { cn } from '@shared/lib/utils'
 import { useWebSocket } from '@shared/context/websocketContext'
+import { Message } from '@shared/types/message'
 
 type MessageComposerProps = {
     chatKey: string
     toUserId: string
+    editingMessage?: Message | null
+    onCancelEdit?: () => void
 }
 
 // Хук для авто-роста textarea
@@ -35,9 +38,13 @@ function useAutoResizeTextarea(value: string) {
 export default function MessageComposer({
     chatKey,
     toUserId,
+    editingMessage,
+    onCancelEdit,
 }: Readonly<MessageComposerProps>) {
-    // Текст сообщения в инпуте
-    const [inputValue, setInputValue] = useState<string>('')
+    // Текст сообщения в инпуте (initialized from editingMessage via key pattern)
+    const [inputValue, setInputValue] = useState(
+        editingMessage?.content ?? '',
+    )
 
     // Флаг состояние открытия пикера эмодзи
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] =
@@ -49,23 +56,52 @@ export default function MessageComposer({
     const textareaRef = useAutoResizeTextarea(inputValue)
 
     // получаем данные из контекста
-    const { sendMessage, status } = useWebSocket()
+    const { sendMessage, updateMessage } = useWebSocket()
 
-    // Функция отправки сообщения
+    // Auto-focus textarea when entering edit mode
+    useEffect(() => {
+        if (editingMessage) {
+            textareaRef.current?.focus()
+        }
+        // textareaRef is stable (ref object), no need in deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editingMessage])
+
+    // Функция отправки/редактирования сообщения
     const handleSendMessage = () => {
         if (inputValue.trim().length === 0) return
 
-        sendMessage({
-            chatKey: chatKey,
-            content: inputValue,
-            toUserId: toUserId,
-            status: 'publish',
-        })
-
-        console.log('Отправка сообщения:', inputValue)
+        if (editingMessage && editingMessage.uid) {
+            // Режим редактирования
+            updateMessage({
+                uid: editingMessage.uid,
+                chatKey: chatKey,
+                content: inputValue,
+                status: 'publish',
+            })
+            console.log(
+                'Редактирование сообщения:',
+                inputValue,
+            )
+            onCancelEdit?.()
+        } else {
+            // Режим создания
+            sendMessage({
+                chatKey: chatKey,
+                content: inputValue,
+                toUserId: toUserId,
+                status: 'publish',
+            })
+            console.log('Отправка сообщения:', inputValue)
+        }
 
         // Очищаем поле после отправки
         setInputValue('')
+    }
+
+    const handleCancel = () => {
+        setInputValue('')
+        onCancelEdit?.()
     }
 
     // Обработчик нажатия клавиш
@@ -106,122 +142,163 @@ export default function MessageComposer({
     return (
         <div
             className={`
-              flex h-fit max-h-[472] items-end justify-between rounded-b-md
-              border-t border-gray-border bg-gray-light px-2 py-3
-              md:px-4
+              flex h-fit max-h-[472] flex-col rounded-b-md border-t
+              border-gray-border bg-gray-light
             `}
         >
-            {/* Attachment Icon */}
-            <button
-                aria-label="Attach file"
-                type="button"
-                className="mb-3"
-            >
-                <Image
-                    width={25}
-                    height={25}
-                    src="/icons/messageComposer/Paperclip.svg"
-                    alt=""
-                    className="cursor-pointer"
-                />
-            </button>
+            {/* Edit mode banner */}
+            {editingMessage && (
+                <div
+                    className={`
+                      flex items-center justify-between border-b
+                      border-gray-border bg-accent-violet-primary/10 px-4 py-2
+                    `}
+                >
+                    <div className="text-sm text-text-gray">
+                        <span className="font-medium text-accent-violet-primary">
+                            Редактирование сообщения
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        className={`
+                          text-text-gray
+                          hover:text-text-black
+                        `}
+                    >
+                        <Image
+                            src="/images/search/iconsClose.svg"
+                            alt="Отменить"
+                            width={20}
+                            height={20}
+                        />
+                    </button>
+                </div>
+            )}
 
-            {/* Message input field */}
             <div
                 className={`
+                  flex items-end justify-between px-2 py-3
+                  md:px-4
+                `}
+            >
+                {/* Attachment Icon */}
+                <button
+                    aria-label="Attach file"
+                    type="button"
+                    className="mb-3"
+                >
+                    <Image
+                        width={25}
+                        height={25}
+                        src="/icons/messageComposer/Paperclip.svg"
+                        alt=""
+                        className="cursor-pointer"
+                    />
+                </button>
+
+                {/* Message input field */}
+                <div
+                    className={`
                   relative mx-1 flex h-full max-h-96 w-full items-center
                   justify-between rounded-3xl bg-white-bg px-2 py-3
                   md:mx-2
                 `}
-            >
-                <textarea
-                    ref={textareaRef}
-                    name="message"
-                    aria-label="Message input"
-                    placeholder="Сообщение"
-                    value={inputValue}
-                    onKeyDown={handleKeyDown}
-                    onChange={(event) =>
-                        setInputValue(event.target.value)
-                    }
-                    className={`
+                >
+                    <textarea
+                        ref={textareaRef}
+                        name="message"
+                        aria-label="Message input"
+                        placeholder="Сообщение"
+                        value={inputValue}
+                        onKeyDown={handleKeyDown}
+                        onChange={(event) =>
+                            setInputValue(
+                                event.target.value,
+                            )
+                        }
+                        className={`
                       h-auto max-h-80 flex-1 resize-none rounded-3xl pr-8 pl-2
                       placeholder:text-text-gray
                       focus:outline-0
                     `}
-                    rows={1} // начальное количество строк
-                />
-
-                {/* Emoji picker trigger */}
-                <button
-                    type="button"
-                    aria-label="Open emoji picker"
-                    className="absolute right-4 bottom-2 mb-1.5"
-                    onMouseEnter={handleEmojiPickerOpen}
-                    onMouseLeave={handleEmojiPickerClose}
-                    onFocus={handleEmojiPickerOpen}
-                    onBlur={handleEmojiPickerClose}
-                >
-                    <Smile
-                        width={20}
-                        height={20}
-                        src="/icons/messageComposer/Smile.svg"
-                        alt=""
-                        className={cn(
-                            'cursor-pointer fill-text-gray',
-                            isEmojiPickerOpen &&
-                                'fill-accent-violet-primary',
-                        )}
+                        rows={1} // начальное количество строк
                     />
-                    {isEmojiPickerOpen && (
-                        <div className="absolute right-0 bottom-full z-50 mb-2">
-                            <EmojiPickerWithCategories
-                                onEmojiSelect={
-                                    handleEmojiSelect
-                                }
-                                className={`
+
+                    {/* Emoji picker trigger */}
+                    <button
+                        type="button"
+                        aria-label="Open emoji picker"
+                        className="absolute right-4 bottom-2 mb-1.5"
+                        onMouseEnter={handleEmojiPickerOpen}
+                        onMouseLeave={
+                            handleEmojiPickerClose
+                        }
+                        onFocus={handleEmojiPickerOpen}
+                        onBlur={handleEmojiPickerClose}
+                    >
+                        <Smile
+                            width={20}
+                            height={20}
+                            src="/icons/messageComposer/Smile.svg"
+                            alt=""
+                            className={cn(
+                                'cursor-pointer fill-text-gray',
+                                isEmojiPickerOpen &&
+                                    'fill-accent-violet-primary',
+                            )}
+                        />
+                        {isEmojiPickerOpen && (
+                            <div className="absolute right-0 bottom-full z-50 mb-2">
+                                <EmojiPickerWithCategories
+                                    onEmojiSelect={
+                                        handleEmojiSelect
+                                    }
+                                    className={`
                                   h-full max-h-[50vh] min-h-[20vh] w-full
                                   rounded-lg bg-white-bg shadow-lg
                                 `}
-                                emojiSize={32}
-                                emojisPerRow={11}
-                            />
-                        </div>
+                                    emojiSize={32}
+                                    emojisPerRow={11}
+                                />
+                            </div>
+                        )}
+                    </button>
+                </div>
+
+                {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
+                <button
+                    type="button"
+                    aria-label={
+                        inputValue.length > 0
+                            ? 'Send message'
+                            : 'Record voice message'
+                    }
+                    onClick={
+                        inputValue.length > 0
+                            ? handleSendMessage
+                            : undefined
+                    }
+                    className="relative mb-2 h-8 w-8"
+                >
+                    {inputValue.length > 0 ? (
+                        <Image
+                            fill
+                            src="/icons/messageComposer/SendMessage.svg"
+                            alt=""
+                            className="cursor-pointer object-contain"
+                        />
+                    ) : (
+                        <Image
+                            fill
+                            src="/icons/messageComposer/Microphone.svg"
+                            alt=""
+                            className="cursor-pointer object-contain"
+                        />
                     )}
                 </button>
             </div>
-
-            {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
-            <button
-                type="button"
-                aria-label={
-                    inputValue.length > 0
-                        ? 'Send message'
-                        : 'Record voice message'
-                }
-                onClick={
-                    inputValue.length > 0
-                        ? handleSendMessage
-                        : undefined
-                }
-                className="relative mb-2 h-8 w-8"
-            >
-                {inputValue.length > 0 ? (
-                    <Image
-                        fill
-                        src="/icons/messageComposer/SendMessage.svg"
-                        alt=""
-                        className="cursor-pointer object-contain"
-                    />
-                ) : (
-                    <Image
-                        fill
-                        src="/icons/messageComposer/Microphone.svg"
-                        alt=""
-                        className="cursor-pointer object-contain"
-                    />
-                )}
-            </button>
         </div>
     )
 }

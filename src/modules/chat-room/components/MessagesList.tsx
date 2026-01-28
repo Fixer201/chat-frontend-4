@@ -3,15 +3,18 @@
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Message } from '@shared/types/message'
 
 // Флаг для отображения всех моковых сообщений независимо от chatKey
 const USE_MOCK = true // TODO: удалить после реализации контактов
 
 export default function MessagesList({
     chatKey,
+    onEditMessage,
 }: Readonly<{
     chatKey: string
+    onEditMessage?: (message: Message) => void
 }>) {
     const { messages } = useWebSocket()
 
@@ -64,6 +67,7 @@ export default function MessagesList({
                         <li key={message.uid}>
                             <MessageItem
                                 message={message}
+                                onEdit={onEditMessage}
                             />
                         </li>
                     ))}

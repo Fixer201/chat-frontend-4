@@ -9,6 +9,13 @@ export type ConnectionStatus =
 
 export type WebSocketContextType = {
     sendMessage: (message: Message) => void
+    updateMessage: (params: {
+        uid: string
+        chatKey: string
+        content: string
+        status: string
+        files?: { filename: string; data: string }[]
+    }) => void
     messages: Message[]
     status: ConnectionStatus
     error: string | null

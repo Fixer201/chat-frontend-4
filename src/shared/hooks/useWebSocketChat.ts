@@ -8,7 +8,7 @@ import {
     useState,
 } from 'react'
 
-import { Message } from '@shared/types/message'
+import { Message, MessageFile } from '@shared/types/message'
 import { ConnectionStatus } from '@shared/types/webSocket'
 import { MOCK_MESSAGES } from '@shared/mocks/messages'
 
@@ -80,6 +80,20 @@ export function useWebSocketChat() {
             data.status === 'success'
         ) {
             setMessages((prev) => [...prev, data.message])
+        }
+
+        if (
+            // если удачно обновили сообщение
+            data.action === 'update_message' &&
+            data.status === 'OK'
+        ) {
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.uid === data.object.uid
+                        ? data.object
+                        : msg,
+                ),
+            )
         }
     }
 
@@ -193,13 +207,63 @@ export function useWebSocketChat() {
         [],
     )
 
+    // Функция редактирования сообщения
+    const updateMessage = useCallback(
+        ({
+            uid,
+            chatKey,
+            content,
+            status,
+            files,
+        }: {
+            uid: string
+            chatKey: string
+            content: string
+            status: string
+            files?: MessageFile[]
+        }) => {
+            const messageObj = {
+                action: 'update_message',
+                request_uid: crypto.randomUUID(),
+                object: {
+                    chat_key: chatKey,
+                    uid: uid,
+                    content: content,
+                    status: status,
+                    files: files,
+                },
+            }
+
+            console.log(
+                'Обновление сообщения на сервере: ',
+                messageObj,
+            )
+
+            if (
+                wsRef.current?.readyState === WebSocket.OPEN
+            ) {
+                wsRef.current?.send(
+                    JSON.stringify(messageObj),
+                )
+            }
+        },
+        [],
+    )
+
     return useMemo(
         () => ({
             sendMessage,
+            updateMessage,
             messages,
             status,
             error,
         }),
-        [sendMessage, messages, status, error],
+        [
+            sendMessage,
+            updateMessage,
+            messages,
+            status,
+            error,
+        ],
     )
 }
