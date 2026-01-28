@@ -108,12 +108,13 @@ export const ContactAvatar = forwardRef<
                 >
                     <Image
                         src={
-                            src ||
-                            '/images/contacts/DefaultAvatar.svg'
-                        } // заменить на дефолтный аватар
+                            src && src.trim() !== ''
+                                ? src
+                                : '/images/contacts/DefaultAvatar.svg'
+                        }
                         alt={alt ?? name}
                         fill
-                        sizes={'40px'}
+                        sizes="40px"
                         className={`
                       object-cover
                       

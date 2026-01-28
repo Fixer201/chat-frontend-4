@@ -51,6 +51,15 @@ export const useApiFetcher = () => {
 
     const fetchData = useCallback(
         async (url: string, options: FetchOptions = {}) => {
+            if (
+                !url ||
+                typeof url !== 'string' ||
+                url.trim() === ''
+            ) {
+                throw new Error(
+                    `Invalid URL provided to fetchData: "${url}". URL must be a non-empty string.`,
+                )
+            }
             const accessToken = Cookies.get('access_token')
             const csrfToken =
                 Cookies.get('csrftoken') ||
