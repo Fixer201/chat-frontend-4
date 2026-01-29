@@ -6,8 +6,10 @@ import { getStatusText } from '@shared/lib/getStatusText'
 
 export default function ChatHeader({
     chat,
+    onBack,
 }: Readonly<{
     chat: ChatItem
+    onBack?: () => void
 }>) {
     const [secondaryText, setSecondaryText] = useState('')
     useEffect(() => {
@@ -23,11 +25,28 @@ export default function ChatHeader({
     return (
         <section
             className={`
-              rounded-t-md border-b border-gray-border bg-gray-light px-4 py-2
+              rounded-t-md border-b border-gray-border bg-gray-light px-3 py-2
+              md:px-4
             `}
         >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-row items-center gap-4">
+                    {/* Back button for mobile */}
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            aria-label="Back to chats"
+                            className="md:hidden"
+                            type="button"
+                        >
+                            <Image
+                                src="/images/login/back.svg"
+                                width={24}
+                                height={24}
+                                alt=""
+                            />
+                        </button>
+                    )}
                     <Image
                         src={getAvatarSrc(chat.chat)}
                         width={40}
@@ -41,9 +60,9 @@ export default function ChatHeader({
                         unoptimized
                     />
 
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col">
                         {/* User Full Name */}
-                        <h2 className="font-semibold">
+                        <h2 className="truncate font-semibold">
                             {chat.chat.firstName}{' '}
                             {chat.chat.lastName}
                         </h2>
@@ -52,10 +71,21 @@ export default function ChatHeader({
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div
+                    className={`
+                  flex gap-1
+                  md:gap-2
+                `}
+                >
                     {/* Кнопки поиска, звонка и т.д. */}
-                    <div className="flex gap-4 text-text-gray">
+                    <div
+                        className={`
+                      flex gap-2 text-text-gray
+                      md:gap-4
+                    `}
+                    >
                         <button
+                            aria-label="Search in chat"
                             className="cursor-pointer"
                             type="button"
                         >
@@ -63,10 +93,11 @@ export default function ChatHeader({
                                 src="/images/chatHeader/Search.svg"
                                 height="20"
                                 width="20"
-                                alt="search in chat button"
+                                alt=""
                             />
                         </button>
                         <button
+                            aria-label="Call"
                             className="cursor-pointer"
                             type="button"
                         >
@@ -74,7 +105,7 @@ export default function ChatHeader({
                                 src="/images/chatHeader/Phone.svg"
                                 height="20"
                                 width="20"
-                                alt="phone call button in chat"
+                                alt=""
                             />
                         </button>
                     </div>

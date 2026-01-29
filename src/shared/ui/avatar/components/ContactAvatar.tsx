@@ -1,3 +1,4 @@
+// ContactAvatar.tsx
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Badge } from '@shared/ui/badge/Badge'

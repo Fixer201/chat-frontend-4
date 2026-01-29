@@ -29,11 +29,24 @@ export default function AppShell({
         return <OfflineStub /> // Показываем вместо всего интерфейса
     }
     return (
-        <div className="flex flex-col items-center justify-center gap-4 p-1">
+        <div
+            className={`
+          flex h-screen flex-col gap-2 p-1
+          md:gap-4 md:p-2
+        `}
+        >
             <AppHeader />
-            <div className="mx-auto flex w-300 flex-row gap-4">
+            <div
+                className={`
+              mx-auto flex h-full w-full max-w-[1200px] flex-row gap-2
+              overflow-hidden
+              md:gap-4
+            `}
+            >
                 <AppSidebar />
-                <div className="flex-1">{children}</div>
+                <div className="flex h-full flex-1 overflow-hidden">
+                    {children}
+                </div>
             </div>
         </div>
     )

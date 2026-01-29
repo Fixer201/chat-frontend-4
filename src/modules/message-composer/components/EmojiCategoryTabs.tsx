@@ -60,8 +60,7 @@ const CategoryTab = memo(function CategoryTab({
     const Icon = category.emoji
 
     return (
-        <div
-            role="button"
+        <button
             tabIndex={0}
             onClick={() => onClick(category.slug)}
             onKeyDown={(e) => {
@@ -84,6 +83,6 @@ const CategoryTab = memo(function CategoryTab({
             aria-pressed={isSelected}
         >
             <Icon className="h-7 w-7" />
-        </div>
+        </button>
     )
 })

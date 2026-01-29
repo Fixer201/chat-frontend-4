@@ -3,12 +3,17 @@ import EmptyContactsState from '@modules/contacts/components/EmptyContactsState'
 
 export default function ContactsPage() {
     return (
-        <div className="flex h-screen max-w-full gap-6">
+        <div
+            className={`
+          flex h-full w-full gap-2
+          md:gap-6
+        `}
+        >
             {/* Левая колонка - список контактов */}
             <div
                 className={`
-                  h-(--screen-height-list) w-full overflow-hidden rounded-md
-                  border border-app-divider bg-gray-main
+                  w-full overflow-hidden rounded-md border border-app-divider
+                  bg-gray-main
                   md:w-80
                   lg:w-96
                 `}
@@ -19,8 +24,8 @@ export default function ContactsPage() {
             {/* Правая колонка - пустой state (скрыт на mobile) */}
             <div
                 className={`
-                  hidden h-(--screen-height-list) flex-1 rounded-md border
-                  border-app-divider
+                  hidden flex-1 rounded-md border border-app-divider
+                  bg-gray-main
                   md:block
                 `}
             >

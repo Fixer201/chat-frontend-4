@@ -1,23 +1,43 @@
+'use client'
+
 import Image from 'next/image'
+import { useWebSocket } from '@shared/context/websocketContext'
+import MessageItem from './MessageItem'
+import { useMemo, useState } from 'react'
+import { Message } from '@shared/types/message'
 
-type Message = {
-    text: string
-    id: number
-}
+// Флаг для отображения всех моковых сообщений независимо от chatKey
+const USE_MOCK = true // TODO: удалить после реализации контактов
 
-export default function MessagesList() {
-    // TODO: заменить на реальные данные
-    // создать тип для сообщений, пока что заглушка
-    const messages: Message[] = []
+export default function MessagesList({
+    chatKey,
+    onEditMessage,
+}: Readonly<{
+    chatKey: string
+    onEditMessage?: (message: Message) => void
+}>) {
+    const { messages } = useWebSocket()
+
+    // Фильтруем сообщения только для текущего чата
+    // В режиме моков показываем все сообщения для демонстрации верстки
+    const chatMessages = useMemo(
+        () =>
+            USE_MOCK
+                ? messages
+                : messages.filter(
+                      (msg) => msg.chatKey === chatKey,
+                  ),
+        [messages, chatKey],
+    )
 
     return (
         <section
             role="log"
             aria-label="История сообщений"
             aria-live="polite"
-            className="flex h-full w-full flex-col overflow-y-auto"
+            className="flex h-full w-full flex-col"
         >
-            {messages.length === 0 ? (
+            {chatMessages.length === 0 ? (
                 <div
                     className={`
                       flex h-full flex-col items-center justify-center
@@ -30,8 +50,8 @@ export default function MessagesList() {
                         height="200"
                         width="200"
                         src="/img_frog_Web.svg"
-                        alt="Иллюстрация пустого чата"
-                        aria-hidden="false"
+                        alt=""
+                        aria-hidden="true"
                     />
                     <p className="text-lg font-medium">
                         Сообщений пока нет
@@ -43,9 +63,12 @@ export default function MessagesList() {
             ) : (
                 // Список сообщений
                 <ul className="flex flex-col gap-2 p-4">
-                    {messages.map((msg) => (
-                        <li key={msg.id}>
-                            {/* MessageItem компонент */}
+                    {chatMessages.map((message) => (
+                        <li key={message.uid}>
+                            <MessageItem
+                                message={message}
+                                onEdit={onEditMessage}
+                            />
                         </li>
                     ))}
                 </ul>
