@@ -3,9 +3,22 @@
 import Image from 'next/image'
 import Cookies from 'js-cookie'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+import Modal from '@shared/ui/modal/Modal'
 
 export function AppHeader() {
     const router = useRouter()
+    const [isThanksModalOpen, setIsThanksModalOpen] =
+        useState(false)
+
+    const handleOpenThanksModal = () => {
+        setIsThanksModalOpen(true)
+    }
+
+    const handleCloseThanksModal = () => {
+        setIsThanksModalOpen(false)
+    }
 
     const handleLogout = () => {
         Cookies.remove('access_token')
@@ -38,7 +51,8 @@ export function AppHeader() {
                         width={150}
                         height={44}
                         loading="eager"
-                        className="hidden lg:block"
+                        className="hidden cursor-pointer lg:block"
+                        onClick={handleOpenThanksModal}
                     />
                     <Image
                         src="/images/header/googlePlay.svg"
@@ -46,22 +60,39 @@ export function AppHeader() {
                         width={150}
                         height={44}
                         loading="eager"
-                        className="hidden lg:block"
+                        className="hidden cursor-pointer lg:block"
+                        onClick={handleOpenThanksModal}
                     />
-                    {/* Кнопка выхода — подумать куда воткнуть ее */}
-                    <button
-                        onClick={handleLogout}
-                        className={`
-                          cursor-pointer text-sm text-accent-violet-primary
-                          transition-colors
-                          hover:text-accent-violet-primary
-                        `}
-                        title="Выйти"
-                    >
-                        Выйти
-                    </button>
                 </div>
             </div>
+            <Modal
+                open={isThanksModalOpen}
+                onClose={handleCloseThanksModal}
+                title="Отсканируйте QR-код с телефона, чтобы скачать приложение"
+                titleClassName="text-xl font-semibold leading-7"
+                blurBackground
+                closeOnOverlayClick
+                className="relative max-w-[420px]"
+            >
+                <button
+                    type="button"
+                    aria-label="Закрыть"
+                    onClick={handleCloseThanksModal}
+                    className="absolute top-4 right-4 mt-1 cursor-pointer text-3xl"
+                >
+                    ×
+                </button>
+                <div className="flex w-full flex-col items-center gap-5 py-4">
+                    <Image
+                        src="/dawnloadApp/QRCode.png"
+                        alt="Скачать приложение"
+                        width={280}
+                        height={280}
+                        className="h-auto w-80"
+                        priority
+                    />
+                </div>
+            </Modal>
         </>
     )
 }
