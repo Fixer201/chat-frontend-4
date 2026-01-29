@@ -1,4 +1,4 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Input } from '@shared/ui/Input'
@@ -43,14 +43,18 @@ export default function CodeConfirmForm({
         null,
     ])
     const [timeLeft, setTimeLeft] = useState(60) // Таймер 60 сек
-    const [canResend, setCanResend] = useState(false) // Флаг для показа "Отправить новый код"
     const [showTooltip, setShowTooltip] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    // const [showCodeForm, setShowCodeForm] = useState(false)
+    const [modalMessage, setModalMessage] = useState(
+        'Не приходит код?',
+    )
     const [
         showSupportRequestForm,
         setShowSupportRequestForm,
     ] = useState(false)
+
+    const canResend = timeLeft === 0
+    const modalOpenedRef = useRef(false) // Флаг для предотвращения повторного открытия модального окна
 
     // Таймер для ввода кода
     useEffect(() => {
@@ -59,11 +63,44 @@ export default function CodeConfirmForm({
                 setTimeLeft((prev) => prev - 1)
             }, 1000)
             return () => clearInterval(timer)
-        } else {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCanResend(true) // Показать "Отправить новый код"
         }
     }, [timeLeft])
+
+    // Открываем модальное окно при isBlocked (только один раз)
+    useEffect(() => {
+        console.log(
+            'useEffect isBlocked triggered, isBlocked:',
+            isBlocked,
+        )
+        if (isBlocked && !modalOpenedRef.current) {
+            modalOpenedRef.current = true
+            setModalMessage('Лимит исчерпан')
+            setIsModalOpen(true)
+        }
+    }, [isBlocked])
+
+    // Эффект для автоматического открытия модального окна при истечении срока (только один раз)
+    useEffect(() => {
+        if (
+            timeLeft === 0 &&
+            code.some((digit) => digit === '') &&
+            !canResend &&
+            !modalOpenedRef.current
+        ) {
+            console.log('useEffect expired triggered')
+            modalOpenedRef.current = true
+            setModalMessage('Срок действия кода истек')
+            setIsModalOpen(true)
+        }
+    }, [timeLeft, code, canResend])
+
+    // Таймер блокировки
+    useEffect(() => {
+        if (blockTime > 0) {
+            const timer = setInterval(() => {}, 1000)
+            return () => clearInterval(timer)
+        }
+    }, [blockTime])
 
     const handleInputChange = (
         index: number,
@@ -74,12 +111,12 @@ export default function CodeConfirmForm({
         newCode[index] = value.replace(/\D/g, '')
         setCode(newCode)
 
-        // переход к следующему окошку
+        // Переход к следующему окошку
         if (value && index < 4) {
             inputRefs.current[index + 1]?.focus()
         }
 
-        // если все цифры введены, автоматически верифицировать
+        // Если все цифры введены, автоматически верифицировать
         if (newCode.every((digit) => digit !== '')) {
             onVerify(newCode.join(''))
         }
@@ -99,31 +136,22 @@ export default function CodeConfirmForm({
     }
 
     const handleResendCode = () => {
-        setTimeLeft(60) // сброс таймера
-        setCanResend(false)
-        setCode(['', '', '', '', '']) // очистка кода
+        setTimeLeft(60) // Сброс таймера
+        setCode(['', '', '', '', '']) // Очистка кода
         onResendCode()
     }
 
-    // открытие модального окна
+    // Открытие модального окна (для "Не приходит код?")
     const handleOpenModal = () => {
+        setModalMessage('Не приходит код?')
         setIsModalOpen(true)
     }
 
-    // закрытие модального окна
+    // Закрытие модального окна
     const handleCloseModal = () => {
         setIsModalOpen(false)
+        modalOpenedRef.current = false // Сбрасываем флаг при закрытии
     }
-
-    // const handleBackToForm = () => setShowCodeForm(false)
-
-    // Таймер блокировки
-    useEffect(() => {
-        if (blockTime > 0) {
-            const timer = setInterval(() => {}, 1000)
-            return () => clearInterval(timer)
-        }
-    }, [blockTime])
 
     if (showSupportRequestForm) {
         return (
@@ -138,10 +166,10 @@ export default function CodeConfirmForm({
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-        relative hidden h-(--app-login-height) w-(--app-login-width) flex-col
-        items-center justify-center
-        md:flex
-      `}
+                  relative hidden h-(--app-login-height) w-(--app-login-width)
+                  flex-col items-center justify-center
+                  md:flex
+                `}
                 style={{
                     backgroundImage:
                         'var(--app-login-background)',
@@ -149,9 +177,9 @@ export default function CodeConfirmForm({
             >
                 <div
                     className={`
-          absolute flex h-190 w-122 flex-col items-center justify-center
-          rounded-2xl
-        `}
+                      absolute flex h-190 w-122 flex-col items-center
+                      justify-center rounded-2xl
+                    `}
                     style={{
                         filter: 'var(--app-start-screen-shadow)',
                         backgroundImage:
@@ -160,9 +188,9 @@ export default function CodeConfirmForm({
                 >
                     <div
                         className={`
-            absolute flex flex-col items-center justify-between
-              gap-6
-          `}
+                          absolute flex flex-col items-center justify-between
+                          gap-6
+                        `}
                     >
                         <div className="relative flex h-17 w-90 items-center">
                             <Image
@@ -174,33 +202,36 @@ export default function CodeConfirmForm({
                                 loading="eager"
                                 onClick={onBack}
                             />
-
                             <Image
                                 src="/images/login/Logo.svg"
                                 alt="Logo"
                                 width={78}
                                 height={70}
-                                className={`
-                mx-auto
-              `}
+                                className="mx-auto"
                                 loading="eager"
                             />
                         </div>
 
                         <div
                             className={`
-              flex h-126 w-90 flex-col items-center justify-between gap-6
-            `}
+                              flex h-126 w-90 flex-col items-center
+                              justify-between gap-6
+                            `}
                         >
-                            <div className="flex w-90 items-center justify-center">
+                            <div
+                                className={`
+                                  flex w-90 items-center justify-center
+                                `}
+                            >
                                 <p className="text-center text-[32px] font-bold">
                                     Подтвердите вход
                                 </p>
                             </div>
                             <div
                                 className={`
-                flex h-112 w-90 flex-col items-center justify-between gap-6
-              `}
+                                  flex h-112 w-90 flex-col items-center
+                                  justify-between gap-6
+                                `}
                             >
                                 <span className="text-center text-lg">
                                     Код подтверждения
@@ -210,8 +241,16 @@ export default function CodeConfirmForm({
                                 <span className="text-center text-lg font-bold">
                                     {phoneNumber}
                                 </span>
-                                <div className="flex flex-row items-center gap-1">
-                                    <span className="text-center text-lg font-bold">
+                                <div
+                                    className={`
+                                      flex flex-row items-center gap-1
+                                    `}
+                                >
+                                    <span
+                                        className={`
+                                          text-center text-lg font-bold
+                                        `}
+                                    >
                                         Введите код
                                     </span>
                                     <Image
@@ -236,10 +275,12 @@ export default function CodeConfirmForm({
                                         <>
                                             <div
                                                 className={`
-                        absolute top-35 left-1/2 z-10 h-34 w-83 -translate-x-1/2
-                        transform rounded-2xl bg-accent-violet-dark p-2
-                        text-white
-                      `}
+                                                  absolute top-35 left-1/2 z-10
+                                                  h-34 w-83 -translate-x-1/2
+                                                  transform rounded-2xl
+                                                  bg-accent-violet-dark p-2
+                                                  text-white
+                                                `}
                                             >
                                                 <p className="text-base">
                                                     Код
@@ -250,12 +291,8 @@ export default function CodeConfirmForm({
                                                     длина —
                                                     5
                                                     символов.
-                                                </p>{' '}
-                                                <p
-                                                    className={`
-                          text-base
-                        `}
-                                                >
+                                                </p>
+                                                <p className="text-base">
                                                     Не более
                                                     10
                                                     запросов
@@ -287,6 +324,16 @@ export default function CodeConfirmForm({
                                         </>
                                     )}
                                 </div>
+                                {error && (
+                                    <span
+                                        className={`
+                                          text-center text-sm text-red-500
+                                        `}
+                                    >
+                                        {error}
+                                    </span>
+                                )}
+
                                 <div className="flex justify-center gap-2">
                                     {code.map(
                                         (digit, index) => (
@@ -322,11 +369,14 @@ export default function CodeConfirmForm({
                                                     )
                                                 }
                                                 className={`
-                        h-15 w-15 rounded-lg border border-accent-violet-primary
-                        bg-transparent text-center text-lg
-                        focus:border-4 focus:border-accent-violet-primary
-                        focus:outline-none
-                      `}
+                                                  h-15 w-15 rounded-lg border
+                                                  border-accent-violet-primary
+                                                  bg-transparent text-center
+                                                  text-lg
+                                                  focus:border-4
+                                                  focus:border-accent-violet-primary
+                                                  focus:outline-none
+                                                `}
                                                 maxLength={
                                                     1
                                                 }
@@ -337,11 +387,7 @@ export default function CodeConfirmForm({
                                         ),
                                     )}
                                 </div>
-                                {error && (
-                                    <span className="text-(--color-system-red)">
-                                        {error}
-                                    </span>
-                                )}
+
                                 {!canResend && (
                                     <span className="text-center text-lg">
                                         Отправить новый код
@@ -360,9 +406,17 @@ export default function CodeConfirmForm({
                                 )}
 
                                 {canResend && (
-                                    <div className="flex flex-col items-center gap-2">
+                                    <div
+                                        className={`
+                                          flex flex-col items-center gap-2
+                                        `}
+                                    >
                                         <span
-                                            className="cursor-pointer text-center text-lg font-bold text-(--color-system-red)"
+                                            className={`
+                                              cursor-pointer text-center text-lg
+                                              font-bold
+                                              text-(--color-system-red)
+                                            `}
                                             onClick={
                                                 handleResendCode
                                             }
@@ -389,8 +443,10 @@ export default function CodeConfirmForm({
                                 )}
                                 <span
                                     className={`
-                  cursor-pointer text-center text-lg font-bold text-accent-violet-primary hover:underline
-                `}
+                                      cursor-pointer text-center text-lg
+                                      font-bold text-accent-violet-primary
+                                      hover:underline
+                                    `}
                                     onClick={
                                         handleOpenModal
                                     }
@@ -421,17 +477,15 @@ export default function CodeConfirmForm({
                 descriptionColor="muted"
                 titleAlign="center"
             >
-                <div
-                    className={`text-center text-lg text-[24px] font-bold`}
-                >
-                    Срок действия кода истек
+                <div className="text-center text-lg text-[24px] font-bold">
+                    {modalMessage}
                 </div>
 
                 <Button
                     variant="solid"
                     size="lg"
-                    color={'primary'}
-                    className={`w-full`}
+                    color="primary"
+                    className="w-full"
                     onClick={() => {
                         setShowSupportRequestForm(true)
                     }}
@@ -441,8 +495,8 @@ export default function CodeConfirmForm({
                 <Button
                     variant="outline"
                     size="lg"
-                    color={'primary'}
-                    className={`w-full`}
+                    color="primary"
+                    className="w-full"
                     onClick={handleCloseModal}
                 >
                     Назад

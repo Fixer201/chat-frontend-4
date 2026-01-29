@@ -237,7 +237,10 @@ export default function LoginForm() {
                         attempts + 1 >= 10 ? 3600 : 600,
                     )
                 }
-                setError('Неверный код. Попробуйте снова.')
+                setError(
+                    data.message ||
+                        'Неверный код. Попробуйте снова.',
+                )
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
