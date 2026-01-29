@@ -31,17 +31,17 @@ export default function AppShell({
     return (
         <div
             className={`
-          flex h-screen flex-col gap-2 p-1
-          md:gap-4 md:p-2
-        `}
+              flex h-screen flex-col gap-2 p-1
+              md:gap-4 md:p-2
+            `}
         >
             <AppHeader />
             <div
                 className={`
-              mx-auto flex h-full w-full max-w-[1200px] flex-row gap-2
-              overflow-hidden
-              md:gap-4
-            `}
+                  mx-auto flex h-full w-full max-w-[1200px] flex-row gap-2
+                  overflow-hidden
+                  md:gap-4
+                `}
             >
                 <AppSidebar />
                 <div className="flex h-full flex-1 overflow-hidden">

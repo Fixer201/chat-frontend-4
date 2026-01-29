@@ -286,8 +286,8 @@ export default function MessageComposer({
                         {isEmojiPickerOpen && (
                             <div
                                 className={`
-                              absolute right-0 bottom-full z-50 mb-2
-                            `}
+                                  absolute right-0 bottom-full z-50 mb-2
+                                `}
                             >
                                 <EmojiPickerWithCategories
                                     onEmojiSelect={
