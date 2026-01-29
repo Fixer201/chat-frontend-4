@@ -1,77 +1,103 @@
 'use client'
 
-import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
-import { useChats } from '@shared/hooks/useChats'
-import ChatRoom from '@modules/chat-room/components/ChatRoom'
 import { useEffect } from 'react'
-import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 
+import ChatRoom from '@modules/chat-room/components/ChatRoom'
+import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
+import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
+import { useChats } from '@shared/hooks/useChats'
+import { cn } from '@shared/lib/utils'
+
+/** Количество чатов, загружаемых при первом рендере страницы */
+const INITIAL_CHATS_COUNT = 15
+
+/**
+ * Главная страница чатов.
+ *
+ * Адаптивный макет с двумя колонками:
+ * - Мобильные устройства: отображается либо список чатов, либо открытый чат (на весь экран).
+ * - Десктоп (md+): обе колонки видны одновременно.
+ */
 export default function ChatsPage() {
     const { chats, selectedChatId, loadChats, selectChat } =
         useChats()
 
+    /** Загрузка начального списка чатов при монтировании компонента */
     useEffect(() => {
-        loadChats(15)
+        loadChats(INITIAL_CHATS_COUNT)
     }, [loadChats])
 
-    // Найти чат по ID
+    /** Текущий выбранный чат (undefined - ни один чат не открыт) */
     const selectedChat = chats.find(
         (chat) => chat.id === selectedChatId,
     )
 
-    // Mobile: show chat full-screen if selected, otherwise show sidebar
-    // Desktop: always show both
-    const showChatOnMobile = !!selectedChat
+    /**
+     * Флаг отображения чата на мобильных устройствах.
+     * Когда чат выбран - на мобильном скрывается список и показывается комната чата.
+     * На десктопе оба блока видны всегда, поэтому флаг влияет только на mobile-классы.
+     */
+    const isChatSelected = !!selectedChat
+
+    /** Общие стили для обеих колонок макета */
+    const panelStyles =
+        'rounded-md border border-app-divider bg-gray-main'
+
+    /**
+     * Контент правой колонки:
+     * - если чат выбран - отображаем комнату чата с кнопкой «Назад»;
+     * - иначе - показываем заглушку с предложением выбрать собеседника.
+     */
+    const chatContent = selectedChat ? (
+        <ChatRoom
+            chat={selectedChat}
+            onBack={() => selectChat(null)}
+        />
+    ) : (
+        <EmptyChatState />
+    )
 
     return (
         <div
             className={`
-          flex h-full w-full gap-2
-          md:gap-6
-        `}
+              flex h-full w-full gap-2
+              md:gap-6
+            `}
         >
-            {/* Левая колонка - список чатов */}
+            {/* Левая колонка - список чатов и формы создания групп/каналов */}
             <div
-                className={`
-                  w-full rounded-md border border-app-divider bg-gray-main
-                  md:w-80
-                  lg:w-96
-                  ${
-                      showChatOnMobile
-                          ? `
-                    hidden
-                    md:block
-                  `
-                          : 'block'
-                  }
-                `}
+                className={cn(
+                    panelStyles,
+                    `
+                      w-full
+                      md:w-80
+                      lg:w-96
+                    `,
+                    isChatSelected
+                        ? `
+                          hidden
+                          md:block
+                        `
+                        : 'block',
+                )}
             >
-                {/* Обертка для списка чатов и форм создания групп/каналов */}
                 <ChatsListWrapper />
             </div>
 
-            {/* Правая колонка - чат или пустой state */}
+            {/* Правая колонка - комната чата или пустое состояние */}
             <div
-                className={`
-                  flex-1 rounded-md border border-app-divider bg-gray-main
-                  ${
-                      showChatOnMobile
-                          ? 'block'
-                          : `
-                    hidden
-                    md:block
-                  `
-                  }
-                `}
-            >
-                {selectedChat ? (
-                    <ChatRoom
-                        chat={selectedChat}
-                        onBack={() => selectChat(null)}
-                    />
-                ) : (
-                    <EmptyChatState />
+                className={cn(
+                    panelStyles,
+                    'flex-1',
+                    isChatSelected
+                        ? 'block'
+                        : `
+                          hidden
+                          md:block
+                        `,
                 )}
+            >
+                {chatContent}
             </div>
         </div>
     )

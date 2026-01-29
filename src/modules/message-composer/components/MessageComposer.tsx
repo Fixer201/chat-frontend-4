@@ -15,7 +15,9 @@ type MessageComposerProps = {
     onCancelEdit?: () => void
 }
 
-// Хук для авто-роста textarea
+// Хук для автоматического изменения высоты textarea в зависимости от содержимого.
+// При каждом изменении value сбрасывает высоту до 'auto', замеряет scrollHeight
+// и устанавливает итоговую высоту с ограничением в 472px (максимум из макета Figma).
 function useAutoResizeTextarea(value: string) {
     const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -23,11 +25,13 @@ function useAutoResizeTextarea(value: string) {
         const el = ref.current
         if (!el) return
 
-        // Сбрасываем высоту перед измерением
+        // Сбрасываем высоту в 'auto', чтобы scrollHeight корректно отразил
+        // реальную высоту контента (иначе при удалении текста высота не уменьшится)
         el.style.height = 'auto'
 
-        // Ограничение по maxHeight
-        const maxHeight = 472 // px, как в Figma
+        // Ограничиваем высоту максимумом 472px (соответствует макету Figma),
+        // чтобы при большом объёме текста появлялась прокрутка внутри textarea
+        const maxHeight = 472
         el.style.height =
             Math.min(el.scrollHeight, maxHeight) + 'px'
     }, [value])
@@ -41,38 +45,52 @@ export default function MessageComposer({
     editingMessage,
     onCancelEdit,
 }: Readonly<MessageComposerProps>) {
-    // Текст сообщения в инпуте (initialized from editingMessage via key pattern)
+    // Текст сообщения в поле ввода. Начальное значение берётся из editingMessage
+    // (если компонент смонтирован в режиме редактирования) либо остаётся пустым.
+    // Сброс при смене сообщения реализуется через паттерн key на уровне родителя.
     const [inputValue, setInputValue] = useState(
         editingMessage?.content ?? '',
     )
 
-    // Флаг состояние открытия пикера эмодзи
+    // Флаг, управляющий видимостью выпадающего пикера эмодзи.
+    // Открывается при наведении/фокусе на кнопку смайлика,
+    // закрывается с задержкой 500мс для плавного перехода курсора к пикеру.
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] =
         useState(false)
 
-    // Store timer ref to allow cancellation when user re-hovers before delay expires
+    // Ref на таймер задержки закрытия пикера эмодзи.
+    // Позволяет отменить запланированное закрытие, если пользователь
+    // вернул курсор на кнопку/пикер до истечения 500мс задержки.
     const timerRef = useRef<NodeJS.Timeout | null>(null)
 
+    // Ref на textarea с автоматическим изменением высоты при вводе текста
     const textareaRef = useAutoResizeTextarea(inputValue)
 
-    // получаем данные из контекста
+    // Методы WebSocket-контекста: sendMessage для отправки нового сообщения,
+    // updateMessage для обновления существующего (режим редактирования)
     const { sendMessage, updateMessage } = useWebSocket()
 
-    // Auto-focus textarea when entering edit mode
+    // При переходе в режим редактирования автоматически устанавливаем фокус
+    // на textarea, чтобы пользователь мог сразу начать редактировать текст
     useEffect(() => {
         if (editingMessage) {
             textareaRef.current?.focus()
         }
-        // textareaRef is stable (ref object), no need in deps
+        // textareaRef — стабильный ref-объект, не меняется между рендерами,
+        // поэтому безопасно исключён из массива зависимостей
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editingMessage])
 
-    // Функция отправки/редактирования сообщения
+    // Универсальный обработчик отправки: определяет режим (создание/редактирование)
+    // по наличию editingMessage и вызывает соответствующий метод WebSocket.
+    // После успешной отправки очищает поле ввода и выходит из режима редактирования.
     const handleSendMessage = () => {
+        // Игнорируем отправку пустого или состоящего только из пробелов сообщения
         if (inputValue.trim().length === 0) return
 
         if (editingMessage && editingMessage.uid) {
-            // Режим редактирования
+            // Режим редактирования: обновляем существующее сообщение по его uid,
+            // затем уведомляем родительский компонент о завершении редактирования
             updateMessage({
                 uid: editingMessage.uid,
                 chatKey: chatKey,
@@ -85,7 +103,8 @@ export default function MessageComposer({
             )
             onCancelEdit?.()
         } else {
-            // Режим создания
+            // Режим создания: отправляем новое сообщение через WebSocket
+            // с указанием ключа чата и идентификатора получателя
             sendMessage({
                 chatKey: chatKey,
                 content: inputValue,
@@ -95,35 +114,43 @@ export default function MessageComposer({
             console.log('Отправка сообщения:', inputValue)
         }
 
-        // Очищаем поле после отправки
+        // Очищаем поле ввода после отправки, чтобы подготовить его к новому сообщению
         setInputValue('')
     }
 
+    // Отмена редактирования: сбрасываем текст в поле ввода
+    // и уведомляем родителя через колбэк для выхода из режима редактирования
     const handleCancel = () => {
         setInputValue('')
         onCancelEdit?.()
     }
 
-    // Обработчик нажатия клавиш
+    // Обработчик клавиатурных событий в textarea.
+    // Enter (без Shift) — отправка сообщения; Shift+Enter — перенос строки (по умолчанию).
     const handleKeyDown = (
         event: React.KeyboardEvent<HTMLTextAreaElement>,
     ) => {
-        // Проверяем, что нажат Enter без Shift
         if (event.key === 'Enter' && !event.shiftKey) {
-            // Игнорируем, если открыто окно ввода (IME), например, для иероглифов
+            // Пропускаем событие, если активна IME-композиция (например, ввод
+            // иероглифов или корейских символов), чтобы не прерывать набор
             if (event.nativeEvent.isComposing) return
 
-            event.preventDefault() // Предотвращаем перенос строки
+            // Предотвращаем вставку символа новой строки и отправляем сообщение
+            event.preventDefault()
             handleSendMessage()
         }
     }
 
+    // Добавляет выбранный эмодзи в конец текущего текста в поле ввода
     const handleEmojiSelect = (emoji: string) => {
         setInputValue(inputValue + emoji)
     }
 
+    // Открытие пикера эмодзи по наведению или фокусу.
+    // Если ранее было запланировано закрытие (таймер), отменяем его —
+    // это позволяет пользователю перемещать курсор между кнопкой и пикером
+    // без мерцания (паттерн «hover intent»).
     const handleEmojiPickerOpen = () => {
-        // Cancel pending close if user re-hovers before delay
         if (timerRef.current) {
             clearTimeout(timerRef.current)
             timerRef.current = null
@@ -131,8 +158,11 @@ export default function MessageComposer({
         setIsEmojiPickerOpen(true)
     }
 
+    // Закрытие пикера эмодзи с задержкой 500мс.
+    // Задержка нужна, чтобы пользователь успел переместить курсор
+    // с кнопки-триггера на сам пикер, не вызывая его закрытия.
+    // Если за это время сработает handleEmojiPickerOpen — таймер будет отменён.
     const handleEmojiPickerClose = () => {
-        // Delay closing to allow moving mouse to the picker itself
         timerRef.current = setTimeout(() => {
             setIsEmojiPickerOpen(false)
             timerRef.current = null
@@ -146,7 +176,8 @@ export default function MessageComposer({
               border-gray-border bg-gray-light
             `}
         >
-            {/* Edit mode banner */}
+            {/* Баннер режима редактирования: отображается при наличии editingMessage,
+                показывает текст «Редактирование сообщения» и кнопку отмены */}
             {editingMessage && (
                 <div
                     className={`
@@ -183,7 +214,7 @@ export default function MessageComposer({
                   md:px-4
                 `}
             >
-                {/* Attachment Icon */}
+                {/* Кнопка прикрепления файла (скрепка) */}
                 <button
                     aria-label="Attach file"
                     type="button"
@@ -198,13 +229,14 @@ export default function MessageComposer({
                     />
                 </button>
 
-                {/* Message input field */}
+                {/* Поле ввода сообщения: textarea с автоматическим ростом высоты,
+                    кнопкой эмодзи и всплывающим пикером эмодзи */}
                 <div
                     className={`
-                  relative mx-1 flex h-full max-h-96 w-full items-center
-                  justify-between rounded-3xl bg-white-bg px-2 py-3
-                  md:mx-2
-                `}
+                      relative mx-1 flex h-full max-h-96 w-full items-center
+                      justify-between rounded-3xl bg-white-bg px-2 py-3
+                      md:mx-2
+                    `}
                 >
                     <textarea
                         ref={textareaRef}
@@ -219,14 +251,16 @@ export default function MessageComposer({
                             )
                         }
                         className={`
-                      h-auto max-h-80 flex-1 resize-none rounded-3xl pr-8 pl-2
-                      placeholder:text-text-gray
-                      focus:outline-0
-                    `}
-                        rows={1} // начальное количество строк
+                          h-auto max-h-80 flex-1 resize-none rounded-3xl pr-8
+                          pl-2
+                          placeholder:text-text-gray
+                          focus:outline-0
+                        `}
+                        rows={1} // начальная высота в одну строку, далее растёт автоматически через useAutoResizeTextarea
                     />
 
-                    {/* Emoji picker trigger */}
+                    {/* Кнопка-триггер пикера эмодзи: открывается по hover/focus,
+                        закрывается с задержкой по mouseleave/blur для плавного UX */}
                     <button
                         type="button"
                         aria-label="Open emoji picker"
@@ -250,15 +284,19 @@ export default function MessageComposer({
                             )}
                         />
                         {isEmojiPickerOpen && (
-                            <div className="absolute right-0 bottom-full z-50 mb-2">
+                            <div
+                                className={`
+                              absolute right-0 bottom-full z-50 mb-2
+                            `}
+                            >
                                 <EmojiPickerWithCategories
                                     onEmojiSelect={
                                         handleEmojiSelect
                                     }
                                     className={`
-                                  h-full max-h-[50vh] min-h-[20vh] w-full
-                                  rounded-lg bg-white-bg shadow-lg
-                                `}
+                                      h-full max-h-[50vh] min-h-[20vh] w-full
+                                      rounded-lg bg-white-bg shadow-lg
+                                    `}
                                     emojiSize={32}
                                     emojisPerRow={11}
                                 />
@@ -267,7 +305,8 @@ export default function MessageComposer({
                     </button>
                 </div>
 
-                {/* Voice record Icon(field empty) OR Send Message Icon(mobile only) */}
+                {/* Контекстная кнопка действия: если поле ввода пустое — иконка записи
+                    голосового сообщения (микрофон), если есть текст — иконка отправки */}
                 <button
                     type="button"
                     aria-label={
