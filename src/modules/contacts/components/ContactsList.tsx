@@ -6,6 +6,7 @@ import { RootState } from '@redux/store'
 import { useEffect, useState, memo } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import Modal from '@shared/ui/modal/Modal'
+
 import {
     removeContacts,
     setContacts,
@@ -18,7 +19,7 @@ import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 import { ApiContact, Contact } from '@shared/types/contact'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import { Spinner } from '@shared/ui/Spinner'
-import { notFound } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default memo(function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -29,6 +30,7 @@ export default memo(function ContactsList() {
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<Contact[]>([])
     const dispatch = useDispatch()
+    const router = useRouter()
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -103,18 +105,22 @@ export default memo(function ContactsList() {
                     'Ошибка загрузки контактов:',
                     error,
                 )
-                if (
-                    error instanceof Error &&
-                    error.message === 'RefreshTokenExpired'
-                ) {
-                    notFound() // Показать 404 страницу
+                if (error instanceof Error) {
+                    if (
+                        error.message ===
+                            'RefreshTokenExpired' ||
+                        error.message ===
+                            'AccessTokenNotFound'
+                    ) {
+                        router.push('/auth/login') // Перенаправление на логин вместо notFound()
+                    }
                 }
             } finally {
                 setLoading(false)
             }
         }
         loadContacts()
-    }, [dispatch, fetchData])
+    }, [dispatch, fetchData, router])
 
     // Загрузка пользователей А-чата на основе searchValue
     useEffect(() => {
@@ -175,17 +181,21 @@ export default memo(function ContactsList() {
                     'Ошибка загрузки пользователей А-чата:',
                     error,
                 )
-                if (
-                    error instanceof Error &&
-                    error.message === 'RefreshTokenExpired'
-                ) {
-                    notFound() // Показать 404 страницу
+                if (error instanceof Error) {
+                    if (
+                        error.message ===
+                            'RefreshTokenExpired' ||
+                        error.message ===
+                            'AccessTokenNotFound'
+                    ) {
+                        router.push('/auth/login')
+                    }
                 }
                 setUsers([])
             }
         }
         loadUsers()
-    }, [searchValue, fetchData])
+    }, [searchValue, fetchData, router])
 
     // Сброс выделенного контакта при входе в режим удаления
     useEffect(() => {
