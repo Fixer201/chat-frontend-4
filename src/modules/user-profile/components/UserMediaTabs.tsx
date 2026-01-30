@@ -1,3 +1,3 @@
 export default function UserMediaTabs() {
-  return <div>User Media Tabs</div>;
+    return <div>User Media Tabs</div>
 }

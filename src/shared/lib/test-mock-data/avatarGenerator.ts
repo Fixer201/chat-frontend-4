@@ -17,7 +17,10 @@ import {
  */
 export const generateAvatarUrl = (
     seed: string | number,
+    // width/height сохранены для обратной совместимости API — вызывающий код передаёт их
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     width: number = 300,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     height: number = 300,
     source: string = DEFAULT_AVATAR_SOURCE,
 ): string => {

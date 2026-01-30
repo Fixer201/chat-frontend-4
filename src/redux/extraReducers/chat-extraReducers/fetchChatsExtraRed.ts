@@ -97,10 +97,11 @@ export const handleFetchChats = (
                 state.loading = false
 
                 // Разделение данных чата и настроек для хранения в разных структурах
-                state.items = action.payload.map((chat) => {
-                    const { settings, ...chatData } = chat
-                    return chatData
-                })
+                state.items = action.payload.map(
+                    // Деструктуризация для исключения settings из данных чата
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    ({ settings, ...chatData }) => chatData,
+                )
 
                 // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {

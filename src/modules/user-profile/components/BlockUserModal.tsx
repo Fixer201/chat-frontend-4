@@ -1,3 +1,3 @@
 export default function BlockUserModal() {
-  return <div>Block User Modal</div>;
+    return <div>Block User Modal</div>
 }

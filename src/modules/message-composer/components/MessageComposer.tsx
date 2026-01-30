@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
 import { useRef, useState, useEffect } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
+import ReplyPreview from './ReplyPreview'
 import { cn } from '@shared/lib/utils'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { Message } from '@shared/types/message'
@@ -12,7 +13,9 @@ type MessageComposerProps = {
     chatKey: string
     toUserId: string
     editingMessage?: Message | null
+    replyingMessage?: Message | null
     onCancelEdit?: () => void
+    onCancelReply?: () => void
 }
 
 // Хук для автоматического изменения высоты textarea в зависимости от содержимого.
@@ -43,7 +46,9 @@ export default function MessageComposer({
     chatKey,
     toUserId,
     editingMessage,
+    replyingMessage,
     onCancelEdit,
+    onCancelReply,
 }: Readonly<MessageComposerProps>) {
     // Текст сообщения в поле ввода. Начальное значение берётся из editingMessage
     // (если компонент смонтирован в режиме редактирования) либо остаётся пустым.
@@ -81,9 +86,9 @@ export default function MessageComposer({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editingMessage])
 
-    // Универсальный обработчик отправки: определяет режим (создание/редактирование)
-    // по наличию editingMessage и вызывает соответствующий метод WebSocket.
-    // После успешной отправки очищает поле ввода и выходит из режима редактирования.
+    // Универсальный обработчик отправки: определяет режим (создание/редактирование/ответ)
+    // по наличию editingMessage или replyingMessage и вызывает соответствующий метод WebSocket.
+    // После успешной отправки очищает поле ввода и выходит из соответствующего режима.
     const handleSendMessage = () => {
         // Игнорируем отправку пустого или состоящего только из пробелов сообщения
         if (inputValue.trim().length === 0) return
@@ -103,15 +108,25 @@ export default function MessageComposer({
             )
             onCancelEdit?.()
         } else {
-            // Режим создания: отправляем новое сообщение через WebSocket
+            // Режим создания или ответа: отправляем новое сообщение через WebSocket
             // с указанием ключа чата и идентификатора получателя
+            const repliedMessages = replyingMessage?.uid
+                ? [{ content: replyingMessage.content }]
+                : undefined
+
             sendMessage({
                 chatKey: chatKey,
                 content: inputValue,
                 toUserId: toUserId,
                 status: 'publish',
+                repliedMessages,
             })
             console.log('Отправка сообщения:', inputValue)
+
+            // Если был режим ответа, уведомляем родителя о завершении
+            if (replyingMessage) {
+                onCancelReply?.()
+            }
         }
 
         // Очищаем поле ввода после отправки, чтобы подготовить его к новому сообщению
@@ -190,12 +205,17 @@ export default function MessageComposer({
                             Редактирование сообщения
                         </span>
                     </div>
+                    {/* Кнопка отмены редактирования: cursor-pointer + hover */}
                     <button
                         type="button"
                         onClick={handleCancel}
                         className={`
-                          text-text-gray
-                          hover:text-text-black
+                          cursor-pointer rounded-lg p-1 text-text-gray
+                          transition-colors
+                          hover:bg-gray-main hover:text-text-black
+                          focus-visible:outline-2
+                          focus-visible:outline-accent-violet-primary
+                          active:scale-95
                         `}
                     >
                         <Image
@@ -208,24 +228,38 @@ export default function MessageComposer({
                 </div>
             )}
 
+            {/* Превью ответа: отображается при наличии replyingMessage */}
+            {replyingMessage && onCancelReply && (
+                <ReplyPreview
+                    message={replyingMessage}
+                    onCancel={onCancelReply}
+                />
+            )}
+
             <div
                 className={`
                   flex items-end justify-between px-2 py-3
                   md:px-4
                 `}
             >
-                {/* Кнопка прикрепления файла (скрепка) */}
+                {/* Кнопка прикрепления файла (скрепка):
+                    cursor-pointer на button, а не на Image — клик-зона = вся кнопка */}
                 <button
                     aria-label="Attach file"
                     type="button"
-                    className="mb-3"
+                    className={`
+                      mb-3 cursor-pointer rounded-lg p-1 transition-colors
+                      hover:bg-gray-main
+                      focus-visible:outline-2
+                      focus-visible:outline-accent-violet-primary
+                      active:scale-95
+                    `}
                 >
                     <Image
                         width={25}
                         height={25}
                         src="/icons/messageComposer/Paperclip.svg"
                         alt=""
-                        className="cursor-pointer"
                     />
                 </button>
 
@@ -260,11 +294,14 @@ export default function MessageComposer({
                     />
 
                     {/* Кнопка-триггер пикера эмодзи: открывается по hover/focus,
-                        закрывается с задержкой по mouseleave/blur для плавного UX */}
+                        закрывается с задержкой по mouseleave/blur для плавного UX.
+                        cursor-pointer на button, fill-цвет на SVG — разделение ответственности */}
                     <button
                         type="button"
                         aria-label="Open emoji picker"
-                        className="absolute right-4 bottom-2 mb-1.5"
+                        className={`
+                          absolute right-4 bottom-2 mb-1.5 cursor-pointer
+                        `}
                         onMouseEnter={handleEmojiPickerOpen}
                         onMouseLeave={
                             handleEmojiPickerClose
@@ -278,7 +315,7 @@ export default function MessageComposer({
                             src="/icons/messageComposer/Smile.svg"
                             alt=""
                             className={cn(
-                                'cursor-pointer fill-text-gray',
+                                'fill-text-gray transition-colors',
                                 isEmojiPickerOpen &&
                                     'fill-accent-violet-primary',
                             )}
@@ -286,8 +323,8 @@ export default function MessageComposer({
                         {isEmojiPickerOpen && (
                             <div
                                 className={`
-                              absolute right-0 bottom-full z-50 mb-2
-                            `}
+                                  absolute right-0 bottom-full z-50 mb-2
+                                `}
                             >
                                 <EmojiPickerWithCategories
                                     onEmojiSelect={
@@ -306,7 +343,8 @@ export default function MessageComposer({
                 </div>
 
                 {/* Контекстная кнопка действия: если поле ввода пустое — иконка записи
-                    голосового сообщения (микрофон), если есть текст — иконка отправки */}
+                    голосового сообщения (микрофон), если есть текст — иконка отправки.
+                    cursor-pointer на button, а не на Image child */}
                 <button
                     type="button"
                     aria-label={
@@ -319,21 +357,27 @@ export default function MessageComposer({
                             ? handleSendMessage
                             : undefined
                     }
-                    className="relative mb-2 h-8 w-8"
+                    className={`
+                      relative mb-2 h-8 w-8 cursor-pointer transition-transform
+                      hover:opacity-80
+                      focus-visible:outline-2
+                      focus-visible:outline-accent-violet-primary
+                      active:scale-90
+                    `}
                 >
                     {inputValue.length > 0 ? (
                         <Image
                             fill
                             src="/icons/messageComposer/SendMessage.svg"
                             alt=""
-                            className="cursor-pointer object-contain"
+                            className="object-contain"
                         />
                     ) : (
                         <Image
                             fill
                             src="/icons/messageComposer/Microphone.svg"
                             alt=""
-                            className="cursor-pointer object-contain"
+                            className="object-contain"
                         />
                     )}
                 </button>

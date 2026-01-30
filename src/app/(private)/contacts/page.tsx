@@ -5,9 +5,9 @@ export default function ContactsPage() {
     return (
         <div
             className={`
-          flex h-full w-full gap-2
-          md:gap-6
-        `}
+              flex h-full w-full gap-2
+              md:gap-6
+            `}
         >
             {/* Левая колонка - список контактов */}
             <div
