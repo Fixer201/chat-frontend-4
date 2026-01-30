@@ -479,7 +479,9 @@ export default function LoginForm() {
                                             handleOpenModal
                                         }
                                         disabled={
-                                            !!showError
+                                            !!showError ||
+                                            phoneNumber ===
+                                                ''
                                         }
                                     >
                                         Далее

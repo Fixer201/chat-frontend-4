@@ -263,7 +263,8 @@ export default function SupportRequestForm({
                                             handleSubmit
                                         }
                                         disabled={
-                                            !!emailError
+                                            !!emailError ||
+                                            email === ''
                                         }
                                     >
                                         Отправить

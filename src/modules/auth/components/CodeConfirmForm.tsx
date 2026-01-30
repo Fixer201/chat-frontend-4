@@ -101,22 +101,33 @@ export default function CodeConfirmForm({
             return () => clearInterval(timer)
         }
     }, [blockTime])
+    //эффект для возврата фокуса после неудачной попытки
+    useEffect(() => {
+        if (error) {
+            setCode(['', '', '', '', '']) // Очистка кода после неудачи
+            inputRefs.current[0]?.focus() // Фокус на первое окошко
+        }
+    }, [error])
 
     const handleInputChange = (
         index: number,
         value: string,
     ) => {
-        if (value.length > 1) return
+        // Санитизация: берём только цифры, ограничиваем до 1 символа
+        const sanitizedValue = value
+            .replace(/\D/g, '')
+            .slice(0, 1)
+
         const newCode = [...code]
-        newCode[index] = value.replace(/\D/g, '')
+        newCode[index] = sanitizedValue // Всегда заменяем цифру в текущем окошке
         setCode(newCode)
 
-        // Переход к следующему окошку
-        if (value && index < 4) {
+        // Автоматический переход к следующему окошку, если ввели цифру
+        if (sanitizedValue && index < 4) {
             inputRefs.current[index + 1]?.focus()
         }
 
-        // Если все цифры введены, автоматически верифицировать
+        // Верификация только если все 5 цифр введены
         if (newCode.every((digit) => digit !== '')) {
             onVerify(newCode.join(''))
         }
