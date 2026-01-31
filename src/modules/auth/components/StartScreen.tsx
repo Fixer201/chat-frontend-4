@@ -15,7 +15,7 @@ export default function StartScreen() {
     return (
         <>
             <div className="flex min-h-screen items-center justify-center">
-                <div className="login-container relative flex h-(--app-login-height) w-(--app-login-width) flex-col items-center justify-center bg-app-login-background">
+                <div className="login-container relative flex h-screen w-(--app-login-width) flex-col items-center justify-center bg-app-login-background">
                     <div className="start-screen-inner absolute flex h-190 w-122 flex-col items-center justify-center rounded-2xl bg-app-login-start filter-app-start-screen-shadow">
                         <Image
                             src="/images/login/Logo.svg"
