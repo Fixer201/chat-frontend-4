@@ -141,8 +141,8 @@ export default function SuccessRegister() {
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-                  relative hidden h-(--app-login-height) w-(--app-login-width)
-                  flex-col items-center justify-center
+                  relative hidden h-screen w-(--app-login-width) flex-col
+                  items-center justify-center
                   md:flex
                 `}
                 style={{
