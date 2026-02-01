@@ -206,11 +206,12 @@ export default memo(function ContactsList() {
 
     // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
-        setSelectedContacts((prev) =>
-            prev.includes(uid)
-                ? prev.filter((id) => id !== uid)
-                : [...prev, uid],
-        )
+        router.push('/chats?contactId=' + uid)
+        // setSelectedContacts((prev) =>
+        //     prev.includes(uid)
+        //         ? prev.filter((id) => id !== uid)
+        //         : [...prev, uid],
+        // )
     }
 
     // Функция открытия модального окна
@@ -376,15 +377,18 @@ export default memo(function ContactsList() {
                                 onSelectContact={
                                     handleSelectContact
                                 }
-                                onSetSelectedContact={(
-                                    uid: string,
-                                ) =>
-                                    dispatch(
-                                        setSelectedContact(
-                                            uid,
-                                        ),
-                                    )
+                                onSetSelectedContact={
+                                    handleSelectContact
                                 }
+                                // onSetSelectedContact={(
+                                //     uid: string,
+                                // ) =>
+                                //     dispatch(
+                                //         setSelectedContact(
+                                //             uid,
+                                //         ),
+                                //     )
+                                // }
                             />
                         ))
                     ) : filteredContacts.length === 0 &&

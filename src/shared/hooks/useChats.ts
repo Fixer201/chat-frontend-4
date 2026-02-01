@@ -18,6 +18,7 @@ import {
     resetChatSettings,
     createGroup as createGroupAction,
     createChannel as createChannelAction,
+    createChat,
 } from '../../redux/slices/chatsSlice'
 import { ChatItem, ChatSettings } from '../types/chat'
 import { Contact } from '../types/contact'
@@ -27,7 +28,12 @@ import { onNextProps } from '../types/createGroup'
 // Абстрагирует взаимодействие с Redux store, предоставляя простой API для компонентов
 export const useChats = () => {
     const dispatch = useAppDispatch()
-
+    const createNewChat = useCallback(
+        (toUserId: string) => {
+            return dispatch(createChat(toUserId))
+        },
+        [dispatch],
+    )
     // Селекторы для получения данных из состояния чатов
     const {
         items,
@@ -204,5 +210,6 @@ export const useChats = () => {
         getChatWithSettings,
         createGroup,
         createChannel,
+        createChat: createNewChat,
     }
 }

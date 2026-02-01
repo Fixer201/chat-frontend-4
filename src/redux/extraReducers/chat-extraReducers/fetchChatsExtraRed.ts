@@ -1,9 +1,10 @@
+// @redux/extraReducers/chat-extraReducers/fetchChatsExtraRed.ts
 import {
     createAsyncThunk,
     PayloadAction,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
-import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
+import Cookies from 'js-cookie'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import {
     ChatItem,
@@ -39,12 +40,28 @@ export const fetchChats = createAsyncThunk(
     'chats/fetchChats',
     async (count: number = 15, { rejectWithValue }) => {
         try {
-            // Генерация моковых данных (в реальном приложении здесь был бы API запрос)
-            const mockData =
-                generateLocalMockChatItems(count)
+            const accessToken = Cookies.get('access_token')
+            if (!accessToken) {
+                throw new Error('AccessTokenNotFound')
+            }
 
-            // Фильтрация валидных данных
-            const validData = mockData.filter(
+            const response = await fetch(
+                `https://api.test.chat.ktsf.ru/api/v1/chat/list/?page_size=${count}`, // Реальный endpoint с параметром page_size
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            )
+            if (!response.ok) {
+                throw new Error('Failed to fetch chats')
+            }
+
+            const data: { results: ApiChatItem[] } =
+                await response.json()
+            const validData = data.results.filter(
                 (item): item is ApiChatItem =>
                     item !== null &&
                     item !== undefined &&
@@ -66,10 +83,12 @@ export const fetchChats = createAsyncThunk(
             )
 
             return transformedChats
-        } catch {
-            return rejectWithValue(
-                'Не удалось загрузить чаты',
-            )
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось загрузить чаты'
+            return rejectWithValue(errorMessage)
         }
     },
 )

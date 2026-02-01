@@ -10,10 +10,8 @@ export const useApiFetcher = () => {
     const refreshAccessToken = useCallback(async () => {
         const refreshToken = Cookies.get('refresh_token')
         if (!refreshToken) {
-            console.warn('Refresh token не найден')
-            Cookies.remove('access_token')
-            Cookies.remove('refresh_token')
-            return null
+            console.error('Refresh token не найден')
+            throw new Error('RefreshTokenNotFound') // Специальная ошибка для отсутствия refresh token
         }
 
         try {
@@ -36,26 +34,18 @@ export const useApiFetcher = () => {
                 })
                 return data.access
             } else if (response.status === 404) {
-                // Refresh token истек (404) — чистим куки и возвращаем null,
-                // чтобы вызывающая сторона могла спокойно редиректить без ошибок в консоли.
-                console.warn(
-                    'Refresh token истек (404), очищаем куки',
-                )
-                Cookies.remove('access_token')
-                Cookies.remove('refresh_token')
-                return null
+                // Refresh token истек (404) — выбрасываем специальную ошибку
+                throw new Error('RefreshTokenExpired')
             } else {
-                console.warn(
+                console.error(
                     'Ошибка refresh token:',
                     response.status,
                 )
                 return null
             }
         } catch (err) {
-            console.warn('Ошибка refreshing token:', err)
-            Cookies.remove('access_token')
-            Cookies.remove('refresh_token')
-            return null
+            console.error('Ошибка refreshing token:', err)
+            throw err // Пробрасываем ошибку дальше
         }
     }, [])
 
@@ -75,10 +65,8 @@ export const useApiFetcher = () => {
                 Cookies.get('csrftoken') ||
                 Cookies.get('X-CSRFTOKEN')
             if (!accessToken) {
-                console.warn('Access token не найден')
-                return Promise.reject(
-                    new Error('AccessTokenNotFound'),
-                )
+                console.error('Access token не найден')
+                throw new Error('AccessTokenNotFound')
             }
 
             const baseHeaders: Record<string, string> = {
@@ -121,22 +109,19 @@ export const useApiFetcher = () => {
                             credentials: 'include',
                         })
                     } else {
-                        return Promise.reject(
-                            new Error(
-                                'AccessTokenNotFound',
-                            ),
+                        throw new Error(
+                            'Не удалось обновить токен',
                         )
                     }
                 } catch (refreshError) {
-                    return Promise.reject(refreshError)
+                    // Если refresh не удался, пробрасываем ошибку
+                    throw refreshError
                 }
             }
 
             if (!response.ok) {
-                return Promise.reject(
-                    new Error(
-                        `Ошибка API: ${response.status} ${response.statusText}`,
-                    ),
+                throw new Error(
+                    `Ошибка API: ${response.status} ${response.statusText}`,
                 )
             }
 

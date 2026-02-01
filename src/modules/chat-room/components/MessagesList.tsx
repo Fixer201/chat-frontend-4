@@ -39,6 +39,7 @@ export default function MessagesList({
         >
             {chatMessages.length === 0 ? (
                 <div
+                    // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                     className={`
                       flex h-full flex-col items-center justify-center
                       text-text-gray

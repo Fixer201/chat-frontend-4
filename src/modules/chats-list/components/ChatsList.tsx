@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // ChatsList.tsx
 'use client'
 import {
@@ -317,6 +318,7 @@ export default function ChatsList({
                                             '/images/chatHeader/userAvatar.svg'
 
                                         // Формирование превью сообщения в зависимости от типа чата
+                                        // Формирование превью сообщения в зависимости от типа чата
                                         let messagePreview =
                                             ''
                                         if (
@@ -328,9 +330,12 @@ export default function ChatsList({
                                             const senderName =
                                                 chat
                                                     .lastMessage
-                                                    .fromUser ||
-                                                'Пользователь'
-                                            messagePreview = `${senderName}: ${chat.lastMessage.content}`
+                                                    ?.fromUser ||
+                                                'Пользователь' // Добавлена проверка на null
+                                            messagePreview =
+                                                chat.lastMessage
+                                                    ? `${senderName}: ${chat.lastMessage.content}`
+                                                    : 'Нет сообщений' // Добавлена проверка
                                         } else if (
                                             chat.chatType.includes(
                                                 'channel',
@@ -339,16 +344,15 @@ export default function ChatsList({
                                             // Для каналов: отображаем описание канала
                                             messagePreview =
                                                 chat.description ||
-                                                ''
+                                                'Нет описания'
                                         } else {
                                             // Для личных чатов: отображаем текст последнего сообщения
                                             messagePreview =
                                                 chat
                                                     .lastMessage
-                                                    .content ||
-                                                ''
+                                                    ?.content ||
+                                                'Нет сообщений' // Добавлена проверка
                                         }
-
                                         // Проверка валидности URL аватарки
                                         if (
                                             !avatarSrc ||

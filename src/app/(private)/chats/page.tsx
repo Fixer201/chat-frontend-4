@@ -1,7 +1,8 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 
 import { useEffect } from 'react'
-
+import { useSearchParams } from 'next/navigation'
 import ChatRoom from '@modules/chat-room/components/ChatRoom'
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
@@ -19,8 +20,29 @@ const INITIAL_CHATS_COUNT = 15
  * - Десктоп (md+): обе колонки видны одновременно.
  */
 export default function ChatsPage() {
-    const { chats, selectedChatId, loadChats, selectChat } =
-        useChats()
+    const {
+        chats,
+        selectedChatId,
+        loadChats,
+        selectChat,
+        createChat,
+    } = useChats()
+    const searchParams = useSearchParams()
+    const contactId = searchParams.get('contactId')
+
+    useEffect(() => {
+        if (contactId && chats.length > 0) {
+            // Ищем существующий чат по uid контакта
+            const existingChat = chats.find(
+                (chat) => chat.chat.uid === contactId,
+            )
+            if (existingChat) {
+                selectChat(existingChat.id)
+            } else {
+                createChat(contactId)
+            }
+        }
+    }, [contactId, chats, selectChat, createChat])
 
     /** Загрузка начального списка чатов при монтировании компонента */
     useEffect(() => {
