@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 
@@ -28,6 +30,20 @@ type ProfileState = {
     refetch: () => Promise<void>
 }
 
+const UNAUTHORIZED_ERROR = 'Unauthorized'
+
+function clearAuthArtifacts() {
+    Cookies.remove('access_token')
+    Cookies.remove('refresh_token')
+    if (typeof window !== 'undefined') {
+        try {
+            localStorage.removeItem('profile_cache')
+        } catch (e) {
+            console.warn('Profile cache clear failed', e)
+        }
+    }
+}
+
 // Универсальный POST-запрос с авторизацией. Бек ожидает POST даже для чтения профиля,
 // поэтому отправляем пустой JSON, чтобы не ломать контракт.
 async function getWithAuth(
@@ -53,7 +69,10 @@ async function getWithAuth(
 // если refresh отсутствует или запрос неуспешен.
 async function refreshAccessToken() {
     const refreshToken = Cookies.get('refresh_token')
-    if (!refreshToken) return null
+    if (!refreshToken) {
+        clearAuthArtifacts()
+        return null
+    }
 
     const res = await fetch('/api/auth/refresh', {
         method: 'POST',
@@ -61,7 +80,10 @@ async function refreshAccessToken() {
         body: JSON.stringify({ refresh: refreshToken }),
     })
 
-    if (!res.ok) return null
+    if (!res.ok) {
+        clearAuthArtifacts()
+        return null
+    }
 
     const data = await res.json()
     if (data?.access) {
@@ -91,6 +113,13 @@ async function fetchProfileWithTokenCheck() {
                 '/api/auth/profile',
                 refreshed,
             )
+        } else {
+            clearAuthArtifacts()
+            const unauthorizedError = new Error(
+                UNAUTHORIZED_ERROR,
+            )
+            unauthorizedError.name = UNAUTHORIZED_ERROR
+            throw unauthorizedError
         }
     }
 
@@ -161,6 +190,19 @@ export function useProfile(): ProfileState {
                 )
             }
         } catch (err) {
+            if (
+                err instanceof Error &&
+                err.message === UNAUTHORIZED_ERROR
+            ) {
+                setError(UNAUTHORIZED_ERROR)
+                setProfile(null)
+                clearAuthArtifacts()
+                if (typeof window !== 'undefined') {
+                    window.location.href = '/auth/login'
+                }
+                return
+            }
+
             // Сетевые/неожиданные ошибки. Показываем общий текст, чтобы не раскрывать детали.
             console.error('Profile fetch error', err)
             setError('Ошибка сети')
