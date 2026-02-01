@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
-import { useRef, useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
 import ReplyPreview from './ReplyPreview'
 import { cn } from '@shared/lib/utils'
@@ -296,8 +296,8 @@ export default function MessageComposer({
                     {/* Кнопка-триггер пикера эмодзи: открывается по hover/focus,
                         закрывается с задержкой по mouseleave/blur для плавного UX.
                         cursor-pointer на button, fill-цвет на SVG — разделение ответственности */}
-                    <button
-                        type="button"
+                    <div
+                        role="button"
                         aria-label="Open emoji picker"
                         className={`
                           absolute right-4 bottom-2 mb-1.5 cursor-pointer
@@ -339,7 +339,7 @@ export default function MessageComposer({
                                 />
                             </div>
                         )}
-                    </button>
+                    </div>
                 </div>
 
                 {/* Контекстная кнопка действия: если поле ввода пустое — иконка записи
