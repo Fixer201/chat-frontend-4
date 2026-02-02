@@ -1,3 +1,3 @@
 export default function ForwardProfileModal() {
-  return <div>Forward Profile Modal</div>;
+    return <div>Forward Profile Modal</div>
 }

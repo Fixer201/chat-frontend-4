@@ -61,7 +61,7 @@ const createPhotoUrl = (
 
     try {
         return URL.createObjectURL(photo)
-    } catch (error) {
+    } catch {
         return null
     }
 }

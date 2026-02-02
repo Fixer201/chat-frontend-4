@@ -49,6 +49,8 @@ export const ChatAvatar = forwardRef<
             rightElement,
             className,
             notificationsEnabled,
+            // Деструктурировано для исключения из ...props (не передаётся в DOM)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             chatType,
             messageStatus,
             isFavorite,

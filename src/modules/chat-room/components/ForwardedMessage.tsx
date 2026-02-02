@@ -2,6 +2,7 @@
 
 import { ForwardedMessage as ForwardedMessageType } from '@shared/types/message'
 
+/** Пропсы содержат объект пересланного сообщения с текстом и метаданными */
 interface ForwardedMessageProps {
     readonly forwardedMessage: ForwardedMessageType
 }
@@ -18,8 +19,14 @@ interface ForwardedMessageProps {
 export default function ForwardedMessage({
     forwardedMessage,
 }: ForwardedMessageProps) {
+    // Блок пересланного сообщения: cursor-default + border-accent для визуального отличия
     return (
-        <div className="rounded-lg bg-gray-main p-2">
+        <div
+            className={`
+          cursor-default rounded-lg border-l-2 border-l-accent-violet-primary
+          bg-gray-main p-2
+        `}
+        >
             <p className="text-xs text-text-gray">
                 Переслано от [Пользователь]
             </p>

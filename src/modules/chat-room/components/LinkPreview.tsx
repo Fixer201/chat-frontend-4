@@ -1,9 +1,13 @@
 'use client'
 
 interface LinkPreviewProps {
+    /** URL ссылки — обязательное поле, используется как fallback для заголовка */
     readonly url: string
+    /** Заголовок страницы (из Open Graph или <title>) */
     readonly title?: string
+    /** Описание страницы (из meta description или OG) */
     readonly description?: string
+    /** URL изображения-превью (из og:image) */
     readonly imageUrl?: string
 }
 
@@ -26,12 +30,19 @@ export default function LinkPreview({
     description,
     imageUrl,
 }: LinkPreviewProps) {
+    // Ссылка-превью: cursor-pointer + hover-подсветка для явной кликабельности
     return (
         <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 block rounded-lg bg-gray-main p-3"
+            className={`
+              mt-2 block cursor-pointer rounded-lg bg-gray-main p-3
+              transition-colors
+              hover:bg-accent-violet-ultra-light
+              focus-visible:outline-2
+              focus-visible:outline-accent-violet-primary
+            `}
         >
             <div className="flex items-start gap-3">
                 {imageUrl && (
