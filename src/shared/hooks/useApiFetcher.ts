@@ -120,11 +120,19 @@ export const useApiFetcher = () => {
             }
 
             if (!response.ok) {
+                let errorDetails = ''
+                try {
+                    const errorText = await response.text()
+                    errorDetails = ` - ${errorText}`
+                } catch {}
                 throw new Error(
-                    `Ошибка API: ${response.status} ${response.statusText}`,
+                    `Ошибка API: ${response.status} ${response.statusText}${errorDetails}`,
                 )
             }
 
+            if (response.status === 204) {
+                return null // Возвращаем null для успешных ответов без тела
+            }
             return await response.json()
         },
         [refreshAccessToken],

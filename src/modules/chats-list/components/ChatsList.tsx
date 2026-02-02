@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // ChatsList.tsx
 'use client'
 import {
@@ -16,7 +15,7 @@ import ChatSuccessToast from './ChatSuccessToast'
 import EmptySearchState from '../../../shared/ui/emptySearchState/EmptySearchState'
 import EmptyChatsState from './emptyChatsState/EmptyChatsState'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
@@ -32,6 +31,7 @@ export default function ChatsList({
     onCreateChannel,
 }: ChatsListProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     // Состояния для управления UI
     const [searchValue, setSearchValue] = useState('')
@@ -198,6 +198,26 @@ export default function ChatsList({
             searchValue.trim() === ''
         )
     }, [loading, chats, searchValue])
+
+    // Обработка query-параметра contactId для выбора чата
+    useEffect(() => {
+        const contactId = searchParams.get('contactId')
+        if (contactId && chats) {
+            // Найти чат с этим контактом (по uid чата)
+            const chat = chats.find(
+                (c) => c.chat.uid === contactId,
+            )
+            if (chat) {
+                selectChat(chat.id)
+            } else {
+                // Если чата нет, можно создать личный чат (если API поддерживает)
+                // Пока оставляем без действия или добавляем логику создания
+                console.log(
+                    'Чат с контактом не найден, возможно, нужно создать',
+                )
+            }
+        }
+    }, [searchParams, chats, selectChat])
 
     return (
         <>

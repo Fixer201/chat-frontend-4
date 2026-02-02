@@ -30,11 +30,19 @@ export async function POST(request: NextRequest) {
             data = { status: response.status }
         }
 
+        if (!response.ok) {
+            console.error(
+                `Refresh API error: ${response.status} ${response.statusText}`,
+            )
+            // Можно добавить логику для других статусов
+        }
+
         return NextResponse.json(data, {
             status: response.status,
         })
     } catch (error) {
         console.error('Proxy error:', error)
+
         return NextResponse.json(
             {
                 error: 'Internal server error',

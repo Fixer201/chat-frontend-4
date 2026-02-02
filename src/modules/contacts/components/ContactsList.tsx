@@ -1,3 +1,4 @@
+// src/modules/contacts/components/ContactsList.tsx
 'use client'
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
@@ -6,6 +7,7 @@ import { RootState } from '@redux/store'
 import { useEffect, useState, memo } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import Modal from '@shared/ui/modal/Modal'
+import Dropdown from '@shared/ui/dropdown/Dropdown' // Импорт Dropdown
 
 import {
     removeContacts,
@@ -20,6 +22,7 @@ import { ApiContact, Contact } from '@shared/types/contact'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import { Spinner } from '@shared/ui/Spinner'
 import { useRouter } from 'next/navigation'
+import { UnauthorizedView } from '@modules/core/components/UnauthorizedView'
 
 export default memo(function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -29,8 +32,15 @@ export default memo(function ContactsList() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<Contact[]>([])
+    // Новые состояния для Dropdown контекстного меню
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+    const [dropdownPosition, setDropdownPosition] =
+        useState<{ top: number; left: number } | null>(null)
+    const [selectedUserForAdd, setSelectedUserForAdd] =
+        useState<Contact | null>(null)
     const dispatch = useDispatch()
     const router = useRouter()
+    const [authError, setAuthError] = useState(false)
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
@@ -112,7 +122,8 @@ export default memo(function ContactsList() {
                         error.message ===
                             'AccessTokenNotFound'
                     ) {
-                        router.push('/auth/login') // Перенаправление на логин вместо notFound()
+                        setAuthError(true)
+                        // router.push('/auth/login') // Перенаправление на логин вместо notFound()
                     }
                 }
             } finally {
@@ -206,12 +217,12 @@ export default memo(function ContactsList() {
 
     // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
-        router.push('/chats?contactId=' + uid)
-        // setSelectedContacts((prev) =>
-        //     prev.includes(uid)
-        //         ? prev.filter((id) => id !== uid)
-        //         : [...prev, uid],
-        // )
+        // router.push('/chats?contactId=' + uid)
+        setSelectedContacts((prev) =>
+            prev.includes(uid)
+                ? prev.filter((id) => id !== uid)
+                : [...prev, uid],
+        )
     }
 
     // Функция открытия модального окна
@@ -224,9 +235,21 @@ export default memo(function ContactsList() {
         setIsModalOpen(false)
     }
 
-    // Функция подтверждения удаления
-    const handleConfirmDelete = () => {
+    // Функция подтверждения удаления с использованием API
+    const handleConfirmDelete = async () => {
         try {
+            // Вызываем API для каждого выбранного контакта
+            const deletePromises = selectedContacts.map(
+                (uid) =>
+                    fetchData(
+                        `https://api.test.chat.ktsf.ru/api/v1/contact/messenger-delete-contact/${uid}/`,
+                        {
+                            method: 'DELETE',
+                        },
+                    ),
+            )
+            await Promise.all(deletePromises)
+            // После успешного удаления обновляем Redux
             dispatch(removeContacts(selectedContacts))
             setSelectedContacts([])
             setDeleteMode(false)
@@ -236,6 +259,8 @@ export default memo(function ContactsList() {
                 'Ошибка при удалении контактов:',
                 error,
             )
+            // Не обновляем Redux, если API не удался
+            // Можно добавить уведомление об ошибке пользователю
         }
     }
 
@@ -252,6 +277,102 @@ export default memo(function ContactsList() {
         setSelectedContacts([])
     }
 
+    // Функция для добавления контакта
+    const handleAddContact = async (user: Contact) => {
+        if (!user.phone) {
+            console.error(
+                'Недостаточно данных для добавления контакта:',
+                {
+                    phone: user.phone,
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                },
+            )
+            return
+        }
+        try {
+            const body = {
+                phone: user.phone,
+                first_name: user.firstName || '',
+                last_name: user.lastName || '',
+            }
+            console.log(
+                'Отправка запроса на добавление контакта:',
+                body,
+            )
+            const response = await fetchData(
+                'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-add-by-phone/',
+                {
+                    method: 'POST',
+                    body: JSON.stringify(body),
+                },
+            )
+            // Маппим ответ в Contact и добавляем в список
+            const newContact: Contact = {
+                uid: response.uid,
+                username: '',
+                nickname: '',
+                phone: response.phone,
+                firstName: response.first_name,
+                lastName: response.last_name,
+                patronymic: '',
+                avatar:
+                    response.system_contact?.avatar || '',
+                avatarUrl:
+                    response.system_contact?.avatar_url ||
+                    '',
+                avatarWebp:
+                    response.system_contact?.avatar_webp ||
+                    '',
+                avatarWebpUrl:
+                    response.system_contact
+                        ?.avatar_webp_url || '',
+                additionalInformation: '',
+                birthday: 0,
+                chatId: 0,
+                isOnline:
+                    response.system_contact?.is_online ||
+                    false,
+                wasOnlineAt:
+                    response.system_contact
+                        ?.was_online_at || 0,
+            }
+            dispatch(
+                setContacts([...contactsList, newContact]),
+            )
+            setDropdownOpen(false)
+            setSelectedUserForAdd(null)
+        } catch (error) {
+            console.error(
+                'Ошибка при добавлении контакта:',
+                error,
+            )
+        }
+    }
+
+    // Функция для обработки клика на контакт (с редиректом)
+    const handleContactClick = (uid: string) => {
+        dispatch(setSelectedContact(uid))
+        router.push(`/chats?contactId=${uid}`)
+    }
+
+    // Функция для открытия контекстного меню
+    const handleContextMenu = (
+        e: React.MouseEvent,
+        user: Contact,
+    ) => {
+        e.preventDefault()
+        setDropdownPosition({
+            top: e.clientY,
+            left: e.clientX,
+        })
+        setSelectedUserForAdd(user)
+        setDropdownOpen(true)
+    }
+
+    if (authError) {
+        return <UnauthorizedView />
+    }
     if (loading) {
         return (
             <div className="flex h-full items-center justify-center">
@@ -378,17 +499,8 @@ export default memo(function ContactsList() {
                                     handleSelectContact
                                 }
                                 onSetSelectedContact={
-                                    handleSelectContact
+                                    handleContactClick
                                 }
-                                // onSetSelectedContact={(
-                                //     uid: string,
-                                // ) =>
-                                //     dispatch(
-                                //         setSelectedContact(
-                                //             uid,
-                                //         ),
-                                //     )
-                                // }
                             />
                         ))
                     ) : filteredContacts.length === 0 &&
@@ -484,13 +596,15 @@ export default memo(function ContactsList() {
                                                 searchValue
                                             }
                                             onSelectContact={() => {}}
-                                            onSetSelectedContact={(
-                                                uid: string,
+                                            onSetSelectedContact={
+                                                handleContactClick
+                                            }
+                                            onContextMenu={(
+                                                e,
                                             ) =>
-                                                dispatch(
-                                                    setSelectedContact(
-                                                        uid,
-                                                    ),
+                                                handleContextMenu(
+                                                    e,
+                                                    user,
                                                 )
                                             }
                                         />
@@ -524,6 +638,30 @@ export default memo(function ContactsList() {
                     },
                 ]}
             />
+
+            {/* Контекстное меню для добавления контакта */}
+            <Dropdown
+                open={dropdownOpen}
+                onOpenChange={setDropdownOpen}
+            >
+                <Dropdown.Content
+                    manualPosition={dropdownPosition}
+                >
+                    <Dropdown.Item
+                        label="Добавить в контакты"
+                        onSelect={() =>
+                            selectedUserForAdd &&
+                            handleAddContact(
+                                selectedUserForAdd,
+                            )
+                        }
+                    />
+                    <Dropdown.Item
+                        label="В черный список"
+                        onSelect={() => {}}
+                    />
+                </Dropdown.Content>
+            </Dropdown>
         </>
     )
 })

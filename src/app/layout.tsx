@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 import '@app/globals.css'
 import { Roboto } from 'next/font/google'
 
