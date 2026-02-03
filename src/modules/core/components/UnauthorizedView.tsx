@@ -12,11 +12,11 @@ export function UnauthorizedView() {
     }
 
     return (
-        // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
         <div
             className={`
-          flex min-h-screen flex-col items-center justify-center bg-gray-main
-        `}
+              flex min-h-screen flex-col items-center justify-center
+              bg-gray-main
+            `}
         >
             <Image
                 src="/images/home/401.svg" // Замените на подходящую иконку, если есть (или используйте 404.svg как fallback)

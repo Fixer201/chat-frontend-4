@@ -1,3 +1,3 @@
 export default function LogoutModal() {
-  return <div>Logout Modal</div>;
+    return <div>Logout Modal</div>
 }

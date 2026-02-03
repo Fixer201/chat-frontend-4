@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // Компонент состояния "Нет чатов" (пустой экран)
 'use client'
 

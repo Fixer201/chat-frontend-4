@@ -32,5 +32,10 @@ export const Emoji = memo(function Emoji({
         [size],
     )
 
-    return <span style={style} dangerouslySetInnerHTML={{ __html: html }} />
+    return (
+        <span
+            style={style}
+            dangerouslySetInnerHTML={{ __html: html }}
+        />
+    )
 })

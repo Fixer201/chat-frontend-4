@@ -1,3 +1,3 @@
 export default function InChatSearch() {
-  return <input placeholder="Search in chat..." />;
+    return <input placeholder="Search in chat..." />
 }

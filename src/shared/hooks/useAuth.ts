@@ -1,8 +1,8 @@
 export function useAuth() {
-  return {
-    user: null,
-    isAuthenticated: false,
-    login: () => {},
-    logout: () => {},
-  };
+    return {
+        user: null,
+        isAuthenticated: false,
+        login: () => {},
+        logout: () => {},
+    }
 }

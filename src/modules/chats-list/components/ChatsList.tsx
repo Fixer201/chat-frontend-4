@@ -19,7 +19,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
-import { Contact } from '@shared/types/contact'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
@@ -51,7 +50,6 @@ export default function ChatsList({
     const {
         chats,
         loading,
-        loadChats,
         chatSettings,
         toggleFavorite: handleFavoriteChat,
         toggleNotifications: handleMuteChat,
@@ -61,8 +59,6 @@ export default function ChatsList({
         addToContacts,
         selectedChatId,
         selectChat,
-        createGroup,
-        createChannel,
     } = useChats()
 
     // Навигация к странице контактов
@@ -145,10 +141,11 @@ export default function ChatsList({
             setDeleteModalOpen(false)
             setChatToDelete(null)
         } catch (error) {
-            const errorMessage =
+            console.error(
                 error instanceof Error
                     ? error.message
-                    : 'Неизвестная ошибка при удалении чата'
+                    : 'Неизвестная ошибка при удалении чата',
+            )
         } finally {
             setIsDeleting(false)
         }

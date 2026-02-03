@@ -1,3 +1,3 @@
 export default function CreateChannelPage() {
-  return <div>Create Channel</div>;
+    return <div>Create Channel</div>
 }

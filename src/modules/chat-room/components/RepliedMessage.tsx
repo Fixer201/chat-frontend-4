@@ -2,6 +2,7 @@
 
 import { RepliedMessage as RepliedMessageType } from '@shared/types/message'
 
+/** Пропсы содержат объект цитируемого сообщения с текстовым контентом */
 interface RepliedMessageProps {
     readonly repliedMessage: RepliedMessageType
 }
@@ -20,8 +21,15 @@ interface RepliedMessageProps {
 export default function RepliedMessage({
     repliedMessage,
 }: RepliedMessageProps) {
+    // Блок цитаты: cursor-pointer подсказывает, что можно кликнуть для перехода к сообщению
     return (
-        <div className="mb-1 rounded bg-gray-main p-2">
+        <div
+            className={`
+              mb-1 cursor-pointer rounded border-l-2
+              border-l-accent-violet-primary bg-gray-main p-2 transition-colors
+              hover:bg-accent-violet-ultra-light
+            `}
+        >
             <p className="text-xs text-text-gray">
                 Ответ на сообщение
             </p>

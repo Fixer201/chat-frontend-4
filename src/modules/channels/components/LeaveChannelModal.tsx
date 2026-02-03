@@ -1,3 +1,3 @@
 export default function LeaveChannelModal() {
-  return <div>Leave Channel Modal</div>;
+    return <div>Leave Channel Modal</div>
 }

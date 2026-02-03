@@ -3,7 +3,18 @@
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 import Image from 'next/image'
 
-/** Позиция контекстного меню */
+/**
+ * Контекстное меню сообщения — выпадающий список действий по правому клику.
+ *
+ * Порядок пунктов: Ответить → Переслать → Скопировать → Выбрать → Редактировать → Удалить.
+ * «Редактировать» доступно только для собственных сообщений (isOwnMessage).
+ * Каждый пункт условно рендерится через optional-колбэки:
+ * если колбэк не передан — пункт скрыт.
+ *
+ * Позиционирование — через manualPosition (clientX/clientY) на компоненте Dropdown.
+ */
+
+/** Позиция контекстного меню (координаты курсора при правом клике) */
 type ContextMenuPosition = Readonly<{
     top: number
     left: number
@@ -12,14 +23,18 @@ type ContextMenuPosition = Readonly<{
 interface MessageContextMenuProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    /** Абсолютная позиция меню (clientX/clientY из события contextmenu) */
     position: ContextMenuPosition
     onReply?: () => void
     onForward?: () => void
     onCopy?: () => void
     onSelect?: () => void
+    /** Доступно только для собственных сообщений */
     onEdit?: () => void
     onDelete?: () => void
-    isOwnMessage: boolean // Можно редактировать/удалять только свои сообщения
+    /** Является ли сообщение собственным — определяет видимость «Редактировать» */
+    isOwnMessage: boolean
+    /** Обёртка вызова: закрывает меню после выполнения действия */
     onMenuItemClick: (handler?: () => void) => void
 }
 
@@ -58,8 +73,8 @@ export const MessageContextMenu = ({
                             <Image
                                 src="/icons/message/Reply.svg"
                                 alt="Ответить"
-                                width={16}
-                                height={16}
+                                width={20}
+                                height={20}
                                 className="opacity-80"
                             />
                         }
@@ -76,10 +91,10 @@ export const MessageContextMenu = ({
                         }
                         rightIcon={
                             <Image
-                                src="/icons/settings-sidebar/Forward.svg"
+                                src="/icons/message/Forward.svg"
                                 alt="Переслать"
-                                width={16}
-                                height={16}
+                                width={20}
+                                height={20}
                                 className="opacity-80"
                             />
                         }
@@ -98,8 +113,8 @@ export const MessageContextMenu = ({
                             <Image
                                 src="/icons/message/Copy.svg"
                                 alt="Скопировать"
-                                width={16}
-                                height={16}
+                                width={20}
+                                height={20}
                                 className="opacity-80"
                             />
                         }
@@ -118,8 +133,8 @@ export const MessageContextMenu = ({
                             <Image
                                 src="/icons/message/Select.svg"
                                 alt="Выбрать"
-                                width={16}
-                                height={16}
+                                width={20}
+                                height={20}
                                 className="opacity-80"
                             />
                         }
@@ -138,8 +153,8 @@ export const MessageContextMenu = ({
                             <Image
                                 src="/icons/settings-sidebar/Edite.svg"
                                 alt="Редактировать"
-                                width={16}
-                                height={16}
+                                width={20}
+                                height={20}
                                 className="opacity-80"
                             />
                         }
@@ -148,8 +163,8 @@ export const MessageContextMenu = ({
                     </Dropdown.Item>
                 )}
 
-                {/* Удалить - только для своих сообщений */}
-                {isOwnMessage && onDelete && (
+                {/* Удалить */}
+                {onDelete && (
                     <Dropdown.Item
                         danger
                         onSelect={() =>
@@ -157,10 +172,10 @@ export const MessageContextMenu = ({
                         }
                         rightIcon={
                             <Image
-                                src="/icons/settings-sidebar/Delete.svg"
+                                src="/icons/message/Delete.svg"
                                 alt="Удалить"
-                                width={16}
-                                height={16}
+                                width={20}
+                                height={20}
                                 className="opacity-80"
                             />
                         }

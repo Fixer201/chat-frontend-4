@@ -1,18 +1,20 @@
 {
-  "semi": false,
-  "singleQuote": true,
-  "jsxSingleQuote": false,
-  "trailingComma": "all",
-  "tabWidth": 4,
-  "useTabs": false,
-  "printWidth": 60,
-  "arrowParens": "always",
-  "bracketSpacing": true,
-  "bracketSameLine": false,
-  "endOfLine": "lf",     - Для запуска перед push в git
+    'semi': false,
+    'singleQuote': true,
+    'jsxSingleQuote': false,
+    'trailingComma': 'all',
+    'tabWidth': 4,
+    'useTabs': false,
+    'printWidth': 60,
+    'arrowParens': 'always',
+    'bracketSpacing': true,
+    'bracketSameLine': false,
+    'endOfLine': 'lf',
+    ? - Для запуска перед push в git
 
-  "proseWrap": "preserve",
-  "quoteProps": "as-needed",
-  "embeddedLanguageFormatting": "auto",
-  "htmlWhitespaceSensitivity": "css"
+      "proseWrap"
+    : 'preserve',
+    'quoteProps': 'as-needed',
+    'embeddedLanguageFormatting': 'auto',
+    'htmlWhitespaceSensitivity': 'css',
 }

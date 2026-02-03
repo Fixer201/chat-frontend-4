@@ -4,11 +4,23 @@ export type MessageFile = {
 }
 
 export type RepliedMessage = {
+    uid?: string
     content: string
+    from_user?: string
+    first_name?: string
+    last_name?: string
+    files_list?: MessageFile[]
 }
 
 export type ForwardedMessage = {
+    uid?: string
     content: string
+    from_user?: string
+    first_name?: string
+    last_name?: string
+    avatar_url?: string
+    avatar_webp_url?: string
+    files_list?: MessageFile[]
 }
 
 export type Message = {

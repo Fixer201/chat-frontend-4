@@ -392,7 +392,7 @@ const chatsSlice = createSlice({
                 state.items[existingIndex] = action.payload
             }
         },
-        // Action для отладки состояния (в продакшене следует удалить)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         debugState: (state) => {
             // Отладочная информация о состоянии
         },
