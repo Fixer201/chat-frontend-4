@@ -341,8 +341,8 @@ export default function MessageItem({
                                         message.created_at && (
                                         <span
                                             className={`
-                                          ml-1 text-xs text-text-gray
-                                        `}
+                                              ml-1 text-xs text-text-gray
+                                            `}
                                         >
                                             (изменено)
                                         </span>
