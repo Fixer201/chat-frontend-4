@@ -4,6 +4,16 @@ import getAvatarSrc from '@shared/lib/getAvatarSrc'
 import { useEffect, useState } from 'react'
 import { getStatusText } from '@shared/lib/getStatusText'
 
+/**
+ * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
+ *
+ * Статус (secondaryText) вычисляется в useEffect, а не при рендере,
+ * чтобы избежать hydration mismatch: getStatusText зависит от new Date(),
+ * которая даёт разные значения на сервере (SSR) и клиенте.
+ *
+ * Кнопка «Назад» видна только на мобильных устройствах (md:hidden)
+ * и передаётся через опциональный колбэк onBack.
+ */
 export default function ChatHeader({
     chat,
     onBack,
@@ -31,12 +41,21 @@ export default function ChatHeader({
         >
             <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-row items-center gap-4">
-                    {/* Back button for mobile */}
+                    {/* Кнопка «Назад» — видна только на мобильных (md:hidden),
+                        возвращает к списку чатов */}
+                    {/* Кнопка «Назад» — cursor-pointer + hover-подсветка для тактильной обратной связи */}
                     {onBack && (
                         <button
                             onClick={onBack}
                             aria-label="Back to chats"
-                            className="md:hidden"
+                            className={`
+                              cursor-pointer rounded-lg p-1 transition-colors
+                              hover:bg-gray-main
+                              focus-visible:outline-2
+                              focus-visible:outline-accent-violet-primary
+                              active:scale-95
+                              md:hidden
+                            `}
                             type="button"
                         >
                             <Image
@@ -47,6 +66,7 @@ export default function ChatHeader({
                             />
                         </button>
                     )}
+                    {/* Аватар собеседника: cursor-pointer подсказывает, что клик откроет профиль */}
                     <Image
                         src={getAvatarSrc(chat.chat)}
                         width={40}
@@ -56,12 +76,15 @@ export default function ChatHeader({
                             ' ' +
                             chat.chat.lastName
                         }
-                        className="rounded-full"
+                        className={`
+                          cursor-pointer rounded-full transition-opacity
+                          hover:opacity-80
+                        `}
                         unoptimized
                     />
 
                     <div className="flex min-w-0 flex-col">
-                        {/* User Full Name */}
+                        {/* Полное имя собеседника: truncate обрезает длинные имена */}
                         <h2 className="truncate font-semibold">
                             {chat.chat.firstName}{' '}
                             {chat.chat.lastName}
@@ -86,7 +109,13 @@ export default function ChatHeader({
                     >
                         <button
                             aria-label="Search in chat"
-                            className="cursor-pointer"
+                            className={`
+                              cursor-pointer rounded-lg p-1 transition-colors
+                              hover:bg-gray-main
+                              focus-visible:outline-2
+                              focus-visible:outline-accent-violet-primary
+                              active:scale-95
+                            `}
                             type="button"
                         >
                             <Image
@@ -98,7 +127,13 @@ export default function ChatHeader({
                         </button>
                         <button
                             aria-label="Call"
-                            className="cursor-pointer"
+                            className={`
+                              cursor-pointer rounded-lg p-1 transition-colors
+                              hover:bg-gray-main
+                              focus-visible:outline-2
+                              focus-visible:outline-accent-violet-primary
+                              active:scale-95
+                            `}
                             type="button"
                         >
                             <Image

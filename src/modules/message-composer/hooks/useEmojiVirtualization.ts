@@ -7,6 +7,21 @@ import {
 } from '@tanstack/react-virtual'
 import { VirtualRow } from '@shared/lib/emojiData'
 
+/**
+ * Хук виртуализации и управления скроллом для пикера эмодзи.
+ *
+ * Решает две взаимосвязанные задачи:
+ * 1. Виртуализация: через @tanstack/react-virtual рендерит только видимые строки
+ *    (+ 5 строк overscan для плавности), что снижает DOM с ~1800 элементов до ~30.
+ * 2. Двусторонняя синхронизация скролла и вкладок:
+ *    - Скролл → вкладка: при ручном скролле определяет текущую категорию
+ *      через rowToCategoryMap и подсвечивает соответствующую вкладку.
+ *    - Вкладка → скролл: при клике по вкладке программно прокручивает
+ *      к заголовку категории через scrollToIndex.
+ *    Для предотвращения цикличного обновления используется флаг isScrollingToRef.
+ */
+
+/** Высота строки-заголовка категории (px) */
 const HEADER_HEIGHT = 44
 
 interface UseEmojiVirtualizationOptions {
@@ -33,16 +48,19 @@ export function useEmojiVirtualization({
     setSelectedCategory,
 }: UseEmojiVirtualizationOptions): UseEmojiVirtualizationReturn {
     const scrollContainerRef = useRef<HTMLDivElement>(null)
+    /** Флаг программного скролла: когда true, onChange виртуализатора не обновляет вкладку */
     const isScrollingToRef = useRef(false)
+    /** Таймер сброса флага программного скролла после завершения анимации */
     const scrollTimeoutRef = useRef<ReturnType<
         typeof setTimeout
     > | null>(null)
 
-    // Ref for current category to avoid stale closure in onChange
+    // Ref на текущую категорию — избегаем stale closure в onChange-колбэке
+    // виртуализатора, который замыкается при создании и не видит обновлений state
     const selectedCategoryRef = useRef(selectedCategory)
     selectedCategoryRef.current = selectedCategory
 
-    // Calculate row height
+    // Вычисление высоты строки: заголовок категории выше строки эмодзи
     const getRowHeight = useCallback(
         (index: number) => {
             return virtualRows[index].type === 'header'
@@ -52,7 +70,11 @@ export function useEmojiVirtualization({
         [virtualRows, rowHeight],
     )
 
-    // Virtualizer setup
+    // Настройка виртуализатора @tanstack/react-virtual.
+    // overscan: 5 — рендерим 5 дополнительных строк за пределами viewport
+    // для плавности прокрутки (баланс между производительностью и визуальными артефактами).
+    // onChange: при ручном скролле определяем категорию первого видимого элемента
+    // и обновляем подсвеченную вкладку (если скролл не программный).
     // eslint-disable-next-line react-hooks/incompatible-library
     const virtualizer = useVirtualizer({
         count: virtualRows.length,
@@ -60,6 +82,8 @@ export function useEmojiVirtualization({
         estimateSize: getRowHeight,
         overscan: 5,
         onChange: (instance) => {
+            // Пропускаем обновление вкладки при программном скролле,
+            // чтобы избежать цикла: клик по вкладке → скролл → onChange → обновление вкладки
             if (isScrollingToRef.current) return
 
             const visibleRange = instance.range
@@ -77,13 +101,15 @@ export function useEmojiVirtualization({
         },
     })
 
-    // Scroll to category when tab is clicked
+    // Программная прокрутка к категории при клике по вкладке.
+    // Устанавливаем isScrollingToRef = true, чтобы onChange не обновлял вкладку
+    // во время анимации скролла. Через 300мс (примерная длительность smooth-скролла)
+    // флаг сбрасывается, и ручной скролл снова синхронизирует вкладки.
     const scrollToCategory = useCallback(
         (slug: string) => {
             const rowIndex = categoryRowIndices.get(slug)
             if (rowIndex === undefined) return
 
-            // Clear previous timeout
             if (scrollTimeoutRef.current) {
                 clearTimeout(scrollTimeoutRef.current)
             }
@@ -96,7 +122,6 @@ export function useEmojiVirtualization({
                 behavior: 'smooth',
             })
 
-            // Reset flag after scroll animation
             scrollTimeoutRef.current = setTimeout(() => {
                 isScrollingToRef.current = false
                 scrollTimeoutRef.current = null

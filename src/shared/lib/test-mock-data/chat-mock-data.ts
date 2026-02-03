@@ -9,8 +9,8 @@ import { ApiChatItem } from '@shared/types/chat'
 import { generateAvatarUrl } from './avatarGenerator'
 import { AVATAR_SOURCES } from './avatarSources'
 
-// Функция генерации моковых данных чатов
 // Фиксированные UID из ContactsListDB для синхронизации с контактами
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CONTACT_UIDS = [
     '3fa85f64-5717-4562-b3fc-2c963f66afa6', // Влад Ляшев
     '3fa85f64-5717-4562-b3fc-2c963f66afa9', // Сергей Авдиев
@@ -140,15 +140,14 @@ export function generateLocalMockChatItems(
         .fill(null) // Создаем массив из count элементов со значением null
         .map((_, index) => {
             // Массив возможных типов чатов
-            const chatTypes = [
-                'chat',
-                'public-group',
-                'private-group',
-                'public-channel',
-                'private-channel',
-            ] as const // Используем as const для сохранения точного типа
+            type ChatType =
+                | 'chat'
+                | 'public-group'
+                | 'private-group'
+                | 'public-channel'
+                | 'private-channel'
 
-            let chatType: (typeof chatTypes)[number]
+            let chatType: ChatType
             const randomValue = Math.random()
 
             if (randomValue < 0.7) {

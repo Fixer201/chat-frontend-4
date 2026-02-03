@@ -16,6 +16,11 @@ export type WebSocketContextType = {
         status: string
         files?: { filename: string; data: string }[]
     }) => void
+    deleteMessage: (params: {
+        uid: string
+        chatKey: string
+        forAll: boolean
+    }) => void
     messages: Message[]
     status: ConnectionStatus
     error: string | null

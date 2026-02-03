@@ -3,23 +3,48 @@
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Message } from '@shared/types/message'
 
-// Флаг для отображения всех моковых сообщений независимо от chatKey
+/**
+ * Список сообщений чата — основная область отображения переписки.
+ *
+ * Получает сообщения из WebSocket-контекста и фильтрует по chatKey.
+ * При пустом списке отображает заглушку с иллюстрацией.
+ * Каждое сообщение рендерится через MessageItem с поддержкой
+ * контекстного меню, режима выбора и действий (ответ, пересылка, удаление).
+ *
+ * Семантика: section[role="log"] с aria-live="polite" для экранных читалок,
+ * обновляющий контент без прерывания текущей озвучки.
+ */
+
+// Временный флаг: показывать все сообщения без фильтрации по chatKey.
+// Используется на этапе разработки, пока не реализована полноценная логика контактов.
 const USE_MOCK = true // TODO: удалить после реализации контактов
 
 export default function MessagesList({
     chatKey,
     onEditMessage,
+    onReplyMessage,
+    onSelectMessage,
+    onForwardMessage,
+    isSelectionMode,
+    selectedMessages,
+    chatName,
 }: Readonly<{
     chatKey: string
     onEditMessage?: (message: Message) => void
+    onReplyMessage?: (message: Message) => void
+    onSelectMessage?: (message: Message) => void
+    onForwardMessage?: (message: Message) => void
+    isSelectionMode?: boolean
+    selectedMessages?: Message[]
+    chatName?: string
 }>) {
     const { messages } = useWebSocket()
 
-    // Фильтруем сообщения только для текущего чата
-    // В режиме моков показываем все сообщения для демонстрации верстки
+    // Фильтрация сообщений по chatKey текущего чата.
+    // В режиме USE_MOCK отключена — все сообщения отображаются для отладки.
     const chatMessages = useMemo(
         () =>
             USE_MOCK
@@ -62,13 +87,24 @@ export default function MessagesList({
                     </p>
                 </div>
             ) : (
-                // Список сообщений
                 <ul className="flex flex-col gap-2 p-4">
                     {chatMessages.map((message) => (
                         <li key={message.uid}>
                             <MessageItem
                                 message={message}
                                 onEdit={onEditMessage}
+                                onReply={onReplyMessage}
+                                onSelect={onSelectMessage}
+                                onForward={onForwardMessage}
+                                isSelectionMode={
+                                    isSelectionMode
+                                }
+                                isSelected={selectedMessages?.some(
+                                    (m) =>
+                                        m.uid ===
+                                        message.uid,
+                                )}
+                                chatName={chatName}
                             />
                         </li>
                     ))}

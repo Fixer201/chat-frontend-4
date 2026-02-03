@@ -36,7 +36,172 @@ interface ChatWithSettings {
     }
 }
 
-// Thunk для создания группы с реальным API
+// Тип участника чата
+interface Participant {
+    uid: string
+    full_name: string
+}
+
+// Преобразование объекта Contact в Participant для API
+const contactToParticipant = (
+    contact: Contact,
+): Participant => ({
+    uid: contact.uid,
+    full_name:
+        `${contact.firstName || ''} ${contact.lastName || ''}`.trim() ||
+        contact.nickname ||
+        contact.username ||
+        'Участник',
+})
+
+// Создание временного URL для файла с изображением
+const createPhotoUrl = (
+    photo: File | null,
+): string | null => {
+    if (!photo) return null
+
+    try {
+        return URL.createObjectURL(photo)
+    } catch {
+        return null
+    }
+}
+
+// Создание моковых данных чата на основе переданных параметров
+const createMockChatFromResponse = (
+    name: string,
+    description: string,
+    chatType:
+        | 'public-group'
+        | 'private-group'
+        | 'public-channel'
+        | 'private-channel',
+    photoUrl: string | null,
+    members: Contact[],
+): ApiChatItem => {
+    const mockChats = generateLocalMockChatItems(1)
+    const baseMockChat = mockChats[0]
+
+    // Генерация уникального ID для нового чата
+    const uniqueId =
+        Math.floor(Date.now() / 1000) * 1000 +
+        Math.floor(Math.random() * 1000)
+
+    // Преобразование контактов в участников чата
+    const participants: Participant[] = members.map(
+        contactToParticipant,
+    )
+
+    // Определение URL аватарки с fallback на стандартные иконки
+    let avatarUrl = photoUrl
+    if (!avatarUrl) {
+        if (chatType.includes('group')) {
+            avatarUrl = '/images/chatHeader/userAvatar.svg'
+        } else if (chatType.includes('channel')) {
+            avatarUrl = '/images/chatHeader/userAvatar.svg'
+        } else {
+            avatarUrl = '/images/chatHeader/userAvatar.svg'
+        }
+    }
+    const avatarWebpUrl = avatarUrl
+
+    // Создание базового объекта чата, если нет моковых данных
+    if (!baseMockChat) {
+        const now = Math.floor(Date.now() / 1000)
+
+        return {
+            id: uniqueId,
+            chat: {
+                uid: `chat_${uniqueId}`,
+                username: '',
+                nickname: 'Создатель',
+                first_name: '',
+                last_name: '',
+                avatar: '',
+                avatar_url: avatarUrl || '',
+                avatar_webp: '',
+                avatar_webp_url: avatarWebpUrl || '',
+                is_blocked: false,
+                is_online: false,
+                was_online_at: now,
+                is_in_contacts: true,
+            },
+            is_active: false,
+            is_favorite: false,
+            notifications: true,
+            index: uniqueId,
+            message_count: 0,
+            file_count: 0,
+            new_message_count: 0,
+            new_file_count: 0,
+            name: name,
+            chat_type: chatType,
+            chat_key: `chat_${uniqueId}`,
+            description: description,
+            created_by: 'Создатель',
+            owner_full_name: 'Создатель',
+            participants: participants,
+            created_at: Date.now().toString(),
+            updated_at: Date.now().toString(),
+            last_activity_at: now,
+            last_seen_message: {
+                id: 0,
+                uid: '',
+            },
+            first_new_message: {
+                id: 0,
+                uid: '',
+            },
+            last_message: {
+                id: 0,
+                uid: '',
+                from_user: 'Вы',
+                content:
+                    participants.length > 0
+                        ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
+                        : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
+                files_summary: {
+                    types: [],
+                    count: 0,
+                },
+                has_replied_message: false,
+                has_forwarded_message: false,
+                new: false,
+                created_at: now,
+                updated_at: now,
+            },
+        }
+    }
+
+    // Модификация существующих моковых данных
+    const modifiedMockChat: ApiChatItem = {
+        ...baseMockChat,
+        id: uniqueId,
+        name: name,
+        chat_type: chatType,
+        chat: {
+            ...baseMockChat.chat,
+            avatar_url:
+                avatarUrl || baseMockChat.chat.avatar_url,
+            avatar_webp_url:
+                avatarWebpUrl ||
+                baseMockChat.chat.avatar_webp_url,
+        },
+        description: description,
+        participants: participants,
+        last_message: {
+            ...baseMockChat.last_message,
+            content:
+                participants.length > 0
+                    ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
+                    : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
+        },
+    }
+
+    return modifiedMockChat
+}
+
+// Thunk для создания группы с обработкой ошибок через rejectWithValue
 export const createGroup = createAsyncThunk<
     ChatWithSettings,
     CreateGroupPayload,
