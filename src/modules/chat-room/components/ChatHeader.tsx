@@ -3,6 +3,7 @@ import { ChatItem } from '@shared/types/chat'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 import { useEffect, useState } from 'react'
 import { getStatusText } from '@shared/lib/getStatusText'
+import InChatSearch from '@modules/search/components/InChatSearch'
 
 /**
  * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
@@ -13,13 +14,31 @@ import { getStatusText } from '@shared/lib/getStatusText'
  *
  * Кнопка «Назад» видна только на мобильных устройствах (md:hidden)
  * и передаётся через опциональный колбэк onBack.
+ *
+ * Режим поиска: при isSearchOpen === true отображает InChatSearch вместо обычной шапки.
  */
 export default function ChatHeader({
     chat,
     onBack,
+    onSearchOpen,
+    isSearchOpen = false,
+    searchQuery = '',
+    onSearchQueryChange,
+    onSearchNavigate,
+    onSearchClose,
+    currentMatchIndex,
+    totalSearchResults = 0,
 }: Readonly<{
     chat: ChatItem
     onBack?: () => void
+    onSearchOpen?: () => void
+    isSearchOpen?: boolean
+    searchQuery?: string
+    onSearchQueryChange?: (query: string) => void
+    onSearchNavigate?: (direction: 'up' | 'down') => void
+    onSearchClose?: () => void
+    currentMatchIndex?: number | null
+    totalSearchResults?: number
 }>) {
     const [secondaryText, setSecondaryText] = useState('')
     useEffect(() => {
@@ -31,6 +50,41 @@ export default function ChatHeader({
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSecondaryText(text)
     }, [chat])
+
+    /**
+     * Условный рендеринг: режим поиска vs обычная шапка.
+     *
+     * При isSearchOpen === true:
+     * - Скрываем аватар, имя, статус, кнопки
+     * - Показываем InChatSearch с полем поиска и навигацией
+     * - Сохраняем те же размеры и границы для плавного перехода
+     *
+     * Fallback пустые функции (|| (() => {})) защищают от undefined
+     * при вызове колбэков, хотя TypeScript их помечает как optional.
+     */
+    if (isSearchOpen) {
+        return (
+            <section
+                className={`
+                  rounded-t-md border-b border-gray-border bg-gray-light
+                `}
+            >
+                <InChatSearch
+                    searchQuery={searchQuery}
+                    onChange={
+                        onSearchQueryChange || (() => {})
+                    }
+                    onNavigate={
+                        onSearchNavigate || (() => {})
+                    }
+                    onClose={onSearchClose || (() => {})}
+                    currentIndex={currentMatchIndex || null}
+                    totalResults={totalSearchResults}
+                    avatarSrc={getAvatarSrc(chat.chat)}
+                />
+            </section>
+        )
+    }
 
     return (
         <section
@@ -109,6 +163,7 @@ export default function ChatHeader({
                     >
                         <button
                             aria-label="Search in chat"
+                            onClick={onSearchOpen}
                             className={`
                               cursor-pointer rounded-lg p-1 transition-colors
                               hover:bg-gray-main
