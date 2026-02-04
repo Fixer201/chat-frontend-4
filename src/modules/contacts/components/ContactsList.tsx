@@ -201,7 +201,8 @@ export default memo(function ContactsList() {
                         error.message ===
                             'AccessTokenNotFound'
                     ) {
-                        router.push('/auth/login')
+                        // router.push('/auth/login')
+                        setAuthError(true)
                     }
                 }
                 setUsers([])
@@ -261,8 +262,16 @@ export default memo(function ContactsList() {
                 'Ошибка при удалении контактов:',
                 error,
             )
-            // Не обновляем Redux, если API не удался
-            // Можно добавить уведомление об ошибке пользователю
+            if (error instanceof Error) {
+                if (
+                    error.message ===
+                        'RefreshTokenExpired' ||
+                    error.message === 'AccessTokenNotFound'
+                ) {
+                    setAuthError(true) // Показать UnauthorizedView
+                    return
+                }
+            }
         }
     }
 
@@ -334,9 +343,20 @@ export default memo(function ContactsList() {
                 'Ошибка при добавлении контакта:',
                 error,
             )
+
             // Обработка ошибок по статусу
             if (error instanceof Error) {
                 const errorMessage = error.message
+                if (
+                    error.message ===
+                        'RefreshTokenExpired' ||
+                    error.message === 'AccessTokenNotFound'
+                ) {
+                    setAuthError(true) // Показать UnauthorizedView
+                    setDropdownOpen(false)
+                    setSelectedUserForAdd(null)
+                    return
+                }
                 if (
                     errorMessage.includes('400') &&
                     errorMessage.includes(

@@ -19,7 +19,7 @@ export function UnauthorizedView() {
             `}
         >
             <Image
-                src="/images/home/401.svg" // Замените на подходящую иконку, если есть (или используйте 404.svg как fallback)
+                src="/images/home/404.svg" // Замените на подходящую иконку, если есть (или используйте 404.svg как fallback)
                 alt="Unauthorized"
                 width={486}
                 height={368}

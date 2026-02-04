@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
 
         const response = await fetch(
-            'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/refresh/',
+            'https://api.test.chat.ktsf.ru/api/v1/auth/login/refresh/token/',
             {
                 method: 'POST',
                 headers: {
