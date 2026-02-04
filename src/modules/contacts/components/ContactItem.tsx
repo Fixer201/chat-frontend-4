@@ -11,7 +11,7 @@ interface ContactItemProps {
     selectedUid: string | null
     selectedContacts: string[]
     searchValue: string
-    onSelectContact: (uid: string) => void
+    onSelectContact?: (uid: string) => void
     onSetSelectedContact: (uid: string) => void
     onContextMenu?: (e: React.MouseEvent) => void
 }
@@ -63,7 +63,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                 statusText={secondaryText}
                 onClick={() =>
                     deleteMode
-                        ? onSelectContact(contact.uid)
+                        ? onSelectContact?.(contact.uid)
                         : onSetSelectedContact(contact.uid)
                 }
                 selected={
@@ -75,7 +75,8 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                 }
                 onSelect={
                     deleteMode
-                        ? () => onSelectContact(contact.uid)
+                        ? () =>
+                              onSelectContact?.(contact.uid)
                         : undefined
                 }
                 isSelected={

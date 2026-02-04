@@ -274,6 +274,55 @@ export const createGroup = createAsyncThunk<
     },
 )
 
+// Thunk для создания чата
+export const createChat = createAsyncThunk<
+    ChatWithSettings,
+    string,
+    { rejectValue: string }
+>(
+    'chats/createChat',
+    async (toUserId, { rejectWithValue }) => {
+        try {
+            const accessToken = Cookies.get('access_token')
+            if (!accessToken)
+                throw new Error('AccessTokenNotFound')
+            const response = await fetch(
+                'https://api.test.chat.ktsf.ru/api/v1/chat/create-personal/',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({
+                        to_user_id: toUserId,
+                    }),
+                },
+            )
+            if (!response.ok)
+                throw new Error('Failed to create chat')
+            const data: ApiChatItem = await response.json()
+            const transformedData = transformFromApi(data)
+            return {
+                chat: transformedData,
+                settings: {
+                    isFavorite: false,
+                    isChatRead: true,
+                    notificationsEnabled: true,
+                    isDeleted: false,
+                    originalUnreadCount: 0,
+                },
+            }
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error
+                    ? error.message
+                    : 'Ошибка создания чата',
+            )
+        }
+    },
+)
+
 // Thunk для создания канала с реальным API
 export const createChannel = createAsyncThunk<
     ChatWithSettings,
@@ -448,4 +497,46 @@ export const handleCreateChat = (
                 state.error = action.payload as string
             },
         )
+
+        .addCase(createChat.pending, (state) => {
+            state.loading = true
+            state.error = null
+        })
+        .addCase(createChat.fulfilled, (state, action) => {
+            // чат добавляется в начало списка для немедленного отображения
+            state.loading = false
+            state.error = null
+            const existingIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+            if (existingIndex === -1) {
+                state.items.unshift(action.payload.chat)
+            } else {
+                state.items[existingIndex] =
+                    action.payload.chat
+            }
+
+            if (
+                !state.chatSettings[action.payload.chat.id]
+            ) {
+                state.chatSettings[action.payload.chat.id] =
+                    action.payload.settings
+            }
+
+            const chatIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    action.payload.settings
+            }
+
+            state.selectedChatId = action.payload.chat.id
+        })
+        .addCase(createChat.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload as string
+        })
 }

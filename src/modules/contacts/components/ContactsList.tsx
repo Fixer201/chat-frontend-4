@@ -4,10 +4,16 @@ import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 import { RootState } from '@redux/store'
-import { useEffect, useState, memo } from 'react'
+import { toast } from 'react-hot-toast'
+import {
+    useEffect,
+    useState,
+    memo,
+    useCallback,
+} from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import Modal from '@shared/ui/modal/Modal'
-import Dropdown from '@shared/ui/dropdown/Dropdown' // Импорт Dropdown
+import Dropdown from '@shared/ui/dropdown/Dropdown'
 
 import {
     removeContacts,
@@ -32,7 +38,6 @@ export default memo(function ContactsList() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<Contact[]>([])
-    // Новые состояния для Dropdown контекстного меню
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const [dropdownPosition, setDropdownPosition] =
         useState<{ top: number; left: number } | null>(null)
@@ -69,75 +74,78 @@ export default memo(function ContactsList() {
     )
     // Функция для определения, является ли строка телефоном (простая проверка: только цифры и опционально +)
     const isPhone = (str: string) => {
-        const cleaned = str.replace(/\s/g, '') // Убираем пробелы
+        const cleaned = str.replace(/\s/g, '')
         return /^\+?\d+$/.test(cleaned)
     }
     const fetchData = useApiFetcher()
 
+    interface ApiUserResponse {
+        uid: string
+        phone: string
+        is_online: boolean
+    }
+
     // Загрузка контактов
-    useEffect(() => {
-        const loadContacts = async () => {
-            try {
-                const data = await fetchData(
-                    'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-list/',
-                    {
-                        method: 'GET',
-                    },
-                )
-                const contactsData: ApiContact[] =
-                    data.results || []
-                console.log('Ответ API:', contactsData)
-                const mappedContacts: Contact[] =
-                    contactsData.map(
-                        (item: ApiContact) => ({
-                            uid: item.uid,
-                            username: '',
-                            nickname: '',
-                            phone: item.phone,
-                            firstName: item.first_name,
-                            lastName: item.last_name,
-                            patronymic: '',
-                            avatar: item.avatar,
-                            avatarUrl: item.avatar_url,
-                            avatarWebp: item.avatar_webp,
-                            avatarWebpUrl:
-                                item.avatar_webp_url,
-                            additionalInformation: '',
-                            birthday: 0,
-                            chatId: 0,
-                            isOnline: item.is_online,
-                            wasOnlineAt: item.was_online_at,
-                        }),
-                    )
-                dispatch(setContacts(mappedContacts))
-            } catch (error: unknown) {
-                console.error(
-                    'Ошибка загрузки контактов:',
-                    error,
-                )
-                if (error instanceof Error) {
-                    if (
-                        error.message ===
-                            'RefreshTokenExpired' ||
-                        error.message ===
-                            'AccessTokenNotFound'
-                    ) {
-                        setAuthError(true)
-                        // router.push('/auth/login') // Перенаправление на логин вместо notFound()
-                    }
+    const loadContacts = useCallback(async () => {
+        try {
+            const data = await fetchData(
+                'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-list/',
+                {
+                    method: 'GET',
+                },
+            )
+            const contactsData: ApiContact[] =
+                data.results || []
+            console.log('Ответ API:', contactsData)
+            const mappedContacts: Contact[] =
+                contactsData.map((item: ApiContact) => ({
+                    uid: item.uid,
+                    username: '',
+                    nickname: '',
+                    phone: item.phone,
+                    firstName: item.first_name,
+                    lastName: item.last_name,
+                    patronymic: '',
+                    avatar: item.avatar,
+                    avatarUrl: item.avatar_url,
+                    avatarWebp: item.avatar_webp,
+                    avatarWebpUrl: item.avatar_webp_url,
+                    additionalInformation: '',
+                    birthday: 0,
+                    chatId: 0,
+                    isOnline: item.is_online,
+                    wasOnlineAt: item.was_online_at,
+                }))
+            dispatch(setContacts(mappedContacts))
+        } catch (error: unknown) {
+            console.error(
+                'Ошибка загрузки контактов:',
+                error,
+            )
+            if (error instanceof Error) {
+                if (
+                    error.message ===
+                        'RefreshTokenExpired' ||
+                    error.message === 'AccessTokenNotFound'
+                ) {
+                    setAuthError(true)
+                    // router.push('/auth/login') // нужно подумать как лучше сделать перенаправление на логин либо notFound()
                 }
-            } finally {
-                setLoading(false)
             }
+        } finally {
+            setLoading(false)
         }
-        loadContacts()
     }, [dispatch, fetchData, router])
+
+    useEffect(() => {
+        loadContacts()
+    }, [loadContacts])
 
     // Загрузка пользователей А-чата на основе searchValue
     useEffect(() => {
         const loadUsers = async () => {
             if (!searchValue.trim()) {
-                setUsers([]) // Сбрасываем, если поиск пустой
+                setUsers([]) // Сброс, если поиск пустой
                 return
             }
             try {
@@ -217,7 +225,7 @@ export default memo(function ContactsList() {
 
     // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
-        // router.push('/chats?contactId=' + uid)
+        //  router.push('/chats?contactId=' + uid)
         setSelectedContacts((prev) =>
             prev.includes(uid)
                 ? prev.filter((id) => id !== uid)
@@ -288,6 +296,9 @@ export default memo(function ContactsList() {
                     lastName: user.lastName || '',
                 },
             )
+            toast.error(
+                'Недостаточно данных для добавления контакта',
+            )
             return
         }
         try {
@@ -307,7 +318,9 @@ export default memo(function ContactsList() {
                     body: JSON.stringify(body),
                 },
             )
-            // Маппим ответ в Contact и добавляем в список
+            // Успешное добавление: показать успех и обновить список
+            toast.success('Контакт добавлен')
+            // Маппим ответ в Contact и добавляем в список (опционально, но loadContacts() сделает это)
             const newContact: Contact = {
                 uid: response.uid,
                 username: '',
@@ -338,15 +351,44 @@ export default memo(function ContactsList() {
                         ?.was_online_at || 0,
             }
             dispatch(
-                setContacts([...contactsList, newContact]),
+                setContacts([newContact, ...contactsList]),
             )
+            loadContacts() // Перезагрузка для актуальности
             setDropdownOpen(false)
             setSelectedUserForAdd(null)
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(
                 'Ошибка при добавлении контакта:',
                 error,
             )
+            // Обработка ошибок по статусу
+            if (error instanceof Error) {
+                const errorMessage = error.message
+                if (
+                    errorMessage.includes('400') &&
+                    errorMessage.includes(
+                        'Этот контакт уже существует',
+                    )
+                ) {
+                    toast.error('Контакт уже существует')
+                } else if (errorMessage.includes('404')) {
+                    toast.error(
+                        'Пользователь с таким номером не найден',
+                    )
+                } else {
+                    toast.error(
+                        'Ошибка при добавлении контакта',
+                    )
+                }
+            } else {
+                toast.error(
+                    'Неизвестная ошибка при добавлении контакта',
+                )
+            }
+            // Всегда перезагружаем список, чтобы отобразить контакт, если он был связан API
+            loadContacts()
+            setDropdownOpen(false)
+            setSelectedUserForAdd(null)
         }
     }
 

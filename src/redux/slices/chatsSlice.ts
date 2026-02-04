@@ -2,7 +2,6 @@
 import {
     createSlice,
     PayloadAction,
-    createAsyncThunk,
 } from '@reduxjs/toolkit'
 import {
     ApiChatItem,
@@ -17,6 +16,7 @@ import {
 import {
     createGroup,
     createChannel,
+    createChat,
     handleCreateChat,
 } from '@redux/extraReducers/chat-extraReducers/createChatExtraRed'
 import { transformFromApi } from '@shared/lib/transformChatData' // Добавлен импорт для маппинга
@@ -29,100 +29,6 @@ const initialState: ChatsState = {
     selectedChatId: null, // ID выбранного чата
     chatSettings: {}, // Настройки для каждого чата
 }
-
-// Thunk для создания личного чата (с моковыми данными, заготовка для API)
-export const createChat = createAsyncThunk(
-    'chats/createChat',
-    async (toUserId: string, { rejectWithValue }) => {
-        try {
-            // Заготовка для реального API (раскомментируйте и замените на реальный endpoint, когда будет)
-            // const response = await fetch(
-            //     'https://api.test.chat.ktsf.ru/api/v1/chat/create', // Пример endpoint
-            //     {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json',
-            //             Authorization: `Bearer ${accessToken}`, // Добавьте токен
-            //         },
-            //         body: JSON.stringify({ toUserId }),
-            //     },
-            // )
-            // if (!response.ok) throw new Error('Failed to create chat')
-            // const data: ApiChatItem = await response.json()
-            // return data
-
-            // Пока что — моковые данные для личного чата
-            const now = Math.floor(Date.now() / 1000)
-            const uniqueId =
-                Math.floor(Date.now() / 1000) * 1000 +
-                Math.floor(Math.random() * 1000)
-
-            const mockApiChat: ApiChatItem = {
-                id: uniqueId,
-                chat: {
-                    uid: toUserId,
-                    username: '',
-                    nickname: '',
-                    first_name: '',
-                    last_name: '',
-                    avatar: '',
-                    avatar_url:
-                        '/images/chatHeader/userAvatar.svg',
-                    avatar_webp: '',
-                    avatar_webp_url:
-                        '/images/chatHeader/userAvatar.svg',
-                    is_blocked: false,
-                    is_online: true,
-                    was_online_at: now,
-                    is_in_contacts: true,
-                },
-                is_active: true,
-                is_favorite: false,
-                notifications: true,
-                index: uniqueId,
-                message_count: 0,
-                file_count: 0,
-                new_message_count: 0,
-                new_file_count: 0,
-                name: '',
-                chat_type: 'chat',
-                chat_key: `chat_${uniqueId}`,
-                description: '',
-                created_by: '',
-                owner_full_name: '',
-                participants: [],
-                created_at: Date.now().toString(),
-                updated_at: Date.now().toString(),
-                last_activity_at: now,
-                last_seen_message: { id: 0, uid: '' },
-                first_new_message: { id: 0, uid: '' },
-                last_message: {
-                    id: 0,
-                    uid: '',
-                    from_user: '',
-                    content: '',
-                    files_list: [],
-                    files_summary: { types: [], count: 0 },
-                    has_replied_message: false,
-                    has_forwarded_message: false,
-                    replied_messages: [],
-                    forwarded_messages: [],
-                    new: false,
-                    created_at: now,
-                    updated_at: now,
-                },
-            }
-
-            return mockApiChat
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'Unknown error'
-            return rejectWithValue(errorMessage)
-        }
-    },
-)
 
 // Функция для получения настроек по умолчанию для чата
 const getDefaultSettings = (
@@ -400,48 +306,17 @@ const chatsSlice = createSlice({
     // Подключение обработчиков для асинхронных thunk'ов
     extraReducers: (builder) => {
         handleFetchChats(builder, initialState)
-        handleCreateChat(builder) // Обрабатывает createGroup и createChannel
-
-        // Добавлены обработчики для createChat (личный чат)
-        builder
-            .addCase(createChat.pending, (state) => {
-                state.loading = true
-                state.error = null
-            })
-            .addCase(
-                createChat.fulfilled,
-                (state, action) => {
-                    state.loading = false
-                    // Маппинг API-данных в ChatItem с помощью transformFromApi
-                    const transformedData =
-                        transformFromApi<ApiChatItem>(
-                            action.payload,
-                        )
-                    const newChat: ChatItem = {
-                        ...transformedData,
-                        chat: {
-                            ...transformedData.chat,
-                            isInContacts: true, // Личный чат автоматически добавляется в контакты
-                        },
-                    }
-                    // Добавляем новый чат в начало списка
-                    state.items.unshift(newChat)
-                    // Автоматически выбираем созданный чат
-                    state.selectedChatId = newChat.id
-                },
-            )
-            .addCase(
-                createChat.rejected,
-                (state, action) => {
-                    state.loading = false
-                    state.error = action.payload as string
-                },
-            )
+        handleCreateChat(builder) // Обрабатывает createGroup, createChannel и createChat
     },
 })
 
 // Экспорт thunk'ов и actions
-export { fetchChats, createGroup, createChannel }
+export {
+    fetchChats,
+    createGroup,
+    createChannel,
+    createChat,
+}
 export const {
     setSelectedChat,
     updateChat,
