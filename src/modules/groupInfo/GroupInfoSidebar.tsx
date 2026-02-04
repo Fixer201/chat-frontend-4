@@ -1,16 +1,23 @@
-// @modules/group-info/components/GroupInfoSidebar.tsx
 'use client'
 
 import { cn } from '@shared/lib/utils'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
-import { useState, useRef, useEffect, useMemo } from 'react'
+import {
+    useState,
+    useRef,
+    useEffect,
+    useMemo,
+    useCallback,
+} from 'react'
 
-import ParticipantsTab from './tabs/ParticipantsTab'
-import MediaTab from './tabs/MediaTab'
-import FilesTab from './tabs/FilesTab'
-import VoiceTab from './tabs/VoiceTab'
-import LinksTab from './tabs/LinksTab'
+import TabContentPreview from './TabContentPreview'
+import TabLayout from './TabLayout'
+import ParticipantsContent from './tabs/ParticipantsContent'
+import MediaContent from './tabs/MediaContent'
+import FilesContent from './tabs/FilesContent'
+import VoiceContent from './tabs/VoiceContent'
+import LinksContent from './tabs/LinksContent'
 
 type TabId =
     | 'participants'
@@ -33,13 +40,108 @@ export default function GroupInfoSidebar() {
     const [isMouseOver, setIsMouseOver] = useState(false)
     const [justSwitchedToTab, setJustSwitchedToTab] =
         useState(false)
+    const [
+        hideTabScrollbarDuringReturn,
+        setHideTabScrollbarDuringReturn,
+    ] = useState(false)
+    const [hasScrolledDown, setHasScrolledDown] =
+        useState(false)
+    const [isReturning, setIsReturning] = useState(false)
+    // Добавляем состояние для хранения позиций скролла
+    const [tabScrollPositions, setTabScrollPositions] =
+        useState<Record<TabId, number>>({
+            participants: 0,
+            media: 0,
+            files: 0,
+            voice: 0,
+            links: 0,
+        })
+
+    // Вычисляем, нужно ли блокировать скролл документа
+    const preventScroll = isMouseOver || viewMode === 'tab'
+
+    // Эффект для блокировки скролла страницы
+    useEffect(() => {
+        if (preventScroll) {
+            document.body.classList.add(
+                'group-info-sidebar-scroll-lock',
+            )
+        } else {
+            document.body.classList.remove(
+                'group-info-sidebar-scroll-lock',
+            )
+        }
+
+        return () => {
+            document.body.classList.remove(
+                'group-info-sidebar-scroll-lock',
+            )
+        }
+    }, [preventScroll])
+
+    // Обработчик попытки скролла вверх в табе
+    const handleAttemptReturn = useCallback(
+        (deltaY?: number) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] handleAttemptReturn',
+                    {
+                        deltaY,
+                        returning: isReturning,
+                        isTransitioning,
+                        justSwitchedToTab,
+                        viewMode,
+                    },
+                )
+            }
+
+            if (
+                isReturning ||
+                isTransitioning ||
+                justSwitchedToTab ||
+                viewMode !== 'tab'
+            )
+                return
+
+            const strongAttempt =
+                typeof deltaY === 'number' && deltaY < -35
+
+            // Если пользователь не скроллил вниз раньше и это не сильный жест — игнорируем
+            if (!hasScrolledDown && !strongAttempt) return
+
+            setIsReturning(true)
+            setHideTabScrollbarDuringReturn(true)
+            setIsTransitioning(true)
+
+            setTimeout(() => {
+                setViewMode('main')
+                setIsTransitioning(false)
+                setHideTabScrollbarDuringReturn(false)
+                setHasScrolledDown(false)
+                setIsReturning(false)
+            }, 300)
+        },
+        [
+            isTransitioning,
+            justSwitchedToTab,
+            viewMode,
+            hasScrolledDown,
+            isReturning,
+        ],
+    )
 
     const tabsRef = useRef<(HTMLButtonElement | null)[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
     const mainContentRef = useRef<HTMLDivElement>(null)
     const tabsContainerRef = useRef<HTMLDivElement>(null)
     const lastTouchY = useRef(0)
-    const lastWheelTime = useRef(0)
+    const wheelDeltaRef = useRef(0)
+    const wheelResetTimeoutRef = useRef<ReturnType<
+        typeof setTimeout
+    > | null>(null)
+    const lastWheelDirRef = useRef<'up' | 'down' | null>(
+        null,
+    )
 
     // Для отслеживания скролла в табах
     const lastScrollY = useRef<number>(0)
@@ -48,9 +150,7 @@ export default function GroupInfoSidebar() {
     )
     const scrollTimeoutRef = useRef<ReturnType<
         typeof setTimeout
-    > | null>(null) // Исправлено
-    const hasScrolledDownRef = useRef<boolean>(false)
-    const returningRef = useRef<boolean>(false) // Флаг чтобы избежать повторного возврата
+    > | null>(null)
 
     const toggleNotifications = () => {
         setNotificationsEnabled(!notificationsEnabled)
@@ -77,184 +177,433 @@ export default function GroupInfoSidebar() {
         )
 
     // Функция для скролла к активной кнопке
-    const scrollToTab = (tabIndex: number) => {
-        const tabElement = tabsRef.current[tabIndex]
-        const container = containerRef.current
+    const scrollToTab = useCallback(
+        (tabIndex: number) => {
+            const tabElement = tabsRef.current[tabIndex]
+            const container = containerRef.current
 
-        if (tabElement && container) {
-            tabElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest',
-                inline: 'center',
-            })
-        }
-    }
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] scrollToTab',
+                    { tabIndex },
+                )
+            }
+
+            if (tabElement && container) {
+                const left = tabElement.offsetLeft
+                const right = left + tabElement.offsetWidth
+                const visibleLeft = container.scrollLeft
+                const visibleRight =
+                    visibleLeft + container.clientWidth
+
+                if (
+                    left < visibleLeft ||
+                    right > visibleRight
+                ) {
+                    if (
+                        process.env.NODE_ENV !==
+                        'production'
+                    ) {
+                        console.debug(
+                            '[GroupInfoSidebar] scrollIntoView for tab',
+                            {
+                                left,
+                                right,
+                                visibleLeft,
+                                visibleRight,
+                            },
+                        )
+                    }
+                    const inlineValue =
+                        tabIndex === 0
+                            ? 'start'
+                            : tabIndex === tabs.length - 1
+                              ? 'end'
+                              : 'center'
+                    tabElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: inlineValue,
+                    })
+                }
+            }
+        },
+        [tabs.length],
+    )
 
     // Обработчик клика по кнопке в главном режиме
-    const handleMainTabClick = (
-        tabId: TabId,
-        index: number,
-    ) => {
-        setActiveTab(tabId)
-        setIsTransitioning(true)
-        setJustSwitchedToTab(true)
-        lastScrollY.current = 0
-        lastScrollDirection.current = 'down'
-        hasScrolledDownRef.current = false
-        returningRef.current = false
+    const handleMainTabClick = useCallback(
+        (tabId: TabId, index: number) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] handleMainTabClick',
+                    { tabId, index, viewMode },
+                )
+            }
 
-        // Плавный переход к табу
-        setTimeout(() => {
-            setViewMode('tab')
-            setIsTransitioning(false)
-            setTimeout(() => scrollToTab(index), 100)
+            scrollToTab(index)
 
-            // Сбрасываем флаг через 800мс чтобы не было мгновенного возврата
+            setActiveTab(tabId)
+            setIsTransitioning(true)
+            setJustSwitchedToTab(true)
+            lastScrollY.current = 0
+            lastScrollDirection.current = 'down'
+            setHasScrolledDown(false)
+            setIsReturning(false)
+
             setTimeout(() => {
-                setJustSwitchedToTab(false)
-            }, 800)
-        }, 300)
-    }
+                setViewMode('tab')
+                setIsTransitioning(false)
+                setTimeout(() => scrollToTab(index), 100)
 
-    // Обработчик клика по кнопке в режиме таба
-    const handleTabContentTabClick = (
-        tabId: TabId,
-        index: number,
-    ) => {
-        setActiveTab(tabId)
-        setTimeout(() => scrollToTab(index), 100)
-    }
+                setTimeout(() => {
+                    setJustSwitchedToTab(false)
+                }, 800)
+            }, 300)
+        },
+        [scrollToTab, viewMode],
+    )
 
     // Функция возврата из режима таба в главный режим
-    const handleBackFromTab = () => {
+    const handleBackFromTab = useCallback(() => {
         setViewMode('main')
-    }
+    }, [])
 
     // Обработчик касания в главном режиме
-    const handleMainTouchStart = (e: React.TouchEvent) => {
-        lastTouchY.current = e.touches[0].clientY
-    }
+    const handleMainTouchStart = useCallback(
+        (e: React.TouchEvent) => {
+            lastTouchY.current = e.touches[0].clientY
+        },
+        [],
+    )
 
-    const handleMainTouchMove = (e: React.TouchEvent) => {
-        if (isTransitioning || viewMode !== 'main') return
+    const handleMainTouchMove = useCallback(
+        (e: React.TouchEvent) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] handleMainTouchMove',
+                    {
+                        isTransitioning,
+                        viewMode,
+                        touches: e.touches.length,
+                    },
+                )
+            }
+            if (isTransitioning || viewMode !== 'main')
+                return
 
-        const currentTouchY = e.touches[0].clientY
-        const deltaY = lastTouchY.current - currentTouchY
+            const currentTouchY = e.touches[0].clientY
+            const deltaY =
+                lastTouchY.current - currentTouchY
 
-        // Если скроллим вниз с достаточной скоростью
-        if (deltaY > 20 && mainContentRef.current) {
-            setIsTransitioning(true)
-            setJustSwitchedToTab(true)
-            lastScrollY.current = 0
-            lastScrollDirection.current = 'down'
-            hasScrolledDownRef.current = false
-            returningRef.current = false
+            if (deltaY > 50 && mainContentRef.current) {
+                const target = mainContentRef.current
+                const scrollTop = target.scrollTop
+                const scrollHeight = target.scrollHeight
+                const clientHeight = target.clientHeight
 
-            setTimeout(() => {
-                setViewMode('tab')
-                setIsTransitioning(false)
-
-                // Сбрасываем флаг через 800мс чтобы не было мгновенного возврата
-                setTimeout(() => {
-                    setJustSwitchedToTab(false)
-                }, 800)
-            }, 300)
-        }
-
-        lastTouchY.current = currentTouchY
-        e.preventDefault()
-    }
-
-    // Обработчик колесика мыши
-    const handleMainWheel = (e: React.WheelEvent) => {
-        if (isTransitioning || viewMode !== 'main') return
-
-        // Дебаунсим wheel события (максимум 1 раз в 50мс)
-        const now = Date.now()
-        if (now - lastWheelTime.current < 50) return
-        lastWheelTime.current = now
-
-        // Если скроллим вниз
-        if (e.deltaY > 20 && mainContentRef.current) {
-            e.preventDefault()
-            e.stopPropagation()
-            setIsTransitioning(true)
-            setJustSwitchedToTab(true)
-            lastScrollY.current = 0
-            lastScrollDirection.current = 'down'
-            hasScrolledDownRef.current = false
-            returningRef.current = false
-
-            setTimeout(() => {
-                setViewMode('tab')
-                setIsTransitioning(false)
-
-                // Сбрасываем флаг через 800мс чтобы не было мгновенного возврата
-                setTimeout(() => {
-                    setJustSwitchedToTab(false)
-                }, 800)
-            }, 300)
-        }
-    }
-
-    // Обработчик скролла в режиме таба
-    const handleTabScrollEvent = (scrollY: number) => {
-        // Игнорируем если уже в процессе возврата
-        if (returningRef.current || isTransitioning) return
-
-        // Игнорируем первые 800мс после переключения
-        if (justSwitchedToTab) {
-            lastScrollY.current = scrollY
-            return
-        }
-
-        // Определяем направление скролла
-        const direction =
-            scrollY < lastScrollY.current ? 'up' : 'down'
-
-        // Сохраняем информацию о скролле вниз
-        if (direction === 'down' && scrollY > 30) {
-            hasScrolledDownRef.current = true
-        }
-
-        // Сохраняем текущую позицию скролла
-        lastScrollY.current = scrollY
-        lastScrollDirection.current = direction
-
-        // Очищаем предыдущий таймаут
-        if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current)
-        }
-
-        // Дебаунсим проверку для избежания ложных срабатываний
-        scrollTimeoutRef.current = setTimeout(() => {
-            // Возврат только если:
-            // 1. Скроллим ВВЕРХ
-            // 2. Находимся в самом верху (scrollY <= 5)
-            // 3. Пользователь уже скроллил достаточно вниз (чтобы избежать случайного возврата)
-            if (
-                direction === 'up' &&
-                scrollY <= 5 &&
-                viewMode === 'tab'
-            ) {
-                // Проверяем, что пользователь действительно скроллил вниз перед этим
                 if (
-                    hasScrolledDownRef.current &&
-                    !returningRef.current
+                    scrollTop + clientHeight >=
+                    scrollHeight - 50
                 ) {
-                    returningRef.current = true
                     setIsTransitioning(true)
+                    setJustSwitchedToTab(true)
+                    lastScrollY.current = 0
+                    lastScrollDirection.current = 'down'
+                    setHasScrolledDown(false)
+                    setIsReturning(false)
+
                     setTimeout(() => {
-                        setViewMode('main')
+                        setViewMode('tab')
                         setIsTransitioning(false)
-                        // Сбрасываем флаг после возврата
-                        hasScrolledDownRef.current = false
-                        returningRef.current = false
+
+                        setTimeout(() => {
+                            setJustSwitchedToTab(false)
+                        }, 800)
                     }, 300)
                 }
             }
-        }, 50)
-    }
+
+            lastTouchY.current = currentTouchY
+            e.preventDefault()
+        },
+        [isTransitioning, viewMode],
+    )
+
+    // Обработчик колесика мыши
+    const handleMainWheel = useCallback(
+        (e: React.WheelEvent) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] handleMainWheel',
+                    {
+                        deltaY: e.deltaY,
+                        isTransitioning,
+                        viewMode,
+                    },
+                )
+            }
+            if (isTransitioning || viewMode !== 'main')
+                return
+
+            if (e.deltaY > 40 && mainContentRef.current) {
+                const target = mainContentRef.current
+                const scrollTop = target.scrollTop
+                const scrollHeight = target.scrollHeight
+                const clientHeight = target.clientHeight
+
+                if (
+                    scrollTop + clientHeight >=
+                    scrollHeight - 50
+                ) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsTransitioning(true)
+                    setJustSwitchedToTab(true)
+                    lastScrollY.current = 0
+                    lastScrollDirection.current = 'down'
+                    setHasScrolledDown(false)
+                    setIsReturning(false)
+
+                    setTimeout(() => {
+                        setViewMode('tab')
+                        setIsTransitioning(false)
+
+                        setTimeout(() => {
+                            setJustSwitchedToTab(false)
+                        }, 800)
+                    }, 300)
+                }
+            }
+        },
+        [isTransitioning, viewMode],
+    )
+
+    // Capture-phase wheel handler
+    const handleMainWheelCapture = useCallback(
+        (e: WheelEvent) => {
+            if (process.env.NODE_ENV !== 'production') {
+                try {
+                    console.debug(
+                        '[GroupInfoSidebar] handleMainWheelCapture',
+                        {
+                            deltaY: e.deltaY,
+                            isTransitioning,
+                            viewMode,
+                            target: (
+                                e.target as HTMLElement
+                            ).tagName,
+                        },
+                    )
+                } catch (_error) {
+                    // Игнорируем ошибки
+                }
+            }
+
+            if (isTransitioning || viewMode !== 'main')
+                return
+
+            if (e.deltaY <= 0) {
+                if (lastWheelDirRef.current === 'down') {
+                    wheelDeltaRef.current = 0
+                    lastWheelDirRef.current = 'up'
+                }
+                return
+            }
+
+            if (!mainContentRef.current) return
+            const target = mainContentRef.current
+            const scrollTop = target.scrollTop
+            const scrollHeight = target.scrollHeight
+            const clientHeight = target.clientHeight
+
+            const atBottom =
+                scrollTop + clientHeight >=
+                scrollHeight - 10
+            if (!atBottom) {
+                wheelDeltaRef.current = 0
+                lastWheelDirRef.current = 'down'
+                return
+            }
+
+            if (lastWheelDirRef.current !== 'down') {
+                wheelDeltaRef.current = 0
+                lastWheelDirRef.current = 'down'
+            }
+            wheelDeltaRef.current += e.deltaY
+
+            if (wheelResetTimeoutRef.current)
+                clearTimeout(wheelResetTimeoutRef.current)
+            wheelResetTimeoutRef.current = setTimeout(
+                () => {
+                    wheelDeltaRef.current = 0
+                    lastWheelDirRef.current = null
+                },
+                250,
+            )
+
+            if (wheelDeltaRef.current >= 25) {
+                e.preventDefault()
+                e.stopPropagation()
+
+                setIsTransitioning(true)
+                setJustSwitchedToTab(true)
+                lastScrollY.current = 0
+                lastScrollDirection.current = 'down'
+                setHasScrolledDown(false)
+                setIsReturning(false)
+
+                setTimeout(() => {
+                    setViewMode('tab')
+                    setIsTransitioning(false)
+
+                    setTimeout(() => {
+                        setJustSwitchedToTab(false)
+                    }, 800)
+                }, 300)
+            }
+        },
+        [viewMode, isTransitioning],
+    )
+
+    // Обработчик скролла в main режиме
+    const handleMainScroll = useCallback(
+        (e: React.UIEvent<HTMLDivElement>) => {
+            if (viewMode !== 'main' || isTransitioning)
+                return
+
+            const target = e.target as HTMLDivElement
+            const scrollTop = target.scrollTop
+            const scrollHeight = target.scrollHeight
+            const clientHeight = target.clientHeight
+
+            if (
+                scrollTop + clientHeight >=
+                scrollHeight - 10
+            ) {
+                setIsTransitioning(true)
+                setJustSwitchedToTab(true)
+                lastScrollY.current = 0
+                lastScrollDirection.current = 'down'
+                setHasScrolledDown(false)
+                setIsReturning(false)
+
+                setTimeout(() => {
+                    setViewMode('tab')
+                    setIsTransitioning(false)
+
+                    setTimeout(() => {
+                        setJustSwitchedToTab(false)
+                    }, 800)
+                }, 300)
+            }
+        },
+        [viewMode, isTransitioning],
+    )
+
+    // Обработчик скролла в режиме таба
+    const handleTabScrollEvent = useCallback(
+        (scrollY: number) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] handleTabScrollEvent',
+                    {
+                        scrollY,
+                        activeTab,
+                        justSwitchedToTab,
+                        returning: isReturning,
+                    },
+                )
+            }
+
+            if (isReturning || isTransitioning) return
+
+            if (justSwitchedToTab) {
+                lastScrollY.current = scrollY
+                return
+            }
+
+            const direction =
+                scrollY < lastScrollY.current
+                    ? 'up'
+                    : 'down'
+
+            if (direction === 'down' && scrollY > 30) {
+                setHasScrolledDown(true)
+            }
+
+            lastScrollY.current = scrollY
+            lastScrollDirection.current = direction
+
+            // Обновляем позицию скролла в состоянии
+            setTabScrollPositions((prev) => ({
+                ...prev,
+                [activeTab]: scrollY,
+            }))
+
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current)
+            }
+
+            scrollTimeoutRef.current = setTimeout(() => {
+                if (
+                    direction === 'up' &&
+                    scrollY <= 5 &&
+                    viewMode === 'tab'
+                ) {
+                    if (hasScrolledDown && !isReturning) {
+                        setIsReturning(true)
+                        setIsTransitioning(true)
+                        setTimeout(() => {
+                            setViewMode('main')
+                            setIsTransitioning(false)
+                            setHasScrolledDown(false)
+                            setIsReturning(false)
+                        }, 300)
+                    }
+                }
+            }, 50)
+        },
+        [
+            activeTab,
+            isTransitioning,
+            justSwitchedToTab,
+            viewMode,
+            hasScrolledDown,
+            isReturning,
+        ],
+    )
+
+    // Обработчик клика по кнопке в режиме таба
+    const handleTabContentTabClick = useCallback(
+        (tabId: TabId, index: number) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[GroupInfoSidebar] handleTabContentTabClick',
+                    {
+                        tabId,
+                        index,
+                        activeTab,
+                        isTransitioning,
+                    },
+                )
+            }
+
+            if (tabId === activeTab || isTransitioning) {
+                return
+            }
+
+            setActiveTab(tabId)
+
+            setJustSwitchedToTab(true)
+            setTimeout(() => {
+                setJustSwitchedToTab(false)
+            }, 400)
+
+            scrollToTab(index)
+        },
+        [activeTab, isTransitioning, scrollToTab],
+    )
 
     // Автоскролл при изменении активной вкладки в режиме таба
     useEffect(() => {
@@ -264,119 +613,107 @@ export default function GroupInfoSidebar() {
             )
             scrollToTab(activeIndex)
         }
-    }, [activeTab, viewMode, tabs])
+    }, [activeTab, viewMode, tabs, scrollToTab])
 
-    // Предотвращаем браузерный скролл когда компонент активен
+    // Автоскролл при возврате в main режим
     useEffect(() => {
-        const preventDefault = (e: TouchEvent) => {
-            if (viewMode === 'main' || viewMode === 'tab') {
-                e.preventDefault()
-            }
+        if (viewMode === 'main') {
+            const activeIndex = tabs.findIndex(
+                (tab) => tab.id === activeTab,
+            )
+            scrollToTab(activeIndex)
         }
+    }, [viewMode, activeTab, tabs, scrollToTab])
 
-        const preventDefaultScroll = (e: Event) => {
-            if (viewMode === 'main' || viewMode === 'tab') {
-                e.preventDefault()
-            }
-        }
+    // Attach capture-phase wheel listener
+    useEffect(() => {
+        const node = mainContentRef.current
+        if (!node) return
 
-        // Блокируем все события скролла
-        document.addEventListener(
-            'touchmove',
-            preventDefault,
-            { passive: false },
-        )
-        document.addEventListener(
-            'scroll',
-            preventDefaultScroll,
-            { passive: false },
+        node.addEventListener(
+            'wheel',
+            handleMainWheelCapture as EventListener,
+            {
+                capture: true,
+                passive: false,
+            },
         )
 
         return () => {
-            document.removeEventListener(
-                'touchmove',
-                preventDefault,
-            )
-            document.removeEventListener(
-                'scroll',
-                preventDefaultScroll,
-            )
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current)
+            try {
+                node.removeEventListener(
+                    'wheel',
+                    handleMainWheelCapture as EventListener,
+                    {
+                        capture: true,
+                    } as EventListenerOptions,
+                )
+            } catch (_error) {
+                // Игнорируем ошибки
             }
+            if (wheelResetTimeoutRef.current) {
+                clearTimeout(wheelResetTimeoutRef.current)
+                wheelResetTimeoutRef.current = null
+            }
+            wheelDeltaRef.current = 0
+            lastWheelDirRef.current = null
         }
-    }, [viewMode])
+    }, [viewMode, isTransitioning, handleMainWheelCapture])
 
-    // Если мы в режиме таба, рендерим соответствующий компонент
-    if (viewMode === 'tab') {
-        switch (activeTab) {
+    // Функция для получения заголовка таба
+    const getTabTitle = (tabId: TabId) => {
+        switch (tabId) {
             case 'participants':
-                return (
-                    <ParticipantsTab
-                        activeTab={activeTab}
-                        onBack={handleBackFromTab}
-                        onTabClick={
-                            handleTabContentTabClick
-                        }
-                        onScroll={handleTabScrollEvent}
-                    />
-                )
+                return 'Участники'
             case 'media':
-                return (
-                    <MediaTab
-                        activeTab={activeTab}
-                        onBack={handleBackFromTab}
-                        onTabClick={
-                            handleTabContentTabClick
-                        }
-                        onScroll={handleTabScrollEvent}
-                    />
-                )
+                return 'Медиа'
             case 'files':
-                return (
-                    <FilesTab
-                        activeTab={activeTab}
-                        onBack={handleBackFromTab}
-                        onTabClick={
-                            handleTabContentTabClick
-                        }
-                        onScroll={handleTabScrollEvent}
-                    />
-                )
+                return 'Файлы'
             case 'voice':
-                return (
-                    <VoiceTab
-                        activeTab={activeTab}
-                        onBack={handleBackFromTab}
-                        onTabClick={
-                            handleTabContentTabClick
-                        }
-                        onScroll={handleTabScrollEvent}
-                    />
-                )
+                return 'Голосовые'
             case 'links':
-                return (
-                    <LinksTab
-                        activeTab={activeTab}
-                        onBack={handleBackFromTab}
-                        onTabClick={
-                            handleTabContentTabClick
-                        }
-                        onScroll={handleTabScrollEvent}
-                    />
-                )
+                return 'Ссылки'
             default:
-                return (
-                    <ParticipantsTab
-                        activeTab={activeTab}
-                        onBack={handleBackFromTab}
-                        onTabClick={
-                            handleTabContentTabClick
-                        }
-                        onScroll={handleTabScrollEvent}
-                    />
-                )
+                return ''
         }
+    }
+
+    // Функция для получения контента таба
+    const getTabContent = (tabId: TabId) => {
+        switch (tabId) {
+            case 'participants':
+                return <ParticipantsContent />
+            case 'media':
+                return <MediaContent />
+            case 'files':
+                return <FilesContent />
+            case 'voice':
+                return <VoiceContent />
+            case 'links':
+                return <LinksContent />
+            default:
+                return null
+        }
+    }
+
+    // Если мы в режиме таба, рендерим TabLayout с нужным контентом
+    if (viewMode === 'tab') {
+        return (
+            <TabLayout
+                activeTab={activeTab}
+                onBack={handleBackFromTab}
+                onTabClick={handleTabContentTabClick}
+                tabTitle={getTabTitle(activeTab)}
+                onScroll={handleTabScrollEvent}
+                onAttemptReturn={handleAttemptReturn}
+                hideScrollbar={hideTabScrollbarDuringReturn}
+                initialScrollTop={
+                    tabScrollPositions[activeTab]
+                }
+            >
+                {getTabContent(activeTab)}
+            </TabLayout>
+        )
     }
 
     // Главный режим - исходный интерфейс
@@ -474,16 +811,14 @@ export default function GroupInfoSidebar() {
             {/* Основной контент */}
             <div
                 ref={mainContentRef}
-                className="flex-1 overflow-hidden"
+                className={cn(
+                    'scrollbar-hide flex-1 overflow-auto',
+                    'h-[calc(100%-64px)] touch-none overscroll-none',
+                )}
                 onWheel={handleMainWheel}
                 onTouchStart={handleMainTouchStart}
                 onTouchMove={handleMainTouchMove}
-                style={{
-                    height: 'calc(100% - 64px)',
-                    touchAction: 'none',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehavior: 'none',
-                }}
+                onScroll={handleMainScroll}
             >
                 <div className="relative">
                     <div className="relative h-60 w-full overflow-hidden">
@@ -524,18 +859,19 @@ export default function GroupInfoSidebar() {
                                     ? 'Отключить уведомления'
                                     : 'Включить уведомления'
                             }
-                            className={`
-                              relative inline-flex h-8 w-14 items-center
-                              rounded-full transition-colors
-                              hover:cursor-pointer
-                              focus:outline-none
-                            `}
-                            style={{
-                                backgroundColor:
-                                    notificationsEnabled
-                                        ? '#3B82F6'
-                                        : '#D1D5DB',
-                            }}
+                            className={cn(
+                                `
+                                  relative inline-flex h-8 w-14 items-center
+                                  rounded-full transition-colors
+                                  hover:cursor-pointer
+                                  focus:outline-none
+                                `,
+                                notificationsEnabled
+                                    ? 'bg-blue-500'
+                                    : `
+                                  bg-gray-300
+                                `,
+                            )}
                         >
                             <span
                                 className={cn(
@@ -545,7 +881,9 @@ export default function GroupInfoSidebar() {
                                     `,
                                     notificationsEnabled
                                         ? 'translate-x-6'
-                                        : 'translate-x-1',
+                                        : `
+                                      translate-x-1
+                                    `,
                                 )}
                             />
                         </button>
@@ -559,9 +897,9 @@ export default function GroupInfoSidebar() {
                         >
                             <span
                                 className={`
-                                  p-0 text-xs font-medium tracking-extra-tight
-                                  text-text-gray
-                                `}
+                              p-0 text-xs font-medium tracking-extra-tight
+                              text-text-gray
+                            `}
                             >
                                 Описание
                             </span>
@@ -578,9 +916,9 @@ export default function GroupInfoSidebar() {
                         <div className="flex flex-col justify-between p-0.5">
                             <span
                                 className={`
-                                  mb-1 p-0 text-xs font-medium
-                                  tracking-extra-tight text-text-gray
-                                `}
+                              mb-1 p-0 text-xs font-medium tracking-extra-tight
+                              text-text-gray
+                            `}
                             >
                                 Ссылка на приглашение в
                                 группу
@@ -618,8 +956,8 @@ export default function GroupInfoSidebar() {
                                             isCopied
                                                 ? 'opacity-50'
                                                 : `
-                                              opacity-100
-                                            `,
+                                          opacity-100
+                                        `,
                                         )}
                                     />
                                 </Button>
@@ -634,17 +972,11 @@ export default function GroupInfoSidebar() {
                     >
                         <div
                             ref={containerRef}
-                            className="flex overflow-x-auto"
-                            style={{
-                                touchAction:
-                                    'pan-y pinch-zoom',
-                                WebkitOverflowScrolling:
-                                    'touch',
-                            }}
+                            className="scrollbar-hide flex overflow-x-auto"
                         >
                             <div
                                 className={`
-                              flex space-x-8 border-b-2 border-b-gray-200 px-4
+                              flex space-x-4 border-b-2 border-b-gray-200 px-4
                               pb-0
                             `}
                             >
@@ -674,12 +1006,11 @@ export default function GroupInfoSidebar() {
                                             `,
                                             'hover:text-accent-violet-hover',
                                             'hover:cursor-pointer',
+                                            'min-w-[100px] px-2',
+                                            'font-medium',
                                             activeTab ===
                                                 tab.id
-                                                ? `
-                                                  font-semibold
-                                                  text-accent-violet-primary
-                                                `
+                                                ? 'text-accent-violet-primary'
                                                 : `
                                                   text-text-black
                                                   hover:text-text-gray
@@ -703,63 +1034,25 @@ export default function GroupInfoSidebar() {
                         </div>
                     </div>
 
-                    {/* Индикатор скролла */}
-                    <div className="mt-2 py-4 text-center">
-                        <div className="text-sm text-gray-500">
-                            <span className="mb-1 inline-block animate-bounce">
-                                ↓
-                            </span>
-                            <div>
-                                Скролл вниз для перехода к
-                                содержимому
-                            </div>
-                        </div>
+                    {/* Preview контента активного таба */}
+                    <div
+                        className={`
+                      relative mt-2 max-h-48 overflow-hidden rounded-b-md
+                    `}
+                    >
+                        <TabContentPreview
+                            activeTab={activeTab}
+                        />
+                        {/* Градиент для указания на продолжение */}
+                        <div
+                            className={`
+                          pointer-events-none absolute right-0 bottom-0 left-0
+                          h-12 bg-gradient-to-t from-white-bg to-transparent
+                        `}
+                        ></div>
                     </div>
                 </div>
             </div>
-
-            {/* Глобальные стили для предотвращения скролла */}
-            <style jsx global>{`
-                * {
-                    box-sizing: border-box;
-                }
-
-                /* Предотвращаем скролл страницы при наведении на этот компонент */
-                body {
-                    overflow: ${isMouseOver ||
-                    viewMode === 'tab'
-                        ? 'hidden'
-                        : 'auto'} !important;
-                    position: ${isMouseOver ||
-                    viewMode === 'tab'
-                        ? 'fixed'
-                        : 'static'};
-                    width: 100%;
-                }
-
-                /* Убираем все эффекты ховера для скроллбара в этом компоненте */
-                .custom-scroll::-webkit-scrollbar {
-                    display: none !important;
-                }
-
-                /* Убираем стандартный скроллбар в Firefox */
-                * {
-                    scrollbar-width: none !important;
-                }
-
-                /* Убираем стандартный скроллбар в IE/Edge */
-                * {
-                    -ms-overflow-style: none !important;
-                }
-
-                /* Предотвращаем выделение текста при перетаскивании */
-                .no-select {
-                    user-select: none;
-                    -webkit-user-select: none;
-                    -moz-user-select: none;
-                    -ms-user-select: none;
-                }
-            `}</style>
         </div>
     )
 }

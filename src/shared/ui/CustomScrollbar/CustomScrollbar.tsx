@@ -24,6 +24,20 @@ interface CustomScrollbarProps {
     contentStyle?: CSSProperties
     autoHeight?: boolean
     onScroll?: (scrollTop: number) => void
+    /**
+     * Вызывается когда пользователь пытается проскроллить ВВЕРХ,
+     * но контент уже на вершине (scrollTop === 0).
+     * deltaY — положительное при скролле вниз, отрицательное при скролле вверх.
+     */
+    onAttemptScrollBeyondTop?: (
+        deltaY: number,
+        scrollTop?: number,
+    ) => void
+    /**
+     * Скрывает визуальную полосу прокрутки (используется при неявных
+     * переходах вверх/вниз чтобы не показывать ползунок во время действия).
+     */
+    hideScrollbar?: boolean
 }
 
 export interface CustomScrollbarRef {
@@ -48,6 +62,8 @@ export const CustomScrollbar = forwardRef<
         contentStyle,
         autoHeight = false,
         onScroll,
+        onAttemptScrollBeyondTop,
+        hideScrollbar = false,
     },
     ref,
 ) {
@@ -59,6 +75,7 @@ export const CustomScrollbar = forwardRef<
     const startScrollTopRef = useRef(0)
     const isProgrammaticScroll = useRef(false)
     const lastScrollTop = useRef(0)
+    const startTouchYRef = useRef(0)
 
     // Функция обновления позиции и размера ползунка
     const updateThumbPosition = useCallback(() => {
@@ -72,6 +89,22 @@ export const CustomScrollbar = forwardRef<
             content
         const containerHeight = container.clientHeight
 
+        // Если прокрутки нет — скрываем ползунок полностью
+        const maxScroll = scrollHeight - clientHeight
+        if (maxScroll <= 0) {
+            thumb.style.height = `0px`
+            thumb.style.top = `0px`
+            container.classList.add(
+                customStyle['custom-scrollbar-hidden'],
+            )
+            // Вызываем onScroll, но ничего не делаем с позицией ползунка
+            if (onScroll) {
+                onScroll(scrollTop)
+                lastScrollTop.current = scrollTop
+            }
+            return
+        }
+
         // Вычисляем высоту ползунка
         const thumbHeight =
             containerHeight * (clientHeight / scrollHeight)
@@ -82,16 +115,16 @@ export const CustomScrollbar = forwardRef<
         )
 
         // Вычисляем позицию ползунка
-        const maxScroll = scrollHeight - clientHeight
         const thumbTop =
-            maxScroll > 0
-                ? (scrollTop / maxScroll) *
-                  (containerHeight - finalThumbHeight)
-                : 0
+            (scrollTop / maxScroll) *
+            (containerHeight - finalThumbHeight)
 
         // Применяем вычисленные размеры
         thumb.style.height = `${finalThumbHeight}px`
         thumb.style.top = `${thumbTop}px`
+        container.classList.remove(
+            customStyle['custom-scrollbar-hidden'],
+        )
 
         // Всегда вызываем onScroll, даже при программном скролле
         if (onScroll) {
@@ -112,6 +145,16 @@ export const CustomScrollbar = forwardRef<
             content
         const containerHeight = container.clientHeight
 
+        const maxScroll = scrollHeight - clientHeight
+        if (maxScroll <= 0) {
+            thumb.style.height = `0px`
+            thumb.style.top = `0px`
+            container.classList.add(
+                customStyle['custom-scrollbar-hidden'],
+            )
+            return
+        }
+
         const thumbHeight =
             containerHeight * (clientHeight / scrollHeight)
         const minHeight = 20
@@ -120,15 +163,15 @@ export const CustomScrollbar = forwardRef<
             minHeight,
         )
 
-        const maxScroll = scrollHeight - clientHeight
         const thumbTop =
-            maxScroll > 0
-                ? (scrollTop / maxScroll) *
-                  (containerHeight - finalThumbHeight)
-                : 0
+            (scrollTop / maxScroll) *
+            (containerHeight - finalThumbHeight)
 
         thumb.style.height = `${finalThumbHeight}px`
         thumb.style.top = `${thumbTop}px`
+        container.classList.remove(
+            customStyle['custom-scrollbar-hidden'],
+        )
     }, [])
 
     // Обработчик начала перетаскивания ползунка
@@ -208,14 +251,66 @@ export const CustomScrollbar = forwardRef<
             const content = contentRef.current
             if (!content) return
 
+            const maxScroll =
+                content.scrollHeight - content.clientHeight
+
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug('[CustomScrollbar] wheel', {
+                    deltaY: e.deltaY,
+                    scrollTopBefore: content.scrollTop,
+                    maxScroll,
+                })
+            }
+
+            // Если контента для прокрутки нет — не блокируем событие, даём ему всплыть
+            if (maxScroll <= 0) {
+                // Но при попытке тянуть вниз уведомим родителя (overscroll)
+                if (
+                    content.scrollTop <= 1 &&
+                    e.deltaY < 0
+                ) {
+                    if (
+                        process.env.NODE_ENV !==
+                        'production'
+                    ) {
+                        console.debug(
+                            '[CustomScrollbar] attempt beyond top (not scrollable)',
+                            { deltaY: e.deltaY },
+                        )
+                    }
+                    if (onAttemptScrollBeyondTop) {
+                        onAttemptScrollBeyondTop(
+                            e.deltaY,
+                            0,
+                        )
+                    }
+                }
+                return
+            }
+
+            // Есть куда прокручивать — выполняем прокрутку и блокируем событие
             content.scrollTop += e.deltaY
 
             updateThumbPosition()
 
+            // Если мы уже на вершине и пользователь пытается скроллить вверх —
+            // уведомляем родителя для возможного возврата в главный экран
+            if (content.scrollTop <= 1 && e.deltaY < 0) {
+                if (process.env.NODE_ENV !== 'production') {
+                    console.debug(
+                        '[CustomScrollbar] attempt beyond top',
+                        { deltaY: e.deltaY },
+                    )
+                }
+                if (onAttemptScrollBeyondTop) {
+                    onAttemptScrollBeyondTop(e.deltaY, 0)
+                }
+            }
+
             e.preventDefault()
             e.stopPropagation()
         },
-        [updateThumbPosition],
+        [updateThumbPosition, onAttemptScrollBeyondTop],
     )
 
     // Эффект для установки обработчиков событий
@@ -233,6 +328,75 @@ export const CustomScrollbar = forwardRef<
             handleWheel(e)
         }
 
+        const touchStartHandler = (e: TouchEvent) => {
+            startTouchYRef.current =
+                e.touches[0]?.clientY || 0
+        }
+
+        const touchMoveHandler = (e: TouchEvent) => {
+            const currentY = e.touches[0]?.clientY || 0
+            const deltaY = startTouchYRef.current - currentY
+
+            if (process.env.NODE_ENV !== 'production') {
+                console.debug(
+                    '[CustomScrollbar] touchmove',
+                    {
+                        deltaY,
+                        scrollTopBefore: content.scrollTop,
+                    },
+                )
+            }
+
+            const maxScroll =
+                content.scrollHeight - content.clientHeight
+
+            // Если прокрутки нет — не блокируем событие, но уведомим родителя при тяге вниз
+            if (maxScroll <= 0) {
+                if (
+                    content.scrollTop <= 1 &&
+                    deltaY < -10
+                ) {
+                    if (
+                        process.env.NODE_ENV !==
+                        'production'
+                    ) {
+                        console.debug(
+                            '[CustomScrollbar] attempt beyond top touch (not scrollable)',
+                            { deltaY },
+                        )
+                    }
+                    if (onAttemptScrollBeyondTop) {
+                        onAttemptScrollBeyondTop(deltaY, 0)
+                    }
+                }
+
+                startTouchYRef.current = currentY
+                return
+            }
+
+            // Применяем смещение к контенту
+            content.scrollTop += deltaY
+            updateThumbPosition()
+
+            // Если мы на вершине и тянем вниз — уведомляем родителя
+            if (content.scrollTop <= 1 && deltaY < -10) {
+                if (process.env.NODE_ENV !== 'production') {
+                    console.debug(
+                        '[CustomScrollbar] attempt beyond top touch',
+                        { deltaY },
+                    )
+                }
+                if (onAttemptScrollBeyondTop) {
+                    onAttemptScrollBeyondTop(deltaY, 0)
+                }
+            }
+
+            startTouchYRef.current = currentY
+
+            e.preventDefault()
+            e.stopPropagation()
+        }
+
         document.addEventListener(
             'mousemove',
             mouseMoveHandler,
@@ -241,6 +405,20 @@ export const CustomScrollbar = forwardRef<
         content.addEventListener('wheel', wheelHandler, {
             passive: false,
         })
+        content.addEventListener(
+            'touchstart',
+            touchStartHandler,
+            {
+                passive: false,
+            },
+        )
+        content.addEventListener(
+            'touchmove',
+            touchMoveHandler,
+            {
+                passive: false,
+            },
+        )
 
         const resizeObserver = new ResizeObserver(() => {
             updateThumbOnly()
@@ -274,6 +452,14 @@ export const CustomScrollbar = forwardRef<
                 wheelHandler,
             )
             content.removeEventListener(
+                'touchstart',
+                touchStartHandler,
+            )
+            content.removeEventListener(
+                'touchmove',
+                touchMoveHandler,
+            )
+            content.removeEventListener(
                 'scroll',
                 scrollHandler,
             )
@@ -284,33 +470,29 @@ export const CustomScrollbar = forwardRef<
         handleMouseUp,
         handleWheel,
         updateThumbOnly,
+        updateThumbPosition,
         onScroll,
+        onAttemptScrollBeyondTop,
     ])
 
     // Экспортируем методы для управления скроллом
     useImperativeHandle(ref, () => ({
-        scrollToTop: () => {
-            if (contentRef.current) {
-                isProgrammaticScroll.current = true
-                contentRef.current.scrollTop = 0
-                updateThumbOnly()
-                // Всегда вызываем onScroll даже при программном скролле
-                if (onScroll) {
-                    onScroll(0)
-                    lastScrollTop.current = 0
-                }
-                setTimeout(() => {
-                    isProgrammaticScroll.current = false
-                }, 100)
-            }
-        },
-        scrollToBottom: () => {
-            if (contentRef.current) {
-                isProgrammaticScroll.current = true
-                const content = contentRef.current
-                content.scrollTop =
-                    content.scrollHeight -
-                    content.clientHeight
+        // Вспомогательная анимация скролла для плавного programmatic scroll
+        animateScrollTo: (
+            target: number,
+            duration = 220,
+        ) => {
+            const content = contentRef.current
+            if (!content) return
+            isProgrammaticScroll.current = true
+            const maxScroll =
+                content.scrollHeight - content.clientHeight
+            const dest = Math.max(
+                0,
+                Math.min(target, maxScroll),
+            )
+            const start = content.scrollTop
+            if (start === dest) {
                 updateThumbOnly()
                 if (onScroll) {
                     onScroll(content.scrollTop)
@@ -319,30 +501,53 @@ export const CustomScrollbar = forwardRef<
                 }
                 setTimeout(() => {
                     isProgrammaticScroll.current = false
-                }, 100)
+                }, 80)
+                return
             }
-        },
-        scrollTo: (position: number) => {
-            if (contentRef.current) {
-                isProgrammaticScroll.current = true
-                const content = contentRef.current
-                const maxScroll =
-                    content.scrollHeight -
-                    content.clientHeight
-                content.scrollTop = Math.max(
-                    0,
-                    Math.min(position, maxScroll),
-                )
+
+            const startTime = performance.now()
+            const step = (now: number) => {
+                const elapsed = now - startTime
+                const t = Math.min(1, elapsed / duration)
+                const eased =
+                    t < 0.5
+                        ? 2 * t * t
+                        : -1 + (4 - 2 * t) * t
+                const current =
+                    start + (dest - start) * eased
+                content.scrollTop = current
                 updateThumbOnly()
                 if (onScroll) {
                     onScroll(content.scrollTop)
                     lastScrollTop.current =
                         content.scrollTop
                 }
-                setTimeout(() => {
-                    isProgrammaticScroll.current = false
-                }, 100)
+                if (t < 1) {
+                    requestAnimationFrame(step)
+                } else {
+                    setTimeout(() => {
+                        isProgrammaticScroll.current = false
+                    }, 60)
+                }
             }
+            requestAnimationFrame(step)
+        },
+
+        scrollToTop: function () {
+            // @ts-expect-error - вызов animateScrollTo из объекта
+            this.animateScrollTo(0)
+        },
+        scrollToBottom: function () {
+            const content = contentRef.current
+            if (!content) return
+            const dest =
+                content.scrollHeight - content.clientHeight
+            // @ts-expect-error - вызов animateScrollTo из объекта
+            this.animateScrollTo(dest)
+        },
+        scrollTo: function (position: number) {
+            // @ts-expect-error - вызов animateScrollTo из объекта
+            this.animateScrollTo(position)
         },
         getScrollTop: () => {
             return contentRef.current?.scrollTop || 0
@@ -365,6 +570,8 @@ export const CustomScrollbar = forwardRef<
                         'custom-scroll-container-auto'
                     ],
                 className,
+                hideScrollbar &&
+                    customStyle['custom-scrollbar-hidden'],
             )}
             style={style}
         >

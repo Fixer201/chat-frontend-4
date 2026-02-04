@@ -151,3 +151,11 @@ body.scrollbar-dragging * {
     background: #c5c5c5;
     opacity: 0.3;
 }
+
+/* Скрытие полосы прокрутки (используется при неявных переходах)
+   чтобы во время действия ползунок не был виден */
+.custom-scrollbar-hidden .custom-scrollbar-thumb,
+.custom-scrollbar-hidden .custom-scrollbar-track {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

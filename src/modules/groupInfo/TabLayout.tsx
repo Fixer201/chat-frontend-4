@@ -1,10 +1,10 @@
-// @modules/group-info/components/TabLayout.tsx
 'use client'
 
 import { cn } from '@shared/lib/utils'
 import { Button } from '@shared/ui/button/Button'
 import { useRef, useEffect, useMemo } from 'react'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
 type TabId =
     | 'participants'
@@ -20,6 +20,9 @@ interface TabLayoutProps {
     children: React.ReactNode
     tabTitle: string
     onScroll?: (scrollY: number) => void
+    onAttemptReturn?: (deltaY?: number) => void
+    hideScrollbar?: boolean
+    initialScrollTop?: number
 }
 
 export default function TabLayout({
@@ -29,45 +32,28 @@ export default function TabLayout({
     children,
     tabTitle,
     onScroll,
+    onAttemptReturn,
+    hideScrollbar,
+    initialScrollTop,
 }: TabLayoutProps) {
     const tabsRef = useRef<(HTMLButtonElement | null)[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
-    const isInitialMount = useRef(true) // Используем ref вместо state
+    const scrollbarRef = useRef<unknown>(null)
+    const isInitialMount = useRef(true)
     const scrollTimeoutRef = useRef<ReturnType<
         typeof setTimeout
     > | null>(null)
 
-    const tabs: Array<{ id: TabId; label: string }> =
-        useMemo(
-            () => [
-                { id: 'participants', label: 'Участники' },
-                { id: 'media', label: 'Медиа' },
-                { id: 'files', label: 'Файлы' },
-                { id: 'voice', label: 'Голосовые' },
-                { id: 'links', label: 'Ссылки' },
-            ],
-            [],
-        )
-
-    // При монтировании компонента блокируем скролл страницы
-    useEffect(() => {
-        // Блокируем скролл страницы при открытии таба
-        document.body.style.overflow = 'hidden'
-        document.body.style.position = 'fixed'
-        document.body.style.width = '100%'
-
-        return () => {
-            // Разблокируем скролл страницы при закрытии таба
-            document.body.style.overflow = ''
-            document.body.style.position = ''
-            document.body.style.width = ''
-
-            // Очищаем таймаут при размонтировании
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current)
-            }
-        }
-    }, [])
+    const tabs = useMemo(
+        () => [
+            { id: 'participants', label: 'Участники' },
+            { id: 'media', label: 'Медиа' },
+            { id: 'files', label: 'Файлы' },
+            { id: 'voice', label: 'Голосовые' },
+            { id: 'links', label: 'Ссылки' },
+        ],
+        [],
+    )
 
     // При монтировании компонента скроллим к активной вкладке
     useEffect(() => {
@@ -102,11 +88,37 @@ export default function TabLayout({
         }
     }, [activeTab, tabs])
 
+    // Восстанавливаем позицию скролла
+    useEffect(() => {
+        if (
+            typeof initialScrollTop === 'number' &&
+            scrollbarRef.current
+        ) {
+            const t = setTimeout(() => {
+                ;(
+                    scrollbarRef.current as {
+                        scrollTo?: (
+                            position: number,
+                        ) => void
+                    }
+                )?.scrollTo?.(initialScrollTop)
+            }, 40)
+            return () => clearTimeout(t)
+        }
+    }, [initialScrollTop])
+
     // Обработчик клика по кнопке таба
     const handleTabClick = (
         tabId: TabId,
         index: number,
     ) => {
+        if (process.env.NODE_ENV !== 'production') {
+            console.debug('[TabLayout] handleTabClick', {
+                tabId,
+                index,
+            })
+        }
+
         onTabClick(tabId, index)
 
         const tabElement = tabsRef.current[index]
@@ -127,17 +139,17 @@ export default function TabLayout({
     return (
         <div
             className={`
-        flex h-(--screen-height-list) min-h-0 flex-col overflow-hidden
-        rounded-md bg-white-bg
-      `}
+              flex h-full min-h-0 flex-col overflow-hidden rounded-md
+              bg-white-bg
+            `}
             onWheel={handleWheel}
         >
             {/* Header с кнопкой назад и заголовком */}
             <div
                 className={`
-        flex items-center justify-start gap-3 rounded-t-md border-b
-        border-app-divider bg-gray-main px-4 py-4
-      `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-4 py-4
+            `}
             >
                 <Button
                     onClick={onBack}
@@ -145,41 +157,34 @@ export default function TabLayout({
                     variant="ghost"
                     size="sm"
                     className={`
-            flex items-center justify-center rounded-full p-0 text-text-black
-            hover:bg-accent-violet-ultra-light
-          `}
+                      flex items-center justify-center rounded-full p-0
+                      text-text-black
+                      hover:bg-accent-violet-ultra-light
+                    `}
                 >
                     <BackIcon className="mx-1 cursor-pointer" />
                 </Button>
 
-                <h2 className="text-lg font-medium tracking-extra-tight text-text-black">
+                <h2
+                    className={`
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
+                >
                     {tabTitle}
                 </h2>
             </div>
 
             {/* Блок с кнопками-табами */}
-            <div className="mt-0">
+            <div className="shrink-0">
                 <div
                     ref={containerRef}
                     className="scrollbar-hide flex overflow-x-auto"
-                    style={{
-                        touchAction: 'pan-y pinch-zoom',
-                        WebkitOverflowScrolling: 'touch',
-                        // Добавляем inline-стили для скрытия скроллбара
-                        msOverflowStyle: 'none',
-                        scrollbarWidth: 'none',
-                    }}
                 >
-                    {/* Добавляем стили для скрытия скроллбара в WebKit браузерах */}
-                    <style jsx>{`
-                        div::-webkit-scrollbar {
-                            display: none;
-                            width: 0;
-                            height: 0;
-                            background: transparent;
-                        }
-                    `}</style>
-                    <div className="flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0">
+                    <div
+                        className={`
+                      flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
+                    `}
+                    >
                         {tabs.map((tab, index) => (
                             <button
                                 key={tab.id}
@@ -195,17 +200,22 @@ export default function TabLayout({
                                 }
                                 className={cn(
                                     `
-                    flex-shrink-0 py-2 text-base font-medium whitespace-nowrap
-                    transition-all duration-200
-                  `,
+                                      flex-shrink-0 py-2 text-base font-medium
+                                      whitespace-nowrap transition-all
+                                      duration-200
+                                    `,
                                     `
-                    relative
-                    focus:outline-none
-                  `,
-                                    'hover:cursor-pointer hover:text-accent-violet-hover',
+                                      relative
+                                      focus:outline-none
+                                    `,
+                                    `
+                                      hover:cursor-pointer
+                                      hover:text-accent-violet-hover
+                                    `,
                                     'min-w-[100px] px-2',
+                                    'font-medium',
                                     activeTab === tab.id
-                                        ? 'font-semibold text-accent-violet-primary'
+                                        ? 'text-accent-violet-primary'
                                         : 'text-text-black',
                                 )}
                             >
@@ -213,9 +223,9 @@ export default function TabLayout({
                                 {activeTab === tab.id && (
                                     <div
                                         className={`
-                    absolute right-0 bottom-0 left-0 h-1.5 rounded-full
-                    bg-accent-violet-primary
-                  `}
+                                      absolute right-0 bottom-0 left-0 h-1.5
+                                      rounded-full bg-accent-violet-primary
+                                    `}
                                     ></div>
                                 )}
                             </button>
@@ -224,10 +234,18 @@ export default function TabLayout({
                 </div>
             </div>
 
-            {/* Контент таба */}
-            <div className="relative flex-1 overflow-auto">
+            {/* Контент таба с CustomScrollbar */}
+            <CustomScrollbar
+                ref={scrollbarRef}
+                className="h-full flex-1"
+                contentClassName="relative"
+                onScroll={onScroll}
+                onAttemptScrollBeyondTop={onAttemptReturn}
+                hideScrollbar={hideScrollbar}
+                autoHeight={false}
+            >
                 {children}
-            </div>
+            </CustomScrollbar>
         </div>
     )
 }

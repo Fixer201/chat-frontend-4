@@ -3,6 +3,7 @@
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 import GroupInfoSidebar from '@modules/groupInfo/GroupInfoSidebar'
+import { cn } from '@shared/lib/utils'
 
 export default function ChatsPage() {
     return (
@@ -33,11 +34,12 @@ export default function ChatsPage() {
             </div>
 
             <div
-                className={`
-                      hidden rounded-md border border-app-divider bg-gray-main
-                      md:block md:w-80
-                      lg:w-96
-                    `}
+                className={cn(`
+                  hidden h-(--screen-height-list) overflow-hidden rounded-md
+                  border border-app-divider bg-gray-main
+                  md:block md:w-80
+                  lg:w-96
+                `)}
             >
                 <GroupInfoSidebar />
                 {/* Третий блок - пока пустой */}

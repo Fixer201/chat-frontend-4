@@ -1,37 +1,21 @@
-// @modules/group-info/components/tabs/FilesTab.tsx
 'use client'
 
-import { useState } from 'react'
-import TabLayout from '../TabLayout'
-import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
+import { cn } from '@shared/lib/utils'
+import { useState, useEffect } from 'react'
 
-interface FilesTabProps {
-    activeTab:
-        | 'participants'
-        | 'media'
-        | 'files'
-        | 'voice'
-        | 'links'
-    onBack: () => void
-    onTabClick: (
-        tabId:
-            | 'participants'
-            | 'media'
-            | 'files'
-            | 'voice'
-            | 'links',
-        index: number,
-    ) => void
-    onScroll?: (scrollY: number) => void
+interface FilesContentProps {
+    isPreview?: boolean
 }
 
-export default function FilesTab({
-    activeTab,
-    onBack,
-    onTabClick,
-    onScroll,
-}: FilesTabProps) {
-    const [isAtTop, setIsAtTop] = useState(true)
+export default function FilesContent({
+    isPreview = false,
+}: FilesContentProps) {
+    const [visible, setVisible] = useState(false)
+
+    useEffect(() => {
+        const t = setTimeout(() => setVisible(true), 10)
+        return () => clearTimeout(t)
+    }, [])
 
     const files = [
         {
@@ -133,30 +117,23 @@ export default function FilesTab({
         }
     }
 
-    const handleCustomScroll = (scrollTop: number) => {
-        setIsAtTop(scrollTop <= 10)
+    const displayedFiles = isPreview
+        ? files.slice(0, 2)
+        : files
 
-        if (onScroll) {
-            onScroll(scrollTop)
-        }
-    }
+    const totalSize = '93.0 MB'
 
     return (
-        <TabLayout
-            activeTab={activeTab}
-            onBack={onBack}
-            onTabClick={onTabClick}
-            tabTitle="Файлы"
+        <div
+            className={cn(
+                'transition-opacity duration-200',
+                visible ? 'opacity-100' : 'opacity-0',
+            )}
         >
-            <CustomScrollbar
-                className="h-full"
-                onScroll={handleCustomScroll}
-                contentClassName="p-4"
-                autoHeight={false}
-            >
+            {!isPreview && (
                 <div className="mb-6">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium">
+                        <h3 className="text-lg font-medium text-text-black">
                             Файлы группы
                         </h3>
                         <div className="text-sm text-text-gray">
@@ -168,99 +145,138 @@ export default function FilesTab({
                         отправленные в группе
                     </p>
                 </div>
+            )}
 
-                <div className="space-y-3">
-                    {files.map((file) => (
+            <div className="space-y-3">
+                {displayedFiles.map((file) => (
+                    <div
+                        key={file.id}
+                        className={cn(
+                            `
+                              group flex items-center rounded-lg border
+                              border-gray-200 bg-white
+                            `,
+                            isPreview
+                                ? `
+                                  p-2 transition-colors
+                                  hover:border-blue-300
+                                `
+                                : 'p-3',
+                        )}
+                    >
                         <div
-                            key={file.id}
-                            className={`
-              group flex items-center rounded-lg border border-gray-200 bg-white
-              p-3 transition-colors
-              hover:border-blue-300
-            `}
+                            className={cn(
+                                'flex items-center justify-center',
+                                isPreview
+                                    ? 'text-xl'
+                                    : 'text-2xl',
+                            )}
                         >
                             <div
-                                className={`
-                flex h-10 w-10 items-center justify-center text-2xl
-              `}
+                                className={cn(
+                                    'flex items-center justify-center',
+                                    isPreview
+                                        ? 'h-8 w-8'
+                                        : 'h-10 w-10',
+                                )}
                             >
                                 {getFileIcon(file.type)}
                             </div>
-                            <div className="ml-3 flex-1">
-                                <h4 className="truncate font-medium text-text-black">
-                                    {file.name}
-                                </h4>
-                                <div className="flex items-center gap-3 text-sm text-text-gray">
-                                    <span>{file.size}</span>
-                                    <span>•</span>
-                                    <span>{file.date}</span>
-                                </div>
+                        </div>
+                        <div
+                            className={cn(
+                                'flex-1',
+                                isPreview ? 'ml-2' : 'ml-3',
+                            )}
+                        >
+                            <h4
+                                className={cn(
+                                    'font-medium text-text-black',
+                                    isPreview
+                                        ? 'truncate text-sm'
+                                        : 'truncate',
+                                )}
+                            >
+                                {file.name}
+                            </h4>
+                            <div
+                                className={cn(
+                                    'flex items-center gap-2 text-text-gray',
+                                    isPreview
+                                        ? 'text-xs'
+                                        : 'text-sm',
+                                )}
+                            >
+                                <span>{file.size}</span>
+                                <span>•</span>
+                                <span>{file.date}</span>
                             </div>
+                        </div>
+                        {!isPreview && (
                             <div
                                 className={`
-                flex items-center gap-2 opacity-0 transition-opacity
-                group-hover:opacity-100
-              `}
+                              flex items-center gap-2 opacity-0
+                              transition-opacity
+                              group-hover:opacity-100
+                            `}
                             >
                                 <button
                                     className={`
-                  rounded p-1.5
-                  hover:bg-gray-100
-                `}
+                                      rounded p-1.5
+                                      hover:bg-gray-100
+                                    `}
                                     title="Скачать"
                                 >
                                     ⬇️
                                 </button>
                                 <button
                                     className={`
-                  rounded p-1.5
-                  hover:bg-gray-100
-                `}
+                                      rounded p-1.5
+                                      hover:bg-gray-100
+                                    `}
                                     title="Поделиться"
                                 >
                                     ↗️
                                 </button>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        )}
+                    </div>
+                ))}
+            </div>
 
+            {isPreview && files.length > 2 && (
+                <div className="mt-2 text-center">
+                    <span className="text-sm text-text-gray">
+                        и ещё {files.length - 2} файлов
+                    </span>
+                </div>
+            )}
+
+            {!isPreview && (
                 <div
                     className={`
-          mt-6 mb-8 rounded-lg border border-blue-200 bg-blue-50 p-4
-        `}
+                  mt-6 mb-8 rounded-lg border border-blue-200 bg-blue-50 p-4
+                `}
                 >
                     <h4 className="mb-2 font-medium text-blue-800">
                         Хранилище группы
                     </h4>
-                    <div className="mb-2 h-2 w-full rounded-full bg-blue-100">
-                        <div
-                            className="h-2 rounded-full bg-blue-500"
-                            style={{ width: '65%' }}
-                        ></div>
+                    <div
+                        className={`
+                      mb-2 h-2 w-full overflow-hidden rounded-full bg-blue-100
+                    `}
+                    >
+                        <div className="h-2 w-[65%] rounded-full bg-blue-500"></div>
                     </div>
                     <div className="flex justify-between text-sm text-blue-700">
                         <span>Использовано 65%</span>
                         <span>15.2 GB / 25 GB</span>
                     </div>
-                </div>
-            </CustomScrollbar>
-
-            {isAtTop && (
-                <div
-                    className={`
-          pointer-events-none absolute right-0 bottom-0 left-0 bg-gradient-to-t
-          from-white to-transparent py-4 text-center
-        `}
-                >
-                    <div className="animate-pulse text-sm text-gray-500">
-                        <span className="mr-2 inline-block">
-                            ↑
-                        </span>{' '}
-                        Скролл вверх для возврата
+                    <div className="mt-3 text-sm text-blue-700">
+                        Общий размер файлов: {totalSize}
                     </div>
                 </div>
             )}
-        </TabLayout>
+        </div>
     )
 }
