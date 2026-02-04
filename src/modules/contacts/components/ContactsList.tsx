@@ -422,10 +422,10 @@ export default memo(function ContactsList() {
                                     <>
                                         <div
                                             className={`
-                                          flex h-9 w-full justify-between gap-1
-                                          bg-accent-violet-ultra-light pt-2.5
-                                          pr-4 pb-2.5 pl-4
-                                        `}
+                                              flex h-9 w-full justify-between
+                                              gap-1 bg-accent-violet-ultra-light
+                                              pt-2.5 pr-4 pb-2.5 pl-4
+                                            `}
                                         >
                                             <p>
                                                 Контакты
