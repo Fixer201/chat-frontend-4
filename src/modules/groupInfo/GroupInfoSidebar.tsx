@@ -1046,9 +1046,9 @@ export default function GroupInfoSidebar() {
                         {/* Градиент для указания на продолжение */}
                         <div
                             className={`
-                          pointer-events-none absolute right-0 bottom-0 left-0
-                          h-12 bg-gradient-to-t from-white-bg to-transparent
-                        `}
+      pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t
+      from-white-bg to-transparent
+    `}
                         ></div>
                     </div>
                 </div>
