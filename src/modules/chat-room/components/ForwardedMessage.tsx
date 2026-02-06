@@ -23,9 +23,9 @@ export default function ForwardedMessage({
     return (
         <div
             className={`
-          cursor-default rounded-lg border-l-2 border-l-accent-violet-primary
-          bg-gray-main p-2
-        `}
+              cursor-default rounded-lg border-l-2
+              border-l-accent-violet-primary bg-gray-main p-2
+            `}
         >
             <p className="text-xs text-text-gray">
                 Переслано от [Пользователь]

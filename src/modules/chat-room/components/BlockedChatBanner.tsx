@@ -8,8 +8,9 @@ export default function BlockedChatBanner() {
     return (
         <div
             className={`
-      cursor-default px-4 py-3 text-center text-sm text-text-gray select-none
-    `}
+              cursor-default px-4 py-3 text-center text-sm text-text-gray
+              select-none
+            `}
         >
             This chat is blocked
         </div>

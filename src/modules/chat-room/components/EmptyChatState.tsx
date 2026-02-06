@@ -7,8 +7,8 @@ export default function EmptyChatState() {
     return (
         <div
             className={`
-          flex h-full cursor-default items-center justify-center select-none
-        `}
+              flex h-full cursor-default items-center justify-center select-none
+            `}
         >
             <p className="text-text-gray">
                 Выберите контакт для начала общения

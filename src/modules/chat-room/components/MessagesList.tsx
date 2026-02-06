@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Message } from '@shared/types/message'
 
 /**
@@ -31,6 +31,10 @@ export default function MessagesList({
     isSelectionMode,
     selectedMessages,
     chatName,
+    searchQuery = '',
+    currentMatchIndex,
+    onSearchMatchesFound,
+    onSearchNavigate,
 }: Readonly<{
     chatKey: string
     onEditMessage?: (message: Message) => void
@@ -40,6 +44,10 @@ export default function MessagesList({
     isSelectionMode?: boolean
     selectedMessages?: Message[]
     chatName?: string
+    searchQuery?: string
+    currentMatchIndex?: number | null
+    onSearchMatchesFound?: (count: number) => void
+    onSearchNavigate?: (index: number) => void
 }>) {
     const { messages } = useWebSocket()
 
@@ -54,6 +62,60 @@ export default function MessagesList({
                   ),
         [messages, chatKey],
     )
+
+    // --- Логика поиска по сообщениям ---
+
+    /**
+     * Вычисляем индексы сообщений, совпадающих с поисковым запросом.
+     *
+     * Возвращает массив индексов в порядке снизу вверх (индекс 0 = самое новое совпадение).
+     * Это соответствует дизайну Telegram где поиск начинается с последних сообщений.
+     *
+     * Vercel pattern (rerender-dependencies):
+     * - useMemo для кеширования дорогих вычислений
+     * - Примитивные зависимости: массив chatMessages и строка searchQuery
+     * - Пересчёт только при изменении сообщений или запроса
+     *
+     */
+    const matchingMessageIndices = useMemo(() => {
+        if (!searchQuery.trim()) return []
+
+        return chatMessages
+            .map((msg, index) => ({
+                index,
+                // Простой case-insensitive поиск подстроки
+                matches: msg.content
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
+            }))
+            .filter((item) => item.matches)
+            .map((item) => item.index)
+    }, [chatMessages, searchQuery])
+
+    /**
+     * Уведомляем родителя (ChatRoom) о количестве найденных результатов.
+     * ChatRoom использует это для:
+     * 1. Обновления счётчика в InChatSearch ("X из Y")
+     * 2. Автоматической установки currentMatchIndex при первом результате
+     *
+     * Используем useEffect потому что это side effect (вызов setState родителя).
+     * React запрещает setState во время рендера дочернего компонента.
+     *
+     *
+     * Зависимости оптимизированы (rerender-dependencies):
+     * - matchingMessageIndices.length (примитив) вместо массива
+     * - onSearchMatchesFound стабилен (useCallback в родителе)
+     */
+    useEffect(() => {
+        if (onSearchMatchesFound) {
+            onSearchMatchesFound(
+                matchingMessageIndices.length,
+            )
+        }
+    }, [
+        matchingMessageIndices.length,
+        onSearchMatchesFound,
+    ])
 
     return (
         <section
@@ -87,26 +149,49 @@ export default function MessagesList({
                 </div>
             ) : (
                 <ul className="flex flex-col gap-2 p-4">
-                    {chatMessages.map((message) => (
-                        <li key={message.uid}>
-                            <MessageItem
-                                message={message}
-                                onEdit={onEditMessage}
-                                onReply={onReplyMessage}
-                                onSelect={onSelectMessage}
-                                onForward={onForwardMessage}
-                                isSelectionMode={
-                                    isSelectionMode
-                                }
-                                isSelected={selectedMessages?.some(
-                                    (m) =>
-                                        m.uid ===
-                                        message.uid,
-                                )}
-                                chatName={chatName}
-                            />
-                        </li>
-                    ))}
+                    {chatMessages.map((message, index) => {
+                        const matchIndex =
+                            matchingMessageIndices.indexOf(
+                                index,
+                            )
+                        const isMatch = matchIndex !== -1
+                        const isCurrentMatch =
+                            currentMatchIndex !== null &&
+                            matchIndex === currentMatchIndex
+
+                        return (
+                            <li key={message.uid}>
+                                <MessageItem
+                                    message={message}
+                                    onEdit={onEditMessage}
+                                    onReply={onReplyMessage}
+                                    onSelect={
+                                        onSelectMessage
+                                    }
+                                    onForward={
+                                        onForwardMessage
+                                    }
+                                    isSelectionMode={
+                                        isSelectionMode
+                                    }
+                                    isSelected={selectedMessages?.some(
+                                        (m) =>
+                                            m.uid ===
+                                            message.uid,
+                                    )}
+                                    chatName={chatName}
+                                    searchQuery={
+                                        isMatch
+                                            ? searchQuery
+                                            : ''
+                                    }
+                                    isCurrentMatch={
+                                        isCurrentMatch
+                                    }
+                                />
+                            </li>
+                        )
+                    })}
                 </ul>
             )}
         </section>
