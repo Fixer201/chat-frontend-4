@@ -1,4 +1,3 @@
-// @shared/hooks/useChats.ts
 import { useCallback } from 'react'
 import {
     useAppDispatch,
@@ -18,6 +17,7 @@ import {
     resetChatSettings,
     createGroup as createGroupAction,
     createChannel as createChannelAction,
+    createChat as createChatAction,
 } from '../../redux/slices/chatsSlice'
 import { ChatItem, ChatSettings } from '../types/chat'
 import { Contact } from '../types/contact'
@@ -130,6 +130,7 @@ export const useChats = () => {
     // Получение настроек конкретного чата
     const getChatSettings = useCallback(
         (chatId: number): ChatSettings | undefined => {
+            // Исправил: добавьте undefined, если не найдено
             return chatSettings[chatId]
         },
         [chatSettings],
@@ -157,6 +158,16 @@ export const useChats = () => {
             }
         },
         [items, chatSettings],
+    )
+
+    // Создание нового личного чата
+    const createChat = useCallback(
+        (toUserId: string) => {
+            return dispatch(
+                createChatAction(toUserId),
+            ).unwrap()
+        },
+        [dispatch],
     )
 
     // Создание новой группы
@@ -202,6 +213,7 @@ export const useChats = () => {
         resetChatSettings: resetAllChatSettings,
         getChatSettings,
         getChatWithSettings,
+        createChat,
         createGroup,
         createChannel,
     }

@@ -1,4 +1,3 @@
-// @redux/extraReducers/chat-extraReducers/createChatExtraRed.ts
 import {
     createAsyncThunk,
     ActionReducerMapBuilder,
@@ -73,6 +72,7 @@ const createMockChatFromResponse = (
     name: string,
     description: string,
     chatType:
+        | 'chat'
         | 'public-group'
         | 'private-group'
         | 'public-channel'
@@ -275,6 +275,54 @@ export const createGroup = createAsyncThunk<
 )
 
 // Thunk для создания чата
+// export const createChat = createAsyncThunk<
+//     ChatWithSettings,
+//     string,
+//     { rejectValue: string }
+// >(
+//     'chats/createChat',
+//     async (toUserId, { rejectWithValue }) => {
+//         try {
+//             const accessToken = Cookies.get('access_token')
+//             if (!accessToken)
+//                 throw new Error('AccessTokenNotFound')
+//             const response = await fetch(
+//                 'https://api.test.chat.ktsf.ru/api/v1/chat/create-chat/',
+//                 {
+//                     method: 'POST',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         Authorization: `Bearer ${accessToken}`,
+//                     },
+//                     body: JSON.stringify({
+//                         to_user_id: toUserId,
+//                     }),
+//                 },
+//             )
+//             if (!response.ok)
+//                 throw new Error('Failed to create chat')
+//             const data: ApiChatItem = await response.json()
+//             const transformedData = transformFromApi(data)
+//             return {
+//                 chat: transformedData,
+//                 settings: {
+//                     isFavorite: false,
+//                     isChatRead: true,
+//                     notificationsEnabled: true,
+//                     isDeleted: false,
+//                     originalUnreadCount: 0,
+//                 },
+//             }
+//         } catch (error) {
+//             return rejectWithValue(
+//                 error instanceof Error
+//                     ? error.message
+//                     : 'Ошибка создания чата',
+//             )
+//         }
+//     },
+// )
+
 export const createChat = createAsyncThunk<
     ChatWithSettings,
     string,
@@ -283,28 +331,31 @@ export const createChat = createAsyncThunk<
     'chats/createChat',
     async (toUserId, { rejectWithValue }) => {
         try {
-            const accessToken = Cookies.get('access_token')
-            if (!accessToken)
-                throw new Error('AccessTokenNotFound')
-            const response = await fetch(
-                'https://api.test.chat.ktsf.ru/api/v1/chat/create-personal/',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: JSON.stringify({
-                        to_user_id: toUserId,
-                    }),
-                },
+            // Создаем локальный моковый чат для личного общения
+            const mockChatData = createMockChatFromResponse(
+                'Личный чат', // Имя чата
+                '', // Описание (пустое)
+                'chat', // Тип для личного чата
+                null, // Фото (нет)
+                [], // Участники (пусто для личного)
             )
-            if (!response.ok)
-                throw new Error('Failed to create chat')
-            const data: ApiChatItem = await response.json()
-            const transformedData = transformFromApi(data)
+
+            // Трансформация в ChatItem
+            const transformedData =
+                transformFromApi(mockChatData)
+
+            // Адаптация для личного чата: установите chat.chat.uid = toUserId (UID собеседника)
+            const enhancedChat: ChatItem = {
+                ...transformedData,
+                chat: {
+                    ...transformedData.chat,
+                    uid: toUserId, // UID пользователя
+                    isInContacts: true, // Предполагаем, что контакт добавлен
+                },
+            }
+
             return {
-                chat: transformedData,
+                chat: enhancedChat,
                 settings: {
                     isFavorite: false,
                     isChatRead: true,

@@ -13,6 +13,8 @@ import { useState, useCallback } from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import { useMessages } from '@shared/hooks/useMessages'
+import EmptyChatsState from '@modules/chats-list/components/emptyChatsState/EmptyChatsState'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -184,7 +186,14 @@ export default function ChatRoom({
         setReplyingMessage(null)
     }
 
+    const isLocalChat = chat.id > 1000000000000
     const chatName = chat.name
+    // Загрузка сообщений из API
+    const {
+        messages: apiMessages,
+        loading: messagesLoading,
+        error: messagesError,
+    } = useMessages(chat.chat.uid, isLocalChat)
 
     return (
         <div className="relative flex h-full flex-col rounded-md bg-gray-light">
@@ -193,16 +202,42 @@ export default function ChatRoom({
                 onBack={onBack}
             />
             <div className="flex-1 overflow-y-auto">
-                <MessagesList
-                    chatKey={chat.chatKey}
-                    onEditMessage={handleEditMessage}
-                    onReplyMessage={handleReplyMessage}
-                    onSelectMessage={handleSelectMessage}
-                    onForwardMessage={handleForwardMessage}
-                    isSelectionMode={isSelectionMode}
-                    selectedMessages={selectedMessages}
-                    chatName={chatName}
-                />
+                {messagesLoading ? (
+                    <div className="flex h-full items-center justify-center">
+                        <p>Загрузка сообщений...</p>
+                    </div>
+                ) : messagesError ? (
+                    <div className="flex h-full items-center justify-center">
+                        <p>Ошибка: {messagesError}</p>
+                    </div>
+                ) : apiMessages.length === 0 ? (
+                    // Показываем EmptyChatState для пустого чата
+                    <EmptyChatsState
+                        onStartChat={() => {
+                            // Функция для начала чата: например, фокусируем MessageComposer или показываем подсказку
+                            console.log(
+                                'Начать чат: пользователь может писать сообщения',
+                            )
+                            // Можно добавить: focus на поле ввода, если нужно
+                        }}
+                    />
+                ) : (
+                    <MessagesList
+                        chatKey={chat.chatKey}
+                        apiMessages={apiMessages}
+                        onEditMessage={handleEditMessage}
+                        onReplyMessage={handleReplyMessage}
+                        onSelectMessage={
+                            handleSelectMessage
+                        }
+                        onForwardMessage={
+                            handleForwardMessage
+                        }
+                        isSelectionMode={isSelectionMode}
+                        selectedMessages={selectedMessages}
+                        chatName={chatName}
+                    />
+                )}
             </div>
 
             {/* Нижняя панель: в режиме выбора — тулбар с действиями,

@@ -20,7 +20,7 @@ import { Message } from '@shared/types/message'
 
 // Временный флаг: показывать все сообщения без фильтрации по chatKey.
 // Используется на этапе разработки, пока не реализована полноценная логика контактов.
-const USE_MOCK = true // TODO: удалить после реализации контактов
+const USE_MOCK = false // TODO: удалить после реализации контактов
 
 export default function MessagesList({
     chatKey,
@@ -31,8 +31,10 @@ export default function MessagesList({
     isSelectionMode,
     selectedMessages,
     chatName,
+    apiMessages = [],
 }: Readonly<{
     chatKey: string
+    apiMessages?: Message[]
     onEditMessage?: (message: Message) => void
     onReplyMessage?: (message: Message) => void
     onSelectMessage?: (message: Message) => void
@@ -41,18 +43,31 @@ export default function MessagesList({
     selectedMessages?: Message[]
     chatName?: string
 }>) {
-    const { messages } = useWebSocket()
+    const { messages: wsMessages } = useWebSocket()
 
     // Фильтрация сообщений по chatKey текущего чата.
     // В режиме USE_MOCK отключена — все сообщения отображаются для отладки.
+    // Объединение: API-сообщения + WebSocket (избегайте дубликатов по uid)
+    const allMessages = useMemo(() => {
+        const combined = [...apiMessages, ...wsMessages]
+        const unique = combined.filter(
+            (msg, index, self) =>
+                index ===
+                self.findIndex((m) => m.uid === msg.uid),
+        )
+        return unique.sort(
+            (a, b) =>
+                (a.created_at || 0) - (b.created_at || 0),
+        ) // Сортировка по времени
+    }, [apiMessages, wsMessages])
+
+    // Фильтрация по chatKey (уберите USE_MOCK после тестирования)
     const chatMessages = useMemo(
         () =>
-            USE_MOCK
-                ? messages
-                : messages.filter(
-                      (msg) => msg.chatKey === chatKey,
-                  ),
-        [messages, chatKey],
+            allMessages.filter(
+                (msg) => msg.chatKey === chatKey,
+            ),
+        [allMessages, chatKey],
     )
 
     return (

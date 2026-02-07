@@ -1,7 +1,8 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 
 import { useEffect } from 'react'
-
+import { useSearchParams } from 'next/navigation'
 import ChatRoom from '@modules/chat-room/components/ChatRoom'
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
@@ -19,13 +20,45 @@ const INITIAL_CHATS_COUNT = 15
  * - Десктоп (md+): обе колонки видны одновременно.
  */
 export default function ChatsPage() {
-    const { chats, selectedChatId, loadChats, selectChat } =
-        useChats()
+    const {
+        chats,
+        selectedChatId,
+        loadChats,
+        selectChat,
+        createChat,
+    } = useChats()
+    const searchParams = useSearchParams()
 
     /** Загрузка начального списка чатов при монтировании компонента */
     useEffect(() => {
         loadChats(INITIAL_CHATS_COUNT)
     }, [loadChats])
+
+    /** Обработка query-параметра contactId для создания/выбора чата */
+    useEffect(() => {
+        const contactId = searchParams.get('contactId')
+        if (contactId) {
+            const existingChat = chats.find(
+                (chat) => chat.chat.uid === contactId,
+            )
+            if (existingChat) {
+                selectChat(existingChat.id)
+            } else {
+                // Создаем новый личный чат локально
+                createChat(contactId)
+                    .then((newChat) => {
+                        selectChat(newChat.chat.id)
+                    })
+                    .catch((error) => {
+                        console.error(
+                            'Ошибка создания чата:',
+                            error,
+                        )
+                        // Можно добавить toast: toast.error('Не удалось создать чат')
+                    })
+            }
+        }
+    }, [searchParams, chats, selectChat, createChat])
 
     /** Текущий выбранный чат (undefined - ни один чат не открыт) */
     const selectedChat = chats.find(

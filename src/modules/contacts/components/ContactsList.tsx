@@ -18,13 +18,18 @@ import Dropdown from '@shared/ui/dropdown/Dropdown'
 import {
     removeContacts,
     setContacts,
+    addContacts,
 } from '@redux/slices/contactsSlice'
 import { getContactWord } from '@shared/lib/getContactWord'
 import { ContactItem } from './ContactItem'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import { ApiContact, Contact } from '@shared/types/contact'
+import {
+    ApiContact,
+    Contact,
+    ApiAddedContact,
+} from '@shared/types/contact'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import { Spinner } from '@shared/ui/Spinner'
 import { useRouter } from 'next/navigation'
@@ -100,15 +105,19 @@ export default memo(function ContactsList() {
                     firstName: item.first_name,
                     lastName: item.last_name,
                     patronymic: '',
-                    avatar: item.avatar,
-                    avatarUrl: item.avatar_url,
-                    avatarWebp: item.avatar_webp,
-                    avatarWebpUrl: item.avatar_webp_url,
+                    avatar: item.system_contact.avatar,
+                    avatarUrl:
+                        item.system_contact.avatar_url,
+                    avatarWebp:
+                        item.system_contact.avatar_webp,
+                    avatarWebpUrl:
+                        item.system_contact.avatar_webp_url,
                     additionalInformation: '',
                     birthday: 0,
                     chatId: 0,
-                    isOnline: item.is_online,
-                    wasOnlineAt: item.was_online_at,
+                    isOnline: item.system_contact.is_online,
+                    wasOnlineAt:
+                        item.system_contact.was_online_at,
                 }))
             dispatch(setContacts(mappedContacts))
         } catch (error: unknown) {
@@ -184,7 +193,7 @@ export default memo(function ContactsList() {
                             birthday: 0,
                             chatId: 0,
                             isOnline: item.is_online,
-                            wasOnlineAt: 0,
+                            wasOnlineAt: null,
                         }
                     },
                 )
@@ -304,18 +313,9 @@ export default memo(function ContactsList() {
             )
             return
         }
-        // проверка:есть ли контакт с таким phone в списке
-        const existingContact = contactsList.find(
-            (c) => c.phone === user.phone,
-        )
-        if (existingContact) {
-            toast.error(
-                'Контакт уже есть в списке контактов',
-            )
-            setDropdownOpen(false)
-            setSelectedUserForAdd(null)
-            return
-        }
+
+        // Убрана локальная проверка на существование контакта
+
         try {
             const body = {
                 phone: user.phone,
@@ -326,16 +326,37 @@ export default memo(function ContactsList() {
                 'Отправка запроса на добавление контакта:',
                 body,
             )
-            await fetchData(
-                'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-add-by-phone/',
-                {
-                    method: 'POST',
-                    body: JSON.stringify(body),
-                },
-            )
-            // Успешное добавление: показать успех и обновить список
+            const response: ApiAddedContact =
+                await fetchData(
+                    'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-add-by-phone/',
+                    {
+                        method: 'POST',
+                        body: JSON.stringify(body),
+                    },
+                )
+
+            // маппим ответ API в Contact и добавляем в Redux моментально
+
+            const newContact: Contact = {
+                uid: response.uid,
+                username: '',
+                nickname: '',
+                phone: response.phone,
+                firstName: response.first_name,
+                lastName: response.last_name,
+                patronymic: '',
+                avatar: response.avatar,
+                avatarUrl: response.avatar_url,
+                avatarWebp: response.avatar_webp,
+                avatarWebpUrl: response.avatar_webp_url,
+                additionalInformation: '',
+                birthday: 0,
+                chatId: 0,
+                isOnline: response.is_online,
+                wasOnlineAt: response.was_online_at,
+            }
+            dispatch(addContacts(newContact)) // Моментальное обновление Redux
             toast.success('Контакт добавлен')
-            loadContacts() // Перезагрузка списка из API для актуальности
             setDropdownOpen(false)
             setSelectedUserForAdd(null)
         } catch (error: unknown) {
@@ -343,7 +364,6 @@ export default memo(function ContactsList() {
                 'Ошибка при добавлении контакта:',
                 error,
             )
-
             // Обработка ошибок по статусу
             if (error instanceof Error) {
                 const errorMessage = error.message
@@ -363,7 +383,11 @@ export default memo(function ContactsList() {
                         'Этот контакт уже существует',
                     )
                 ) {
-                    toast.error('Контакт уже существует')
+                    // Контакт уже существует: не показываем ошибку, считаем успехом (он уже в списке)
+                    toast.success('Контакт добавлен')
+                    setDropdownOpen(false)
+                    setSelectedUserForAdd(null)
+                    return
                 } else if (errorMessage.includes('404')) {
                     toast.error(
                         'Пользователь с таким номером не найден',
@@ -378,8 +402,6 @@ export default memo(function ContactsList() {
                     'Неизвестная ошибка при добавлении контакта',
                 )
             }
-            // Всегда перезагружаем список, чтобы отобразить контакт, если он был связан API
-            loadContacts()
             setDropdownOpen(false)
             setSelectedUserForAdd(null)
         }
