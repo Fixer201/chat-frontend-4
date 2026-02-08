@@ -94,9 +94,9 @@ export default function LinksContent() {
     return (
         <div
             className={`
-          transition-opacity duration-200
-          ${visible ? `opacity-100` : `opacity-0`}
-        `}
+              transition-opacity duration-200
+              ${visible ? `opacity-100` : `opacity-0`}
+            `}
         >
             <div className="mb-6">
                 <div className="flex items-center justify-between">
@@ -125,9 +125,9 @@ export default function LinksContent() {
                         <div className="flex items-start gap-3">
                             <div
                                 className={`
-                              flex h-12 w-12 items-center justify-center
-                              rounded-lg bg-blue-100 text-blue-600
-                            `}
+                                  flex h-12 w-12 items-center justify-center
+                                  rounded-lg bg-blue-100 text-blue-600
+                                `}
                             >
                                 🔗
                             </div>
@@ -137,15 +137,15 @@ export default function LinksContent() {
                                 </h4>
                                 <p
                                     className={`
-                                  mb-2 truncate text-sm text-blue-500
-                                `}
+                                      mb-2 truncate text-sm text-blue-500
+                                    `}
                                 >
                                     {link.url}
                                 </p>
                                 <div
                                     className={`
-                                  flex items-center text-sm text-text-gray
-                                `}
+                                      flex items-center text-sm text-text-gray
+                                    `}
                                 >
                                     <span className="truncate">
                                         {link.sender}
@@ -158,10 +158,10 @@ export default function LinksContent() {
                             </div>
                             <div
                                 className={`
-                              flex items-center gap-1 opacity-0
-                              transition-opacity
-                              group-hover:opacity-100
-                            `}
+                                  flex items-center gap-1 opacity-0
+                                  transition-opacity
+                                  group-hover:opacity-100
+                                `}
                             >
                                 <button
                                     className={`
@@ -200,8 +200,8 @@ export default function LinksContent() {
             <div className="mt-6 mb-8">
                 <div
                     className={`
-                  rounded-lg border border-gray-200 bg-gray-50 p-4
-                `}
+                      rounded-lg border border-gray-200 bg-gray-50 p-4
+                    `}
                 >
                     <h4 className="mb-2 font-medium text-text-black">
                         Добавить новую ссылку
@@ -227,10 +227,10 @@ export default function LinksContent() {
                         />
                         <button
                             className={`
-                          w-full rounded-lg bg-blue-500 py-2 text-white
-                          transition-colors
-                          hover:bg-blue-600
-                        `}
+                              w-full rounded-lg bg-blue-500 py-2 text-white
+                              transition-colors
+                              hover:bg-blue-600
+                            `}
                         >
                             Добавить ссылку
                         </button>

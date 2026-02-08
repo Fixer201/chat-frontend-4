@@ -1,144 +1,162 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { transformFiles } from '../../../shared/lib/fileUtils'
+import type { BaseFile, MockFile } from '@shared/types/file'
 
 export default function MediaContent() {
     const [visible, setVisible] = useState(false)
+    const [mediaItems, setMediaItems] = useState<
+        BaseFile[]
+    >([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const t = setTimeout(() => setVisible(true), 10)
+
+        // Загружаем медиа
+        loadMedia()
+
         return () => clearTimeout(t)
     }, [])
 
-    const mediaItems = [
-        { id: 1, type: 'image', date: 'Сегодня', count: 5 },
-        { id: 2, type: 'image', date: 'Вчера', count: 3 },
+    const mockMediaFiles: MockFile[] = [
         {
-            id: 3,
-            type: 'video',
-            date: '2 дня назад',
-            count: 2,
+            url: '/images/infoMediaImages/infoMediaImage1.png',
         },
         {
-            id: 4,
-            type: 'image',
-            date: 'Неделю назад',
-            count: 12,
+            url: '/images/infoMediaImages/infoMediaImage2.png',
         },
         {
-            id: 5,
-            type: 'image',
-            date: '2 недели назад',
-            count: 8,
+            url: '/images/infoMediaImages/infoMediaImage3.png',
         },
         {
-            id: 6,
-            type: 'video',
-            date: 'Месяц назад',
-            count: 4,
+            url: '/images/infoMediaImages/infoMediaImage4.png',
         },
         {
-            id: 7,
-            type: 'image',
-            date: '2 месяца назад',
-            count: 15,
+            url: '/images/infoMediaImages/infoMediaImage5.png',
         },
         {
-            id: 8,
-            type: 'image',
-            date: '3 месяца назад',
-            count: 7,
+            url: '/images/infoMediaImages/infoMediaImage6.png',
         },
         {
-            id: 9,
-            type: 'image',
-            date: '4 месяца назад',
-            count: 9,
+            url: '/images/infoMediaImages/infoMediaImage7.png',
         },
         {
-            id: 10,
-            type: 'video',
-            date: '5 месяца назад',
-            count: 6,
+            url: '/images/infoMediaImages/infoMediaImage8.png',
         },
     ]
 
-    const totalMediaCount = mediaItems.reduce(
-        (sum, item) => sum + item.count,
-        0,
-    )
+    // Функция загрузки медиа
+    const loadMedia = async () => {
+        setLoading(true)
+
+        try {
+            // Преобразуем моковые файлы и фильтруем только изображения
+            const transformedFiles = transformFiles(
+                mockMediaFiles,
+                'mock',
+            )
+            const imageFiles = transformedFiles.filter(
+                (file) => file.type === 'image',
+            )
+
+            // Отладка: проверяем что получилось
+            console.log(
+                'Transformed files:',
+                transformedFiles,
+            )
+            console.log('Image files:', imageFiles)
+
+            setMediaItems(imageFiles)
+        } catch (error) {
+            console.error('Ошибка загрузки медиа:', error)
+            // В случае ошибки все равно используем моковые данные
+            const transformedFiles = transformFiles(
+                mockMediaFiles,
+                'mock',
+            )
+            const imageFiles = transformedFiles.filter(
+                (file) => file.type === 'image',
+            )
+            setMediaItems(imageFiles)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Функция для обновления медиа из другого источника
+    const updateMediaFromSource = (
+        files: MockFile[],
+        sourceType: 'backend' | 'mock' = 'mock',
+    ) => {
+        const transformedFiles = transformFiles(
+            files,
+            sourceType,
+        )
+        const imageFiles = transformedFiles.filter(
+            (file) => file.type === 'image',
+        )
+        setMediaItems(imageFiles)
+    }
+
+    if (loading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <div className="text-text-gray">
+                    Загрузка медиа...
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div
             className={`
           transition-opacity duration-200
-          ${visible ? `opacity-100` : `opacity-0`}
+          ${visible ? 'opacity-100' : 'opacity-0'}
         `}
         >
-            <div
-                className={`
-              grid grid-cols-3 gap-2
-              sm:grid-cols-4
-              md:grid-cols-5
-            `}
-            >
+            <div className="grid grid-cols-3 gap-0.5 px-[4px] py-[8px]">
                 {mediaItems.map((item) => (
                     <div
                         key={item.id}
                         className={`
-                          group relative aspect-square cursor-pointer
-                          overflow-hidden rounded-lg transition-transform
-                          hover:scale-105
+                          flex h-full w-full items-center justify-center
                         `}
                     >
-                        <div
-                            className={`
-                          flex h-full w-full items-center justify-center
-                          bg-gradient-to-br from-blue-200 to-purple-300
-                        `}
-                        >
-                            {item.type === 'video' ? (
-                                <div className="text-white">
-                                    <svg
-                                        className="h-8 w-8 fill-current"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path d="M8 5v14l11-7z" />
-                                    </svg>
-                                </div>
-                            ) : (
-                                <div className="text-white">
-                                    <svg
-                                        className="h-8 w-8 fill-current"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                                    </svg>
-                                </div>
+                        {/* Проверяем что url существует и не пустой */}
+                        {item.type === 'image' &&
+                            item.url && (
+                                <Image
+                                    src={item.url}
+                                    alt={`Media item ${item.id}`}
+                                    width={120}
+                                    height={120}
+                                />
                             )}
-                        </div>
-                        <div
-                            className={`
-                          absolute inset-0 flex items-center justify-center
-                          bg-black/50 opacity-0 transition-opacity
-                          group-hover:opacity-100
-                        `}
-                        >
-                            <span className="text-sm font-medium text-white">
-                                {item.count} шт.
-                            </span>
-                        </div>
-                        <div
-                            className={`
-                          absolute right-1 bottom-1 left-1 truncate rounded
-                          bg-black/50 px-1 py-0.5 text-xs text-white
-                        `}
-                        >
-                            {item.date}
-                        </div>
+                        {/* Для отладки: показываем если url отсутствует */}
+                        {(!item.url || item.url === '') && (
+                            <div
+                                className={`
+                              flex h-[120px] w-[120px] items-center
+                              justify-center bg-gray-200 text-xs text-gray-500
+                            `}
+                            >
+                                No URL
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
+
+            {/* Отладка: показываем количество элементов */}
+            {mediaItems.length === 0 && (
+                <div className="p-8 text-center text-text-gray">
+                    Изображения не найдены
+                </div>
+            )}
         </div>
     )
 }

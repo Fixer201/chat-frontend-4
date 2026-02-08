@@ -1,229 +1,234 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import {
+    transformFiles,
+    formatFileSize,
+    formatFileDate,
+} from '../../../shared/lib/fileUtils'
+import type {
+    BackendFile,
+    BaseFile,
+    MockFile,
+} from '@shared/types/file'
+import FileItem from '../../../shared/ui/FileItem'
 
 export default function FilesContent() {
     const [visible, setVisible] = useState(false)
+    const [filesState, setFilesState] = useState<
+        BaseFile[]
+    >([])
+    const [loading, setLoading] = useState(true)
+
+    // Создаем ref для хранения интервалов загрузки
+    const downloadIntervalsRef = useRef<{
+        [key: number]: NodeJS.Timeout
+    }>({})
 
     useEffect(() => {
         const t = setTimeout(() => setVisible(true), 10)
-        return () => clearTimeout(t)
+
+        // Загружаем файлы
+        loadFiles()
+
+        // Очистка интервалов при размонтировании компонента
+        return () => {
+            clearTimeout(t)
+            // Очищаем все интервалы загрузки
+            Object.values(
+                downloadIntervalsRef.current,
+            ).forEach((interval) => {
+                clearInterval(interval)
+            })
+        }
     }, [])
 
-    const files = [
-        {
-            id: 1,
-            name: 'Проект_дизайн.pdf',
-            size: '2.4 MB',
-            date: 'Сегодня, 14:30',
-            type: 'pdf',
-        },
-        {
-            id: 2,
-            name: 'Отчет_за_месяц.docx',
-            size: '1.8 MB',
-            date: 'Вчера, 11:15',
-            type: 'doc',
-        },
-        {
-            id: 3,
-            name: 'Презентация.pptx',
-            size: '4.2 MB',
-            date: '3 дня назад',
-            type: 'ppt',
-        },
-        {
-            id: 4,
-            name: 'Изображение_проекта.jpg',
-            size: '3.1 MB',
-            date: 'Неделю назад',
-            type: 'image',
-        },
-        {
-            id: 5,
-            name: 'Архив_материалов.zip',
-            size: '15.7 MB',
-            date: '2 недели назад',
-            type: 'archive',
-        },
-        {
-            id: 6,
-            name: 'Таблица_данных.xlsx',
-            size: '0.9 MB',
-            date: 'Месяц назад',
-            type: 'excel',
-        },
-        {
-            id: 7,
-            name: 'Видео_презентация.mp4',
-            size: '42.5 MB',
-            date: 'Месяц назад',
-            type: 'video',
-        },
-        {
-            id: 8,
-            name: 'Аудио_заметки.mp3',
-            size: '5.3 MB',
-            date: '2 месяца назад',
-            type: 'audio',
-        },
-        {
-            id: 9,
-            name: 'Бриф_проекта.txt',
-            size: '0.2 MB',
-            date: '2 месяца назад',
-            type: 'text',
-        },
-        {
-            id: 10,
-            name: 'Дизайн_система.sketch',
-            size: '8.9 MB',
-            date: '3 месяца назад',
-            type: 'sketch',
-        },
+    const mockFiles = [
+        { url: '/mockFiles/_Info.txt' },
+        { url: '/mockFiles/задача для deepseek.docx' },
+        { url: '/mockFiles/CLI-COMMANDS.md' },
+        { url: '/mockFiles/COMMIT-STRUCTURE.md' },
+        { url: '/mockFiles/CSS-STYLING-GUIDE-DETAILED.md' },
+        { url: '/mockFiles/GIT-FLOW.md' },
+        { url: '/mockFiles/lorem.pdf' },
+        { url: '/mockFiles/README.ru.md' },
     ]
 
-    const totalSize = '93.0 MB'
+    // Функция загрузки файлов (может загружать из разных источников)
+    const loadFiles = async () => {
+        setLoading(true)
 
-    const getFileIcon = (type: string) => {
-        switch (type) {
-            case 'pdf':
-                return '📄'
-            case 'doc':
-                return '📝'
-            case 'ppt':
-                return '📊'
-            case 'image':
-                return '🖼️'
-            case 'archive':
-                return '📦'
-            case 'excel':
-                return '📈'
-            case 'video':
-                return '🎬'
-            case 'audio':
-                return '🎵'
-            case 'text':
-                return '📃'
-            case 'sketch':
-                return '✏️'
-            default:
-                return '📎'
+        try {
+            // Пример 1: Используем моковые файлы
+            const transformedFiles = transformFiles(
+                mockFiles,
+                'mock',
+            )
+            setFilesState(transformedFiles)
+        } catch (error) {
+            console.error('Ошибка загрузки файлов:', error)
+            // В случае ошибки все равно используем моковые данные
+            const transformedFiles = transformFiles(
+                mockFiles,
+                'mock',
+            )
+            setFilesState(transformedFiles)
+        } finally {
+            setLoading(false)
         }
     }
 
+    // Функция для имитации загрузки файла
+    const simulateDownload = (id: number) => {
+        const file = filesState.find((f) => f.id === id)
+        if (!file) return
+
+        // Если файл уже загружается - останавливаем загрузку
+        if (file.isLoading) {
+            // Останавливаем интервал
+            if (downloadIntervalsRef.current[id]) {
+                clearInterval(
+                    downloadIntervalsRef.current[id],
+                )
+                delete downloadIntervalsRef.current[id]
+            }
+
+            // Сбрасываем состояние файла
+            setFilesState((prev) =>
+                prev.map((f) =>
+                    f.id === id
+                        ? {
+                              ...f,
+                              isLoading: false,
+                              progress: 0,
+                              size: `${f.originalSize.toFixed(1)} MB`,
+                          }
+                        : f,
+                ),
+            )
+            return
+        }
+
+        // Начинаем загрузку
+        setFilesState((prev) =>
+            prev.map((f) =>
+                f.id === id
+                    ? { ...f, isLoading: true, progress: 1 }
+                    : f,
+            ),
+        )
+
+        // Имитация загрузки
+        let progress = 1
+        const interval = setInterval(() => {
+            progress += 1
+
+            setFilesState((prev) =>
+                prev.map((f) => {
+                    if (f.id === id) {
+                        // Вычисляем оставшийся размер
+                        const remaining =
+                            file.originalSize *
+                            (1 - progress / 100)
+
+                        return {
+                            ...f,
+                            progress,
+                            size:
+                                remaining > 0
+                                    ? `${remaining.toFixed(1)} MB`
+                                    : '0 MB',
+                        }
+                    }
+                    return f
+                }),
+            )
+
+            // Когда загрузка завершена
+            if (progress >= 100) {
+                clearInterval(interval)
+                delete downloadIntervalsRef.current[id]
+
+                // Возвращаем исходное состояние через 500мс
+                setTimeout(() => {
+                    setFilesState((prev) =>
+                        prev.map((f) =>
+                            f.id === id
+                                ? {
+                                      ...f,
+                                      isLoading: false,
+                                      progress: 0,
+                                      size: `${file.originalSize.toFixed(1)} MB`,
+                                  }
+                                : f,
+                        ),
+                    )
+                }, 500)
+            }
+        }, 50)
+
+        // Сохраняем ссылку на интервал для возможности остановки
+        downloadIntervalsRef.current[id] = interval
+    }
+
+    // Функция для обновления файлов из другого источника
+    const updateFilesFromSource = (
+        files: BackendFile[] | MockFile[],
+        sourceType: 'backend' | 'mock' = 'mock',
+    ) => {
+        const transformedFiles = transformFiles(
+            files,
+            sourceType,
+        )
+        setFilesState(transformedFiles)
+    }
+
+    // Вычисляем общий размер файлов
+    const totalSize =
+        filesState
+            .reduce((sum, file) => {
+                return sum + file.originalSize
+            }, 0)
+            .toFixed(1) + ' MB'
+
+    if (loading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <div className="text-text-gray">
+                    Загрузка файлов...
+                </div>
+            </div>
+        )
+    }
+
     return (
-        <div
-            className={`
-          transition-opacity duration-200
-          ${visible ? `opacity-100` : `opacity-0`}
-        `}
-        >
-            <div className="mb-6">
+        <div>
+            {/* Заголовок с общим размером */}
+            <div className="border-b border-gray-200 p-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-text-black">
-                        Файлы группы
+                    <h3 className="font-medium text-text-black">
+                        Файлы ({filesState.length})
                     </h3>
-                    <div className="text-sm text-text-gray">
-                        Всего: {files.length} файлов
-                    </div>
+                    <span className="text-sm text-text-gray">
+                        {totalSize}
+                    </span>
                 </div>
-                <p className="mt-1 text-text-gray">
-                    Здесь хранятся все файлы, отправленные в
-                    группе
-                </p>
             </div>
 
-            <div className="space-y-3">
-                {files.map((file) => (
-                    <div
-                        key={file.id}
-                        className={`
-                          group flex items-center rounded-lg border
-                          border-gray-200 bg-white p-3
-                        `}
-                    >
-                        <div
-                            className={`
-                          flex items-center justify-center text-2xl
-                        `}
-                        >
-                            <div
-                                className={`
-                              flex h-10 w-10 items-center justify-center
-                            `}
-                            >
-                                {getFileIcon(file.type)}
-                            </div>
-                        </div>
-                        <div className="ml-3 flex-1">
-                            <h4 className="truncate font-medium text-text-black">
-                                {file.name}
-                            </h4>
-                            <div
-                                className={`
-                              flex items-center gap-2 text-sm text-text-gray
-                            `}
-                            >
-                                <span>{file.size}</span>
-                                <span>•</span>
-                                <span>{file.date}</span>
-                            </div>
-                        </div>
-                        <div
-                            className={`
-                          flex items-center gap-2 opacity-0 transition-opacity
-                          group-hover:opacity-100
-                        `}
-                        >
-                            <button
-                                className={`
-                                  rounded p-1.5
-                                  hover:bg-gray-100
-                                `}
-                                title="Скачать"
-                            >
-                                ⬇️
-                            </button>
-                            <button
-                                className={`
-                                  rounded p-1.5
-                                  hover:bg-gray-100
-                                `}
-                                title="Поделиться"
-                            >
-                                ↗️
-                            </button>
-                        </div>
+            <div className="space-y-0">
+                {filesState.length === 0 ? (
+                    <div className="p-8 text-center text-text-gray">
+                        Файлы не найдены
                     </div>
-                ))}
-            </div>
-
-            <div
-                className={`
-              mt-6 mb-8 rounded-lg border border-blue-200 bg-blue-50 p-4
-            `}
-            >
-                <h4 className="mb-2 font-medium text-blue-800">
-                    Хранилище группы
-                </h4>
-                <div
-                    className={`
-                  mb-2 h-2 w-full overflow-hidden rounded-full bg-blue-100
-                `}
-                >
-                    <div
-                        className="h-2 rounded-full bg-blue-500"
-                        style={{ width: '65%' }}
-                    ></div>
-                </div>
-                <div className="flex justify-between text-sm text-blue-700">
-                    <span>Использовано 65%</span>
-                    <span>15.2 GB / 25 GB</span>
-                </div>
-                <div className="mt-3 text-sm text-blue-700">
-                    Общий размер файлов: {totalSize}
-                </div>
+                ) : (
+                    filesState.map((file) => (
+                        <FileItem
+                            key={file.id}
+                            file={file}
+                            onDownload={simulateDownload}
+                        />
+                    ))
+                )}
             </div>
         </div>
     )

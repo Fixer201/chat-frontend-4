@@ -120,9 +120,9 @@ export default function NewTabLayout({
             {/* Header с кнопкой назад и заголовком */}
             <div
                 className={`
-              flex items-center justify-start gap-3 rounded-t-md border-b
-              border-app-divider bg-gray-main px-4 py-4
-            `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-4 py-4
+                `}
             >
                 <Button
                     onClick={onBack}
@@ -140,8 +140,8 @@ export default function NewTabLayout({
 
                 <h2
                     className={`
-                  text-lg font-medium tracking-extra-tight text-text-black
-                `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     {tabTitle}
                 </h2>
@@ -155,8 +155,8 @@ export default function NewTabLayout({
                 >
                     <div
                         className={`
-                      flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
-                    `}
+                          flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
+                        `}
                     >
                         {tabs.map((tab, index) => (
                             <button
@@ -196,9 +196,9 @@ export default function NewTabLayout({
                                 {activeTab === tab.id && (
                                     <div
                                         className={`
-                                      absolute right-0 bottom-0 left-0 h-1.5
-                                      rounded-full bg-accent-violet-primary
-                                    `}
+                                          absolute right-0 bottom-0 left-0 h-1.5
+                                          rounded-full bg-accent-violet-primary
+                                        `}
                                     ></div>
                                 )}
                             </button>
