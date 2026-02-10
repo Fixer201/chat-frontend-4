@@ -14,44 +14,41 @@ import { getContactWord } from '@shared/lib/getContactWord'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import { ApiContact, Contact } from '@shared/types/contact'
-// import { useApiFetcher } from '@shared/hooks/useApiFetcher'
-import { notFound } from 'next/navigation'
+import { GroupParticipant } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
 
-export default memo(function ContactsListGroup() {
+interface ContactsListGroupProps {
+    owner: GroupParticipant | null
+    participants: GroupParticipant[]
+    onInviteClick?: () => void // Новый проп
+}
+
+export default memo(function ContactsListGroup({
+    owner,
+    participants,
+    onInviteClick,
+}: ContactsListGroupProps) {
     const [searchValue, setSearchValue] = useState('')
     const [deleteMode, setDeleteMode] = useState(false)
     const [selectedContacts, setSelectedContacts] =
         useState<string[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [loading, setLoading] = useState(false)
+
     const dispatch = useDispatch()
 
     // Получение данных из Redux store
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContactTemp.uid,
     )
-    const contactsList = useSelector(
-        (state: RootState) => state.contactsTemp.list,
-    )
-    const { filteredValue: filteredContacts } = useSearch(
-        contactsList,
-        searchValue,
-        [
+
+    const { filteredValue: filteredParticipants } =
+        useSearch(participants, searchValue, [
             (contact) =>
                 `${contact.firstName} ${contact.lastName}`.toLowerCase(),
-            (contact) => `${contact.phone}`,
-            (contact) => `${contact.nickname}`,
-        ],
-    )
-
-    // Функция для определения, является ли строка телефоном (простая проверка: только цифры и опционально +)
-    const isPhone = (str: string) => {
-        const cleaned = str.replace(/\s/g, '') // Убираем пробелы
-        return /^\+?\d+$/.test(cleaned)
-    }
+            (contact) => `${contact.phone || ''}`,
+            (contact) => `${contact.nickname || ''}`,
+        ])
 
     // Сброс выделенного контакта при входе в режим удаления
     useEffect(() => {
@@ -107,23 +104,6 @@ export default memo(function ContactsListGroup() {
         setSelectedContacts([])
     }
 
-    if (loading) {
-        return (
-            <div className="flex h-full items-center justify-center">
-                <p>Загрузка контактов...</p>
-            </div>
-        )
-    }
-    const owner: Contact = {
-        uid: '1',
-        firstName: 'Иван',
-        lastName: 'Иванов',
-        nickname: 'ivan123',
-        phone: '+1234567890',
-        avatarUrl: 'AvatarWeb1.png',
-        isOnline: true,
-        wasOnlineAt: new Date(),
-    }
     return (
         <>
             <div className="mt-2 flex h-1/12 min-h-15 items-center px-4">
@@ -134,23 +114,25 @@ export default memo(function ContactsListGroup() {
                           hover:cursor-pointer
                         `,
                     )}
+                    onClick={onInviteClick}
                 >
                     <Image
                         src="/icons/addToGroup.svg"
-                        alt="Назад"
+                        alt="Добавить"
                         width={16}
                         height={16}
                     />
                     <p
                         className={`
-                          text-accent-violet transition-colors duration-200
-                          hover:text-accent-violet-dark
-                        `}
+                      text-accent-violet transition-colors duration-200
+                      hover:text-accent-violet-dark
+                    `}
                     >
                         Пригласить в группу
                     </p>
                 </button>
             </div>
+
             <div className="mt-0 flex h-1/12 items-center px-4">
                 <Search
                     value={searchValue}
@@ -161,50 +143,26 @@ export default memo(function ContactsListGroup() {
                     bgColor="bg-accent-violet-ultra-light"
                 />
             </div>
+
             {/* Контейнер контактов и пользователей */}
             <div className="flex flex-col">
                 <CustomScrollbar>
-                    <div
-                        className={`
-                          flex h-9 w-full justify-between gap-1 pt-2.5 pr-4
-                          pb-2.5 pl-4 text-text-gray
-                        `}
-                    >
-                        <p className="text-sm">Владелец</p>
-                    </div>
-                    <ContactItemGroup
-                        key={owner.uid}
-                        contact={owner}
-                        deleteMode={deleteMode}
-                        selectedUid={selectedUid}
-                        selectedContacts={selectedContacts}
-                        searchValue={searchValue}
-                        onSelectContact={
-                            handleSelectContact
-                        }
-                        onSetSelectedContact={(
-                            uid: string,
-                        ) =>
-                            dispatch(
-                                setSelectedContact(uid),
-                            )
-                        }
-                    />
-                    <div
-                        className={`
-                          flex h-9 w-full justify-between gap-1 pt-2.5 pr-4
-                          pb-2.5 pl-4 text-text-gray
-                        `}
-                    >
-                        <p className="text-sm">Участники</p>
-                    </div>
-
-                    {filteredContacts &&
-                    filteredContacts.length > 0 ? (
-                        filteredContacts.map((contact) => (
+                    {/* Владелец */}
+                    {owner && (
+                        <>
+                            <div
+                                className={`
+                              flex h-9 w-full justify-between gap-1 pt-2.5 pr-4
+                              pb-2.5 pl-4 text-text-gray
+                            `}
+                            >
+                                <p className="text-sm">
+                                    Владелец
+                                </p>
+                            </div>
                             <ContactItemGroup
-                                key={contact.uid}
-                                contact={contact}
+                                key={owner.uid}
+                                contact={owner}
                                 deleteMode={deleteMode}
                                 selectedUid={selectedUid}
                                 selectedContacts={
@@ -224,23 +182,67 @@ export default memo(function ContactsListGroup() {
                                     )
                                 }
                             />
-                        ))
-                    ) : filteredContacts.length === 0 &&
+                        </>
+                    )}
+
+                    {/* Участники */}
+                    <div
+                        className={`
+                      flex h-9 w-full justify-between gap-1 pt-2.5 pr-4 pb-2.5
+                      pl-4 text-text-gray
+                    `}
+                    >
+                        <p className="text-sm">Участники</p>
+                    </div>
+
+                    {filteredParticipants &&
+                    filteredParticipants.length > 0 ? (
+                        filteredParticipants.map(
+                            (contact) => (
+                                <ContactItemGroup
+                                    key={contact.uid}
+                                    contact={contact}
+                                    deleteMode={deleteMode}
+                                    selectedUid={
+                                        selectedUid
+                                    }
+                                    selectedContacts={
+                                        selectedContacts
+                                    }
+                                    searchValue={
+                                        searchValue
+                                    }
+                                    onSelectContact={
+                                        handleSelectContact
+                                    }
+                                    onSetSelectedContact={(
+                                        uid: string,
+                                    ) =>
+                                        dispatch(
+                                            setSelectedContact(
+                                                uid,
+                                            ),
+                                        )
+                                    }
+                                />
+                            ),
+                        )
+                    ) : filteredParticipants.length === 0 &&
                       searchValue.trim() ? (
                         <div
                             className={`
-                              flex h-full flex-col items-center justify-center
-                              p-4 text-center
-                            `}
+                          flex h-full flex-col items-center justify-center p-4
+                          text-center
+                        `}
                         >
                             <EmptySearchState />
                         </div>
                     ) : (
                         <div
                             className={`
-                              flex h-full flex-col items-center justify-center
-                              p-4 text-center
-                            `}
+                          flex h-full flex-col items-center justify-center p-4
+                          text-center
+                        `}
                         >
                             <Image
                                 src="/images/search/nullContacts.svg"
@@ -254,37 +256,12 @@ export default memo(function ContactsListGroup() {
                                 }}
                             />
                             <p className="mt-2 text-text-gray">
-                                Список контактов пока пуст
+                                Список участников пока пуст
                             </p>
                         </div>
                     )}
 
                     {/* Панель удаления выбранных контактов */}
-                    {deleteMode &&
-                        selectedContacts.length > 0 && (
-                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-                            <div
-                                className={`
-                                  right-0 left-0 z-10 flex h-20 w-full
-                                  cursor-pointer items-center justify-center
-                                  bg-(--color-gray-light) transition-colors
-                                  hover:bg-(--color-accent-violet-light)
-                                `}
-                                onClick={handleOpenModal}
-                                role="button"
-                                aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
-                            >
-                                <p className="text-(--color-system-red)">
-                                    Удалить{' '}
-                                    {
-                                        selectedContacts.length
-                                    }{' '}
-                                    {getContactWord(
-                                        selectedContacts.length,
-                                    )}
-                                </p>
-                            </div>
-                        )}
                 </CustomScrollbar>
             </div>
 

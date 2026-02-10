@@ -31,3 +31,10 @@ export interface MockFile {
     size?: number // в байтах
     created_at?: number // timestamp
 }
+// Интерфейс для аудио сообщений
+export interface AudioFile extends BaseFile {
+    duration: string // форматированная длительность "1:30"
+    isPlaying: boolean
+    currentTime: number // текущее время в секундах
+    totalDuration: number // общая длительность в секундах
+}

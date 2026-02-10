@@ -47,6 +47,9 @@ export default function GroupInfoSidebar() {
     const [hasScrolledDown, setHasScrolledDown] =
         useState(false)
     const [isReturning, setIsReturning] = useState(false)
+    const [dynamicTabTitle, setDynamicTabTitle] = useState<
+        string | null
+    >(null)
     // Добавляем состояние для хранения позиций скролла
     const [tabScrollPositions, setTabScrollPositions] =
         useState<Record<TabId, number>>({
@@ -592,7 +595,7 @@ export default function GroupInfoSidebar() {
             if (tabId === activeTab || isTransitioning) {
                 return
             }
-
+            setDynamicTabTitle(null)
             setActiveTab(tabId)
 
             setJustSwitchedToTab(true)
@@ -682,7 +685,11 @@ export default function GroupInfoSidebar() {
     const getTabContent = (tabId: TabId) => {
         switch (tabId) {
             case 'participants':
-                return <ParticipantsContent />
+                return (
+                    <ParticipantsContent
+                        onTitleChange={setDynamicTabTitle}
+                    />
+                )
             case 'media':
                 return <MediaContent />
             case 'files':
@@ -704,6 +711,7 @@ export default function GroupInfoSidebar() {
                 onBack={handleBackFromTab}
                 onTabClick={handleTabContentTabClick}
                 tabTitle={getTabTitle(activeTab)}
+                dynamicTitle={dynamicTabTitle || undefined}
                 onScroll={handleTabScrollEvent}
                 onAttemptReturn={handleAttemptReturn}
                 hideScrollbar={hideTabScrollbarDuringReturn}
@@ -729,9 +737,9 @@ export default function GroupInfoSidebar() {
             {/* Header с кнопками и заголовком */}
             <div
                 className={`
-                  flex items-center justify-between gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-4 py-4
-                `}
+              flex items-center justify-between gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-4 py-4
+            `}
             >
                 <Button
                     onClick={() => console.log('Закрыть')}
@@ -754,35 +762,14 @@ export default function GroupInfoSidebar() {
 
                 <h2
                     className={`
-                      ml-3 flex-1 text-left text-lg font-medium
-                      tracking-extra-tight text-text-black
-                    `}
+                  ml-3 flex-1 text-left text-lg font-medium tracking-extra-tight
+                  text-text-black
+                `}
                 >
                     Информация о группе
                 </h2>
 
                 <div className="flex items-center gap-3">
-                    <Button
-                        onClick={() =>
-                            console.log('Настройки')
-                        }
-                        aria-label="Настройки"
-                        variant="ghost"
-                        size="sm"
-                        className={`
-                          flex items-center justify-center rounded-full p-0
-                          text-text-black
-                          hover:bg-accent-violet-ultra-light
-                        `}
-                    >
-                        <Image
-                            src="/icons/detailInfo/detailInfoDropdown.svg"
-                            alt="Настройки"
-                            width={24}
-                            height={24}
-                        />
-                    </Button>
-
                     <Button
                         onClick={() =>
                             console.log(
@@ -801,6 +788,26 @@ export default function GroupInfoSidebar() {
                         <Image
                             src="/icons/detailInfo/detailInfoSettings.svg"
                             alt="Детальные настройки"
+                            width={24}
+                            height={24}
+                        />
+                    </Button>
+                    <Button
+                        onClick={() =>
+                            console.log('Настройки')
+                        }
+                        aria-label="Настройки"
+                        variant="ghost"
+                        size="sm"
+                        className={`
+                          flex items-center justify-center rounded-full p-0
+                          text-text-black
+                          hover:bg-accent-violet-ultra-light
+                        `}
+                    >
+                        <Image
+                            src="/icons/detailInfo/detailInfoDropdown.svg"
+                            alt="Настройки"
                             width={24}
                             height={24}
                         />
@@ -832,9 +839,9 @@ export default function GroupInfoSidebar() {
 
                     <div
                         className={`
-                          absolute right-0 bottom-0 left-0 rounded-b-md
-                          bg-gradient-to-t from-black/70 to-transparent p-4
-                        `}
+                      absolute right-0 bottom-0 left-0 rounded-b-md
+                      bg-gradient-to-t from-black/70 to-transparent p-4
+                    `}
                     >
                         <h3 className="text-2xl font-semibold text-white">
                             Рабочая группа
@@ -868,7 +875,9 @@ export default function GroupInfoSidebar() {
                                 `,
                                 notificationsEnabled
                                     ? 'bg-blue-500'
-                                    : `bg-gray-300`,
+                                    : `
+                                  bg-gray-300
+                                `,
                             )}
                         >
                             <span
@@ -879,7 +888,9 @@ export default function GroupInfoSidebar() {
                                     `,
                                     notificationsEnabled
                                         ? 'translate-x-6'
-                                        : `translate-x-1`,
+                                        : `
+                                      translate-x-1
+                                    `,
                                 )}
                             />
                         </button>
@@ -888,14 +899,14 @@ export default function GroupInfoSidebar() {
                     <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
                         <div
                             className={`
-                              flex flex-col justify-between p-0.5 pr-8
-                            `}
+                          flex flex-col justify-between p-0.5 pr-8
+                        `}
                         >
                             <span
                                 className={`
-                                  p-0 text-xs font-medium tracking-extra-tight
-                                  text-text-gray
-                                `}
+                              p-0 text-xs font-medium tracking-extra-tight
+                              text-text-gray
+                            `}
                             >
                                 Описание
                             </span>
@@ -912,9 +923,9 @@ export default function GroupInfoSidebar() {
                         <div className="flex flex-col justify-between p-0.5">
                             <span
                                 className={`
-                                  mb-1 p-0 text-xs font-medium
-                                  tracking-extra-tight text-text-gray
-                                `}
+                              mb-1 p-0 text-xs font-medium tracking-extra-tight
+                              text-text-gray
+                            `}
                             >
                                 Ссылка на приглашение в
                                 группу
@@ -923,9 +934,9 @@ export default function GroupInfoSidebar() {
                             <div className="flex items-center justify-between">
                                 <span
                                     className={`
-                                      pr-2 text-base break-all
-                                      text-accent-violet-primary
-                                    `}
+                                  pr-2 text-base break-all
+                                  text-accent-violet-primary
+                                `}
                                 >
                                     http://a-chat.su/fGHgfdYUfjsf
                                 </span>
@@ -951,7 +962,9 @@ export default function GroupInfoSidebar() {
                                         className={cn(
                                             isCopied
                                                 ? 'opacity-50'
-                                                : `opacity-100`,
+                                                : `
+                                          opacity-100
+                                        `,
                                         )}
                                     />
                                 </Button>
@@ -970,9 +983,9 @@ export default function GroupInfoSidebar() {
                         >
                             <div
                                 className={`
-                                  flex space-x-4 border-b-2 border-b-gray-200
-                                  px-4 pb-0
-                                `}
+                              flex space-x-4 border-b-2 border-b-gray-200 px-4
+                              pb-0
+                            `}
                             >
                                 {tabs.map((tab, index) => (
                                     <button
@@ -1016,10 +1029,10 @@ export default function GroupInfoSidebar() {
                                             tab.id && (
                                             <div
                                                 className={`
-                                                  absolute right-0 bottom-0
-                                                  left-0 h-1.5 rounded-full
-                                                  bg-accent-violet-primary
-                                                `}
+                                              absolute right-0 bottom-0 left-0
+                                              h-1.5 rounded-full
+                                              bg-accent-violet-primary
+                                            `}
                                             ></div>
                                         )}
                                     </button>
@@ -1031,8 +1044,8 @@ export default function GroupInfoSidebar() {
                     {/* Preview контента активного таба */}
                     <div
                         className={`
-                          relative mt-2 max-h-48 overflow-hidden rounded-b-md
-                        `}
+                      relative mt-2 max-h-48 overflow-hidden rounded-b-md
+                    `}
                     >
                         <TabContentPreview
                             activeTab={activeTab}
@@ -1040,10 +1053,9 @@ export default function GroupInfoSidebar() {
                         {/* Градиент для указания на продолжение */}
                         <div
                             className={`
-                              pointer-events-none absolute right-0 bottom-0
-                              left-0 h-12 bg-gradient-to-t from-white-bg
-                              to-transparent
-                            `}
+      pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t
+      from-white-bg to-transparent
+    `}
                         ></div>
                     </div>
                 </div>

@@ -35,3 +35,23 @@ export interface ApiContact {
     is_online: boolean
     was_online_at: number | string | Date
 }
+// Новый интерфейс для участников группы из API
+export interface ApiGroupParticipant {
+    uid: string
+    first_name: string
+    last_name: string
+    avatar_url: string
+    avatar_webp_url: string
+    is_owner: boolean
+    is_blocked: boolean
+    is_online: boolean
+    was_online_at: number
+    is_in_contacts: boolean
+}
+
+// Расширенный интерфейс Contact для участников группы
+export interface GroupParticipant extends Contact {
+    isOwner: boolean
+    isBlocked: boolean
+    isInContacts: boolean
+}

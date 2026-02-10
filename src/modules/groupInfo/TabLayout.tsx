@@ -23,6 +23,7 @@ interface TabLayoutProps {
     onAttemptReturn?: (deltaY?: number) => void
     hideScrollbar?: boolean
     initialScrollTop?: number
+    dynamicTitle?: string
 }
 
 export default function TabLayout({
@@ -35,6 +36,7 @@ export default function TabLayout({
     onAttemptReturn,
     hideScrollbar,
     initialScrollTop,
+    dynamicTitle,
 }: TabLayoutProps) {
     const tabsRef = useRef<(HTMLButtonElement | null)[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
@@ -44,7 +46,9 @@ export default function TabLayout({
         typeof setTimeout
     > | null>(null)
 
-    const tabs = useMemo(
+    const tabs = useMemo<
+        Array<{ id: TabId; label: string }>
+    >(
         () => [
             { id: 'participants', label: 'Участники' },
             { id: 'media', label: 'Медиа' },
@@ -140,16 +144,16 @@ export default function TabLayout({
         <div
             className={`
               flex h-full min-h-0 flex-col overflow-hidden rounded-md
-              bg-white-bg
+              bg-gray-main
             `}
             onWheel={handleWheel}
         >
             {/* Header с кнопкой назад и заголовком */}
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-4 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-4 py-4
+            `}
             >
                 <Button
                     onClick={onBack}
@@ -167,10 +171,10 @@ export default function TabLayout({
 
                 <h2
                     className={`
-                      text-lg font-medium tracking-extra-tight text-text-black
-                    `}
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
                 >
-                    {tabTitle}
+                    {dynamicTitle || tabTitle}
                 </h2>
             </div>
 
@@ -182,8 +186,8 @@ export default function TabLayout({
                 >
                     <div
                         className={`
-                          flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
-                        `}
+                      flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
+                    `}
                     >
                         {tabs.map((tab, index) => (
                             <button
@@ -223,9 +227,9 @@ export default function TabLayout({
                                 {activeTab === tab.id && (
                                     <div
                                         className={`
-                                          absolute right-0 bottom-0 left-0 h-1.5
-                                          rounded-full bg-accent-violet-primary
-                                        `}
+                                      absolute right-0 bottom-0 left-0 h-1.5
+                                      rounded-full bg-accent-violet-primary
+                                    `}
                                     ></div>
                                 )}
                             </button>

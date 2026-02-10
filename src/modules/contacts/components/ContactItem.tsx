@@ -45,7 +45,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
         <div className={STYLES.container}>
             <div className={STYLES.divider} />
             <ContactAvatar
-                // src={`/images/contacts/${contact?.avatarUrl}`}
+                //src={`/images/contacts/${contact?.avatarUrl}`}
                 src={contact?.avatarUrl || ''}
                 name={`${contact.firstName} ${contact.lastName}`}
                 mode={

@@ -3,6 +3,7 @@ import {
     BaseFile,
     BackendFile,
     MockFile,
+    AudioFile,
 } from '../types/file'
 
 // Функция определения типа файла по расширению
@@ -251,4 +252,31 @@ export const transformFiles = (
             )
         }
     })
+}
+
+// Функция форматирования времени в формат MM:SS
+export const formatAudioDuration = (
+    seconds: number,
+): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// Функция преобразования файла в AudioFile
+export const fileToAudioFile = (
+    file: BaseFile,
+): AudioFile => {
+    // Генерируем случайную длительность от 30 сек до 4 минут
+    const totalDuration = Math.floor(
+        Math.random() * (240 - 30) + 30,
+    )
+
+    return {
+        ...file,
+        duration: formatAudioDuration(totalDuration),
+        isPlaying: false,
+        currentTime: 0,
+        totalDuration,
+    }
 }
