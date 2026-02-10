@@ -68,9 +68,9 @@ export default function InChatSearch({
     return (
         <div
             className={`
-        flex items-center gap-3 border-b border-gray-border bg-white-bg px-3
-        py-2
-      `}
+              flex items-center gap-3 border-b border-gray-border bg-white-bg
+              px-3 py-2
+            `}
         >
             {/* Аватар пользователя слева - согласно дизайну из chat_search.png */}
             {avatarSrc && (
@@ -101,11 +101,11 @@ export default function InChatSearch({
                         onChange(e.target.value)
                     }
                     className={`
-            h-11 w-full rounded-lg border border-gray-border bg-white-bg py-2.5
-            pr-3 pl-10 text-sm text-text-black
-            placeholder:text-text-gray
-            focus:border-accent-violet-primary focus:outline-none
-          `}
+                      h-11 w-full rounded-lg border border-gray-border
+                      bg-white-bg py-2.5 pr-3 pl-10 text-sm text-text-black
+                      placeholder:text-text-gray
+                      focus:border-accent-violet-primary focus:outline-none
+                    `}
                     aria-label="Поиск в чате"
                 />
             </div>
@@ -133,10 +133,11 @@ export default function InChatSearch({
                                 }
                                 aria-label="Предыдущий результат"
                                 className={`
-                  rounded-lg p-1 text-text-gray transition-colors
-                  hover:bg-gray-light
-                  active:scale-95
-                `}
+                                  rounded-lg p-1 text-text-gray
+                                  transition-colors
+                                  hover:bg-gray-light
+                                  active:scale-95
+                                `}
                             >
                                 <Image
                                     src="/images/search/arrow-up.svg"
@@ -154,10 +155,11 @@ export default function InChatSearch({
                                 }
                                 aria-label="Следующий результат"
                                 className={`
-                  rounded-lg p-1 text-text-gray transition-colors
-                  hover:bg-gray-light
-                  active:scale-95
-                `}
+                                  rounded-lg p-1 text-text-gray
+                                  transition-colors
+                                  hover:bg-gray-light
+                                  active:scale-95
+                                `}
                             >
                                 <Image
                                     src="/images/search/arrow-down.svg"
@@ -177,10 +179,10 @@ export default function InChatSearch({
                 onClick={onClose}
                 aria-label="Закрыть поиск"
                 className={`
-          rounded-lg p-1 text-text-gray transition-colors
-          hover:bg-gray-light
-          active:scale-95
-        `}
+                  rounded-lg p-1 text-text-gray transition-colors
+                  hover:bg-gray-light
+                  active:scale-95
+                `}
             >
                 <Image
                     src="/images/search/iconsClose.svg"

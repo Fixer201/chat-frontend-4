@@ -3,7 +3,12 @@
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
-import { useEffect, useMemo } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react'
 import { Message } from '@shared/types/message'
 
 /**
@@ -34,7 +39,6 @@ export default function MessagesList({
     searchQuery = '',
     currentMatchIndex,
     onSearchMatchesFound,
-    onSearchNavigate,
 }: Readonly<{
     chatKey: string
     onEditMessage?: (message: Message) => void
@@ -50,6 +54,58 @@ export default function MessagesList({
     onSearchNavigate?: (index: number) => void
 }>) {
     const { messages } = useWebSocket()
+
+    /** Ref на контейнер списка для поиска DOM-элементов сообщений по uid */
+    const listRef = useRef<HTMLUListElement>(null)
+
+    /**
+     * Прокрутка к сообщению по uid с подсветкой.
+     *
+     * Используется при клике по карточке цитаты (RepliedMessage):
+     * находим li[data-message-uid] в DOM, прокручиваем к нему
+     * и добавляем кратковременную подсветку для визуального акцента.
+     *
+     * Vercel pattern (rerender-functional-setstate):
+     * useCallback без зависимостей — стабильная ссылка, не вызывает
+     * ререндер дочерних компонентов при передаче через props.
+     */
+    const handleNavigateToMessage = useCallback(
+        (uid: string) => {
+            if (!listRef.current) return
+
+            const target = listRef.current.querySelector(
+                `[data-message-uid="${CSS.escape(uid)}"]`,
+            )
+            if (!target) return
+
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            })
+
+            // Кратковременная подсветка целевого сообщения
+            const bubble = target.querySelector(
+                '[data-message-bubble]',
+            )
+            if (bubble) {
+                bubble.classList.add(
+                    'ring-2',
+                    'ring-system-blue',
+                    'shadow-lg',
+                    'shadow-system-blue/25',
+                )
+                setTimeout(() => {
+                    bubble.classList.remove(
+                        'ring-2',
+                        'ring-system-blue',
+                        'shadow-lg',
+                        'shadow-system-blue/25',
+                    )
+                }, 1500)
+            }
+        },
+        [],
+    )
 
     // Фильтрация сообщений по chatKey текущего чата.
     // В режиме USE_MOCK отключена — все сообщения отображаются для отладки.
@@ -148,7 +204,10 @@ export default function MessagesList({
                     </p>
                 </div>
             ) : (
-                <ul className="flex flex-col gap-2 p-4">
+                <ul
+                    ref={listRef}
+                    className="flex flex-col gap-2 p-4"
+                >
                     {chatMessages.map((message, index) => {
                         const matchIndex =
                             matchingMessageIndices.indexOf(
@@ -160,7 +219,12 @@ export default function MessagesList({
                             matchIndex === currentMatchIndex
 
                         return (
-                            <li key={message.uid}>
+                            <li
+                                key={message.uid}
+                                data-message-uid={
+                                    message.uid
+                                }
+                            >
                                 <MessageItem
                                     message={message}
                                     onEdit={onEditMessage}
@@ -170,6 +234,9 @@ export default function MessagesList({
                                     }
                                     onForward={
                                         onForwardMessage
+                                    }
+                                    onNavigateToMessage={
+                                        handleNavigateToMessage
                                     }
                                     isSelectionMode={
                                         isSelectionMode

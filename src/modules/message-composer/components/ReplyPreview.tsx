@@ -4,8 +4,8 @@ import { Message } from '@shared/types/message'
 /**
  * Превью ответа на сообщение — баннер над полем ввода в MessageComposer.
  *
- * Отображает текст цитируемого сообщения с визуальным акцентом
- * (фиолетовая полоска слева + подсветка фона) и кнопку отмены.
+ * Отображает имя автора цитируемого сообщения (если доступно) и его текст
+ * с визуальным акцентом (фиолетовая полоска слева + подсветка фона).
  * Используется при активации «Ответить» из контекстного меню сообщения.
  */
 interface ReplyPreviewProps {
@@ -15,10 +15,24 @@ interface ReplyPreviewProps {
     onCancel: () => void
 }
 
+/**
+ * Формирует отображаемое имя автора цитируемого сообщения.
+ *
+ * Используется для превью в зоне ввода — пользователь видит,
+ * на чьё сообщение он отвечает, перед отправкой.
+ */
+function getReplyAuthorLabel(message: Message): string {
+    return message.from_user
+        ? `Ответ на сообщение`
+        : 'Ответ на сообщение'
+}
+
 export default function ReplyPreview({
     message,
     onCancel,
 }: ReplyPreviewProps) {
+    const authorLabel = getReplyAuthorLabel(message)
+
     return (
         <div
             className={`
@@ -27,10 +41,13 @@ export default function ReplyPreview({
               bg-accent-violet-primary/10 px-4 py-2
             `}
         >
-            <div className="flex flex-col">
+            <div className="flex min-w-0 flex-col">
+                {/* Метка режима ответа — акцентный цвет для визуального выделения */}
                 <span className="text-xs font-medium text-accent-violet-primary">
-                    Ответ на сообщение
+                    {authorLabel}
                 </span>
+                {/* Текст цитируемого сообщения: одна строка с обрезкой,
+                    чтобы превью не занимало много места над полем ввода */}
                 <span className="line-clamp-1 text-sm text-text-gray">
                     {message.content}
                 </span>
@@ -40,7 +57,8 @@ export default function ReplyPreview({
                 type="button"
                 onClick={onCancel}
                 className={`
-                  cursor-pointer rounded-lg p-1 text-text-gray transition-colors
+                  shrink-0 cursor-pointer rounded-lg p-1 text-text-gray
+                  transition-colors
                   hover:bg-gray-main hover:text-text-black
                   focus-visible:outline-2
                   focus-visible:outline-accent-violet-primary
