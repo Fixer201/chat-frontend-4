@@ -9,6 +9,8 @@ import ReadIcon from '@public/images/messageStatus/read.svg'
 import { MessageContextMenu } from './MessageContextMenu'
 import DeleteMessageModal from './DeleteMessageModal'
 import CopyToast from './CopyToast'
+import ForwardedMessage from './ForwardedMessage'
+import RepliedMessage from './RepliedMessage'
 import Image from 'next/image'
 import {
     useCallback,
@@ -43,6 +45,7 @@ interface MessageItemProps {
     readonly onReply?: (message: Message) => void
     readonly onSelect?: (message: Message) => void
     readonly onForward?: (message: Message) => void
+    readonly onNavigateToMessage?: (uid: string) => void
     /** Режим множественного выбора: показывает чекбоксы, меняет поведение кликов */
     readonly isSelectionMode?: boolean
     readonly isSelected?: boolean
@@ -120,6 +123,7 @@ export default function MessageItem({
     onReply,
     onSelect,
     onForward,
+    onNavigateToMessage,
     isSelectionMode = false,
     isSelected = false,
     chatName,
@@ -352,11 +356,22 @@ export default function MessageItem({
                     {/* Пузырь сообщения: opacity снижается при удалении (optimistic feedback) */}
                     <div
                         ref={messageRef}
+                        data-message-bubble
                         onContextMenu={handleContextMenu}
                         aria-label={
-                            isOwn
-                                ? `Ваше сообщение: ${message.content}`
-                                : `Сообщение: ${message.content}`
+                            /**
+                             * Формируем aria-label с учётом типа сообщения:
+                             * - Обычное: «Ваше сообщение: текст» / «Сообщение: текст»
+                             * - Пересланное без текста: «Пересланное сообщение»
+                             */
+                            message.content
+                                ? isOwn
+                                    ? `Ваше сообщение: ${message.content}`
+                                    : `Сообщение: ${message.content}`
+                                : message.forwardedMessages
+                                        ?.length
+                                  ? 'Пересланное сообщение'
+                                  : 'Сообщение'
                         }
                         style={{
                             maxWidth:
@@ -379,69 +394,155 @@ export default function MessageItem({
                                 `,
                         )}
                     >
-                        <div className="flex items-end justify-between gap-2">
-                            {/* cursor-text на тексте — пользователь видит I-beam при наведении на текст */}
-                            <div
-                                className={`
-                                  cursor-text text-base font-normal
-                                  wrap-break-word whitespace-pre-wrap
-                                `}
-                            >
-                                {searchQuery ? (
-                                    <>
-                                        {/*
-                                            Подсветка совпадений поиска.
+                        {/*
+                            Контент пузыря сообщения.
 
-                                            highlightText() разбивает текст на сегменты:
-                                            - isMatch: true → совпадение с поисковым запросом
-                                            - isMatch: false → обычный текст
+                            Пересылка и текст пользователя — взаимоисключающие:
+                            - forwardedMessages → заголовок «Переслано от» + текст пересылки
+                            - repliedMessages → карточка-цитата + текст ответа
+                            - Обычное сообщение → только message.content
 
-                                            Vercel pattern: highlightText использует module-level cache,
-                                            поэтому useMemo здесь не нужен (избегаем двойной мемоизации).
-                                        */}
-                                        {highlightText(
-                                            message.content,
-                                            searchQuery,
-                                        ).map(
-                                            (
-                                                segment,
-                                                i,
-                                            ) => (
-                                                <span
-                                                    key={i}
-                                                    className={
-                                                        segment.isMatch
-                                                            ? `
-                                                              rounded-sm
-                                                              bg-system-blue/20
-                                                              font-semibold
-                                                              text-system-blue
-                                                            `
-                                                            : ''
-                                                    }
-                                                >
-                                                    {
-                                                        segment.text
-                                                    }
-                                                </span>
-                                            ),
-                                        )}
-                                    </>
-                                ) : (
-                                    message.content
+                            Ответ (reply) может сосуществовать с текстом пользователя:
+                            карточка-цитата сверху + текст ответа снизу.
+                        */}
+
+                        {/* Цитаты: ответы на другие сообщения.
+                            Карточка с фиолетовой полоской слева, имя автора + текст оригинала. */}
+                        {message.repliedMessages &&
+                        message.repliedMessages.length > 0
+                            ? message.repliedMessages.map(
+                                  (replied, idx) => (
+                                      <RepliedMessage
+                                          key={
+                                              replied.uid ??
+                                              `reply-${idx}`
+                                          }
+                                          repliedMessage={
+                                              replied
+                                          }
+                                          onNavigateToOriginal={
+                                              onNavigateToMessage
+                                          }
+                                      />
+                                  ),
+                              )
+                            : null}
+
+                        {message.forwardedMessages &&
+                        message.forwardedMessages.length >
+                            0 ? (
+                            <>
+                                {/*
+                                    Пересланное сообщение: заголовок + текст.
+                                    Заголовок: «Переслано от» + аватар + имя автора (фиолетовый).
+                                    Текст: полный контент пересланного сообщения (без обрезки).
+                                    message.content всегда пустой при наличии forwardedMessages.
+                                */}
+                                {message.forwardedMessages.map(
+                                    (forwarded, idx) => (
+                                        <ForwardedMessage
+                                            key={
+                                                forwarded.uid ??
+                                                `fwd-${idx}`
+                                            }
+                                            forwardedMessage={
+                                                forwarded
+                                            }
+                                        />
+                                    ),
                                 )}
-                                {message.updated_at &&
-                                    message.updated_at !==
-                                        message.created_at && (
-                                        <span
-                                            className={`
-                                              ml-1 text-xs text-text-gray
-                                            `}
-                                        >
-                                            (изменено)
-                                        </span>
+                                {/* Текст пересланного сообщения — основной контент пузыря */}
+                                {message.forwardedMessages.map(
+                                    (forwarded, idx) =>
+                                        forwarded.content ? (
+                                            <div
+                                                key={`fwd-text-${forwarded.uid ?? idx}`}
+                                                className={`
+                                                  cursor-text text-base
+                                                  font-normal wrap-break-word
+                                                  whitespace-pre-wrap
+                                                `}
+                                            >
+                                                {
+                                                    forwarded.content
+                                                }
+                                            </div>
+                                        ) : null,
+                                )}
+                            </>
+                        ) : null}
+
+                        <div className="flex items-end justify-between gap-2">
+                            {/*
+                                Текст сообщения пользователя.
+                                Рендерится только если есть content (не пустая строка).
+                                Для пересылок content всегда пустой — div не создаётся.
+                            */}
+                            {message.content ? (
+                                <div
+                                    className={`
+                                      cursor-text text-base font-normal
+                                      wrap-break-word whitespace-pre-wrap
+                                    `}
+                                >
+                                    {searchQuery ? (
+                                        <>
+                                            {/*
+                                                Подсветка совпадений поиска.
+
+                                                highlightText() разбивает текст на сегменты:
+                                                - isMatch: true → совпадение с поисковым запросом
+                                                - isMatch: false → обычный текст
+
+                                                Vercel pattern: highlightText использует module-level cache,
+                                                поэтому useMemo здесь не нужен (избегаем двойной мемоизации).
+                                            */}
+                                            {highlightText(
+                                                message.content,
+                                                searchQuery,
+                                            ).map(
+                                                (
+                                                    segment,
+                                                    i,
+                                                ) => (
+                                                    <span
+                                                        key={
+                                                            i
+                                                        }
+                                                        className={
+                                                            segment.isMatch
+                                                                ? `
+                                                                  rounded-sm
+                                                                  bg-system-blue/20
+                                                                  font-semibold
+                                                                  text-system-blue
+                                                                `
+                                                                : ''
+                                                        }
+                                                    >
+                                                        {
+                                                            segment.text
+                                                        }
+                                                    </span>
+                                                ),
+                                            )}
+                                        </>
+                                    ) : (
+                                        message.content
                                     )}
-                            </div>
+                                    {message.updated_at &&
+                                        message.updated_at !==
+                                            message.created_at && (
+                                            <span
+                                                className={`
+                                                  ml-1 text-xs text-text-gray
+                                                `}
+                                            >
+                                                (изменено)
+                                            </span>
+                                        )}
+                                </div>
+                            ) : null}
                             {message.created_at && (
                                 <div
                                     className={`

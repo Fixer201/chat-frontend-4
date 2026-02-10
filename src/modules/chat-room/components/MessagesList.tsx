@@ -3,7 +3,14 @@
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
-import { useEffect, useMemo } from 'react'
+import DateDivider from './DateDivider'
+import {
+    Fragment,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react'
 import { Message } from '@shared/types/message'
 
 /**
@@ -14,6 +21,10 @@ import { Message } from '@shared/types/message'
  * Каждое сообщение рендерится через MessageItem с поддержкой
  * контекстного меню, режима выбора и действий (ответ, пересылка, удаление).
  *
+ * Между группами сообщений разных дней вставляется DateDivider —
+ * горизонтальная линия с меткой даты («Сегодня», «15 января» и т.д.),
+ * позволяющая пользователю ориентироваться в хронологии переписки.
+ *
  * Семантика: section[role="log"] с aria-live="polite" для экранных читалок,
  * обновляющий контент без прерывания текущей озвучки.
  */
@@ -21,6 +32,36 @@ import { Message } from '@shared/types/message'
 // Временный флаг: показывать все сообщения без фильтрации по chatKey.
 // Используется на этапе разработки, пока не реализована полноценная логика контактов.
 const USE_MOCK = true // TODO: удалить после реализации контактов
+
+/**
+ * Проверяет, принадлежат ли два Unix-timestamp (в секундах) одному
+ * календарному дню в локальном часовом поясе пользователя.
+ *
+ * Используется в цикле рендеринга MessagesList для определения
+ * границ между днями: если текущее сообщение и предыдущее относятся
+ * к разным дням — перед текущим вставляется DateDivider.
+ *
+ * Сравнение ведётся по трём компонентам (год, месяц, день),
+ * а не через разницу в миллисекундах, чтобы корректно обрабатывать
+ * пограничные случаи (сообщения в 23:59 и 00:01 — разные дни).
+ *
+ * @param a — timestamp предыдущего сообщения (может быть undefined)
+ * @param b — timestamp текущего сообщения (может быть undefined)
+ * @returns true если оба timestamp определены и относятся к одному дню
+ */
+function isSameDay(
+    a: number | undefined,
+    b: number | undefined,
+): boolean {
+    if (!a || !b) return false
+    const da = new Date(a * 1000)
+    const db = new Date(b * 1000)
+    return (
+        da.getFullYear() === db.getFullYear() &&
+        da.getMonth() === db.getMonth() &&
+        da.getDate() === db.getDate()
+    )
+}
 
 export default function MessagesList({
     chatKey,
@@ -34,7 +75,6 @@ export default function MessagesList({
     searchQuery = '',
     currentMatchIndex,
     onSearchMatchesFound,
-    onSearchNavigate,
 }: Readonly<{
     chatKey: string
     onEditMessage?: (message: Message) => void
@@ -50,6 +90,58 @@ export default function MessagesList({
     onSearchNavigate?: (index: number) => void
 }>) {
     const { messages } = useWebSocket()
+
+    /** Ref на контейнер списка для поиска DOM-элементов сообщений по uid */
+    const listRef = useRef<HTMLUListElement>(null)
+
+    /**
+     * Прокрутка к сообщению по uid с подсветкой.
+     *
+     * Используется при клике по карточке цитаты (RepliedMessage):
+     * находим li[data-message-uid] в DOM, прокручиваем к нему
+     * и добавляем кратковременную подсветку для визуального акцента.
+     *
+     * Vercel pattern (rerender-functional-setstate):
+     * useCallback без зависимостей — стабильная ссылка, не вызывает
+     * ререндер дочерних компонентов при передаче через props.
+     */
+    const handleNavigateToMessage = useCallback(
+        (uid: string) => {
+            if (!listRef.current) return
+
+            const target = listRef.current.querySelector(
+                `[data-message-uid="${CSS.escape(uid)}"]`,
+            )
+            if (!target) return
+
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            })
+
+            // Кратковременная подсветка целевого сообщения
+            const bubble = target.querySelector(
+                '[data-message-bubble]',
+            )
+            if (bubble) {
+                bubble.classList.add(
+                    'ring-2',
+                    'ring-system-blue',
+                    'shadow-lg',
+                    'shadow-system-blue/25',
+                )
+                setTimeout(() => {
+                    bubble.classList.remove(
+                        'ring-2',
+                        'ring-system-blue',
+                        'shadow-lg',
+                        'shadow-system-blue/25',
+                    )
+                }, 1500)
+            }
+        },
+        [],
+    )
 
     // Фильтрация сообщений по chatKey текущего чата.
     // В режиме USE_MOCK отключена — все сообщения отображаются для отладки.
@@ -148,7 +240,10 @@ export default function MessagesList({
                     </p>
                 </div>
             ) : (
-                <ul className="flex flex-col gap-2 p-4">
+                <ul
+                    ref={listRef}
+                    className="flex flex-col gap-2 p-4"
+                >
                     {chatMessages.map((message, index) => {
                         const matchIndex =
                             matchingMessageIndices.indexOf(
@@ -159,37 +254,84 @@ export default function MessagesList({
                             currentMatchIndex !== null &&
                             matchIndex === currentMatchIndex
 
+                        /**
+                         * Логика вставки DateDivider между группами сообщений разных дней.
+                         *
+                         * Разделитель показывается, когда:
+                         * 1. У сообщения есть created_at (без даты разделитель бессмысленен)
+                         * 2. Это первое сообщение в списке (index === 0) — всегда
+                         *    показываем дату начала переписки
+                         * 3. Или дата текущего сообщения отличается от даты предыдущего —
+                         *    началась новая календарная дата, нужен визуальный разделитель
+                         *
+                         * Проверка выполняется за O(1) — сравниваются только два соседних
+                         * сообщения, без предварительного группирования всего массива.
+                         */
+                        const showDivider =
+                            !!message.created_at &&
+                            (index === 0 ||
+                                !isSameDay(
+                                    chatMessages[index - 1]
+                                        .created_at,
+                                    message.created_at,
+                                ))
+
                         return (
-                            <li key={message.uid}>
-                                <MessageItem
-                                    message={message}
-                                    onEdit={onEditMessage}
-                                    onReply={onReplyMessage}
-                                    onSelect={
-                                        onSelectMessage
+                            /*
+                             * Fragment необходим для рендеринга двух элементов
+                             * (DateDivider + li) под одним key без лишнего DOM-узла.
+                             * key на Fragment наследуется от message.uid.
+                             */
+                            <Fragment key={message.uid}>
+                                {showDivider && (
+                                    <DateDivider
+                                        timestampSec={
+                                            message.created_at!
+                                        }
+                                    />
+                                )}
+                                <li
+                                    data-message-uid={
+                                        message.uid
                                     }
-                                    onForward={
-                                        onForwardMessage
-                                    }
-                                    isSelectionMode={
-                                        isSelectionMode
-                                    }
-                                    isSelected={selectedMessages?.some(
-                                        (m) =>
-                                            m.uid ===
-                                            message.uid,
-                                    )}
-                                    chatName={chatName}
-                                    searchQuery={
-                                        isMatch
-                                            ? searchQuery
-                                            : ''
-                                    }
-                                    isCurrentMatch={
-                                        isCurrentMatch
-                                    }
-                                />
-                            </li>
+                                >
+                                    <MessageItem
+                                        message={message}
+                                        onEdit={
+                                            onEditMessage
+                                        }
+                                        onReply={
+                                            onReplyMessage
+                                        }
+                                        onSelect={
+                                            onSelectMessage
+                                        }
+                                        onForward={
+                                            onForwardMessage
+                                        }
+                                        onNavigateToMessage={
+                                            handleNavigateToMessage
+                                        }
+                                        isSelectionMode={
+                                            isSelectionMode
+                                        }
+                                        isSelected={selectedMessages?.some(
+                                            (m) =>
+                                                m.uid ===
+                                                message.uid,
+                                        )}
+                                        chatName={chatName}
+                                        searchQuery={
+                                            isMatch
+                                                ? searchQuery
+                                                : ''
+                                        }
+                                        isCurrentMatch={
+                                            isCurrentMatch
+                                        }
+                                    />
+                                </li>
+                            </Fragment>
                         )
                     })}
                 </ul>

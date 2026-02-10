@@ -1,14 +1,11 @@
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import Image from 'next/image'
-import Cookies from 'js-cookie'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import Modal from '@shared/ui/modal/Modal'
 
 export function AppHeader() {
-    const router = useRouter()
     const [isThanksModalOpen, setIsThanksModalOpen] =
         useState(false)
 
@@ -18,12 +15,6 @@ export function AppHeader() {
 
     const handleCloseThanksModal = () => {
         setIsThanksModalOpen(false)
-    }
-
-    const handleLogout = () => {
-        Cookies.remove('access_token')
-        Cookies.remove('refresh_token')
-        router.push('/auth/register')
     }
 
     return (

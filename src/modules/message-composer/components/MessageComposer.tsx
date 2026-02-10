@@ -163,10 +163,22 @@ export default function MessageComposer({
             )
             onCancelEdit?.()
         } else {
-            // Режим создания или ответа: отправляем новое сообщение через WebSocket
-            // с указанием ключа чата и идентификатора получателя
-            const repliedMessages = replyingMessage?.uid
-                ? [{ content: replyingMessage.content }]
+            /**
+             * Режим создания или ответа: отправляем новое сообщение через WebSocket.
+             *
+             * При наличии replyingMessage формируем объект RepliedMessage
+             * с метаданными автора (from_user), чтобы компонент RepliedMessage
+             * корректно отобразил имя автора цитируемого сообщения.
+             */
+            const repliedMessages = replyingMessage
+                ? [
+                      {
+                          uid: replyingMessage.uid,
+                          content: replyingMessage.content,
+                          from_user:
+                              replyingMessage.from_user,
+                      },
+                  ]
                 : undefined
 
             sendMessage({
@@ -176,7 +188,6 @@ export default function MessageComposer({
                 status: 'publish',
                 repliedMessages,
             })
-            console.log('Отправка сообщения:', inputValue)
 
             // Если был режим ответа, уведомляем родителя о завершении
             if (replyingMessage) {
