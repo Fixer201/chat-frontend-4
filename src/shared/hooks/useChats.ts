@@ -38,9 +38,10 @@ export const useChats = () => {
     } = useAppSelector((state) => state.chats)
 
     // Загрузка списка чатов
+
     const loadChats = useCallback(
-        (count: number = 20) => {
-            dispatch(fetchChats(count))
+        (search: string = '', count: number = 20) => {
+            dispatch(fetchChats({ search, count }))
         },
         [dispatch],
     )

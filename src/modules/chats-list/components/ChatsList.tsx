@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // ChatsList.tsx
 'use client'
 import {
@@ -19,7 +20,8 @@ import { useRouter } from 'next/navigation'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
-import { Contact } from '@shared/types/contact'
+// import { Contact } from '@shared/types/contact'
+import { toast } from 'react-hot-toast'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
@@ -50,6 +52,7 @@ export default function ChatsList({
     const {
         chats,
         loading,
+        error,
         loadChats,
         chatSettings,
         toggleFavorite: handleFavoriteChat,
@@ -131,9 +134,7 @@ export default function ChatsList({
     // Подтверждение удаления чата
     const handleDeleteConfirm = useCallback(async () => {
         if (!chatToDelete || isDeleting) return
-
         setIsDeleting(true)
-
         try {
             // Имитация задержки для UX
             await new Promise<void>((resolve) =>
@@ -198,6 +199,11 @@ export default function ChatsList({
         )
     }, [loading, chats, searchValue])
 
+    // Загрузка чатов при монтировании и изменении поиска
+    useEffect(() => {
+        loadChats(searchValue, 20) // Загружаем с поиском
+    }, [loadChats, searchValue])
+
     return (
         <>
             <div className="flex h-(--screen-height-list) min-h-0 flex-col">
@@ -236,6 +242,36 @@ export default function ChatsList({
                                 Загрузка...
                             </div>
                         </div>
+                    ) : error ? ( // Обработка ошибки в render
+                        (() => {
+                            if (
+                                error.includes(
+                                    'RefreshTokenExpired',
+                                ) ||
+                                error.includes(
+                                    'AccessTokenNotFound',
+                                )
+                            ) {
+                                router.push('/auth/login') // Редирект на логин
+                            } else if (
+                                error.includes('414')
+                            ) {
+                                toast.error(
+                                    'Поисковый запрос слишком длинный. Укоротите его.',
+                                )
+                            } else {
+                                toast.error(error)
+                            }
+                            return (
+                                <div
+                                    className={`
+                                      flex h-full items-center justify-center
+                                    `}
+                                >
+                                    Ошибка загрузки чатов
+                                </div>
+                            )
+                        })()
                     ) : showEmptySearchState ? (
                         <div
                             className={`
@@ -316,7 +352,6 @@ export default function ChatsList({
                                                 .avatar ||
                                             '/images/chatHeader/userAvatar.svg'
 
-                                        // Формирование превью сообщения в зависимости от типа чата
                                         // Формирование превью сообщения в зависимости от типа чата
                                         let messagePreview =
                                             ''

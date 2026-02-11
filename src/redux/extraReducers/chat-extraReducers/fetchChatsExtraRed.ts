@@ -35,28 +35,97 @@ const createChatSettings = (apiChatItem: ApiChatItem) => ({
     originalUnreadCount: apiChatItem.new_message_count || 0,
 })
 
-// Асинхронный thunk для загрузки чатов с сервера
+// Асинхронный thunk для загрузки чатов с сервера (обновлён для поиска и ошибок)
 export const fetchChats = createAsyncThunk(
     'chats/fetchChats',
-    async (count: number = 15, { rejectWithValue }) => {
+    async (
+        {
+            search = '',
+            count = 15,
+        }: { search?: string; count?: number },
+        { rejectWithValue },
+    ) => {
         try {
             const accessToken = Cookies.get('access_token')
             if (!accessToken) {
                 throw new Error('AccessTokenNotFound')
             }
 
-            const response = await fetch(
-                `https://api.test.chat.ktsf.ru/api/v1/chat/list/?page_size=${count}`, // Реальный endpoint с параметром page_size
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                },
+            const url = new URL(
+                'https://api.test.chat.ktsf.ru/api/v1/chat/list/',
             )
+            if (search)
+                url.searchParams.append('search', search)
+            url.searchParams.append(
+                'limit',
+                count.toString(),
+            ) // Используем limit вместо page_size
+
+            let response = await fetch(url.toString(), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            })
+
+            if (response.status === 401) {
+                // Попытка refresh token
+                const refreshToken =
+                    Cookies.get('refresh_token')
+                if (refreshToken) {
+                    const refreshResponse = await fetch(
+                        '/api/auth/refresh',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                            body: JSON.stringify({
+                                refresh: refreshToken,
+                            }),
+                        },
+                    )
+                    if (refreshResponse.ok) {
+                        const data =
+                            await refreshResponse.json()
+                        Cookies.set(
+                            'access_token',
+                            data.access,
+                            { expires: 7 },
+                        )
+                        // Повторный запрос с новым токеном
+                        response = await fetch(
+                            url.toString(),
+                            {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type':
+                                        'application/json',
+                                    Authorization: `Bearer ${data.access}`,
+                                },
+                            },
+                        )
+                    } else {
+                        throw new Error(
+                            'RefreshTokenExpired',
+                        )
+                    }
+                } else {
+                    throw new Error('RefreshTokenNotFound')
+                }
+            }
+
             if (!response.ok) {
-                throw new Error('Failed to fetch chats')
+                if (response.status === 414) {
+                    throw new Error(
+                        'Размер query-параметра превышает установленный лимит.',
+                    )
+                }
+                throw new Error(
+                    `Ошибка API: ${response.status} ${response.statusText}`,
+                )
             }
 
             const data: { results: ApiChatItem[] } =
@@ -74,7 +143,6 @@ export const fetchChats = createAsyncThunk(
                 (item) => {
                     const transformedItem =
                         transformFromApi<ApiChatItem>(item)
-
                     return {
                         ...transformedItem,
                         settings: createChatSettings(item),
@@ -93,7 +161,7 @@ export const fetchChats = createAsyncThunk(
     },
 )
 
-// Обработчики состояний для thunk'а загрузки чатов
+// Обработчики состояний для thunk'а загрузки чатов (без изменений)
 export const handleFetchChats = (
     builder: ActionReducerMapBuilder<ChatsState>,
     initialState: ChatsState,

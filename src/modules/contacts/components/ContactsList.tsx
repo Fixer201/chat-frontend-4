@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // src/modules/contacts/components/ContactsList.tsx
 'use client'
 import { useDispatch, useSelector } from 'react-redux'
@@ -35,7 +36,11 @@ import { Spinner } from '@shared/ui/Spinner'
 import { useRouter } from 'next/navigation'
 import { UnauthorizedView } from '@modules/core/components/UnauthorizedView'
 
-export default memo(function ContactsList() {
+export default memo(function ContactsList({
+    onContactSelect,
+}: {
+    onContactSelect: (uid: string) => void
+}) {
     const [searchValue, setSearchValue] = useState('')
     const [deleteMode, setDeleteMode] = useState(false)
     const [selectedContacts, setSelectedContacts] =
@@ -99,6 +104,7 @@ export default memo(function ContactsList() {
             const mappedContacts: Contact[] =
                 contactsData.map((item: ApiContact) => ({
                     uid: item.uid,
+                    userUid: item.system_contact.uid,
                     username: '',
                     nickname: '',
                     phone: item.phone,
@@ -175,6 +181,7 @@ export default memo(function ContactsList() {
                             isPhone(searchValue)
                         return {
                             uid: item.uid,
+                            userUid: item.uid,
                             username: '',
                             nickname: isSearchPhone
                                 ? ''
@@ -336,9 +343,12 @@ export default memo(function ContactsList() {
                 )
 
             // маппим ответ API в Contact и добавляем в Redux моментально
+            // newContact.uid = response.uid (ID пользователя, используем как ID записи контакта для консистентности)
+            // newContact.userUid = response.uid (ID пользователя для чата)
 
             const newContact: Contact = {
                 uid: response.uid,
+                userUid: response.uid,
                 username: '',
                 nickname: '',
                 phone: response.phone,
@@ -356,6 +366,7 @@ export default memo(function ContactsList() {
                 wasOnlineAt: response.was_online_at,
             }
             dispatch(addContacts(newContact)) // Моментальное обновление Redux
+            await loadContacts() // Перезагрузить список контактов для получения правильного uid
             toast.success('Контакт добавлен')
             setDropdownOpen(false)
             setSelectedUserForAdd(null)
@@ -408,9 +419,17 @@ export default memo(function ContactsList() {
     }
 
     // Функция для обработки клика на контакт (с редиректом)
-    const handleContactClick = (uid: string) => {
-        dispatch(setSelectedContact(uid))
-        router.push(`/chats?contactId=${uid}`)
+    // const handleContactClick = (uid: string) => {
+    //     dispatch(setSelectedContact(uid))
+    //     router.push(`/chats?contactId=${uid}`)
+    // }
+    // const handleContactClick = (uid: string) => {
+    //     dispatch(setSelectedContact(uid))  // Оставьте для выделения в списке
+    //     onContactSelect(uid)  // Новый вызов для открытия чата
+    // }
+    const handleContactClick = (contact: Contact) => {
+        dispatch(setSelectedContact(contact.uid))
+        onContactSelect(contact.userUid)
     }
 
     // Функция для открытия контекстного меню
@@ -495,9 +514,13 @@ export default memo(function ContactsList() {
                                                     searchValue={
                                                         searchValue
                                                     }
-                                                    onSelectContact={() => {}}
-                                                    onSetSelectedContact={
-                                                        handleContactClick
+                                                    onSelectContact={
+                                                        handleSelectContact
+                                                    }
+                                                    onSetSelectedContact={() =>
+                                                        handleContactClick(
+                                                            contact,
+                                                        )
                                                     }
                                                 />
                                             ),
@@ -538,9 +561,13 @@ export default memo(function ContactsList() {
                                                     searchValue={
                                                         searchValue
                                                     }
-                                                    onSelectContact={() => {}}
-                                                    onSetSelectedContact={
-                                                        handleContactClick
+                                                    onSelectContact={
+                                                        handleSelectContact
+                                                    }
+                                                    onSetSelectedContact={() =>
+                                                        handleContactClick(
+                                                            user,
+                                                        )
                                                     }
                                                     onContextMenu={(
                                                         e,
@@ -707,8 +734,10 @@ export default memo(function ContactsList() {
                                                 onSelectContact={
                                                     handleSelectContact
                                                 }
-                                                onSetSelectedContact={
-                                                    handleContactClick
+                                                onSetSelectedContact={() =>
+                                                    handleContactClick(
+                                                        contact,
+                                                    )
                                                 }
                                             />
                                         ),

@@ -1,5 +1,6 @@
 export interface Contact {
     uid: string
+    userUid: string
     username?: string | ''
     nickname?: string | ''
     phone?: string
