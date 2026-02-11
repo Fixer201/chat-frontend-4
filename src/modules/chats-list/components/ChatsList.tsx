@@ -1,7 +1,6 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // ChatsList.tsx
 'use client'
-import {
+import React, {
     useCallback,
     useEffect,
     useMemo,
@@ -22,13 +21,14 @@ import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
 // import { Contact } from '@shared/types/contact'
 import { toast } from 'react-hot-toast'
+import { useDebounce } from '@shared/hooks/useDebounce'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
 }
 
-export default function ChatsList({
+export default React.memo(function ChatsList({
     onCreateGroup,
     onCreateChannel,
 }: ChatsListProps) {
@@ -103,6 +103,10 @@ export default function ChatsList({
     // Сортировка чатов: избранные в начале списка
     const sortedChats = [...(filteredValue || [])].sort(
         (a, b) => {
+            // Выбранный чат всегда первый
+            if (a.id === selectedChatId) return -1
+            if (b.id === selectedChatId) return 1
+            // Затем избранные
             const aIsFavorite =
                 chatSettings[a.id]?.isFavorite || false
             const bIsFavorite =
@@ -199,10 +203,21 @@ export default function ChatsList({
         )
     }, [loading, chats, searchValue])
 
-    // Загрузка чатов при монтировании и изменении поиска
-    useEffect(() => {
-        loadChats(searchValue, 20) // Загружаем с поиском
-    }, [loadChats, searchValue])
+    // Дебаунс для поиска (если хук useDebounce доступен)
+    const debouncedSearchValue = useDebounce(
+        searchValue,
+        300,
+    ) // Задержка 300ms;
+
+    // Загрузка чатов при монтировании и изменении поиска (только если поиск не пустой)
+    // useEffect(() => {
+    //     if (
+    //         debouncedSearchValue.trim() ||
+    //         debouncedSearchValue === ''
+    //     ) {
+    //         loadChats(debouncedSearchValue, 20)
+    //     }
+    // }, [loadChats, debouncedSearchValue])
 
     return (
         <>
@@ -431,7 +446,9 @@ export default function ChatsList({
                                                     avatarSrc
                                                 }
                                                 name={
-                                                    chat.name
+                                                    chat.name ||
+                                                    `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
+                                                    'Неизвестный чат'
                                                 }
                                                 messagePreview={
                                                     messagePreview
@@ -549,4 +566,4 @@ export default function ChatsList({
             />
         </>
     )
-}
+})

@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // src/modules/contacts/components/ContactsList.tsx
 'use client'
 import { useDispatch, useSelector } from 'react-redux'
@@ -429,6 +428,7 @@ export default memo(function ContactsList({
     // }
     const handleContactClick = (contact: Contact) => {
         dispatch(setSelectedContact(contact.uid))
+        //    router.push(`/chats?contactId=${contact.userUid}`)
         onContactSelect(contact.userUid)
     }
 

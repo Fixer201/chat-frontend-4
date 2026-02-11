@@ -26,7 +26,7 @@ export interface Contact {
 // Тип для данных контакта из API /api/v1/contact/{user_uid}/ (snake_case)
 export interface ContactData {
     uid: string
-    // userUid: string
+    userUid: string
     username: string
     nickname: string
     first_name: string

@@ -36,6 +36,7 @@ export const MessageStatusIcon = ({
             alt={config.alt}
             width={config.size}
             height={config.size}
+            style={{ height: 'auto' }}
             className={cn(
                 selected
                     ? 'brightness-0 invert'

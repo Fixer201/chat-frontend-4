@@ -136,7 +136,7 @@ export const ChatAvatar = forwardRef<
                                         : 'text-text-black', // Черный текст по умолчанию
                                 )}
                             >
-                                {name}
+                                {name || 'Без имени'}
                             </p>
                             {/* Иконка отключенных уведомлений */}
                             {/* Показывается только если notificationsEnabled === false */}

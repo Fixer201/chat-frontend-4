@@ -15,11 +15,11 @@ export const getContactWebStatus = (
     isOnline: boolean,
     wasOnlineAt: string | number | Date | null,
 ): string => {
-    console.log('getContactWebStatus input:', {
-        isOnline,
-        wasOnlineAt,
-        typeof: typeof wasOnlineAt,
-    })
+    // console.log('getContactWebStatus input:', {
+    //     isOnline,
+    //     wasOnlineAt,
+    //     typeof: typeof wasOnlineAt,
+    // })
 
     // Если онлайн, статус "в сети"
     if (isOnline) {
@@ -28,7 +28,7 @@ export const getContactWebStatus = (
 
     // Если wasOnlineAt некорректен или null (нет данных), считаем "только что"
     if (!wasOnlineAt) {
-        console.log('возвращает был только что')
+        // console.log('возвращает был только что')
         return STATUS_TEXTS.justNow
     }
 
@@ -67,12 +67,12 @@ export const getContactWebStatus = (
     const diffMs = now.getTime() - lastOnlineDate.getTime()
     const diffMinutes = diffMs / (1000 * 60)
 
-    console.log(
-        'diffMinutes:',
-        diffMinutes,
-        'lastOnlineDate:',
-        lastOnlineDate,
-    )
+    // console.log(
+    //     'diffMinutes:',
+    //     diffMinutes,
+    //     'lastOnlineDate:',
+    //     lastOnlineDate,
+    // )
 
     // Если дата в будущем (diffMinutes < 0), показать дату (как для старых дат)
     if (diffMinutes < 0) {
