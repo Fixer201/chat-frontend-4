@@ -114,12 +114,12 @@ export default memo(function ContactsList() {
 
                         return {
                             // uid — локальный идентификатор контакта,
-                            // userUid — идентификатор пользователя для блокировки.
-                            // Если owner_user отсутствует, используем uid системного контакта.
+                            // userUid — идентификатор пользователя (контакта).
+                            // Для чатов используем uid системного контакта, а owner_user — это текущий пользователь.
                             uid: item.uid,
                             userUid:
-                                item.owner_user ??
                                 systemContact?.uid ??
+                                item.owner_user ??
                                 item.uid,
                             username: '',
                             nickname: item.nickname ?? '',
@@ -331,7 +331,14 @@ export default memo(function ContactsList() {
     // Функция подтверждения удаления
     const handleConfirmDelete = () => {
         try {
+            console.info('[Contacts][Delete] confirm', {
+                selectedContacts,
+                selectedCount: selectedContacts.length,
+            })
             dispatch(removeContacts(selectedContacts))
+            console.info('[Contacts][Delete] dispatched', {
+                selectedContacts,
+            })
             setSelectedContacts([])
             setDeleteMode(false)
             setIsModalOpen(false)
@@ -452,6 +459,14 @@ export default memo(function ContactsList() {
     const handleCancelBlock = () => {
         setBlockModalOpen(false) // Для теста чёрного списка
         setContactToBlock(null) // Для теста чёрного списка
+    }
+
+    const handleOpenChat = (contact: Contact) => {
+        const contactId = contact.userUid ?? contact.uid
+        dispatch(setSelectedContact(contact.uid))
+        router.push(
+            `/chats?contactId=${encodeURIComponent(contactId)}`,
+        )
     }
 
     if (loading) {
@@ -579,14 +594,8 @@ export default memo(function ContactsList() {
                                 onSelectContact={
                                     handleSelectContact
                                 }
-                                onSetSelectedContact={(
-                                    uid: string,
-                                ) =>
-                                    dispatch(
-                                        setSelectedContact(
-                                            uid,
-                                        ),
-                                    )
+                                onSetSelectedContact={() =>
+                                    handleOpenChat(contact)
                                 }
                                 onBlock={() =>
                                     handleOpenBlock(
@@ -695,13 +704,9 @@ export default memo(function ContactsList() {
                                                 searchValue
                                             }
                                             onSelectContact={() => {}}
-                                            onSetSelectedContact={(
-                                                uid: string,
-                                            ) =>
-                                                dispatch(
-                                                    setSelectedContact(
-                                                        uid,
-                                                    ),
+                                            onSetSelectedContact={() =>
+                                                handleOpenChat(
+                                                    user,
                                                 )
                                             }
                                             onBlock={() =>

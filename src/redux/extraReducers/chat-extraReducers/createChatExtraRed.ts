@@ -12,6 +12,7 @@ import {
 import { Contact } from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
+import { RootState } from '@redux/store'
 
 // Типы для payload при создании группы и канала
 interface CreateGroupPayload {
@@ -40,6 +41,32 @@ interface ChatWithSettings {
 interface Participant {
     uid: string
     full_name: string
+}
+
+const LOCAL_CHATS_STORAGE_KEY = 'localChats'
+const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
+
+const persistLocalChats = (state: ChatsState) => {
+    if (typeof window === 'undefined') return
+    try {
+        const localChats = state.items
+            .filter(
+                (chat) => chat.id > LOCAL_CHAT_ID_THRESHOLD,
+            )
+            .map((chat) => ({
+                ...chat,
+                settings: state.chatSettings[chat.id],
+            }))
+        window.localStorage.setItem(
+            LOCAL_CHATS_STORAGE_KEY,
+            JSON.stringify(localChats),
+        )
+    } catch (error) {
+        console.warn(
+            'Не удалось сохранить localChats:',
+            error,
+        )
+    }
 }
 
 // Преобразование объекта Contact в Participant для API
@@ -326,11 +353,40 @@ export const createGroup = createAsyncThunk<
 export const createChat = createAsyncThunk<
     ChatWithSettings,
     string,
-    { rejectValue: string }
+    { rejectValue: string; state: RootState }
 >(
     'chats/createChat',
-    async (toUserId, { rejectWithValue }) => {
+    async (toUserId, { rejectWithValue, getState }) => {
         try {
+            const state = getState()
+            const existingChat = state.chats.items.find(
+                (chat: ChatItem) =>
+                    chat.chat.uid === toUserId ||
+                    chat.tempContactUid === toUserId,
+            )
+
+            if (existingChat) {
+                return {
+                    chat: existingChat,
+                    settings: state.chats.chatSettings[
+                        existingChat.id
+                    ] || {
+                        isFavorite:
+                            existingChat.isFavorite ||
+                            false,
+                        isChatRead:
+                            existingChat.newMessageCount ===
+                            0,
+                        notificationsEnabled:
+                            existingChat.notifications ??
+                            true,
+                        isDeleted: false,
+                        originalUnreadCount:
+                            existingChat.newMessageCount ||
+                            0,
+                    },
+                }
+            }
             // Создаем локальный моковый чат для личного общения
             const mockChatData = createMockChatFromResponse(
                 'Личный чат', // Имя чата
@@ -347,6 +403,8 @@ export const createChat = createAsyncThunk<
             // Адаптация для личного чата: установите chat.chat.uid = toUserId (UID собеседника)
             const enhancedChat: ChatItem = {
                 ...transformedData,
+                isTemporary: true,
+                tempContactUid: toUserId,
                 chat: {
                     ...transformedData.chat,
                     uid: toUserId, // UID пользователя
@@ -585,6 +643,8 @@ export const handleCreateChat = (
             }
 
             state.selectedChatId = action.payload.chat.id
+
+            persistLocalChats(state)
         })
         .addCase(createChat.rejected, (state, action) => {
             state.loading = false

@@ -40,6 +40,8 @@ export interface Participant {
 // Полный UI тип для чатов с API полями
 export interface ChatItem {
     id: number
+    isTemporary?: boolean
+    tempContactUid?: string
     chat: {
         uid: string
         username: string

@@ -65,6 +65,9 @@ function isSameDay(
 
 export default function MessagesList({
     chatKey,
+    apiMessages = [],
+    contactUid,
+    isTemporary = false,
     onEditMessage,
     onReplyMessage,
     onSelectMessage,
@@ -76,10 +79,11 @@ export default function MessagesList({
     searchQuery = '',
     currentMatchIndex,
     onSearchMatchesFound,
-
 }: Readonly<{
     chatKey: string
     apiMessages?: Message[]
+    contactUid?: string
+    isTemporary?: boolean
     onEditMessage?: (message: Message) => void
     onReplyMessage?: (message: Message) => void
     onSelectMessage?: (message: Message) => void
@@ -163,13 +167,27 @@ export default function MessagesList({
     }, [apiMessages, wsMessages])
 
     // Фильтрация по chatKey (уберите USE_MOCK после тестирования)
-    const chatMessages = useMemo(
-        () =>
-            allMessages.filter(
-                (msg) => msg.chatKey === chatKey,
-            ),
-        [allMessages, chatKey],
-    )
+    const chatMessages = useMemo(() => {
+        const filtered = allMessages.filter((msg) => {
+            if (msg.chatKey === chatKey) return true
+            if (!isTemporary || !contactUid) return false
+
+            return (
+                msg.toUserId === contactUid ||
+                msg.from_user === contactUid
+            )
+        })
+
+        console.debug('[MessagesList] filter', {
+            chatKey,
+            isTemporary,
+            contactUid,
+            total: allMessages.length,
+            filtered: filtered.length,
+        })
+
+        return filtered
+    }, [allMessages, chatKey, isTemporary, contactUid])
 
     // --- Логика поиска по сообщениям ---
 

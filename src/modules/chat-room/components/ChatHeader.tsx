@@ -10,6 +10,8 @@ import {
     useContactData,
     Contact,
 } from '@shared/hooks/useContactData'
+import { useSelector } from 'react-redux'
+import { RootState } from '@redux/store'
 
 /**
  * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
@@ -53,10 +55,19 @@ export default function ChatHeader({
         loading,
         error,
     } = useContactData(shouldLoadData ? chat.chat.uid : '')
+    const contactsList = useSelector(
+        (state: RootState) => state.contacts.list,
+    )
+    const contactMatch = contactsList.find(
+        (contact) =>
+            contact.userUid === chat.chat.uid ||
+            contact.uid === chat.chat.uid,
+    )
 
     // Используем данные из API или fallback на chat.chat (с добавлением userUid)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const currentContact: Contact =
+        contactMatch ||
         contactData ||
         ({
             ...chat.chat,
@@ -154,8 +165,11 @@ export default function ChatHeader({
                     <div className="flex min-w-0 flex-col">
                         {/* Имя: используем currentContact */}
                         <h2 className="truncate font-semibold">
-                            {currentContact.firstName}{' '}
-                            {currentContact.lastName}
+                            {`${currentContact.firstName || ''} ${currentContact.lastName || ''}`.trim() ||
+                                currentContact.nickname ||
+                                currentContact.phone ||
+                                currentContact.username ||
+                                'Контакт'}
                         </h2>
                         <p className="text-sm text-text-gray">
                             {loading
