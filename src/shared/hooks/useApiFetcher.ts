@@ -133,6 +133,44 @@ export const useApiFetcher = () => {
             }
 
             if (!response.ok) {
+                let errorBody = ''
+                try {
+                    errorBody = await response
+                        .clone()
+                        .text()
+                } catch (readError) {
+                    console.warn(
+                        'Не удалось прочитать тело ошибки API:',
+                        readError,
+                    )
+                }
+
+                const sanitizedHeaders = Object.keys(
+                    headers ?? {},
+                ).reduce<Record<string, string>>(
+                    (acc, key) => {
+                        if (
+                            key.toLowerCase() ===
+                            'authorization'
+                        ) {
+                            return acc
+                        }
+                        acc[key] = headers[key]
+                        return acc
+                    },
+                    {},
+                )
+
+                console.error('Ошибка API (подробно):', {
+                    url,
+                    method: options.method ?? 'GET',
+                    status: response.status,
+                    statusText: response.statusText,
+                    requestHeaders: sanitizedHeaders,
+                    requestBody: options.body ?? null,
+                    responseBody: errorBody || null,
+                })
+
                 return Promise.reject(
                     new Error(
                         `Ошибка API: ${response.status} ${response.statusText}`,
@@ -140,7 +178,24 @@ export const useApiFetcher = () => {
                 )
             }
 
-            return await response.json()
+            if (response.status === 204) {
+                return null
+            }
+
+            const responseText = await response.text()
+            if (!responseText) {
+                return null
+            }
+
+            try {
+                return JSON.parse(responseText)
+            } catch (parseError) {
+                console.warn(
+                    'Ответ API не является JSON:',
+                    parseError,
+                )
+                return responseText
+            }
         },
         [refreshAccessToken],
     )

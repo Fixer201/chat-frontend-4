@@ -1,25 +1,25 @@
 'use client'
-import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
-import { setSelectedContact } from '@redux/slices/selectedContactSlice'
-import { RootState } from '@redux/store'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState, memo } from 'react'
-import { useSearch } from '@shared/hooks/useSearch'
-import Modal from '@shared/ui/modal/Modal'
-
+import { useDispatch, useSelector } from 'react-redux'
+import BlockModal from '@modules/chats-list/components/BlockModal'
 import {
     removeContacts,
     setContacts,
 } from '@redux/slices/contactsSlice'
-import { getContactWord } from '@shared/lib/getContactWord'
-import { ContactItem } from './ContactItem'
-import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
-import Search from '@shared/ui/Search'
-import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import { ApiContact, Contact } from '@shared/types/contact'
+import { setSelectedContact } from '@redux/slices/selectedContactSlice'
+import { RootState } from '@redux/store'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
+import { useSearch } from '@shared/hooks/useSearch'
+import { getContactWord } from '@shared/lib/getContactWord'
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
+import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
+import Modal from '@shared/ui/modal/Modal'
+import Search from '@shared/ui/Search'
 import { Spinner } from '@shared/ui/Spinner'
-import { useRouter } from 'next/navigation'
+import { ApiContact, Contact } from '@shared/types/contact'
+import { ContactItem } from './ContactItem'
 
 export default memo(function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
@@ -29,6 +29,16 @@ export default memo(function ContactsList() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<Contact[]>([])
+    // Состояние модалки блокировки и выбранного контакта.
+    // Best practice: храним минимум данных, чтобы исключить рассинхрон UI/данных.
+    const [blockModalOpen, setBlockModalOpen] =
+        useState(false) // Для теста чёрного списка
+    const [contactToBlock, setContactToBlock] = useState<{
+        uid: string
+        name: string
+        phone?: string
+        nickname?: string
+    } | null>(null) // Для теста чёрного списка
     const dispatch = useDispatch()
     const router = useRouter()
     const selectedUid = useSelector(
@@ -76,11 +86,12 @@ export default memo(function ContactsList() {
                 )
                 const contactsData: ApiContact[] =
                     data.results || []
-                console.log('Ответ API:', contactsData)
                 const mappedContacts: Contact[] =
                     contactsData.map(
                         (item: ApiContact) => ({
-                            uid: item.uid,
+                            uid: item.user_uid ?? item.uid,
+                            userUid:
+                                item.user_uid ?? item.uid,
                             username: '',
                             nickname: '',
                             phone: item.phone,
@@ -153,6 +164,7 @@ export default memo(function ContactsList() {
                             isPhone(searchValue)
                         return {
                             uid: item.uid,
+                            userUid: item.uid,
                             username: '',
                             nickname: isSearchPhone
                                 ? ''
@@ -249,6 +261,90 @@ export default memo(function ContactsList() {
     // Функция для сброса выделения
     const handleClearSelection = () => {
         setSelectedContacts([])
+    }
+
+    // Открываем подтверждение блокировки: сохраняем выбранный контакт в state
+    // и показываем модалку. Это упрощает повторные клики/повторные подтверждения.
+    const handleOpenBlock = (
+        uid: string,
+        name: string,
+        phone?: string,
+        nickname?: string,
+    ) => {
+        setContactToBlock({
+            uid,
+            name,
+            phone,
+            nickname,
+        }) // Для теста чёрного списка
+        setBlockModalOpen(true) // Для теста чёрного списка
+    }
+
+    // Подтверждаем блокировку: API требует user_uid.
+    // Best practice: при наличии phone/nickname уточняем user_uid через lookup
+    // (API /contact/check/full-list/), чтобы избежать 404 "No User matches".
+    const handleConfirmBlock = async () => {
+        if (!contactToBlock) return
+        try {
+            let userUid = contactToBlock.uid
+
+            if (
+                contactToBlock.phone ||
+                contactToBlock.nickname
+            ) {
+                try {
+                    const lookupData = await fetchData(
+                        'https://api.test.chat.ktsf.ru/api/v1/contact/check/full-list/',
+                        {
+                            method: 'POST',
+                            body: JSON.stringify([
+                                {
+                                    phone_or_nickname:
+                                        contactToBlock.phone ||
+                                        contactToBlock.nickname,
+                                },
+                            ]),
+                        },
+                    )
+
+                    const lookupArray = Array.isArray(
+                        lookupData,
+                    )
+                        ? lookupData
+                        : []
+                    if (lookupArray.length > 0) {
+                        userUid = lookupArray[0].uid
+                    }
+                } catch (lookupError) {
+                    console.warn(
+                        'Не удалось получить user_uid для блокировки:',
+                        lookupError,
+                    )
+                }
+            }
+
+            // Блокировка выполняется по user_uid (path param), как требует API.
+            await fetchData(
+                `https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/add/${encodeURIComponent(userUid)}/`,
+                {
+                    method: 'POST',
+                },
+            ) // Для теста чёрного списка
+        } catch (error) {
+            console.error(
+                'Ошибка блокировки контакта (test):',
+                error,
+            )
+        } finally {
+            // Всегда сбрасываем состояние, чтобы избежать "залипания" модалки.
+            setBlockModalOpen(false) // Для теста чёрного списка
+            setContactToBlock(null) // Для теста чёрного списка
+        }
+    }
+
+    const handleCancelBlock = () => {
+        setBlockModalOpen(false) // Для теста чёрного списка
+        setContactToBlock(null) // Для теста чёрного списка
     }
 
     if (loading) {
@@ -385,6 +481,18 @@ export default memo(function ContactsList() {
                                         ),
                                     )
                                 }
+                                onBlock={() =>
+                                    handleOpenBlock(
+                                        contact.userUid ||
+                                            contact.uid,
+                                        `${contact.firstName || ''} ${contact.lastName || ''}`.trim() ||
+                                            contact.phone ||
+                                            contact.nickname ||
+                                            'контакт',
+                                        contact.phone,
+                                        contact.nickname,
+                                    )
+                                }
                             />
                         ))
                     ) : filteredContacts.length === 0 &&
@@ -489,6 +597,18 @@ export default memo(function ContactsList() {
                                                     ),
                                                 )
                                             }
+                                            onBlock={() =>
+                                                handleOpenBlock(
+                                                    user.userUid ||
+                                                        user.uid,
+                                                    `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+                                                        user.phone ||
+                                                        user.nickname ||
+                                                        'контакт',
+                                                    user.phone,
+                                                    user.nickname,
+                                                )
+                                            }
                                         />
                                     ),
                                 )}
@@ -519,6 +639,16 @@ export default memo(function ContactsList() {
                         onClick: handleConfirmDelete,
                     },
                 ]}
+            />
+
+            {/* Модалка подтверждения блокировки.
+                рендерим один экземпляр и управляем им через state,
+                чтобы исключить расхождение состояния между списком и модалкой. */}
+            <BlockModal
+                open={blockModalOpen}
+                onClose={handleCancelBlock}
+                onConfirm={handleConfirmBlock}
+                contactName={contactToBlock?.name || ''}
             />
         </>
     )

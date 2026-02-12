@@ -1,8 +1,14 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, {
+    useCallback,
+    useEffect,
+    useState,
+} from 'react'
 import { Contact } from '@shared/types/contact'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
 import { getStatusText } from '@shared/lib/getStatusText'
+import type { ReactNode } from 'react'
+import { ContactContextMenu } from './ContactContextMenu'
 
 interface ContactItemProps {
     contact: Contact
@@ -12,6 +18,8 @@ interface ContactItemProps {
     searchValue: string
     onSelectContact: (uid: string) => void
     onSetSelectedContact: (uid: string) => void
+    rightElement?: ReactNode
+    onBlock?: () => void // Для теста чёрного списка
 }
 
 const STYLES = {
@@ -29,8 +37,26 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     searchValue,
     onSelectContact,
     onSetSelectedContact,
+    rightElement,
+    onBlock,
 }) => {
     const [secondaryText, setSecondaryText] = useState('')
+    const [contextMenuOpen, setContextMenuOpen] =
+        useState(false)
+    const [contextMenuPosition, setContextMenuPosition] =
+        useState({ top: 0, left: 0 })
+
+    const handleContextMenu = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            e.preventDefault()
+            setContextMenuPosition({
+                left: e.clientX,
+                top: e.clientY,
+            })
+            setContextMenuOpen(true)
+        },
+        [],
+    )
     useEffect(() => {
         // Вычисляем secondaryText на клиенте после гидрации для избежания mismatch.
         // getStatusText() использует getContactWebStatus(), который зависит от new Date(),
@@ -42,7 +68,10 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     }, [contact, searchValue])
 
     return (
-        <div className={STYLES.container}>
+        <div
+            className={STYLES.container}
+            onContextMenu={handleContextMenu}
+        >
             <div className={STYLES.divider} />
             <ContactAvatar
                 // src={`/images/contacts/${contact?.avatarUrl}`}
@@ -79,6 +108,17 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                           )
                         : false
                 }
+                rightElement={rightElement}
+            />
+
+            <ContactContextMenu
+                open={contextMenuOpen}
+                onOpenChange={setContextMenuOpen}
+                position={contextMenuPosition}
+                onBlock={() => {
+                    onBlock?.()
+                    setContextMenuOpen(false)
+                }}
             />
         </div>
     )
