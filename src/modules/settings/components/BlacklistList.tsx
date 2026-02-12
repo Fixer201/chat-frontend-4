@@ -3,7 +3,6 @@
 import Image from 'next/image'
 import { memo, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-
 import { useSearch } from '@shared/hooks/useSearch'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import { cn } from '@shared/lib/utils'
