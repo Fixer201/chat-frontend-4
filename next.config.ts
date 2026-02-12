@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'via.placeholder.com',
             },
+            {
+                protocol: 'https',
+                hostname: 'api.test.chat.ktsf.ru',
+            },
         ],
     },
     // Добавляем headers для CORS (чтобы разрешить запросы к /api/* из браузера)
