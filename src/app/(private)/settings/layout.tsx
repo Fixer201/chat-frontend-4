@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 
 import SettingsMenu from '@modules/settings/components/SettingsMenu'
+import { usePathname } from 'next/navigation'
 
 interface SettingsLayoutProps {
     children: ReactNode
@@ -11,6 +12,15 @@ interface SettingsLayoutProps {
 export default function SettingsLayout({
     children,
 }: SettingsLayoutProps) {
+    const pathname = usePathname()
+    const isBlacklist = pathname === '/settings/blacklist'
+
+    if (isBlacklist) {
+        return (
+            <div className="h-full w-full">{children}</div>
+        )
+    }
+
     return (
         <div
             className={`

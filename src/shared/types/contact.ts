@@ -1,5 +1,6 @@
 export interface Contact {
     uid: string
+    userUid?: string
     username?: string
     nickname?: string
     phone?: string
@@ -19,6 +20,7 @@ export interface Contact {
 
 export interface ApiContact {
     uid: string
+    user_uid?: string
     username: string
     nickname: string
     phone: string

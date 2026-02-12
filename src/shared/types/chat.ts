@@ -224,4 +224,5 @@ export interface ChatListItemProps extends Omit<
     isChatRead?: boolean
     onAddToContacts?: () => void
     isInContacts?: boolean
+    onBlockChat?: () => void // Для теста чёрного списка
 }
