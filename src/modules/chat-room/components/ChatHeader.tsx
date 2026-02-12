@@ -1,10 +1,10 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // @modules/chat-room/components/ChatHeader.tsx
 import Image from 'next/image'
 import { ChatItem } from '@shared/types/chat'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 import { useMemo } from 'react'
 import { getStatusText } from '@shared/lib/getStatusText'
+import InChatSearch from '@modules/search/components/InChatSearch'
 
 import {
     useContactData,
@@ -14,23 +14,13 @@ import {
 /**
  * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
  *
- * Данные контакта берутся из API для актуальности.
- * secondaryText вычисляется декларативно с useMemo, чтобы избежать setState в эффекте.
-
-import InChatSearch from '@modules/search/components/InChatSearch'
-
-/**
- * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
- *
- * Статус (secondaryText) вычисляется в useEffect, а не при рендере,
- * чтобы избежать hydration mismatch: getStatusText зависит от new Date(),
- * которая даёт разные значения на сервере (SSR) и клиенте.
+ * Статус (secondaryText) вычисляется в useMemo, чтобы избежать гидрации
+ * с разными значениями от new Date() на сервере и клиенте.
  *
  * Кнопка «Назад» видна только на мобильных устройствах (md:hidden)
  * и передаётся через опциональный колбэк onBack.
  *
  * Режим поиска: при isSearchOpen === true отображает InChatSearch вместо обычной шапки.
-
  */
 export default function ChatHeader({
     chat,

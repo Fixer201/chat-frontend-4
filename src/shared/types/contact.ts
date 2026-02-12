@@ -20,7 +20,9 @@ export interface Contact {
 
 export interface ApiContact {
     uid: string
-    owner_user: string
+    // UID владельца контакта (user uid). Может отсутствовать в некоторых ответах.
+    owner_user?: string
+    // Системные данные контакта (онлайн/аватар и т.п.).
     system_contact: {
         uid: string
         avatar: string | null
@@ -33,6 +35,14 @@ export interface ApiContact {
     first_name: string
     last_name: string
     phone: string
+    // Поля, приходящие в ответах чёрного списка / поиска (опционально).
+    nickname?: string | null
+    avatar?: string | null
+    avatar_url?: string | null
+    avatar_webp?: string | null
+    avatar_webp_url?: string | null
+    is_online?: boolean
+    was_online_at?: number | string | Date | null
 }
 
 export interface ApiAddedContact {

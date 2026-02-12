@@ -21,6 +21,7 @@ import Modal from '@shared/ui/modal/Modal'
 
 import EditProfileForm from './EditProfileForm'
 import SupportForm from './SupportForm'
+import BlacklistList from './BlacklistList'
 
 const menuItems = [
     {
@@ -218,6 +219,14 @@ export default function SettingsMenu() {
         return (
             <aside className={asideClass}>
                 <SupportForm />
+            </aside>
+        )
+    }
+
+    if (pathname?.startsWith('/settings/blacklist')) {
+        return (
+            <aside className={asideClass}>
+                <BlacklistList />
             </aside>
         )
     }
