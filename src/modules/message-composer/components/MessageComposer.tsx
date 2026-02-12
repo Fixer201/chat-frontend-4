@@ -2,12 +2,29 @@
 
 import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
-import { useEffect, useRef, useState } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
+import { useAutoResizeTextarea } from '../hooks/useAutoResizeTextarea'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
 import ReplyPreview from './ReplyPreview'
+import dynamic from 'next/dynamic'
+import FilePickerMenu from './FilePickerMenu'
 import { cn } from '@shared/lib/utils'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { Message } from '@shared/types/message'
+
+// SendFileModal тяжёлый (FileReader, image preview),
+// загружается только при выборе файлов, не нужен при SSR
+const SendFileModal = dynamic(
+    () => import('./SendFileModal'),
+    {
+        ssr: false,
+    },
+)
 
 type MessageComposerProps = {
     chatKey: string
@@ -16,30 +33,6 @@ type MessageComposerProps = {
     replyingMessage?: Message | null
     onCancelEdit?: () => void
     onCancelReply?: () => void
-}
-
-// Хук для автоматического изменения высоты textarea в зависимости от содержимого.
-// При каждом изменении value сбрасывает высоту до 'auto', замеряет scrollHeight
-// и устанавливает итоговую высоту с ограничением в 472px (максимум из макета Figma).
-function useAutoResizeTextarea(value: string) {
-    const ref = useRef<HTMLTextAreaElement>(null)
-
-    useEffect(() => {
-        const el = ref.current
-        if (!el) return
-
-        // Сбрасываем высоту в 'auto', чтобы scrollHeight корректно отразил
-        // реальную высоту контента (иначе при удалении текста высота не уменьшится)
-        el.style.height = 'auto'
-
-        // Ограничиваем высоту максимумом 472px (соответствует макету Figma),
-        // чтобы при большом объёме текста появлялась прокрутка внутри textarea
-        const maxHeight = 472
-        el.style.height =
-            Math.min(el.scrollHeight, maxHeight) + 'px'
-    }, [value])
-
-    return ref
 }
 
 export default function MessageComposer({
@@ -75,6 +68,68 @@ export default function MessageComposer({
     // updateMessage для обновления существующего (режим редактирования)
     const { sendMessage, updateMessage } = useWebSocket()
 
+    // Состояние выпадающего меню выбора файлов (изображение / файл)
+    const [isFileMenuOpen, setIsFileMenuOpen] =
+        useState(false)
+
+    // Файлы, выбранные пользователем для отправки через модальное окно
+    const [pendingFiles, setPendingFiles] = useState<
+        File[]
+    >([])
+
+    // Ref-ы на скрытые input[type=file] для выбора изображений и файлов
+    const imageInputRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleSelectImage = useCallback(() => {
+        imageInputRef.current?.click()
+    }, [])
+
+    const handleSelectFile = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    // Обработка выбора файлов из нативного диалога
+    const handleFilesSelected = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const selectedFiles = event.target.files
+            if (
+                !selectedFiles ||
+                selectedFiles.length === 0
+            )
+                return
+            setPendingFiles(Array.from(selectedFiles))
+            // Сбрасываем value, чтобы повторный выбор того же файла сработал
+            event.target.value = ''
+        },
+        [],
+    )
+
+    // Каждый файл отправляется отдельным сообщением
+    // Подпись (caption) прикрепляется только к первому файлу.
+    const handleFileSend = useCallback(
+        (
+            files: { filename: string; data: string }[],
+            caption: string,
+        ) => {
+            files.forEach((file, index) => {
+                sendMessage({
+                    chatKey: chatKey,
+                    content: index === 0 ? caption : '',
+                    toUserId: toUserId,
+                    status: 'publish',
+                    files: [file],
+                })
+            })
+            setPendingFiles([])
+        },
+        [sendMessage, chatKey, toUserId],
+    )
+
+    const handleFileModalClose = useCallback(() => {
+        setPendingFiles([])
+    }, [])
+
     // При переходе в режим редактирования автоматически устанавливаем фокус
     // на textarea, чтобы пользователь мог сразу начать редактировать текст
     useEffect(() => {
@@ -108,10 +163,22 @@ export default function MessageComposer({
             )
             onCancelEdit?.()
         } else {
-            // Режим создания или ответа: отправляем новое сообщение через WebSocket
-            // с указанием ключа чата и идентификатора получателя
-            const repliedMessages = replyingMessage?.uid
-                ? [{ content: replyingMessage.content }]
+            /**
+             * Режим создания или ответа: отправляем новое сообщение через WebSocket.
+             *
+             * При наличии replyingMessage формируем объект RepliedMessage
+             * с метаданными автора (from_user), чтобы компонент RepliedMessage
+             * корректно отобразил имя автора цитируемого сообщения.
+             */
+            const repliedMessages = replyingMessage
+                ? [
+                      {
+                          uid: replyingMessage.uid,
+                          content: replyingMessage.content,
+                          from_user:
+                              replyingMessage.from_user,
+                      },
+                  ]
                 : undefined
 
             sendMessage({
@@ -121,7 +188,6 @@ export default function MessageComposer({
                 status: 'publish',
                 repliedMessages,
             })
-            console.log('Отправка сообщения:', inputValue)
 
             // Если был режим ответа, уведомляем родителя о завершении
             if (replyingMessage) {
@@ -242,26 +308,61 @@ export default function MessageComposer({
                   md:px-4
                 `}
             >
-                {/* Кнопка прикрепления файла (скрепка):
-                    cursor-pointer на button, а не на Image — клик-зона = вся кнопка */}
-                <button
-                    aria-label="Attach file"
-                    type="button"
-                    className={`
-                      mb-3 cursor-pointer rounded-lg p-1 transition-colors
-                      hover:bg-gray-main
-                      focus-visible:outline-2
-                      focus-visible:outline-accent-violet-primary
-                      active:scale-95
-                    `}
-                >
-                    <Image
-                        width={25}
-                        height={25}
-                        src="/icons/messageComposer/Paperclip.svg"
-                        alt=""
+                {/* Кнопка прикрепления файла (скрепка) + выпадающее меню выбора типа файла */}
+                <div className="relative mb-2">
+                    <button
+                        aria-label="Attach file"
+                        type="button"
+                        onClick={() =>
+                            setIsFileMenuOpen(
+                                (prev) => !prev,
+                            )
+                        }
+                        className={`
+                          cursor-pointer rounded-lg p-1 transition-colors
+                          hover:bg-gray-main
+                          focus-visible:outline-2
+                          focus-visible:outline-accent-violet-primary
+                          active:scale-95
+                        `}
+                    >
+                        <Image
+                            width={25}
+                            height={25}
+                            src="/icons/messageComposer/Paperclip.svg"
+                            alt=""
+                        />
+                    </button>
+
+                    {isFileMenuOpen && (
+                        <FilePickerMenu
+                            onSelectImage={
+                                handleSelectImage
+                            }
+                            onSelectFile={handleSelectFile}
+                            onClose={() =>
+                                setIsFileMenuOpen(false)
+                            }
+                        />
+                    )}
+
+                    {/* Скрытые input-ы для нативного диалога выбора файлов */}
+                    <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleFilesSelected}
                     />
-                </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={handleFilesSelected}
+                    />
+                </div>
 
                 {/* Поле ввода сообщения: textarea с автоматическим ростом высоты,
                     кнопкой эмодзи и всплывающим пикером эмодзи */}
@@ -382,6 +483,14 @@ export default function MessageComposer({
                     )}
                 </button>
             </div>
+
+            {pendingFiles.length > 0 ? (
+                <SendFileModal
+                    files={pendingFiles}
+                    onSend={handleFileSend}
+                    onClose={handleFileModalClose}
+                />
+            ) : null}
         </div>
     )
 }

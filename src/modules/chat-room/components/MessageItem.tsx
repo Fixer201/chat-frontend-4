@@ -9,10 +9,19 @@ import ReadIcon from '@public/images/messageStatus/read.svg'
 import { MessageContextMenu } from './MessageContextMenu'
 import DeleteMessageModal from './DeleteMessageModal'
 import CopyToast from './CopyToast'
+import ForwardedMessage from './ForwardedMessage'
+import RepliedMessage from './RepliedMessage'
 import Image from 'next/image'
-import { useState, useCallback, useTransition } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    useTransition,
+} from 'react'
 import { cn } from '@shared/lib/utils'
 import { useWebSocket } from '@shared/context/websocketContext'
+import { highlightText } from '@shared/lib/highlightText'
 
 /**
  * Элемент списка сообщений — отображение одного сообщения с действиями.
@@ -36,11 +45,16 @@ interface MessageItemProps {
     readonly onReply?: (message: Message) => void
     readonly onSelect?: (message: Message) => void
     readonly onForward?: (message: Message) => void
+    readonly onNavigateToMessage?: (uid: string) => void
     /** Режим множественного выбора: показывает чекбоксы, меняет поведение кликов */
     readonly isSelectionMode?: boolean
     readonly isSelected?: boolean
     /** Имя собеседника — для персонализации текста в модалке удаления */
     readonly chatName?: string
+    /** Поисковый запрос для подсветки совпадений */
+    readonly searchQuery?: string
+    /** Флаг: данное сообщение является текущим результатом поиска */
+    readonly isCurrentMatch?: boolean
 }
 
 /** Статус прочтения исходящего сообщения */
@@ -109,9 +123,12 @@ export default function MessageItem({
     onReply,
     onSelect,
     onForward,
+    onNavigateToMessage,
     isSelectionMode = false,
     isSelected = false,
     chatName,
+    searchQuery = '',
+    isCurrentMatch = false,
 }: MessageItemProps) {
     const currentUser = useAppSelector(
         (state) => state.user.currentUser,
@@ -141,6 +158,39 @@ export default function MessageItem({
         useState(false)
     const [copyToastVisible, setCopyToastVisible] =
         useState(false)
+
+    // --- Ref для скроллинга к результату поиска ---
+    /**
+     * Ref на DOM-элемент пузыря сообщения для программного скроллинга.
+     *
+     * Vercel pattern (rerender-use-ref-transient-values):
+     * - useRef вместо useState для значений без необходимости re-render
+     * - Обновление ref не вызывает перерисовку компонента
+     * - Используется только для прямых DOM-манипуляций (скроллинг)
+     */
+    const messageRef = useRef<HTMLDivElement>(null)
+
+    /**
+     * Автоматический скроллинг к текущему результату поиска.
+     *
+     * Срабатывает когда:
+     * - isCurrentMatch становится true (пользователь навигирует на это сообщение)
+     * - messageRef.current доступен (DOM-элемент смонтирован)
+     *
+     * Параметры scrollIntoView:
+     * - behavior: 'smooth' — плавная анимация скроллинга
+     * - block: 'center' — позиционирование в центре экрана для лучшей видимости
+     *
+     * Зависимости: только [isCurrentMatch], чтобы избежать лишних скроллингов.
+     */
+    useEffect(() => {
+        if (isCurrentMatch && messageRef.current) {
+            messageRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            })
+        }
+    }, [isCurrentMatch])
 
     // Форматирование Unix-timestamp в строку времени (ЧЧ:ММ) по русской локали.
     // Умножение на 1000 — бэкенд отдаёт timestamp в секундах, Date ожидает миллисекунды.
@@ -305,11 +355,23 @@ export default function MessageItem({
                         hover-подсветка даёт визуальную обратную связь */}
                     {/* Пузырь сообщения: opacity снижается при удалении (optimistic feedback) */}
                     <div
+                        ref={messageRef}
+                        data-message-bubble
                         onContextMenu={handleContextMenu}
                         aria-label={
-                            isOwn
-                                ? `Ваше сообщение: ${message.content}`
-                                : `Сообщение: ${message.content}`
+                            /**
+                             * Формируем aria-label с учётом типа сообщения:
+                             * - Обычное: «Ваше сообщение: текст» / «Сообщение: текст»
+                             * - Пересланное без текста: «Пересланное сообщение»
+                             */
+                            message.content
+                                ? isOwn
+                                    ? `Ваше сообщение: ${message.content}`
+                                    : `Сообщение: ${message.content}`
+                                : message.forwardedMessages
+                                        ?.length
+                                  ? 'Пересланное сообщение'
+                                  : 'Сообщение'
                         }
                         style={{
                             maxWidth:
@@ -318,36 +380,171 @@ export default function MessageItem({
                         className={cn(
                             `
                               cursor-context-menu rounded-lg px-4 py-2
-                              text-text-black transition-shadow
+                              text-text-black transition-all duration-300
                               hover:shadow-md
                             `,
                             isOwn
                                 ? 'bg-teal-secondary'
                                 : 'bg-message-bg-other',
                             isDeleting && 'opacity-50',
+                            isCurrentMatch &&
+                                `
+                                  shadow-lg ring-2 shadow-system-blue/25
+                                  ring-system-blue
+                                `,
                         )}
                     >
+                        {/*
+                            Контент пузыря сообщения.
+
+                            Пересылка и текст пользователя — взаимоисключающие:
+                            - forwardedMessages → заголовок «Переслано от» + текст пересылки
+                            - repliedMessages → карточка-цитата + текст ответа
+                            - Обычное сообщение → только message.content
+
+                            Ответ (reply) может сосуществовать с текстом пользователя:
+                            карточка-цитата сверху + текст ответа снизу.
+                        */}
+
+                        {/* Цитаты: ответы на другие сообщения.
+                            Карточка с фиолетовой полоской слева, имя автора + текст оригинала. */}
+                        {message.repliedMessages &&
+                        message.repliedMessages.length > 0
+                            ? message.repliedMessages.map(
+                                  (replied, idx) => (
+                                      <RepliedMessage
+                                          key={
+                                              replied.uid ??
+                                              `reply-${idx}`
+                                          }
+                                          repliedMessage={
+                                              replied
+                                          }
+                                          onNavigateToOriginal={
+                                              onNavigateToMessage
+                                          }
+                                      />
+                                  ),
+                              )
+                            : null}
+
+                        {message.forwardedMessages &&
+                        message.forwardedMessages.length >
+                            0 ? (
+                            <>
+                                {/*
+                                    Пересланное сообщение: заголовок + текст.
+                                    Заголовок: «Переслано от» + аватар + имя автора (фиолетовый).
+                                    Текст: полный контент пересланного сообщения (без обрезки).
+                                    message.content всегда пустой при наличии forwardedMessages.
+                                */}
+                                {message.forwardedMessages.map(
+                                    (forwarded, idx) => (
+                                        <ForwardedMessage
+                                            key={
+                                                forwarded.uid ??
+                                                `fwd-${idx}`
+                                            }
+                                            forwardedMessage={
+                                                forwarded
+                                            }
+                                        />
+                                    ),
+                                )}
+                                {/* Текст пересланного сообщения — основной контент пузыря */}
+                                {message.forwardedMessages.map(
+                                    (forwarded, idx) =>
+                                        forwarded.content ? (
+                                            <div
+                                                key={`fwd-text-${forwarded.uid ?? idx}`}
+                                                className={`
+                                                  cursor-text text-base
+                                                  font-normal wrap-break-word
+                                                  whitespace-pre-wrap
+                                                `}
+                                            >
+                                                {
+                                                    forwarded.content
+                                                }
+                                            </div>
+                                        ) : null,
+                                )}
+                            </>
+                        ) : null}
+
                         <div className="flex items-end justify-between gap-2">
-                            {/* cursor-text на тексте — пользователь видит I-beam при наведении на текст */}
-                            <div
-                                className={`
-                                  cursor-text text-base font-normal
-                                  wrap-break-word whitespace-pre-wrap
-                                `}
-                            >
-                                {message.content}
-                                {message.updated_at &&
-                                    message.updated_at !==
-                                        message.created_at && (
-                                        <span
-                                            className={`
-                                              ml-1 text-xs text-text-gray
-                                            `}
-                                        >
-                                            (изменено)
-                                        </span>
+
+                            {/*
+                                Текст сообщения пользователя.
+                                Рендерится только если есть content (не пустая строка).
+                                Для пересылок content всегда пустой — div не создаётся.
+                            */}
+                            {message.content ? (
+                                <div
+                                    className={`
+                                      cursor-text text-base font-normal
+                                      wrap-break-word whitespace-pre-wrap
+                                    `}
+                                >
+                                    {searchQuery ? (
+                                        <>
+                                            {/*
+                                                Подсветка совпадений поиска.
+
+                                                highlightText() разбивает текст на сегменты:
+                                                - isMatch: true → совпадение с поисковым запросом
+                                                - isMatch: false → обычный текст
+
+                                                Vercel pattern: highlightText использует module-level cache,
+                                                поэтому useMemo здесь не нужен (избегаем двойной мемоизации).
+                                            */}
+                                            {highlightText(
+                                                message.content,
+                                                searchQuery,
+                                            ).map(
+                                                (
+                                                    segment,
+                                                    i,
+                                                ) => (
+                                                    <span
+                                                        key={
+                                                            i
+                                                        }
+                                                        className={
+                                                            segment.isMatch
+                                                                ? `
+                                                                  rounded-sm
+                                                                  bg-system-blue/20
+                                                                  font-semibold
+                                                                  text-system-blue
+                                                                `
+                                                                : ''
+                                                        }
+                                                    >
+                                                        {
+                                                            segment.text
+                                                        }
+                                                    </span>
+                                                ),
+                                            )}
+                                        </>
+                                    ) : (
+                                        message.content
+
                                     )}
-                            </div>
+                                    {message.updated_at &&
+                                        message.updated_at !==
+                                            message.created_at && (
+                                            <span
+                                                className={`
+                                                  ml-1 text-xs text-text-gray
+                                                `}
+                                            >
+                                                (изменено)
+                                            </span>
+                                        )}
+                                </div>
+                            ) : null}
                             {message.created_at && (
                                 <div
                                     className={`

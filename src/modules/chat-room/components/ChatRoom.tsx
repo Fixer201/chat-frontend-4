@@ -9,7 +9,7 @@ import CopyToast from './CopyToast'
 import MessageComposer from '@modules/message-composer/components/MessageComposer'
 import { ChatItem } from '@shared/types/chat'
 import { Message } from '@shared/types/message'
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
@@ -23,6 +23,7 @@ import EmptyChatsState from '@modules/chats-list/components/emptyChatsState/Empt
  * - Режим редактирования (editingMessage) — редактирование собственного сообщения
  * - Режим ответа (replyingMessage) — ответ на любое сообщение
  * - Режим выбора (selectedMessages) — множественный выбор для пересылки/копирования/удаления
+ * - Режим поиска (isSearchOpen) — поиск по содержимому сообщений с навигацией по результатам
  *
  * Режимы взаимоисключающие: при активации редактирования сбрасывается ответ и наоборот.
  * Режим выбора заменяет MessageComposer на SelectionToolbar в нижней части.
@@ -66,6 +67,21 @@ export default function ChatRoom({
         deleteSelectedModalOpen,
         setDeleteSelectedModalOpen,
     ] = useState(false)
+
+    // --- Состояние режима поиска ---
+    /** Флаг активности режима поиска. При true ChatHeader показывает InChatSearch. */
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
+    /** Поисковый запрос для фильтрации сообщений (case-insensitive) */
+    const [searchQuery, setSearchQuery] = useState('')
+    /**
+     * Индекс текущего результата поиска в массиве совпадений (0-based).
+     * null = нет активного результата, 0 = первый результат (нижний/последний по времени).
+     */
+    const [currentMatchIndex, setCurrentMatchIndex] =
+        useState<number | null>(null)
+    /** Общее количество найденных результатов. Обновляется через handleSearchMatchesFound. */
+    const [totalSearchResults, setTotalSearchResults] =
+        useState(0)
 
     const { sendMessage, deleteMessage } = useWebSocket()
 
@@ -112,9 +128,16 @@ export default function ChatRoom({
         setForwardModalOpen(true)
     }
 
-    // Подтверждение пересылки: отправляем каждое сообщение в каждый выбранный чат.
-    // content пустой — бэкенд берёт текст из forwardedMessages.
-    // После отправки сбрасываем все связанные состояния.
+    /**
+     * Подтверждение пересылки: отправляем каждое сообщение в каждый выбранный чат.
+     *
+     * Для каждого пересылаемого сообщения формируем объект ForwardedMessage
+     * с метаданными автора (from_user, first_name, last_name), чтобы
+     * компонент ForwardedMessage мог корректно отобразить источник.
+     *
+     * content корневого сообщения остаётся пустым — бэкенд берёт
+     * текст из forwardedMessages[].content.
+     */
     const handleForwardConfirm = (
         selectedChatKeys: string[],
     ) => {
@@ -125,7 +148,10 @@ export default function ChatRoom({
                     content: '',
                     status: 'publish',
                     forwardedMessages: [
-                        { content: msg.content },
+                        {
+                            content: msg.content,
+                            from_user: msg.from_user,
+                        },
                     ],
                 })
             })
@@ -186,7 +212,124 @@ export default function ChatRoom({
         setReplyingMessage(null)
     }
 
+
     const isLocalChat = chat.id > 1000000000000
+
+ 
+    /**
+     * Открытие режима поиска.
+     * Очищаем все состояния поиска для чистого старта.
+     * ChatHeader переключается в режим InChatSearch при isSearchOpen === true.
+     *
+     * Vercel pattern: useCallback без зависимостей для стабильной ссылки.
+     */
+    const handleSearchOpen = useCallback(() => {
+        setIsSearchOpen(true)
+        setSearchQuery('')
+        setCurrentMatchIndex(null)
+        setTotalSearchResults(0)
+    }, [])
+
+    /**
+     * Закрытие режима поиска.
+     * Полностью очищаем состояние поиска и возвращаемся к обычному виду шапки.
+     * ChatHeader автоматически переключится обратно в обычный режим.
+     */
+    const handleSearchClose = useCallback(() => {
+        setIsSearchOpen(false)
+        setSearchQuery('')
+        setCurrentMatchIndex(null)
+        setTotalSearchResults(0)
+    }, [])
+
+    /**
+     * Изменение поискового запроса.
+     * При вводе нового текста сбрасываем currentMatchIndex в null,
+     * чтобы MessagesList пересчитал совпадения и установил индекс на первый результат (снизу).
+     *
+     * Также сбрасываем totalSearchResults в 0, чтобы избежать показа "0 из N"
+     * в момент между вводом и пересчётом результатов.
+     *
+     */
+    const handleSearchQueryChange = useCallback(
+        (query: string) => {
+            setSearchQuery(query)
+            // Сброс индекса и счётчика: новый поиск начинается заново
+            setCurrentMatchIndex(null)
+            setTotalSearchResults(0)
+        },
+        [],
+    )
+
+    /**
+     * Callback вызываемый MessagesList когда пересчитаны совпадения.
+     * Обновляем totalSearchResults и при первом результате устанавливаем индекс.
+     *
+     * Логика инициализации индекса:
+     * - Если найдены результаты (count > 0)
+     * - И текущий индекс не установлен (currentMatchIndex === null)
+     * - И есть активный поисковый запрос
+     * → Устанавливаем индекс 0, который соответствует последнему (нижнему) результату
+     *
+     * Почему 0 = нижний результат:
+     * MessagesList возвращает индексы в порядке снизу вверх согласно дизайну.
+     */
+    const handleSearchMatchesFound = useCallback(
+        (count: number) => {
+            setTotalSearchResults(count)
+
+            // Автоматическая установка индекса при первом результате
+            if (
+                count > 0 &&
+                currentMatchIndex === null &&
+                searchQuery
+            ) {
+                setCurrentMatchIndex(0)
+            }
+        },
+        [currentMatchIndex, searchQuery],
+    )
+
+    /**
+     * Навигация по результатам поиска.
+     *
+     * matchingMessageIndices упорядочен сверху вниз (индекс 0 = самый старый/верхний).
+     *
+     * Направления:
+     * - 'up' → переход к более старым сообщениям (индекс уменьшается)
+     * - 'down' → переход к более новым сообщениям (индекс увеличивается)
+     *
+     * Циклическая навигация (wrap around):
+     * - При достижении верха → переход к самому новому (индекс totalSearchResults - 1)
+     * - При достижении низа → переход к самому старому (индекс 0)
+     *
+     */
+    const handleSearchNavigate = useCallback(
+        (direction: 'up' | 'down') => {
+            if (totalSearchResults === 0) return
+
+            setCurrentMatchIndex((prev) => {
+                // Граничный случай: индекс не установлен
+                if (prev === null) return 0
+
+                if (direction === 'up') {
+                    // Навигация вверх: к более старым сообщениям (меньший индекс)
+                    // Если достигли верха → переход к самому новому (циклическая навигация)
+                    return prev - 1 < 0
+                        ? totalSearchResults - 1
+                        : prev - 1
+                } else {
+                    // Навигация вниз: к более новым сообщениям (больший индекс)
+                    // Если достигли низа → переход к самому старому (циклическая навигация)
+                    return prev + 1 >= totalSearchResults
+                        ? 0
+                        : prev + 1
+                }
+            })
+        },
+        [totalSearchResults],
+    )
+
     const chatName = chat.name
     // Загрузка сообщений из API
     const {
@@ -200,44 +343,46 @@ export default function ChatRoom({
             <ChatHeader
                 chat={chat || null}
                 onBack={onBack}
+                onSearchOpen={handleSearchOpen}
+                isSearchOpen={isSearchOpen}
+                searchQuery={searchQuery}
+                onSearchQueryChange={
+                    handleSearchQueryChange
+                }
+                onSearchNavigate={handleSearchNavigate}
+                onSearchClose={handleSearchClose}
+                currentMatchIndex={currentMatchIndex}
+                totalSearchResults={totalSearchResults}
             />
-            <div className="flex-1 overflow-y-auto">
-                {messagesLoading ? (
-                    <div className="flex h-full items-center justify-center">
-                        <p>Загрузка сообщений...</p>
-                    </div>
-                ) : messagesError ? (
-                    <div className="flex h-full items-center justify-center">
-                        <p>Ошибка: {messagesError}</p>
-                    </div>
-                ) : apiMessages.length === 0 ? (
-                    // Показываем EmptyChatState для пустого чата
-                    <EmptyChatsState
-                        onStartChat={() => {
-                            // Функция для начала чата: например, фокусируем MessageComposer или показываем подсказку
-                            console.log(
-                                'Начать чат: пользователь может писать сообщения',
-                            )
-                            // Можно добавить: focus на поле ввода, если нужно
-                        }}
-                    />
-                ) : (
-                    <MessagesList
-                        chatKey={chat.chatKey}
-                        apiMessages={apiMessages}
-                        onEditMessage={handleEditMessage}
-                        onReplyMessage={handleReplyMessage}
-                        onSelectMessage={
-                            handleSelectMessage
-                        }
-                        onForwardMessage={
-                            handleForwardMessage
-                        }
-                        isSelectionMode={isSelectionMode}
-                        selectedMessages={selectedMessages}
-                        chatName={chatName}
-                    />
-                )}
+
+            <div
+                role="presentation"
+                className="flex-1 overflow-y-auto"
+                onClick={() => {
+                    if (isSearchOpen) {
+                        handleSearchClose()
+                    }
+                }}
+            >
+                <MessagesList
+                    chatKey={chat.chatKey}
+                    onEditMessage={handleEditMessage}
+                    onReplyMessage={handleReplyMessage}
+                    onSelectMessage={handleSelectMessage}
+                    onForwardMessage={handleForwardMessage}
+                    isSelectionMode={isSelectionMode}
+                    selectedMessages={selectedMessages}
+                    chatName={chatName}
+                    searchQuery={
+                        isSearchOpen ? searchQuery : ''
+                    }
+                    currentMatchIndex={currentMatchIndex}
+                    onSearchMatchesFound={
+                        handleSearchMatchesFound
+                    }
+                    onSearchNavigate={setCurrentMatchIndex}
+                />
+
             </div>
 
             {/* Нижняя панель: в режиме выбора — тулбар с действиями,
