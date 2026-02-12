@@ -33,7 +33,7 @@ function subscribe(callback: Subscriber): () => void {
 }
 
 function notifySubscribers(): void {
-    subscribers.forEach(cb => cb())
+    subscribers.forEach((cb) => cb())
 }
 
 function loadFromStorage(): string[] {
@@ -44,7 +44,9 @@ function loadFromStorage(): string[] {
         const parsed = JSON.parse(stored)
         if (!Array.isArray(parsed)) return []
         // Filter out ZWJ sequences to avoid rendering issues
-        return parsed.filter(e => !isZWJSequence(e)).slice(0, MAX_RECENT)
+        return parsed
+            .filter((e) => !isZWJSequence(e))
+            .slice(0, MAX_RECENT)
     } catch {
         return []
     }
@@ -53,7 +55,10 @@ function loadFromStorage(): string[] {
 function saveToStorage(emojis: string[]): void {
     if (typeof window === 'undefined') return
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(emojis))
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(emojis),
+        )
     } catch {
         // Ignore storage errors (quota exceeded, etc.)
     }
@@ -75,8 +80,11 @@ export function useRecentEmojis() {
         const current = getSnapshot()
 
         // Remove if already exists, then add to front
-        const filtered = current.filter(e => e !== emoji)
-        const updated = [emoji, ...filtered].slice(0, MAX_RECENT)
+        const filtered = current.filter((e) => e !== emoji)
+        const updated = [emoji, ...filtered].slice(
+            0,
+            MAX_RECENT,
+        )
 
         // Update cache and storage
         cachedEmojis = updated

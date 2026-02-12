@@ -1,9 +1,10 @@
+// @redux/extraReducers/chat-extraReducers/fetchChatsExtraRed.ts
 import {
     createAsyncThunk,
     PayloadAction,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
-import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
+import Cookies from 'js-cookie'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import {
     ChatItem,
@@ -34,17 +35,102 @@ const createChatSettings = (apiChatItem: ApiChatItem) => ({
     originalUnreadCount: apiChatItem.new_message_count || 0,
 })
 
-// Асинхронный thunk для загрузки чатов с сервера
+// Асинхронный thunk для загрузки чатов с сервера (обновлён для поиска и ошибок)
 export const fetchChats = createAsyncThunk(
     'chats/fetchChats',
-    async (count: number = 15, { rejectWithValue }) => {
+    async (
+        {
+            search = '',
+            count = 15,
+        }: { search?: string; count?: number },
+        { rejectWithValue },
+    ) => {
         try {
-            // Генерация моковых данных (в реальном приложении здесь был бы API запрос)
-            const mockData =
-                generateLocalMockChatItems(count)
+            const accessToken = Cookies.get('access_token')
+            if (!accessToken) {
+                throw new Error('AccessTokenNotFound')
+            }
 
-            // Фильтрация валидных данных
-            const validData = mockData.filter(
+            const url = new URL(
+                'https://api.test.chat.ktsf.ru/api/v1/chat/list/',
+            )
+            if (search)
+                url.searchParams.append('search', search)
+            url.searchParams.append(
+                'limit',
+                count.toString(),
+            ) // Используем limit вместо page_size
+
+            let response = await fetch(url.toString(), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            })
+
+            if (response.status === 401) {
+                // Попытка refresh token
+                const refreshToken =
+                    Cookies.get('refresh_token')
+                if (refreshToken) {
+                    const refreshResponse = await fetch(
+                        '/api/auth/refresh',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                            },
+                            body: JSON.stringify({
+                                refresh: refreshToken,
+                            }),
+                        },
+                    )
+                    if (refreshResponse.ok) {
+                        const data =
+                            await refreshResponse.json()
+                        Cookies.set(
+                            'access_token',
+                            data.access,
+                            { expires: 7 },
+                        )
+                        // Повторный запрос с новым токеном
+                        response = await fetch(
+                            url.toString(),
+                            {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type':
+                                        'application/json',
+                                    Authorization: `Bearer ${data.access}`,
+                                },
+                            },
+                        )
+                    } else {
+                        throw new Error(
+                            'RefreshTokenExpired',
+                        )
+                    }
+                } else {
+                    throw new Error('RefreshTokenNotFound')
+                }
+            }
+
+            if (!response.ok) {
+                if (response.status === 414) {
+                    throw new Error(
+                        'Размер query-параметра превышает установленный лимит.',
+                    )
+                }
+                throw new Error(
+                    `Ошибка API: ${response.status} ${response.statusText}`,
+                )
+            }
+
+            const data: { results: ApiChatItem[] } =
+                await response.json()
+            const validData = data.results.filter(
                 (item): item is ApiChatItem =>
                     item !== null &&
                     item !== undefined &&
@@ -57,7 +143,6 @@ export const fetchChats = createAsyncThunk(
                 (item) => {
                     const transformedItem =
                         transformFromApi<ApiChatItem>(item)
-
                     return {
                         ...transformedItem,
                         settings: createChatSettings(item),
@@ -66,15 +151,17 @@ export const fetchChats = createAsyncThunk(
             )
 
             return transformedChats
-        } catch {
-            return rejectWithValue(
-                'Не удалось загрузить чаты',
-            )
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось загрузить чаты'
+            return rejectWithValue(errorMessage)
         }
     },
 )
 
-// Обработчики состояний для thunk'а загрузки чатов
+// Обработчики состояний для thunk'а загрузки чатов (без изменений)
 export const handleFetchChats = (
     builder: ActionReducerMapBuilder<ChatsState>,
     initialState: ChatsState,

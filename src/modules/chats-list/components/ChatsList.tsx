@@ -1,6 +1,11 @@
 // ChatsList.tsx
 'use client'
-import { useCallback, useMemo, useState } from 'react'
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react'
 import { useChats } from '@shared/hooks/useChats'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
 import { useSearch } from '@shared/hooks/useSearch'
@@ -14,13 +19,16 @@ import { useRouter } from 'next/navigation'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
+// import { Contact } from '@shared/types/contact'
+import { toast } from 'react-hot-toast'
+import { useDebounce } from '@shared/hooks/useDebounce'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
 }
 
-export default function ChatsList({
+export default React.memo(function ChatsList({
     onCreateGroup,
     onCreateChannel,
 }: ChatsListProps) {
@@ -44,6 +52,8 @@ export default function ChatsList({
     const {
         chats,
         loading,
+        error,
+        loadChats,
         chatSettings,
         toggleFavorite: handleFavoriteChat,
         toggleNotifications: handleMuteChat,
@@ -53,6 +63,8 @@ export default function ChatsList({
         addToContacts,
         selectedChatId,
         selectChat,
+        createGroup,
+        createChannel,
     } = useChats()
 
     // Навигация к странице контактов
@@ -91,6 +103,10 @@ export default function ChatsList({
     // Сортировка чатов: избранные в начале списка
     const sortedChats = [...(filteredValue || [])].sort(
         (a, b) => {
+            // Выбранный чат всегда первый
+            if (a.id === selectedChatId) return -1
+            if (b.id === selectedChatId) return 1
+            // Затем избранные
             const aIsFavorite =
                 chatSettings[a.id]?.isFavorite || false
             const bIsFavorite =
@@ -122,9 +138,7 @@ export default function ChatsList({
     // Подтверждение удаления чата
     const handleDeleteConfirm = useCallback(async () => {
         if (!chatToDelete || isDeleting) return
-
         setIsDeleting(true)
-
         try {
             // Имитация задержки для UX
             await new Promise<void>((resolve) =>
@@ -135,11 +149,10 @@ export default function ChatsList({
             setDeleteModalOpen(false)
             setChatToDelete(null)
         } catch (error) {
-            console.error(
+            const errorMessage =
                 error instanceof Error
                     ? error.message
-                    : 'Неизвестная ошибка при удалении чата',
-            )
+                    : 'Неизвестная ошибка при удалении чата'
         } finally {
             setIsDeleting(false)
         }
@@ -190,6 +203,22 @@ export default function ChatsList({
         )
     }, [loading, chats, searchValue])
 
+    // Дебаунс для поиска (если хук useDebounce доступен)
+    const debouncedSearchValue = useDebounce(
+        searchValue,
+        300,
+    ) // Задержка 300ms;
+
+    // Загрузка чатов при монтировании и изменении поиска (только если поиск не пустой)
+    // useEffect(() => {
+    //     if (
+    //         debouncedSearchValue.trim() ||
+    //         debouncedSearchValue === ''
+    //     ) {
+    //         loadChats(debouncedSearchValue, 20)
+    //     }
+    // }, [loadChats, debouncedSearchValue])
+
     return (
         <>
             <div className="flex h-(--screen-height-list) min-h-0 flex-col">
@@ -228,6 +257,36 @@ export default function ChatsList({
                                 Загрузка...
                             </div>
                         </div>
+                    ) : error ? ( // Обработка ошибки в render
+                        (() => {
+                            if (
+                                error.includes(
+                                    'RefreshTokenExpired',
+                                ) ||
+                                error.includes(
+                                    'AccessTokenNotFound',
+                                )
+                            ) {
+                                router.push('/auth/login') // Редирект на логин
+                            } else if (
+                                error.includes('414')
+                            ) {
+                                toast.error(
+                                    'Поисковый запрос слишком длинный. Укоротите его.',
+                                )
+                            } else {
+                                toast.error(error)
+                            }
+                            return (
+                                <div
+                                    className={`
+                                      flex h-full items-center justify-center
+                                    `}
+                                >
+                                    Ошибка загрузки чатов
+                                </div>
+                            )
+                        })()
                     ) : showEmptySearchState ? (
                         <div
                             className={`
@@ -320,9 +379,12 @@ export default function ChatsList({
                                             const senderName =
                                                 chat
                                                     .lastMessage
-                                                    .fromUser ||
-                                                'Пользователь'
-                                            messagePreview = `${senderName}: ${chat.lastMessage.content}`
+                                                    ?.fromUser ||
+                                                'Пользователь' // Добавлена проверка на null
+                                            messagePreview =
+                                                chat.lastMessage
+                                                    ? `${senderName}: ${chat.lastMessage.content}`
+                                                    : 'Нет сообщений' // Добавлена проверка
                                         } else if (
                                             chat.chatType.includes(
                                                 'channel',
@@ -331,16 +393,15 @@ export default function ChatsList({
                                             // Для каналов: отображаем описание канала
                                             messagePreview =
                                                 chat.description ||
-                                                ''
+                                                'Нет описания'
                                         } else {
                                             // Для личных чатов: отображаем текст последнего сообщения
                                             messagePreview =
                                                 chat
                                                     .lastMessage
-                                                    .content ||
-                                                ''
+                                                    ?.content ||
+                                                'Нет сообщений' // Добавлена проверка
                                         }
-
                                         // Проверка валидности URL аватарки
                                         if (
                                             !avatarSrc ||
@@ -385,7 +446,9 @@ export default function ChatsList({
                                                     avatarSrc
                                                 }
                                                 name={
-                                                    chat.name
+                                                    chat.name ||
+                                                    `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
+                                                    'Неизвестный чат'
                                                 }
                                                 messagePreview={
                                                     messagePreview
@@ -503,4 +566,4 @@ export default function ChatsList({
             />
         </>
     )
-}
+})

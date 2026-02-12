@@ -1,3 +1,3 @@
 export default function CreateGroupPage() {
-  return <div>Create Group</div>;
+    return <div>Create Group</div>
 }

@@ -1,29 +1,29 @@
 import { ComponentType, SVGProps } from 'react'
 
 export interface Emoji {
-    emoji: string;
-    name: string;
-    slug: string;
-    skin_tone_support: boolean;
+    emoji: string
+    name: string
+    slug: string
+    skin_tone_support: boolean
 }
 
 export interface EmojiGroup {
-    name: string;
-    slug: string;
-    emojis: Emoji[];
+    name: string
+    slug: string
+    emojis: Emoji[]
 }
 
 export interface EmojiPickerWithCategoriesProps {
-    onEmojiSelect: (emoji: string) => void;
-    className?: string;
-    emojisPerRow?: number;
-    emojiSize?: number;
+    onEmojiSelect: (emoji: string) => void
+    className?: string
+    emojisPerRow?: number
+    emojiSize?: number
 }
 
 export interface Category {
-    name: string;
-    slug: string;
-    emoji: ComponentType<SVGProps<SVGSVGElement>>;
+    name: string
+    slug: string
+    emoji: ComponentType<SVGProps<SVGSVGElement>>
 }
 
 // Memoized emoji row component

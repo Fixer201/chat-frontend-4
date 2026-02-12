@@ -1,3 +1,3 @@
 export default function SupportForm() {
-  return <form>Support Form</form>;
+    return <form>Support Form</form>
 }

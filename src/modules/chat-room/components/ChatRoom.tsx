@@ -13,6 +13,8 @@ import { useCallback, useState } from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import { useMessages } from '@shared/hooks/useMessages'
+import EmptyChatsState from '@modules/chats-list/components/emptyChatsState/EmptyChatsState'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -210,8 +212,10 @@ export default function ChatRoom({
         setReplyingMessage(null)
     }
 
-    // --- Обработчики режима поиска ---
 
+    const isLocalChat = chat.id > 1000000000000
+
+ 
     /**
      * Открытие режима поиска.
      * Очищаем все состояния поиска для чистого старта.
@@ -327,6 +331,12 @@ export default function ChatRoom({
     )
 
     const chatName = chat.name
+    // Загрузка сообщений из API
+    const {
+        messages: apiMessages,
+        loading: messagesLoading,
+        error: messagesError,
+    } = useMessages(chat.chat.uid, isLocalChat)
 
     return (
         <div className="relative flex h-full flex-col rounded-md bg-gray-light">
@@ -344,6 +354,7 @@ export default function ChatRoom({
                 currentMatchIndex={currentMatchIndex}
                 totalSearchResults={totalSearchResults}
             />
+
             <div
                 role="presentation"
                 className="flex-1 overflow-y-auto"
@@ -371,6 +382,7 @@ export default function ChatRoom({
                     }
                     onSearchNavigate={setCurrentMatchIndex}
                 />
+
             </div>
 
             {/* Нижняя панель: в режиме выбора — тулбар с действиями,

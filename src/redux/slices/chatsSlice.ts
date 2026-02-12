@@ -4,6 +4,7 @@ import {
     PayloadAction,
 } from '@reduxjs/toolkit'
 import {
+    ApiChatItem,
     ChatItem,
     ChatsState,
     ChatSettings,
@@ -15,8 +16,10 @@ import {
 import {
     createGroup,
     createChannel,
+    createChat,
     handleCreateChat,
 } from '@redux/extraReducers/chat-extraReducers/createChatExtraRed'
+import { transformFromApi } from '@shared/lib/transformChatData' // Добавлен импорт для маппинга
 
 // Начальное состояние slice чатов
 const initialState: ChatsState = {
@@ -303,12 +306,17 @@ const chatsSlice = createSlice({
     // Подключение обработчиков для асинхронных thunk'ов
     extraReducers: (builder) => {
         handleFetchChats(builder, initialState)
-        handleCreateChat(builder)
+        handleCreateChat(builder) // Обрабатывает createGroup, createChannel и createChat
     },
 })
 
 // Экспорт thunk'ов и actions
-export { fetchChats, createGroup, createChannel }
+export {
+    fetchChats,
+    createGroup,
+    createChannel,
+    createChat,
+}
 export const {
     setSelectedChat,
     updateChat,

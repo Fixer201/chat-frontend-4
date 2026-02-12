@@ -103,6 +103,7 @@ export interface ChatItem {
         updatedAt: number
     }
     settings?: ChatSettings
+    // contactUid?: string
 }
 
 // Тип для состояния Redux

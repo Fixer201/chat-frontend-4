@@ -1,3 +1,3 @@
 export default function GlobalSearchInput() {
-  return <input placeholder="Global search..." />;
+    return <input placeholder="Global search..." />
 }

@@ -16,7 +16,7 @@ const MAX_RECONNECT_ATTEMPTS = 3
 
 // TODO: Временный флаг для переключения между моковыми и реальными данными
 // Удалить после реализации контактов на бэкенде
-const USE_MOCK = true
+const USE_MOCK = false
 
 export function useWebSocketChat() {
     // Ссылка на websocket подключение

@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
 
         const response = await fetch(
-            'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/refresh/',
+            'https://api.test.chat.ktsf.ru/api/v1/auth/login/refresh/token/',
             {
                 method: 'POST',
                 headers: {
@@ -30,11 +30,19 @@ export async function POST(request: NextRequest) {
             data = { status: response.status }
         }
 
+        if (!response.ok) {
+            console.error(
+                `Refresh API error: ${response.status} ${response.statusText}`,
+            )
+            // Можно добавить логику для других статусов
+        }
+
         return NextResponse.json(data, {
             status: response.status,
         })
     } catch (error) {
         console.error('Proxy error:', error)
+
         return NextResponse.json(
             {
                 error: 'Internal server error',

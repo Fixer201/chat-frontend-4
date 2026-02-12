@@ -64,8 +64,10 @@ const ForwardedMessage = memo(function ForwardedMessage({
 
     return (
         <div
+
             className="mb-1"
             aria-label={`Переслано от ${authorName}`}
+
         >
             {/* Метка «Переслано от» — фиолетовый акцентный цвет для визуального отличия
                 от обычных сообщений. Мелкий шрифт — второстепенная информация. */}

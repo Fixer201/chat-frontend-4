@@ -1,3 +1,4 @@
+// src/modules/contacts/components/ContactItem.tsx
 'use client'
 import React, { useEffect, useState } from 'react'
 import { Contact } from '@shared/types/contact'
@@ -10,8 +11,10 @@ interface ContactItemProps {
     selectedUid: string | null
     selectedContacts: string[]
     searchValue: string
-    onSelectContact: (uid: string) => void
-    onSetSelectedContact: (uid: string) => void
+    onSelectContact?: (uid: string) => void
+    onSetSelectedContact: (contact: Contact) => void
+    //  onSetSelectedContact: (userUid: string) => void
+    onContextMenu?: (e: React.MouseEvent) => void
 }
 
 const STYLES = {
@@ -29,6 +32,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     searchValue,
     onSelectContact,
     onSetSelectedContact,
+    onContextMenu,
 }) => {
     const [secondaryText, setSecondaryText] = useState('')
     useEffect(() => {
@@ -42,7 +46,10 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     }, [contact, searchValue])
 
     return (
-        <div className={STYLES.container}>
+        <div
+            className={STYLES.container}
+            onContextMenu={onContextMenu} // Добавлено для контекстного меню
+        >
             <div className={STYLES.divider} />
             <ContactAvatar
                 // src={`/images/contacts/${contact?.avatarUrl}`}
@@ -57,8 +64,8 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                 statusText={secondaryText}
                 onClick={() =>
                     deleteMode
-                        ? onSelectContact(contact.uid)
-                        : onSetSelectedContact(contact.uid)
+                        ? onSelectContact?.(contact.uid)
+                        : onSetSelectedContact(contact)
                 }
                 selected={
                     deleteMode
@@ -69,7 +76,8 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                 }
                 onSelect={
                     deleteMode
-                        ? () => onSelectContact(contact.uid)
+                        ? () =>
+                              onSelectContact?.(contact.uid)
                         : undefined
                 }
                 isSelected={

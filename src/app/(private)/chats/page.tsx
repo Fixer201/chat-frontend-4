@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-
+import { useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ChatRoom from '@modules/chat-room/components/ChatRoom'
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
@@ -9,7 +9,7 @@ import { useChats } from '@shared/hooks/useChats'
 import { cn } from '@shared/lib/utils'
 
 /** Количество чатов, загружаемых при первом рендере страницы */
-const INITIAL_CHATS_COUNT = 15
+const INITIAL_CHATS_COUNT = '15'
 
 /**
  * Главная страница чатов.
@@ -19,13 +19,83 @@ const INITIAL_CHATS_COUNT = 15
  * - Десктоп (md+): обе колонки видны одновременно.
  */
 export default function ChatsPage() {
-    const { chats, selectedChatId, loadChats, selectChat } =
-        useChats()
+    const {
+        chats,
+        selectedChatId,
+        loadChats,
+        selectChat,
+        createChat,
+    } = useChats()
+    const searchParams = useSearchParams()
+    const processedContactIdRef = useRef<string | null>(
+        null,
+    )
+    const chatsRef = useRef(chats)
+
+    // Обновлять ref при изменении chats
+    useEffect(() => {
+        chatsRef.current = chats
+    }, [chats])
 
     /** Загрузка начального списка чатов при монтировании компонента */
     useEffect(() => {
         loadChats(INITIAL_CHATS_COUNT)
     }, [loadChats])
+
+    /** Обработка query-параметра contactId для создания/выбора чата */
+    useEffect(() => {
+        const contactId = searchParams.get('contactId')
+        if (
+            contactId &&
+            contactId !== processedContactIdRef.current &&
+            !selectedChatId
+        ) {
+            console.log(
+                'Обработка contactId из URL',
+                contactId,
+            )
+            processedContactIdRef.current = contactId
+            const existingChat = chatsRef.current.find(
+                // Использовать ref вместо прямого chats
+                (chat) => chat.chat.uid === contactId,
+            )
+            console.log(
+                'Найден существующий чат:',
+                existingChat,
+            )
+            if (existingChat) {
+                selectChat(existingChat.id)
+                console.log(
+                    'Выбран существующий идентификатор чата:',
+                    existingChat.id,
+                )
+            } else {
+                createChat(contactId)
+                    .then((newChat) => {
+                        console.log(
+                            'Новый чат создан:',
+                            newChat,
+                        )
+                        selectChat(newChat.chat.id)
+                        console.log(
+                            'создание нового chat ID:',
+                            newChat.chat.id,
+                        )
+                    })
+                    .catch((error) => {
+                        console.error(
+                            'Ошибка создания чата:',
+                            error,
+                        )
+                    })
+            }
+        }
+    }, [
+        searchParams,
+        selectChat,
+        createChat,
+        selectedChatId,
+    ])
 
     /** Текущий выбранный чат (undefined - ни один чат не открыт) */
     const selectedChat = chats.find(
