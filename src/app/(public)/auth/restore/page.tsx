@@ -1,3 +1,3 @@
 export default function RestorePage() {
-  return <div>Restore Password</div>;
+    return <div>Restore Password</div>
 }

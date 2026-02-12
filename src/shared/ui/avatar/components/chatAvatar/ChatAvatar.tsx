@@ -49,6 +49,8 @@ export const ChatAvatar = forwardRef<
             rightElement,
             className,
             notificationsEnabled,
+            // Деструктурировано для исключения из ...props (не передаётся в DOM)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             chatType,
             messageStatus,
             isFavorite,
@@ -134,7 +136,7 @@ export const ChatAvatar = forwardRef<
                                         : 'text-text-black', // Черный текст по умолчанию
                                 )}
                             >
-                                {name}
+                                {name || 'Без имени'}
                             </p>
                             {/* Иконка отключенных уведомлений */}
                             {/* Показывается только если notificationsEnabled === false */}

@@ -1,3 +1,3 @@
 export default function SubscribeButton() {
-  return <button>Subscribe</button>;
+    return <button>Subscribe</button>
 }

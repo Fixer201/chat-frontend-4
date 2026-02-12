@@ -3,9 +3,18 @@ import { cn } from '@shared/lib/utils'
 import { Category } from '@shared/types/Emoji'
 import { EMOJI_CATEGORIES } from '@shared/config/constants'
 
+/**
+ * Панель вкладок категорий эмодзи — нижняя навигация пикера.
+ *
+ * Обёрнута в React.memo, так как перерисовывается только при смене
+ * выбранной категории (selectedCategory), а не при каждом скролле.
+ * Вкладка «Недавние» условно отображается через showRecent.
+ */
+
 interface EmojiCategoryTabsProps {
     selectedCategory: string
     onCategoryChange: (slug: string) => void
+    /** Показывать вкладку «Недавние» — true, если в localStorage есть история */
     showRecent?: boolean
 }
 
@@ -15,7 +24,8 @@ export const EmojiCategoryTabs = memo(
         onCategoryChange,
         showRecent = false,
     }: EmojiCategoryTabsProps) {
-        // Filter categories based on showRecent
+        // Фильтруем категории: скрываем «Недавние», если история пуста,
+        // чтобы не показывать пустую вкладку при первом использовании
         const visibleCategories = useMemo(() => {
             if (showRecent) return EMOJI_CATEGORIES
             return EMOJI_CATEGORIES.filter(
@@ -46,6 +56,11 @@ export const EmojiCategoryTabs = memo(
     },
 )
 
+/**
+ * Отдельная вкладка категории — иконка с подсветкой активного состояния.
+ * Обёрнута в memo: перерисовывается только при смене isSelected.
+ * Поддерживает навигацию с клавиатуры (Enter/Пробел) для доступности.
+ */
 interface CategoryTabProps {
     category: Category
     isSelected: boolean
@@ -73,7 +88,10 @@ const CategoryTab = memo(function CategoryTab({
                 `
                   flex h-9 w-9 cursor-pointer items-center justify-center
                   rounded-lg transition-colors
-                  hover:bg-gray-100
+                  hover:bg-gray-main
+                  focus-visible:outline-2
+                  focus-visible:outline-accent-violet-primary
+                  active:scale-95
                 `,
                 isSelected
                     ? 'text-accent-violet-primary'

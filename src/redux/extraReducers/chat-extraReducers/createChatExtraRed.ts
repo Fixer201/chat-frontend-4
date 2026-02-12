@@ -2,7 +2,7 @@ import {
     createAsyncThunk,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
-import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
+import Cookies from 'js-cookie' // импорт для токенов
 import { transformFromApi } from '@shared/lib/transformChatData'
 import {
     ApiChatItem,
@@ -11,6 +11,7 @@ import {
 } from '@shared/types/chat'
 import { Contact } from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
+import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
 
 // Типы для payload при создании группы и канала
 interface CreateGroupPayload {
@@ -61,7 +62,7 @@ const createPhotoUrl = (
 
     try {
         return URL.createObjectURL(photo)
-    } catch (error) {
+    } catch {
         return null
     }
 }
@@ -71,6 +72,7 @@ const createMockChatFromResponse = (
     name: string,
     description: string,
     chatType:
+        | 'chat'
         | 'public-group'
         | 'private-group'
         | 'public-channel'
@@ -209,28 +211,41 @@ export const createGroup = createAsyncThunk<
     'chats/createGroup',
     async ({ groupData, members }, { rejectWithValue }) => {
         try {
-            // Определение типа чата на основе выбранного типа группы
+            const accessToken = Cookies.get('access_token')
+            if (!accessToken)
+                throw new Error('AccessTokenNotFound')
+
             const chatType =
                 groupData.type === 'open'
                     ? 'public-group'
                     : 'private-group'
+            const body = {
+                name: groupData.name,
+                description: groupData.description,
+                type: chatType,
+                members: members.map((m) => ({
+                    uid: m.uid,
+                })),
+                // photo: groupData.photo (если API поддерживает файл, добавьте FormData)
+            }
 
-            const photoUrl = createPhotoUrl(groupData.photo)
-
-            // Создание моковых данных для нового чата
-            const mockData = createMockChatFromResponse(
-                groupData.name,
-                groupData.description,
-                chatType,
-                photoUrl,
-                members,
+            const response = await fetch(
+                'https://api.test.chat.ktsf.ru/api/v1/chat/create-group', // Предполагаемый endpoint — замените на реальный, если отличается
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify(body),
+                },
             )
+            if (!response.ok)
+                throw new Error('Failed to create group')
 
-            // Трансформация API данных в формат приложения
+            const data: ApiChatItem = await response.json()
             const transformedData =
-                transformFromApi<ApiChatItem>(mockData)
-
-            // Дополнение данных чата
+                transformFromApi<ApiChatItem>(data)
             const enhancedChat: ChatItem = {
                 ...transformedData,
                 chat: {
@@ -249,7 +264,7 @@ export const createGroup = createAsyncThunk<
                     originalUnreadCount: 0,
                 },
             }
-        } catch (error) {
+        } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
@@ -259,7 +274,107 @@ export const createGroup = createAsyncThunk<
     },
 )
 
-// Thunk для создания канала с обработкой ошибок через rejectWithValue
+// Thunk для создания чата
+// export const createChat = createAsyncThunk<
+//     ChatWithSettings,
+//     string,
+//     { rejectValue: string }
+// >(
+//     'chats/createChat',
+//     async (toUserId, { rejectWithValue }) => {
+//         try {
+//             const accessToken = Cookies.get('access_token')
+//             if (!accessToken)
+//                 throw new Error('AccessTokenNotFound')
+//             const response = await fetch(
+//                 'https://api.test.chat.ktsf.ru/api/v1/chat/create-chat/',
+//                 {
+//                     method: 'POST',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         Authorization: `Bearer ${accessToken}`,
+//                     },
+//                     body: JSON.stringify({
+//                         to_user_id: toUserId,
+//                     }),
+//                 },
+//             )
+//             if (!response.ok)
+//                 throw new Error('Failed to create chat')
+//             const data: ApiChatItem = await response.json()
+//             const transformedData = transformFromApi(data)
+//             return {
+//                 chat: transformedData,
+//                 settings: {
+//                     isFavorite: false,
+//                     isChatRead: true,
+//                     notificationsEnabled: true,
+//                     isDeleted: false,
+//                     originalUnreadCount: 0,
+//                 },
+//             }
+//         } catch (error) {
+//             return rejectWithValue(
+//                 error instanceof Error
+//                     ? error.message
+//                     : 'Ошибка создания чата',
+//             )
+//         }
+//     },
+// )
+
+export const createChat = createAsyncThunk<
+    ChatWithSettings,
+    string,
+    { rejectValue: string }
+>(
+    'chats/createChat',
+    async (toUserId, { rejectWithValue }) => {
+        try {
+            // Создаем локальный моковый чат для личного общения
+            const mockChatData = createMockChatFromResponse(
+                'Личный чат', // Имя чата
+                '', // Описание (пустое)
+                'chat', // Тип для личного чата
+                null, // Фото (нет)
+                [], // Участники (пусто для личного)
+            )
+
+            // Трансформация в ChatItem
+            const transformedData =
+                transformFromApi(mockChatData)
+
+            // Адаптация для личного чата: установите chat.chat.uid = toUserId (UID собеседника)
+            const enhancedChat: ChatItem = {
+                ...transformedData,
+                chat: {
+                    ...transformedData.chat,
+                    uid: toUserId, // UID пользователя
+                    isInContacts: true, // Предполагаем, что контакт добавлен
+                },
+            }
+
+            return {
+                chat: enhancedChat,
+                settings: {
+                    isFavorite: false,
+                    isChatRead: true,
+                    notificationsEnabled: true,
+                    isDeleted: false,
+                    originalUnreadCount: 0,
+                },
+            }
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error
+                    ? error.message
+                    : 'Ошибка создания чата',
+            )
+        }
+    },
+)
+
+// Thunk для создания канала с реальным API
 export const createChannel = createAsyncThunk<
     ChatWithSettings,
     CreateChannelPayload,
@@ -271,27 +386,41 @@ export const createChannel = createAsyncThunk<
         { rejectWithValue },
     ) => {
         try {
-            // Определение типа чата на основе выбранного типа канала
+            const accessToken = Cookies.get('access_token')
+            if (!accessToken)
+                throw new Error('AccessTokenNotFound')
+
             const chatType =
                 channelData.type === 'public'
                     ? 'public-channel'
                     : 'private-channel'
+            const body = {
+                name: channelData.name,
+                description: channelData.description,
+                type: chatType,
+                members: members.map((m) => ({
+                    uid: m.uid,
+                })),
+                // photo: channelData.photo
+            }
 
-            const photoUrl = createPhotoUrl(
-                channelData.photo,
+            const response = await fetch(
+                'https://api.test.chat.ktsf.ru/api/v1/chat/create-channel', // Предполагаемый endpoint — замените на реальный, если отличается
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify(body),
+                },
             )
+            if (!response.ok)
+                throw new Error('Failed to create channel')
 
-            const mockData = createMockChatFromResponse(
-                channelData.name,
-                channelData.description,
-                chatType,
-                photoUrl,
-                members,
-            )
-
+            const data: ApiChatItem = await response.json()
             const transformedData =
-                transformFromApi<ApiChatItem>(mockData)
-
+                transformFromApi<ApiChatItem>(data)
             const enhancedChat: ChatItem = {
                 ...transformedData,
                 chat: {
@@ -310,7 +439,7 @@ export const createChannel = createAsyncThunk<
                     originalUnreadCount: 0,
                 },
             }
-        } catch (error) {
+        } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
@@ -320,22 +449,19 @@ export const createChannel = createAsyncThunk<
     },
 )
 
-// Обработчики состояний для thunk'ов создания чатов
+// Обработчики состояний для thunk'ов создания чатов (без изменений)
 export const handleCreateChat = (
     builder: ActionReducerMapBuilder<ChatsState>,
 ) => {
     builder
-        // Обработка состояния загрузки при создании группы
         .addCase(createGroup.pending, (state) => {
             state.loading = true
             state.error = null
         })
-        // Обработка успешного создания группы
         .addCase(createGroup.fulfilled, (state, action) => {
             state.loading = false
             state.error = null
 
-            // Проверка на существование чата с таким ID
             const existingIndex = state.items.findIndex(
                 (chat) =>
                     chat.id === action.payload.chat.id,
@@ -348,7 +474,6 @@ export const handleCreateChat = (
                     action.payload.chat
             }
 
-            // Добавление настроек для нового чата
             if (
                 !state.chatSettings[action.payload.chat.id]
             ) {
@@ -356,7 +481,6 @@ export const handleCreateChat = (
                     action.payload.settings
             }
 
-            // Обновление настроек в объекте чата для обратной совместимости
             const chatIndex = state.items.findIndex(
                 (chat) =>
                     chat.id === action.payload.chat.id,
@@ -366,20 +490,16 @@ export const handleCreateChat = (
                     action.payload.settings
             }
 
-            // Автоматический выбор созданного чата
             state.selectedChatId = action.payload.chat.id
         })
-        // Обработка ошибки при создании группы
         .addCase(createGroup.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload as string
         })
-        // Обработка состояния загрузки при создании канала
         .addCase(createChannel.pending, (state) => {
             state.loading = true
             state.error = null
         })
-        // Обработка успешного создания канала
         .addCase(
             createChannel.fulfilled,
             (state, action) => {
@@ -421,7 +541,6 @@ export const handleCreateChat = (
                     action.payload.chat.id
             },
         )
-        // Обработка ошибки при создании канала
         .addCase(
             createChannel.rejected,
             (state, action) => {
@@ -429,4 +548,46 @@ export const handleCreateChat = (
                 state.error = action.payload as string
             },
         )
+
+        .addCase(createChat.pending, (state) => {
+            state.loading = true
+            state.error = null
+        })
+        .addCase(createChat.fulfilled, (state, action) => {
+            // чат добавляется в начало списка для немедленного отображения
+            state.loading = false
+            state.error = null
+            const existingIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+            if (existingIndex === -1) {
+                state.items.unshift(action.payload.chat)
+            } else {
+                state.items[existingIndex] =
+                    action.payload.chat
+            }
+
+            if (
+                !state.chatSettings[action.payload.chat.id]
+            ) {
+                state.chatSettings[action.payload.chat.id] =
+                    action.payload.settings
+            }
+
+            const chatIndex = state.items.findIndex(
+                (chat) =>
+                    chat.id === action.payload.chat.id,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    action.payload.settings
+            }
+
+            state.selectedChatId = action.payload.chat.id
+        })
+        .addCase(createChat.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload as string
+        })
 }

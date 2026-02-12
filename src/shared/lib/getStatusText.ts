@@ -6,6 +6,15 @@ export const getStatusText = (
     searchValue: string,
 ) => {
     const lowerSearch = searchValue.toLowerCase()
+    // console.log('getStatusText:', {
+    //     searchValue,
+    //     lowerSearch,
+    //     phone: contact.phone,
+    //     nickname: contact.nickname,
+    //     isOnline: contact.isOnline,
+    //     wasOnlineAt: contact.wasOnlineAt,
+    // })
+
     if (
         lowerSearch &&
         contact.phone?.toLowerCase().includes(lowerSearch)
@@ -19,9 +28,14 @@ export const getStatusText = (
     ) {
         return contact.nickname
     } else {
-        return getContactWebStatus(
+        const status = getContactWebStatus(
             contact.isOnline,
             contact.wasOnlineAt,
         )
+        // console.log(
+        //     'Status from getContactWebStatus:',
+        //     status,
+        // )
+        return status
     }
 }

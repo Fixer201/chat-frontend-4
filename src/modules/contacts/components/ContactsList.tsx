@@ -1,61 +1,66 @@
+// src/modules/contacts/components/ContactsList.tsx
 'use client'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, memo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import BlockModal from '@modules/chats-list/components/BlockModal'
+import Image from 'next/image'
+import { setSelectedContact } from '@redux/slices/selectedContactSlice'
+import { RootState } from '@redux/store'
+import { toast } from 'react-hot-toast'
+import {
+    useEffect,
+    useState,
+    memo,
+    useCallback,
+} from 'react'
+import { useSearch } from '@shared/hooks/useSearch'
+import Modal from '@shared/ui/modal/Modal'
+import Dropdown from '@shared/ui/dropdown/Dropdown'
+
 import {
     removeContacts,
     setContacts,
+    addContacts,
 } from '@redux/slices/contactsSlice'
-import { setSelectedContact } from '@redux/slices/selectedContactSlice'
-import { RootState } from '@redux/store'
-import { useApiFetcher } from '@shared/hooks/useApiFetcher'
-import { useSearch } from '@shared/hooks/useSearch'
 import { getContactWord } from '@shared/lib/getContactWord'
-import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
-import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import Modal from '@shared/ui/modal/Modal'
-import Search from '@shared/ui/Search'
-import { Spinner } from '@shared/ui/Spinner'
-import { ApiContact, Contact } from '@shared/types/contact'
 import { ContactItem } from './ContactItem'
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
+import Search from '@shared/ui/Search'
+import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
+import {
+    ApiContact,
+    Contact,
+    ApiAddedContact,
+} from '@shared/types/contact'
+import { useApiFetcher } from '@shared/hooks/useApiFetcher'
+import { Spinner } from '@shared/ui/Spinner'
+import { useRouter } from 'next/navigation'
+import { UnauthorizedView } from '@modules/core/components/UnauthorizedView'
 
-export default memo(function ContactsList() {
-    // Поле поиска управляет фильтрацией контактов/пользователей А‑чата.
+export default memo(function ContactsList({
+    onContactSelect,
+}: {
+    onContactSelect: (uid: string) => void
+}) {
     const [searchValue, setSearchValue] = useState('')
-    // Режим массового удаления (выделение чекбоксами).
     const [deleteMode, setDeleteMode] = useState(false)
-    // Список UID выбранных контактов для удаления.
     const [selectedContacts, setSelectedContacts] =
         useState<string[]>([])
-    // Модалка подтверждения удаления контактов.
     const [isModalOpen, setIsModalOpen] = useState(false)
-    // Флаг загрузки первоначальных данных контактов.
     const [loading, setLoading] = useState(true)
-    // Результаты поиска пользователей А‑чата (добавление в контакты).
     const [users, setUsers] = useState<Contact[]>([])
-    // Состояние модалки блокировки и выбранного контакта.
-    // Best practice: храним минимум данных, чтобы исключить рассинхрон UI/данных.
-    const [blockModalOpen, setBlockModalOpen] =
-        useState(false) // Для теста чёрного списка
-    const [contactToBlock, setContactToBlock] = useState<{
-        uid: string
-        name: string
-        phone?: string
-        nickname?: string
-    } | null>(null) // Для теста чёрного списка
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+    const [dropdownPosition, setDropdownPosition] =
+        useState<{ top: number; left: number } | null>(null)
+    const [selectedUserForAdd, setSelectedUserForAdd] =
+        useState<Contact | null>(null)
     const dispatch = useDispatch()
     const router = useRouter()
-    // Текущий выбранный контакт в Redux (для подсветки в списке).
+    const [authError, setAuthError] = useState(false)
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
-    // Храним список контактов в Redux, чтобы переиспользовать между экранами.
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
     )
-    // Фильтр контактов по ФИО/телефону/никнейму.
     const { filteredValue: filteredContacts } = useSearch(
         contactsList,
         searchValue,
@@ -66,7 +71,6 @@ export default memo(function ContactsList() {
             (contact) => `${contact.nickname}`,
         ],
     )
-    // Отдельный фильтр по результатам поиска пользователей А‑чата.
     const { filteredValue: filteredUsers } = useSearch(
         users,
         searchValue,
@@ -77,84 +81,79 @@ export default memo(function ContactsList() {
             (user) => `${user.nickname}`,
         ],
     )
-    // Функция для определения, является ли строка телефоном
-    // (best practice: быстрое клиентское эвристическое определение формата).
+    // Функция для определения, является ли строка телефоном (простая проверка: только цифры и опционально +)
     const isPhone = (str: string) => {
-        const cleaned = str.replace(/\s/g, '') // Убираем пробелы
+        const cleaned = str.replace(/\s/g, '')
         return /^\+?\d+$/.test(cleaned)
     }
     const fetchData = useApiFetcher()
 
-    // Загрузка контактов (основной список).
-    useEffect(() => {
-        const loadContacts = async () => {
-            try {
-                const data = await fetchData(
-                    'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-list/',
-                    {
-                        method: 'GET',
-                    },
-                )
-                // API отдаёт contacts в results — приводим к массиву для устойчивости.
-                const contactsData: ApiContact[] =
-                    data.results || []
-                const mappedContacts: Contact[] =
-                    contactsData.map(
-                        (item: ApiContact) => ({
-                            // API может возвращать user_uid (нужен для блокировки),
-                            // fallback на uid, если поле отсутствует.
-                            uid: item.user_uid ?? item.uid,
-                            userUid:
-                                item.user_uid ?? item.uid,
-                            username: '',
-                            nickname: '',
-                            phone: item.phone,
-                            firstName: item.first_name,
-                            lastName: item.last_name,
-                            patronymic: '',
-                            avatar: item.avatar,
-                            avatarUrl: item.avatar_url,
-                            avatarWebp: item.avatar_webp,
-                            avatarWebpUrl:
-                                item.avatar_webp_url,
-                            additionalInformation: '',
-                            birthday: 0,
-                            chatId: 0,
-                            isOnline: item.is_online,
-                            wasOnlineAt: item.was_online_at,
-                        }),
-                    )
-                // Обновляем Redux‑хранилище, чтобы список был доступен другим экранам.
-                dispatch(setContacts(mappedContacts))
-            } catch (error: unknown) {
-                console.error(
-                    'Ошибка загрузки контактов:',
-                    error,
-                )
-                if (error instanceof Error) {
-                    if (
-                        error.message ===
-                            'RefreshTokenExpired' ||
-                        error.message ===
-                            'AccessTokenNotFound'
-                    ) {
-                        router.push('/auth/login') // Перенаправление на логин вместо notFound()
-                    }
+    // Загрузка контактов
+    const loadContacts = useCallback(async () => {
+        try {
+            const data = await fetchData(
+                'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-list/',
+                {
+                    method: 'GET',
+                },
+            )
+            const contactsData: ApiContact[] =
+                data.results || []
+            console.log('Ответ API:', contactsData)
+            const mappedContacts: Contact[] =
+                contactsData.map((item: ApiContact) => ({
+                    uid: item.uid,
+                    userUid: item.system_contact.uid,
+                    username: '',
+                    nickname: '',
+                    phone: item.phone,
+                    firstName: item.first_name,
+                    lastName: item.last_name,
+                    patronymic: '',
+                    avatar: item.system_contact.avatar,
+                    avatarUrl:
+                        item.system_contact.avatar_url,
+                    avatarWebp:
+                        item.system_contact.avatar_webp,
+                    avatarWebpUrl:
+                        item.system_contact.avatar_webp_url,
+                    additionalInformation: '',
+                    birthday: 0,
+                    chatId: 0,
+                    isOnline: item.system_contact.is_online,
+                    wasOnlineAt:
+                        item.system_contact.was_online_at,
+                }))
+            dispatch(setContacts(mappedContacts))
+        } catch (error: unknown) {
+            console.error(
+                'Ошибка загрузки контактов:',
+                error,
+            )
+            if (error instanceof Error) {
+                if (
+                    error.message ===
+                        'RefreshTokenExpired' ||
+                    error.message === 'AccessTokenNotFound'
+                ) {
+                    setAuthError(true)
+                    // router.push('/auth/login') // нужно подумать как лучше сделать перенаправление на логин либо notFound()
                 }
-            } finally {
-                setLoading(false)
             }
+        } finally {
+            setLoading(false)
         }
-        loadContacts()
-    }, [dispatch, fetchData, router])
+    }, [dispatch, fetchData])
 
-    // Загрузка пользователей А‑чата на основе searchValue.
-    // Это отдельный API, не влияющий на список контактов.
+    useEffect(() => {
+        loadContacts()
+    }, [loadContacts])
+
+    // Загрузка пользователей А-чата на основе searchValue
     useEffect(() => {
         const loadUsers = async () => {
             if (!searchValue.trim()) {
-                // Если поиск пустой — очищаем результаты, чтобы не показывать старые данные.
-                setUsers([])
+                setUsers([]) // Сброс, если поиск пустой
                 return
             }
             try {
@@ -170,7 +169,7 @@ export default memo(function ContactsList() {
                         ]),
                     },
                 )
-                // Маппим ответ API в Contact[] для повторного использования ContactItem.
+                // Маппим ответ API в Contact[]
                 const mappedUsers: Contact[] = data.map(
                     (item: {
                         uid: string
@@ -180,20 +179,16 @@ export default memo(function ContactsList() {
                         const isSearchPhone =
                             isPhone(searchValue)
                         return {
-                            // Для найденных пользователей uid == user_uid.
                             uid: item.uid,
                             userUid: item.uid,
                             username: '',
-                            // Никнейм только если поиск выполнялся по никнейму.
                             nickname: isSearchPhone
                                 ? ''
-                                : searchValue,
+                                : searchValue, // Никнейм только если поиск по нему
                             phone: item.phone,
-                            // При поиске по телефону показываем телефон в имени,
-                            // при поиске по никнейму — никнейм.
                             firstName: isSearchPhone
                                 ? item.phone
-                                : searchValue,
+                                : searchValue, // Телефон для телефона, searchValue для никнейма
                             lastName: '',
                             patronymic: '',
                             avatar: '',
@@ -204,11 +199,10 @@ export default memo(function ContactsList() {
                             birthday: 0,
                             chatId: 0,
                             isOnline: item.is_online,
-                            wasOnlineAt: 0,
+                            wasOnlineAt: null,
                         }
                     },
                 )
-                // Обновляем список результатов поиска пользователей.
                 setUsers(mappedUsers)
             } catch (error: unknown) {
                 console.error(
@@ -222,26 +216,26 @@ export default memo(function ContactsList() {
                         error.message ===
                             'AccessTokenNotFound'
                     ) {
-                        router.push('/auth/login')
+                        // router.push('/auth/login')
+                        setAuthError(true)
                     }
                 }
-                // В случае ошибки очищаем список, чтобы не показывать устаревшие данные.
                 setUsers([])
             }
         }
         loadUsers()
     }, [searchValue, fetchData, router])
 
-    // Сброс выделенного контакта при входе в режим удаления.
-    // Best practice: не держим одновременно "selected" и "delete" режим.
+    // Сброс выделенного контакта при входе в режим удаления
     useEffect(() => {
         if (deleteMode) {
             dispatch(setSelectedContact(null))
         }
     }, [deleteMode, dispatch])
 
-    // Выбор/снятие выбора контакта для массового удаления.
+    // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
+        //  router.push('/chats?contactId=' + uid)
         setSelectedContacts((prev) =>
             prev.includes(uid)
                 ? prev.filter((id) => id !== uid)
@@ -249,20 +243,31 @@ export default memo(function ContactsList() {
         )
     }
 
-    // Открытие модалки подтверждения удаления.
+    // Функция открытия модального окна
     const handleOpenModal = () => {
         setIsModalOpen(true)
     }
 
-    // Закрытие модалки подтверждения удаления.
+    // Функция закрытия модального окна
     const handleCloseModal = () => {
         setIsModalOpen(false)
     }
 
-    // Подтверждение удаления: очищаем список выбранных и выходим из deleteMode.
-    // Best practice: локально обновляем UI после редьюсер‑операции.
-    const handleConfirmDelete = () => {
+    // Функция подтверждения удаления с использованием API
+    const handleConfirmDelete = async () => {
         try {
+            // Вызываем API для каждого выбранного контакта
+            const deletePromises = selectedContacts.map(
+                (uid) =>
+                    fetchData(
+                        `https://api.test.chat.ktsf.ru/api/v1/contact/messenger-delete-contact/${uid}/`,
+                        {
+                            method: 'DELETE',
+                        },
+                    ),
+            )
+            await Promise.all(deletePromises)
+            // После успешного удаления обновляем Redux
             dispatch(removeContacts(selectedContacts))
             setSelectedContacts([])
             setDeleteMode(false)
@@ -272,10 +277,20 @@ export default memo(function ContactsList() {
                 'Ошибка при удалении контактов:',
                 error,
             )
+            if (error instanceof Error) {
+                if (
+                    error.message ===
+                        'RefreshTokenExpired' ||
+                    error.message === 'AccessTokenNotFound'
+                ) {
+                    setAuthError(true) // Показать UnauthorizedView
+                    return
+                }
+            }
         }
     }
 
-    // Переключение режима удаления со сбросом выбранных контактов.
+    // Функция для переключения режима удаления со сбросом выбранных контактов
     const handleToggleDeleteMode = (mode: boolean) => {
         setDeleteMode(mode)
         if (mode) {
@@ -283,97 +298,157 @@ export default memo(function ContactsList() {
         }
     }
 
-    // Сброс выделения выбранных контактов.
+    // Функция для сброса выделения
     const handleClearSelection = () => {
         setSelectedContacts([])
     }
 
-    // Открываем подтверждение блокировки: сохраняем выбранный контакт в state
-    // и показываем модалку. Это упрощает повторные клики и повторное подтверждение.
-    const handleOpenBlock = (
-        uid: string,
-        name: string,
-        phone?: string,
-        nickname?: string,
-    ) => {
-        setContactToBlock({
-            uid,
-            name,
-            phone,
-            nickname,
-        }) // Для теста чёрного списка
-        setBlockModalOpen(true) // Для теста чёрного списка
-    }
-
-    // Подтверждаем блокировку: API требует user_uid.
-    // Best practice: при наличии phone/nickname уточняем user_uid через lookup
-    // (API /contact/check/full-list/), чтобы избежать 404 "No User matches".
-    const handleConfirmBlock = async () => {
-        if (!contactToBlock) return
-        try {
-            let userUid = contactToBlock.uid
-
-            if (
-                contactToBlock.phone ||
-                contactToBlock.nickname
-            ) {
-                try {
-                    const lookupData = await fetchData(
-                        'https://api.test.chat.ktsf.ru/api/v1/contact/check/full-list/',
-                        {
-                            method: 'POST',
-                            body: JSON.stringify([
-                                {
-                                    phone_or_nickname:
-                                        contactToBlock.phone ||
-                                        contactToBlock.nickname,
-                                },
-                            ]),
-                        },
-                    )
-
-                    const lookupArray = Array.isArray(
-                        lookupData,
-                    )
-                        ? lookupData
-                        : []
-                    if (lookupArray.length > 0) {
-                        userUid = lookupArray[0].uid
-                    }
-                } catch (lookupError) {
-                    console.warn(
-                        'Не удалось получить user_uid для блокировки:',
-                        lookupError,
-                    )
-                }
-            }
-
-            // Блокировка выполняется по user_uid (path param), как требует API.
-            await fetchData(
-                `https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/add/${encodeURIComponent(userUid)}/`,
-                {
-                    method: 'POST',
-                },
-            ) // Для теста чёрного списка
-        } catch (error) {
+    // Функция для добавления контакта
+    const handleAddContact = async (user: Contact) => {
+        if (!user.phone) {
             console.error(
-                'Ошибка блокировки контакта (test):',
+                'Недостаточно данных для добавления контакта:',
+                {
+                    phone: user.phone,
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                },
+            )
+            toast.error(
+                'Недостаточно данных для добавления контакта',
+            )
+            return
+        }
+
+        // Убрана локальная проверка на существование контакта
+
+        try {
+            const body = {
+                phone: user.phone,
+                first_name: user.firstName || '',
+                last_name: user.lastName || '',
+            }
+            console.log(
+                'Отправка запроса на добавление контакта:',
+                body,
+            )
+            const response: ApiAddedContact =
+                await fetchData(
+                    'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-add-by-phone/',
+                    {
+                        method: 'POST',
+                        body: JSON.stringify(body),
+                    },
+                )
+
+            // маппим ответ API в Contact и добавляем в Redux моментально
+            // newContact.uid = response.uid (ID пользователя, используем как ID записи контакта для консистентности)
+            // newContact.userUid = response.uid (ID пользователя для чата)
+
+            const newContact: Contact = {
+                uid: response.uid,
+                userUid: response.uid,
+                username: '',
+                nickname: '',
+                phone: response.phone,
+                firstName: response.first_name,
+                lastName: response.last_name,
+                patronymic: '',
+                avatar: response.avatar,
+                avatarUrl: response.avatar_url,
+                avatarWebp: response.avatar_webp,
+                avatarWebpUrl: response.avatar_webp_url,
+                additionalInformation: '',
+                birthday: 0,
+                chatId: 0,
+                isOnline: response.is_online,
+                wasOnlineAt: response.was_online_at,
+            }
+            dispatch(addContacts(newContact)) // Моментальное обновление Redux
+            await loadContacts() // Перезагрузить список контактов для получения правильного uid
+            toast.success('Контакт добавлен')
+            setDropdownOpen(false)
+            setSelectedUserForAdd(null)
+        } catch (error: unknown) {
+            console.error(
+                'Ошибка при добавлении контакта:',
                 error,
             )
-        } finally {
-            // Всегда сбрасываем состояние, чтобы избежать "залипания" модалки.
-            setBlockModalOpen(false) // Для теста чёрного списка
-            setContactToBlock(null) // Для теста чёрного списка
+            // Обработка ошибок по статусу
+            if (error instanceof Error) {
+                const errorMessage = error.message
+                if (
+                    error.message ===
+                        'RefreshTokenExpired' ||
+                    error.message === 'AccessTokenNotFound'
+                ) {
+                    setAuthError(true) // Показать UnauthorizedView
+                    setDropdownOpen(false)
+                    setSelectedUserForAdd(null)
+                    return
+                }
+                if (
+                    errorMessage.includes('400') &&
+                    errorMessage.includes(
+                        'Этот контакт уже существует',
+                    )
+                ) {
+                    // Контакт уже существует: не показываем ошибку, считаем успехом (он уже в списке)
+                    toast.success('Контакт добавлен')
+                    setDropdownOpen(false)
+                    setSelectedUserForAdd(null)
+                    return
+                } else if (errorMessage.includes('404')) {
+                    toast.error(
+                        'Пользователь с таким номером не найден',
+                    )
+                } else {
+                    toast.error(
+                        'Ошибка при добавлении контакта',
+                    )
+                }
+            } else {
+                toast.error(
+                    'Неизвестная ошибка при добавлении контакта',
+                )
+            }
+            setDropdownOpen(false)
+            setSelectedUserForAdd(null)
         }
     }
 
-    // Отмена блокировки: закрываем модалку и чистим выбранный контакт.
-    // Best practice: очищать state при закрытии модалки, чтобы не блокировать неверный контакт.
-    const handleCancelBlock = () => {
-        setBlockModalOpen(false) // Для теста чёрного списка
-        setContactToBlock(null) // Для теста чёрного списка
+    // Функция для обработки клика на контакт (с редиректом)
+    // const handleContactClick = (uid: string) => {
+    //     dispatch(setSelectedContact(uid))
+    //     router.push(`/chats?contactId=${uid}`)
+    // }
+    // const handleContactClick = (uid: string) => {
+    //     dispatch(setSelectedContact(uid))  // Оставьте для выделения в списке
+    //     onContactSelect(uid)  // Новый вызов для открытия чата
+    // }
+    const handleContactClick = (contact: Contact) => {
+        dispatch(setSelectedContact(contact.uid))
+        //    router.push(`/chats?contactId=${contact.userUid}`)
+        onContactSelect(contact.userUid)
     }
 
+    // Функция для открытия контекстного меню
+    const handleContextMenu = (
+        e: React.MouseEvent,
+        user: Contact,
+    ) => {
+        e.preventDefault()
+        setDropdownPosition({
+            top: e.clientY,
+            left: e.clientX,
+        })
+        setSelectedUserForAdd(user)
+        setDropdownOpen(true)
+    }
+
+    if (authError) {
+        return <UnauthorizedView />
+    }
     if (loading) {
         return (
             <div className="flex h-full items-center justify-center">
@@ -382,7 +457,6 @@ export default memo(function ContactsList() {
             </div>
         )
     }
-
     return (
         <>
             <div className="mt-2 flex h-1/12 min-h-15 items-center px-4">
@@ -395,252 +469,343 @@ export default memo(function ContactsList() {
                 />
             </div>
 
-            {/* рендеринг в зависимости от режима  */}
-            {filteredContacts &&
-                filteredContacts.length > 0 && (
-                    <div
-                        className={`
-                          flex h-9 w-full justify-between gap-1
-                          bg-accent-violet-ultra-light pt-2.5 pr-4 pb-2.5 pl-4
-                        `}
-                    >
-                        {deleteMode ? (
-                            <>
-                                <Image
-                                    src="/images/contacts/arrow.svg"
-                                    alt="back"
-                                    width={24}
-                                    height={24}
-                                    style={{
-                                        width: '24px',
-                                        height: '24px',
-                                    }}
-                                    onClick={() =>
-                                        handleToggleDeleteMode(
-                                            false,
-                                        )
-                                    }
-                                    className="cursor-pointer"
-                                />
-                                <p>Удалить контакты</p>
-                                {selectedContacts.length >
-                                0 ? (
-                                    <Image
-                                        src="/images/contacts/iconCancel.svg"
-                                        alt="cancel selection"
-                                        width={24}
-                                        height={24}
-                                        style={{
-                                            width: '24px',
-                                            height: '24px',
-                                        }}
-                                        onClick={
-                                            handleClearSelection
-                                        }
-                                        className="cursor-pointer"
-                                        aria-label="Отменить выделение всех контактов"
-                                    />
-                                ) : (
-                                    <Image
-                                        src="/images/contacts/basketViolet.svg"
-                                        alt="delete"
-                                        width={24}
-                                        height={24}
-                                        style={{
-                                            width: '24px',
-                                            height: '24px',
-                                        }}
-                                        className="cursor-pointer"
-                                    />
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <p>
-                                    Контакты пользователей
-                                    А-чата
-                                </p>
-                                <Image
-                                    src="/images/contacts/basket.svg"
-                                    alt="delete"
-                                    width={24}
-                                    height={24}
-                                    style={{
-                                        width: '24px',
-                                        height: '24px',
-                                    }}
-                                    className="cursor-pointer"
-                                    onClick={() =>
-                                        handleToggleDeleteMode(
-                                            true,
-                                        )
-                                    }
-                                />
-                            </>
-                        )}
-                    </div>
-                )}
-
             {/* Контейнер контактов и пользователей */}
+
             <div className="flex flex-col">
                 <CustomScrollbar>
-                    {filteredContacts &&
-                    filteredContacts.length > 0 ? (
-                        filteredContacts.map((contact) => (
-                            <ContactItem
-                                key={contact.uid}
-                                contact={contact}
-                                deleteMode={deleteMode}
-                                selectedUid={selectedUid}
-                                selectedContacts={
-                                    selectedContacts
-                                }
-                                searchValue={searchValue}
-                                onSelectContact={
-                                    handleSelectContact
-                                }
-                                onSetSelectedContact={(
-                                    uid: string,
-                                ) =>
-                                    dispatch(
-                                        setSelectedContact(
-                                            uid,
-                                        ),
-                                    )
-                                }
-                                onBlock={() =>
-                                    handleOpenBlock(
-                                        contact.userUid ||
-                                            contact.uid,
-                                        `${contact.firstName || ''} ${contact.lastName || ''}`.trim() ||
-                                            contact.phone ||
-                                            contact.nickname ||
-                                            'контакт',
-                                        contact.phone,
-                                        contact.nickname,
-                                    )
-                                }
-                            />
-                        ))
-                    ) : filteredContacts.length === 0 &&
-                      filteredUsers.length === 0 &&
-                      searchValue.trim() ? (
-                        <div
-                            className={`
-                              flex h-full flex-col items-center justify-center
-                              p-4 text-center
-                            `}
-                        >
-                            <EmptySearchState />
-                        </div>
-                    ) : (
-                        <div
-                            className={`
-                              flex h-full flex-col items-center justify-center
-                              p-4 text-center
-                            `}
-                        >
-                            <Image
-                                src="/images/search/nullContacts.svg"
-                                alt="iconsSearch"
-                                width={200}
-                                height={200}
-                                loading="eager"
-                                style={{
-                                    width: '200px',
-                                    height: '200px',
-                                }}
-                            />
-                            <p className="mt-2 text-text-gray">
-                                Список контактов пока пуст
-                            </p>
-                        </div>
-                    )}
+                    {/* Режим поиска: показывать найденные контакты и/или пользователей */}
+                    {searchValue.trim() ? (
+                        <>
+                            {/* Показывать контакты, если они есть в поиске */}
+                            {filteredContacts &&
+                                filteredContacts.length >
+                                    0 && (
+                                    <>
+                                        <div
+                                            className={`
+                                              flex h-9 w-full justify-between
+                                              gap-1 bg-accent-violet-ultra-light
+                                              pt-2.5 pr-4 pb-2.5 pl-4
+                                            `}
+                                        >
+                                            <p>
+                                                Контакты
+                                                пользователей
+                                                А-чата
+                                            </p>
+                                            {/* Убрал кнопки удаления в режиме поиска, чтобы не путать */}
+                                        </div>
+                                        {filteredContacts.map(
+                                            (contact) => (
+                                                <ContactItem
+                                                    key={
+                                                        contact.uid
+                                                    }
+                                                    contact={
+                                                        contact
+                                                    }
+                                                    deleteMode={
+                                                        false
+                                                    } // В режиме поиска отключить режим удаления
+                                                    selectedUid={
+                                                        selectedUid
+                                                    }
+                                                    selectedContacts={[]}
+                                                    searchValue={
+                                                        searchValue
+                                                    }
+                                                    onSelectContact={
+                                                        handleSelectContact
+                                                    }
+                                                    onSetSelectedContact={() =>
+                                                        handleContactClick(
+                                                            contact,
+                                                        )
+                                                    }
+                                                />
+                                            ),
+                                        )}
+                                    </>
+                                )}
+                            {/* Показывать пользователей А-чата, если они есть в поиске */}
+                            {filteredUsers &&
+                                filteredUsers.length >
+                                    0 && (
+                                    <>
+                                        <div
+                                            className={`
+                                              flex h-9 w-full justify-center
+                                              bg-accent-violet-ultra-light
+                                              pt-2.5 pr-4 pb-2.5 pl-4
+                                            `}
+                                        >
+                                            <p>
+                                                Пользователи
+                                                А-чата
+                                            </p>
+                                        </div>
+                                        {filteredUsers.map(
+                                            (user) => (
+                                                <ContactItem
+                                                    key={`user-${user.uid}`}
+                                                    contact={
+                                                        user
+                                                    }
+                                                    deleteMode={
+                                                        false
+                                                    }
+                                                    selectedUid={
+                                                        selectedUid
+                                                    }
+                                                    selectedContacts={[]}
+                                                    searchValue={
+                                                        searchValue
+                                                    }
+                                                    onSelectContact={
+                                                        handleSelectContact
+                                                    }
+                                                    onSetSelectedContact={() =>
+                                                        handleContactClick(
+                                                            user,
+                                                        )
+                                                    }
+                                                    onContextMenu={(
+                                                        e,
+                                                    ) =>
+                                                        handleContextMenu(
+                                                            e,
+                                                            user,
+                                                        )
+                                                    }
+                                                />
+                                            ),
+                                        )}
+                                    </>
+                                )}
 
-                    {/* Панель удаления выбранных контактов */}
-                    {deleteMode &&
-                        selectedContacts.length > 0 && (
-                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-                            <div
-                                className={`
-                                  right-0 left-0 z-10 flex h-20 w-full
-                                  cursor-pointer items-center justify-center
-                                  bg-(--color-gray-light) transition-colors
-                                  hover:bg-(--color-accent-violet-light)
-                                `}
-                                onClick={handleOpenModal}
-                                role="button"
-                                aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
-                            >
-                                <p className="text-(--color-system-red)">
-                                    Удалить{' '}
-                                    {
-                                        selectedContacts.length
-                                    }{' '}
-                                    {getContactWord(
-                                        selectedContacts.length,
+                            {/* Если в поиске ничего не найдено */}
+                            {filteredContacts.length ===
+                                0 &&
+                                filteredUsers.length ===
+                                    0 && (
+                                    <div
+                                        className={`
+                                          flex h-full flex-col items-center
+                                          justify-center p-4 text-center
+                                        `}
+                                    >
+                                        <EmptySearchState />
+                                    </div>
+                                )}
+                        </>
+                    ) : (
+                        /* Режим без поиска: показывать контакты или баннер */
+                        <>
+                            {filteredContacts &&
+                            filteredContacts.length > 0 ? (
+                                <>
+                                    <div
+                                        className={`
+                                          flex h-9 w-full justify-between gap-1
+                                          bg-accent-violet-ultra-light pt-2.5
+                                          pr-4 pb-2.5 pl-4
+                                        `}
+                                    >
+                                        {deleteMode ? (
+                                            <>
+                                                <Image
+                                                    src="/images/contacts/arrow.svg"
+                                                    alt="back"
+                                                    width={
+                                                        24
+                                                    }
+                                                    height={
+                                                        24
+                                                    }
+                                                    style={{
+                                                        width: '24px',
+                                                        height: '24px',
+                                                    }}
+                                                    onClick={() =>
+                                                        handleToggleDeleteMode(
+                                                            false,
+                                                        )
+                                                    }
+                                                    className="cursor-pointer"
+                                                />
+                                                <p>
+                                                    Удалить
+                                                    контакты
+                                                </p>
+                                                {selectedContacts.length >
+                                                0 ? (
+                                                    <Image
+                                                        src="/images/contacts/iconCancel.svg"
+                                                        alt="cancel selection"
+                                                        width={
+                                                            24
+                                                        }
+                                                        height={
+                                                            24
+                                                        }
+                                                        style={{
+                                                            width: '24px',
+                                                            height: '24px',
+                                                        }}
+                                                        onClick={
+                                                            handleClearSelection
+                                                        }
+                                                        className={`
+                                                          cursor-pointer
+                                                        `}
+                                                        aria-label="Отменить выделение всех контактов"
+                                                    />
+                                                ) : (
+                                                    <Image
+                                                        src="/images/contacts/basketViolet.svg"
+                                                        alt="delete"
+                                                        width={
+                                                            24
+                                                        }
+                                                        height={
+                                                            24
+                                                        }
+                                                        style={{
+                                                            width: '24px',
+                                                            height: '24px',
+                                                        }}
+                                                        className={`
+                                                          cursor-pointer
+                                                        `}
+                                                    />
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p>
+                                                    Контакты
+                                                    пользователей
+                                                    А-чата
+                                                </p>
+                                                <Image
+                                                    src="/images/contacts/basket.svg"
+                                                    alt="delete"
+                                                    width={
+                                                        24
+                                                    }
+                                                    height={
+                                                        24
+                                                    }
+                                                    style={{
+                                                        width: '24px',
+                                                        height: '24px',
+                                                    }}
+                                                    onClick={() =>
+                                                        handleToggleDeleteMode(
+                                                            true,
+                                                        )
+                                                    }
+                                                    className="cursor-pointer"
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                    {filteredContacts.map(
+                                        (contact) => (
+                                            <ContactItem
+                                                key={
+                                                    contact.uid
+                                                }
+                                                contact={
+                                                    contact
+                                                }
+                                                deleteMode={
+                                                    deleteMode
+                                                }
+                                                selectedUid={
+                                                    selectedUid
+                                                }
+                                                selectedContacts={
+                                                    selectedContacts
+                                                }
+                                                searchValue={
+                                                    searchValue
+                                                }
+                                                onSelectContact={
+                                                    handleSelectContact
+                                                }
+                                                onSetSelectedContact={() =>
+                                                    handleContactClick(
+                                                        contact,
+                                                    )
+                                                }
+                                            />
+                                        ),
                                     )}
-                                </p>
-                            </div>
-                        )}
-                    {/* Блок пользователей А-чата */}
-                    {filteredUsers &&
-                        filteredUsers.length > 0 && (
-                            <>
+
+                                    {/* Панель удаления выбранных контактов */}
+                                    {deleteMode &&
+                                        selectedContacts.length >
+                                            0 && (
+                                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+                                            <div
+                                                className={`
+                                                  right-0 left-0 z-10 flex h-20
+                                                  w-full cursor-pointer
+                                                  items-center justify-center
+                                                  bg-(--color-gray-light)
+                                                  transition-colors
+                                                  hover:bg-(--color-accent-violet-light)
+                                                `}
+                                                onClick={
+                                                    handleOpenModal
+                                                }
+                                                role="button"
+                                                aria-label={`Удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}`}
+                                            >
+                                                <p
+                                                    className={`
+                                                      text-(--color-system-red)
+                                                    `}
+                                                >
+                                                    Удалить{' '}
+                                                    {
+                                                        selectedContacts.length
+                                                    }{' '}
+                                                    {getContactWord(
+                                                        selectedContacts.length,
+                                                    )}
+                                                </p>
+                                            </div>
+                                        )}
+                                </>
+                            ) : (
+                                /* Баннер только если нет поиска и контакты пустые */
                                 <div
                                     className={`
-                                      flex h-9 w-full justify-center
-                                      bg-accent-violet-ultra-light pt-2.5 pr-4
-                                      pb-2.5 pl-4
+                                      flex h-full flex-col items-center
+                                      justify-center p-4 text-center
                                     `}
                                 >
-                                    <p>
-                                        Пользователи А-чата
+                                    <Image
+                                        src="/images/search/nullContacts.svg"
+                                        alt="iconsSearch"
+                                        width={200}
+                                        height={200}
+                                        loading="eager"
+                                        style={{
+                                            width: '200px',
+                                            height: '200px',
+                                        }}
+                                    />
+                                    <p className="mt-2 text-text-gray">
+                                        Список контактов
+                                        пока пуст
                                     </p>
                                 </div>
-
-                                {filteredUsers.map(
-                                    (user) => (
-                                        <ContactItem
-                                            key={`user-${user.uid}`}
-                                            contact={user}
-                                            deleteMode={
-                                                false
-                                            }
-                                            selectedUid={
-                                                selectedUid
-                                            }
-                                            selectedContacts={[]}
-                                            searchValue={
-                                                searchValue
-                                            }
-                                            onSelectContact={() => {}}
-                                            onSetSelectedContact={(
-                                                uid: string,
-                                            ) =>
-                                                dispatch(
-                                                    setSelectedContact(
-                                                        uid,
-                                                    ),
-                                                )
-                                            }
-                                            onBlock={() =>
-                                                handleOpenBlock(
-                                                    user.userUid ||
-                                                        user.uid,
-                                                    `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                                                        user.phone ||
-                                                        user.nickname ||
-                                                        'контакт',
-                                                    user.phone,
-                                                    user.nickname,
-                                                )
-                                            }
-                                        />
-                                    ),
-                                )}
-                            </>
-                        )}
+                            )}
+                        </>
+                    )}
                 </CustomScrollbar>
             </div>
 
@@ -668,15 +833,29 @@ export default memo(function ContactsList() {
                 ]}
             />
 
-            {/* Модалка подтверждения блокировки.
-                Best practice: рендерим один экземпляр и управляем им через state,
-                чтобы исключить расхождение состояния между списком и модалкой. */}
-            <BlockModal
-                open={blockModalOpen}
-                onClose={handleCancelBlock}
-                onConfirm={handleConfirmBlock}
-                contactName={contactToBlock?.name || ''}
-            />
+            {/* Контекстное меню для добавления контакта */}
+            <Dropdown
+                open={dropdownOpen}
+                onOpenChange={setDropdownOpen}
+            >
+                <Dropdown.Content
+                    manualPosition={dropdownPosition}
+                >
+                    <Dropdown.Item
+                        label="Добавить в контакты"
+                        onSelect={() =>
+                            selectedUserForAdd &&
+                            handleAddContact(
+                                selectedUserForAdd,
+                            )
+                        }
+                    />
+                    <Dropdown.Item
+                        label="В черный список"
+                        onSelect={() => {}}
+                    />
+                </Dropdown.Content>
+            </Dropdown>
         </>
     )
 })

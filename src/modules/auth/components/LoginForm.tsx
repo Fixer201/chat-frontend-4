@@ -237,7 +237,10 @@ export default function LoginForm() {
                         attempts + 1 >= 10 ? 3600 : 600,
                     )
                 }
-                setError('Неверный код. Попробуйте снова.')
+                setError(
+                    data.message ||
+                        'Неверный код. Попробуйте снова.',
+                )
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
@@ -367,7 +370,7 @@ export default function LoginForm() {
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-            relative hidden h-(--app-login-height) w-(--app-login-width)
+            relative hidden h-screen w-(--app-login-width)
             flex-col items-center justify-center
             md:flex
           `}
@@ -476,7 +479,9 @@ export default function LoginForm() {
                                             handleOpenModal
                                         }
                                         disabled={
-                                            !!showError
+                                            !!showError ||
+                                            phoneNumber ===
+                                                ''
                                         }
                                     >
                                         Далее

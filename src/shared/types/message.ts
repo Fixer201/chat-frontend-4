@@ -4,11 +4,23 @@ export type MessageFile = {
 }
 
 export type RepliedMessage = {
+    uid?: string
     content: string
+    from_user?: string
+    first_name?: string
+    last_name?: string
+    files_list?: MessageFile[]
 }
 
 export type ForwardedMessage = {
+    uid?: string
     content: string
+    from_user?: string
+    first_name?: string
+    last_name?: string
+    avatar_url?: string
+    avatar_webp_url?: string
+    files_list?: MessageFile[]
 }
 
 export type Message = {
@@ -29,4 +41,54 @@ export type Message = {
     files?: MessageFile[] // прикрепленные файлы
     repliedMessages?: RepliedMessage[] // ответы на другие сообщения
     forwardedMessages?: ForwardedMessage[] // пересланные сообщения
+}
+
+export interface ApiMessage {
+    id: number
+    uid: string
+    from_user: {
+        uid: string
+        username: string
+        nickname: string
+        first_name: string
+        last_name: string
+        avatar_url: string
+        avatar_webp_url: string
+    }
+    to_user: {
+        uid: string
+        username: string
+        nickname: string
+        first_name: string
+        last_name: string
+        avatar_url: string
+        avatar_webp_url: string
+    }
+    content: string
+    replied_messages: {
+        id: number
+        uid: string
+        from_user: string
+        first_name: string
+        last_name: string
+        content: string
+        files_list: MessageFile[]
+    }[]
+    forwarded_messages: {
+        id: number
+        uid: string
+        from_user: string
+        first_name: string
+        last_name: string
+        content: string
+        files_list: MessageFile[]
+        avatar_webp_url: string
+    }[]
+    files_list: MessageFile[]
+    new: boolean
+    created_at: number
+    updated_at: number
+    chat_id: number
+    chat_key: string
+    message_rtc: number
 }

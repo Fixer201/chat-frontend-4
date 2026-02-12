@@ -4,6 +4,7 @@ Thank you for your interest in contributing. This document explains the preferre
 process for creating high-quality pull requests. Follow these guidelines to make review and integration smoother.
 
 > Important: work **only** in the `dev` branch of _your fork_. Do not push direct changes to the upstream repository.
+
 ---
 
 ## Before you start

@@ -1,14 +1,10 @@
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import Image from 'next/image'
-import Cookies from 'js-cookie'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
 import Modal from '@shared/ui/modal/Modal'
 
 export function AppHeader() {
-    const router = useRouter()
     const [isThanksModalOpen, setIsThanksModalOpen] =
         useState(false)
 
@@ -24,7 +20,7 @@ export function AppHeader() {
         <>
             <div
                 className={`
-                  mx-auto flex h-15 w-full max-w-[1200px] rotate-0 flex-row
+                  mx-auto flex h-15 w-full max-w-300 rotate-0 flex-row
                   items-center justify-between rounded-br-lg rounded-bl-lg
                   border-r border-b border-l border-app-divider bg-gray-main
                   px-2 opacity-100
@@ -66,7 +62,7 @@ export function AppHeader() {
                 titleClassName="text-xl font-semibold leading-7"
                 blurBackground
                 closeOnOverlayClick
-                className="relative max-w-[420px]"
+                className="relative max-w-105"
             >
                 <button
                     type="button"

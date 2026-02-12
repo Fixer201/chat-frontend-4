@@ -2,48 +2,46 @@
 
 import Image from 'next/image'
 import Smile from '@public/icons/messageComposer/Smile.svg'
-import { useRef, useState, useEffect } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
+import { useAutoResizeTextarea } from '../hooks/useAutoResizeTextarea'
 import { EmojiPickerWithCategories } from './EmojiPickerWithCategories'
+import ReplyPreview from './ReplyPreview'
+import dynamic from 'next/dynamic'
+import FilePickerMenu from './FilePickerMenu'
 import { cn } from '@shared/lib/utils'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { Message } from '@shared/types/message'
+
+// SendFileModal тяжёлый (FileReader, image preview),
+// загружается только при выборе файлов, не нужен при SSR
+const SendFileModal = dynamic(
+    () => import('./SendFileModal'),
+    {
+        ssr: false,
+    },
+)
 
 type MessageComposerProps = {
     chatKey: string
     toUserId: string
     editingMessage?: Message | null
+    replyingMessage?: Message | null
     onCancelEdit?: () => void
-}
-
-// Хук для автоматического изменения высоты textarea в зависимости от содержимого.
-// При каждом изменении value сбрасывает высоту до 'auto', замеряет scrollHeight
-// и устанавливает итоговую высоту с ограничением в 472px (максимум из макета Figma).
-function useAutoResizeTextarea(value: string) {
-    const ref = useRef<HTMLTextAreaElement>(null)
-
-    useEffect(() => {
-        const el = ref.current
-        if (!el) return
-
-        // Сбрасываем высоту в 'auto', чтобы scrollHeight корректно отразил
-        // реальную высоту контента (иначе при удалении текста высота не уменьшится)
-        el.style.height = 'auto'
-
-        // Ограничиваем высоту максимумом 472px (соответствует макету Figma),
-        // чтобы при большом объёме текста появлялась прокрутка внутри textarea
-        const maxHeight = 472
-        el.style.height =
-            Math.min(el.scrollHeight, maxHeight) + 'px'
-    }, [value])
-
-    return ref
+    onCancelReply?: () => void
 }
 
 export default function MessageComposer({
     chatKey,
     toUserId,
     editingMessage,
+    replyingMessage,
     onCancelEdit,
+    onCancelReply,
 }: Readonly<MessageComposerProps>) {
     // Текст сообщения в поле ввода. Начальное значение берётся из editingMessage
     // (если компонент смонтирован в режиме редактирования) либо остаётся пустым.
@@ -70,6 +68,68 @@ export default function MessageComposer({
     // updateMessage для обновления существующего (режим редактирования)
     const { sendMessage, updateMessage } = useWebSocket()
 
+    // Состояние выпадающего меню выбора файлов (изображение / файл)
+    const [isFileMenuOpen, setIsFileMenuOpen] =
+        useState(false)
+
+    // Файлы, выбранные пользователем для отправки через модальное окно
+    const [pendingFiles, setPendingFiles] = useState<
+        File[]
+    >([])
+
+    // Ref-ы на скрытые input[type=file] для выбора изображений и файлов
+    const imageInputRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleSelectImage = useCallback(() => {
+        imageInputRef.current?.click()
+    }, [])
+
+    const handleSelectFile = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    // Обработка выбора файлов из нативного диалога
+    const handleFilesSelected = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const selectedFiles = event.target.files
+            if (
+                !selectedFiles ||
+                selectedFiles.length === 0
+            )
+                return
+            setPendingFiles(Array.from(selectedFiles))
+            // Сбрасываем value, чтобы повторный выбор того же файла сработал
+            event.target.value = ''
+        },
+        [],
+    )
+
+    // Каждый файл отправляется отдельным сообщением
+    // Подпись (caption) прикрепляется только к первому файлу.
+    const handleFileSend = useCallback(
+        (
+            files: { filename: string; data: string }[],
+            caption: string,
+        ) => {
+            files.forEach((file, index) => {
+                sendMessage({
+                    chatKey: chatKey,
+                    content: index === 0 ? caption : '',
+                    toUserId: toUserId,
+                    status: 'publish',
+                    files: [file],
+                })
+            })
+            setPendingFiles([])
+        },
+        [sendMessage, chatKey, toUserId],
+    )
+
+    const handleFileModalClose = useCallback(() => {
+        setPendingFiles([])
+    }, [])
+
     // При переходе в режим редактирования автоматически устанавливаем фокус
     // на textarea, чтобы пользователь мог сразу начать редактировать текст
     useEffect(() => {
@@ -81,9 +141,9 @@ export default function MessageComposer({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editingMessage])
 
-    // Универсальный обработчик отправки: определяет режим (создание/редактирование)
-    // по наличию editingMessage и вызывает соответствующий метод WebSocket.
-    // После успешной отправки очищает поле ввода и выходит из режима редактирования.
+    // Универсальный обработчик отправки: определяет режим (создание/редактирование/ответ)
+    // по наличию editingMessage или replyingMessage и вызывает соответствующий метод WebSocket.
+    // После успешной отправки очищает поле ввода и выходит из соответствующего режима.
     const handleSendMessage = () => {
         // Игнорируем отправку пустого или состоящего только из пробелов сообщения
         if (inputValue.trim().length === 0) return
@@ -103,15 +163,36 @@ export default function MessageComposer({
             )
             onCancelEdit?.()
         } else {
-            // Режим создания: отправляем новое сообщение через WebSocket
-            // с указанием ключа чата и идентификатора получателя
+            /**
+             * Режим создания или ответа: отправляем новое сообщение через WebSocket.
+             *
+             * При наличии replyingMessage формируем объект RepliedMessage
+             * с метаданными автора (from_user), чтобы компонент RepliedMessage
+             * корректно отобразил имя автора цитируемого сообщения.
+             */
+            const repliedMessages = replyingMessage
+                ? [
+                      {
+                          uid: replyingMessage.uid,
+                          content: replyingMessage.content,
+                          from_user:
+                              replyingMessage.from_user,
+                      },
+                  ]
+                : undefined
+
             sendMessage({
                 chatKey: chatKey,
                 content: inputValue,
                 toUserId: toUserId,
                 status: 'publish',
+                repliedMessages,
             })
-            console.log('Отправка сообщения:', inputValue)
+
+            // Если был режим ответа, уведомляем родителя о завершении
+            if (replyingMessage) {
+                onCancelReply?.()
+            }
         }
 
         // Очищаем поле ввода после отправки, чтобы подготовить его к новому сообщению
@@ -190,12 +271,17 @@ export default function MessageComposer({
                             Редактирование сообщения
                         </span>
                     </div>
+                    {/* Кнопка отмены редактирования: cursor-pointer + hover */}
                     <button
                         type="button"
                         onClick={handleCancel}
                         className={`
-                          text-text-gray
-                          hover:text-text-black
+                          cursor-pointer rounded-lg p-1 text-text-gray
+                          transition-colors
+                          hover:bg-gray-main hover:text-text-black
+                          focus-visible:outline-2
+                          focus-visible:outline-accent-violet-primary
+                          active:scale-95
                         `}
                     >
                         <Image
@@ -208,26 +294,75 @@ export default function MessageComposer({
                 </div>
             )}
 
+            {/* Превью ответа: отображается при наличии replyingMessage */}
+            {replyingMessage && onCancelReply && (
+                <ReplyPreview
+                    message={replyingMessage}
+                    onCancel={onCancelReply}
+                />
+            )}
+
             <div
                 className={`
                   flex items-end justify-between px-2 py-3
                   md:px-4
                 `}
             >
-                {/* Кнопка прикрепления файла (скрепка) */}
-                <button
-                    aria-label="Attach file"
-                    type="button"
-                    className="mb-3"
-                >
-                    <Image
-                        width={25}
-                        height={25}
-                        src="/icons/messageComposer/Paperclip.svg"
-                        alt=""
-                        className="cursor-pointer"
+                {/* Кнопка прикрепления файла (скрепка) + выпадающее меню выбора типа файла */}
+                <div className="relative mb-2">
+                    <button
+                        aria-label="Attach file"
+                        type="button"
+                        onClick={() =>
+                            setIsFileMenuOpen(
+                                (prev) => !prev,
+                            )
+                        }
+                        className={`
+                          cursor-pointer rounded-lg p-1 transition-colors
+                          hover:bg-gray-main
+                          focus-visible:outline-2
+                          focus-visible:outline-accent-violet-primary
+                          active:scale-95
+                        `}
+                    >
+                        <Image
+                            width={25}
+                            height={25}
+                            src="/icons/messageComposer/Paperclip.svg"
+                            alt=""
+                        />
+                    </button>
+
+                    {isFileMenuOpen && (
+                        <FilePickerMenu
+                            onSelectImage={
+                                handleSelectImage
+                            }
+                            onSelectFile={handleSelectFile}
+                            onClose={() =>
+                                setIsFileMenuOpen(false)
+                            }
+                        />
+                    )}
+
+                    {/* Скрытые input-ы для нативного диалога выбора файлов */}
+                    <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleFilesSelected}
                     />
-                </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={handleFilesSelected}
+                    />
+                </div>
 
                 {/* Поле ввода сообщения: textarea с автоматическим ростом высоты,
                     кнопкой эмодзи и всплывающим пикером эмодзи */}
@@ -260,11 +395,14 @@ export default function MessageComposer({
                     />
 
                     {/* Кнопка-триггер пикера эмодзи: открывается по hover/focus,
-                        закрывается с задержкой по mouseleave/blur для плавного UX */}
-                    <button
-                        type="button"
+                        закрывается с задержкой по mouseleave/blur для плавного UX.
+                        cursor-pointer на button, fill-цвет на SVG — разделение ответственности */}
+                    <div
+                        role="button"
                         aria-label="Open emoji picker"
-                        className="absolute right-4 bottom-2 mb-1.5"
+                        className={`
+                          absolute right-4 bottom-2 mb-1.5 cursor-pointer
+                        `}
                         onMouseEnter={handleEmojiPickerOpen}
                         onMouseLeave={
                             handleEmojiPickerClose
@@ -278,7 +416,7 @@ export default function MessageComposer({
                             src="/icons/messageComposer/Smile.svg"
                             alt=""
                             className={cn(
-                                'cursor-pointer fill-text-gray',
+                                'fill-text-gray transition-colors',
                                 isEmojiPickerOpen &&
                                     'fill-accent-violet-primary',
                             )}
@@ -302,11 +440,12 @@ export default function MessageComposer({
                                 />
                             </div>
                         )}
-                    </button>
+                    </div>
                 </div>
 
                 {/* Контекстная кнопка действия: если поле ввода пустое — иконка записи
-                    голосового сообщения (микрофон), если есть текст — иконка отправки */}
+                    голосового сообщения (микрофон), если есть текст — иконка отправки.
+                    cursor-pointer на button, а не на Image child */}
                 <button
                     type="button"
                     aria-label={
@@ -319,25 +458,39 @@ export default function MessageComposer({
                             ? handleSendMessage
                             : undefined
                     }
-                    className="relative mb-2 h-8 w-8"
+                    className={`
+                      relative mb-2 h-8 w-8 cursor-pointer transition-transform
+                      hover:opacity-80
+                      focus-visible:outline-2
+                      focus-visible:outline-accent-violet-primary
+                      active:scale-90
+                    `}
                 >
                     {inputValue.length > 0 ? (
                         <Image
                             fill
                             src="/icons/messageComposer/SendMessage.svg"
                             alt=""
-                            className="cursor-pointer object-contain"
+                            className="object-contain"
                         />
                     ) : (
                         <Image
                             fill
                             src="/icons/messageComposer/Microphone.svg"
                             alt=""
-                            className="cursor-pointer object-contain"
+                            className="object-contain"
                         />
                     )}
                 </button>
             </div>
+
+            {pendingFiles.length > 0 ? (
+                <SendFileModal
+                    files={pendingFiles}
+                    onSend={handleFileSend}
+                    onClose={handleFileModalClose}
+                />
+            ) : null}
         </div>
     )
 }

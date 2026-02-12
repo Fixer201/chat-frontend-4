@@ -1,3 +1,3 @@
 export default function SupportPage() {
-  return <div>Support</div>;
+    return <div>Support</div>
 }

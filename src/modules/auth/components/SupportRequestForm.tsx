@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react'
 import Cookies from 'js-cookie'
 import Textarea from '@shared/ui/textarea/Textarea'
 import CodeConfirmForm from './CodeConfirmForm'
+import SuccessSupport from './SuccessSupport'
 
 interface SupportRequestFormProps {
     phoneNumber: string
@@ -41,6 +42,7 @@ export default function SupportRequestForm({
         setEmail(value)
         // обновлять ошибку в реальном времени
         if (
+            value &&
             value.length > 0 &&
             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
         ) {
@@ -61,6 +63,9 @@ export default function SupportRequestForm({
     }
     const handleDownload = () => {
         window.open('/listSolutions.pdf', '_blank')
+    }
+    const handleSubmit = () => {
+        setShowSuccessSupport(true)
     }
 
     // const handleSubmit = async () => {
@@ -84,13 +89,16 @@ export default function SupportRequestForm({
     //         setLoading(false)
     //     }
     // }
+    if (showSuccessSupport) {
+        return <SuccessSupport onBack={onBack} />
+    }
 
     return (
         <>
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-            relative hidden h-(--app-login-height) w-(--app-login-width)
+            relative hidden h-screen w-(--app-login-width)
             flex-col items-center justify-center
             md:flex
           `}
@@ -207,7 +215,7 @@ export default function SupportRequestForm({
                                     </div>
 
                                     <span
-                                        className={`text-[14px]`}
+                                    // className={`text-[14px]`}
                                     >
                                         Ознакомьтесь со{' '}
                                         <span
@@ -251,13 +259,12 @@ export default function SupportRequestForm({
                                                 : 'light-gray'
                                         }
                                         className={`w-full`}
-                                        onClick={() => {
-                                            setShowSuccessSupport(
-                                                true,
-                                            )
-                                        }}
+                                        onClick={
+                                            handleSubmit
+                                        }
                                         disabled={
-                                            !!emailError
+                                            !!emailError ||
+                                            email === ''
                                         }
                                     >
                                         Отправить

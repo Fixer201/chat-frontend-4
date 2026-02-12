@@ -134,10 +134,7 @@ export default function ChatsListWrapper() {
         setSelectedContacts(contacts)
 
         try {
-            const result = await createGroup(
-                groupData,
-                contacts,
-            ).unwrap()
+            await createGroup(groupData, contacts).unwrap()
 
             // Формирование строки с именами участников для отображения
             const memberNames = contacts
@@ -187,7 +184,7 @@ export default function ChatsListWrapper() {
         setSelectedContacts(contacts)
 
         try {
-            const result = await createChannel(
+            await createChannel(
                 channelData,
                 contacts,
             ).unwrap()

@@ -16,7 +16,7 @@ const MAX_RECONNECT_ATTEMPTS = 3
 
 // TODO: Временный флаг для переключения между моковыми и реальными данными
 // Удалить после реализации контактов на бэкенде
-const USE_MOCK = true
+const USE_MOCK = false
 
 export function useWebSocketChat() {
     // Ссылка на websocket подключение
@@ -92,6 +92,18 @@ export function useWebSocketChat() {
                     msg.uid === data.object.uid
                         ? data.object
                         : msg,
+                ),
+            )
+        }
+
+        if (
+            // если удачно удалили сообщение
+            data.action === 'delete_message' &&
+            data.status === 'OK'
+        ) {
+            setMessages((prev) =>
+                prev.filter(
+                    (msg) => msg.uid !== data.object.uid,
                 ),
             )
         }
@@ -250,10 +262,48 @@ export function useWebSocketChat() {
         [],
     )
 
+    // Функция удаления сообщения
+    const deleteMessage = useCallback(
+        ({
+            uid,
+            chatKey,
+            forAll,
+        }: {
+            uid: string
+            chatKey: string
+            forAll: boolean
+        }) => {
+            const messageObj = {
+                action: 'delete_message',
+                request_uid: crypto.randomUUID(),
+                object: {
+                    uid: uid,
+                    for_all: forAll,
+                    chat_key: chatKey,
+                },
+            }
+
+            console.log(
+                'Удаление сообщения на сервере: ',
+                messageObj,
+            )
+
+            if (
+                wsRef.current?.readyState === WebSocket.OPEN
+            ) {
+                wsRef.current?.send(
+                    JSON.stringify(messageObj),
+                )
+            }
+        },
+        [],
+    )
+
     return useMemo(
         () => ({
             sendMessage,
             updateMessage,
+            deleteMessage,
             messages,
             status,
             error,
@@ -261,6 +311,7 @@ export function useWebSocketChat() {
         [
             sendMessage,
             updateMessage,
+            deleteMessage,
             messages,
             status,
             error,
