@@ -76,8 +76,11 @@ const BlacklistContactsList = memo(
 
                                 return {
                                     uid: blockedUser.uid,
+                                    userUid:
+                                        blockedUser.uid,
                                     nickname:
-                                        blockedUser.nickname,
+                                        blockedUser.nickname ??
+                                        '',
                                     phone: blockedUser.phone,
                                     firstName:
                                         blockedUser.first_name,
@@ -91,9 +94,11 @@ const BlacklistContactsList = memo(
                                     avatarWebpUrl:
                                         blockedUser.avatar_webp_url,
                                     isOnline:
-                                        blockedUser.is_online,
+                                        blockedUser.is_online ??
+                                        false,
                                     wasOnlineAt:
-                                        blockedUser.was_online_at,
+                                        blockedUser.was_online_at ??
+                                        null,
                                 }
                             },
                         )
