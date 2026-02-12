@@ -1,19 +1,25 @@
 // Дропдаун действий по контакту (блокировка) // Для теста чёрного списка
+// Best practice: компонент отвечает только за UI и события,
+// а бизнес‑логика блокировки находится выше (родительский контейнер).
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
 
 interface ContactActionsDropdownProps {
+    // Колбэк наверх — единый источник правды для блокировки.
     onBlock: () => void // Для теста чёрного списка
 }
 
 export default function ContactActionsDropdown({
     onBlock,
 }: ContactActionsDropdownProps) {
+    // Управляем локальным состоянием раскрытия меню.
     const [open, setOpen] = useState(false)
+    // Реф для проверки кликов вне компонента.
     const menuRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
+        // Закрываем меню по клику вне (best practice для dropdown UX).
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 menuRef.current &&
@@ -25,12 +31,15 @@ export default function ContactActionsDropdown({
             }
         }
         if (open) {
+            // Подписываемся только пока меню открыто,
+            // чтобы избежать лишних слушателей.
             document.addEventListener(
                 'mousedown',
                 handleClickOutside,
             )
         }
         return () => {
+            // Всегда снимаем слушатель при unmount/закрытии.
             document.removeEventListener(
                 'mousedown',
                 handleClickOutside,
@@ -42,6 +51,7 @@ export default function ContactActionsDropdown({
         <div className="relative" ref={menuRef}>
             <button
                 type="button"
+                // Переключаем видимость меню по клику.
                 onClick={() => setOpen((prev) => !prev)}
                 className={`
                   flex h-8 w-8 items-center justify-center rounded
@@ -64,6 +74,8 @@ export default function ContactActionsDropdown({
                 >
                     <button
                         type="button"
+                        // Сначала выполняем действие, затем закрываем меню.
+                        // Это делает UX предсказуемым и упрощает повторные клики.
                         onClick={() => {
                             onBlock()
                             setOpen(false)

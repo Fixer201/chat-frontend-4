@@ -22,12 +22,18 @@ import { ApiContact, Contact } from '@shared/types/contact'
 import { ContactItem } from './ContactItem'
 
 export default memo(function ContactsList() {
+    // Поле поиска управляет фильтрацией контактов/пользователей А‑чата.
     const [searchValue, setSearchValue] = useState('')
+    // Режим массового удаления (выделение чекбоксами).
     const [deleteMode, setDeleteMode] = useState(false)
+    // Список UID выбранных контактов для удаления.
     const [selectedContacts, setSelectedContacts] =
         useState<string[]>([])
+    // Модалка подтверждения удаления контактов.
     const [isModalOpen, setIsModalOpen] = useState(false)
+    // Флаг загрузки первоначальных данных контактов.
     const [loading, setLoading] = useState(true)
+    // Результаты поиска пользователей А‑чата (добавление в контакты).
     const [users, setUsers] = useState<Contact[]>([])
     // Состояние модалки блокировки и выбранного контакта.
     // Best practice: храним минимум данных, чтобы исключить рассинхрон UI/данных.
@@ -41,12 +47,15 @@ export default memo(function ContactsList() {
     } | null>(null) // Для теста чёрного списка
     const dispatch = useDispatch()
     const router = useRouter()
+    // Текущий выбранный контакт в Redux (для подсветки в списке).
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContact.uid,
     )
+    // Храним список контактов в Redux, чтобы переиспользовать между экранами.
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
     )
+    // Фильтр контактов по ФИО/телефону/никнейму.
     const { filteredValue: filteredContacts } = useSearch(
         contactsList,
         searchValue,
@@ -57,6 +66,7 @@ export default memo(function ContactsList() {
             (contact) => `${contact.nickname}`,
         ],
     )
+    // Отдельный фильтр по результатам поиска пользователей А‑чата.
     const { filteredValue: filteredUsers } = useSearch(
         users,
         searchValue,
@@ -67,14 +77,15 @@ export default memo(function ContactsList() {
             (user) => `${user.nickname}`,
         ],
     )
-    // Функция для определения, является ли строка телефоном (простая проверка: только цифры и опционально +)
+    // Функция для определения, является ли строка телефоном
+    // (best practice: быстрое клиентское эвристическое определение формата).
     const isPhone = (str: string) => {
         const cleaned = str.replace(/\s/g, '') // Убираем пробелы
         return /^\+?\d+$/.test(cleaned)
     }
     const fetchData = useApiFetcher()
 
-    // Загрузка контактов
+    // Загрузка контактов (основной список).
     useEffect(() => {
         const loadContacts = async () => {
             try {
@@ -84,11 +95,14 @@ export default memo(function ContactsList() {
                         method: 'GET',
                     },
                 )
+                // API отдаёт contacts в results — приводим к массиву для устойчивости.
                 const contactsData: ApiContact[] =
                     data.results || []
                 const mappedContacts: Contact[] =
                     contactsData.map(
                         (item: ApiContact) => ({
+                            // API может возвращать user_uid (нужен для блокировки),
+                            // fallback на uid, если поле отсутствует.
                             uid: item.user_uid ?? item.uid,
                             userUid:
                                 item.user_uid ?? item.uid,
@@ -110,6 +124,7 @@ export default memo(function ContactsList() {
                             wasOnlineAt: item.was_online_at,
                         }),
                     )
+                // Обновляем Redux‑хранилище, чтобы список был доступен другим экранам.
                 dispatch(setContacts(mappedContacts))
             } catch (error: unknown) {
                 console.error(
@@ -133,11 +148,13 @@ export default memo(function ContactsList() {
         loadContacts()
     }, [dispatch, fetchData, router])
 
-    // Загрузка пользователей А-чата на основе searchValue
+    // Загрузка пользователей А‑чата на основе searchValue.
+    // Это отдельный API, не влияющий на список контактов.
     useEffect(() => {
         const loadUsers = async () => {
             if (!searchValue.trim()) {
-                setUsers([]) // Сбрасываем, если поиск пустой
+                // Если поиск пустой — очищаем результаты, чтобы не показывать старые данные.
+                setUsers([])
                 return
             }
             try {
@@ -153,7 +170,7 @@ export default memo(function ContactsList() {
                         ]),
                     },
                 )
-                // Маппим ответ API в Contact[]
+                // Маппим ответ API в Contact[] для повторного использования ContactItem.
                 const mappedUsers: Contact[] = data.map(
                     (item: {
                         uid: string
@@ -163,16 +180,20 @@ export default memo(function ContactsList() {
                         const isSearchPhone =
                             isPhone(searchValue)
                         return {
+                            // Для найденных пользователей uid == user_uid.
                             uid: item.uid,
                             userUid: item.uid,
                             username: '',
+                            // Никнейм только если поиск выполнялся по никнейму.
                             nickname: isSearchPhone
                                 ? ''
-                                : searchValue, // Никнейм только если поиск по нему
+                                : searchValue,
                             phone: item.phone,
+                            // При поиске по телефону показываем телефон в имени,
+                            // при поиске по никнейму — никнейм.
                             firstName: isSearchPhone
                                 ? item.phone
-                                : searchValue, // Телефон для телефона, searchValue для никнейма
+                                : searchValue,
                             lastName: '',
                             patronymic: '',
                             avatar: '',
@@ -187,6 +208,7 @@ export default memo(function ContactsList() {
                         }
                     },
                 )
+                // Обновляем список результатов поиска пользователей.
                 setUsers(mappedUsers)
             } catch (error: unknown) {
                 console.error(
@@ -203,20 +225,22 @@ export default memo(function ContactsList() {
                         router.push('/auth/login')
                     }
                 }
+                // В случае ошибки очищаем список, чтобы не показывать устаревшие данные.
                 setUsers([])
             }
         }
         loadUsers()
     }, [searchValue, fetchData, router])
 
-    // Сброс выделенного контакта при входе в режим удаления
+    // Сброс выделенного контакта при входе в режим удаления.
+    // Best practice: не держим одновременно "selected" и "delete" режим.
     useEffect(() => {
         if (deleteMode) {
             dispatch(setSelectedContact(null))
         }
     }, [deleteMode, dispatch])
 
-    // Функция для выбора контактов для удаления
+    // Выбор/снятие выбора контакта для массового удаления.
     const handleSelectContact = (uid: string) => {
         setSelectedContacts((prev) =>
             prev.includes(uid)
@@ -225,17 +249,18 @@ export default memo(function ContactsList() {
         )
     }
 
-    // Функция открытия модального окна
+    // Открытие модалки подтверждения удаления.
     const handleOpenModal = () => {
         setIsModalOpen(true)
     }
 
-    // Функция закрытия модального окна
+    // Закрытие модалки подтверждения удаления.
     const handleCloseModal = () => {
         setIsModalOpen(false)
     }
 
-    // Функция подтверждения удаления
+    // Подтверждение удаления: очищаем список выбранных и выходим из deleteMode.
+    // Best practice: локально обновляем UI после редьюсер‑операции.
     const handleConfirmDelete = () => {
         try {
             dispatch(removeContacts(selectedContacts))
@@ -250,7 +275,7 @@ export default memo(function ContactsList() {
         }
     }
 
-    // Функция для переключения режима удаления со сбросом выбранных контактов
+    // Переключение режима удаления со сбросом выбранных контактов.
     const handleToggleDeleteMode = (mode: boolean) => {
         setDeleteMode(mode)
         if (mode) {
@@ -258,13 +283,13 @@ export default memo(function ContactsList() {
         }
     }
 
-    // Функция для сброса выделения
+    // Сброс выделения выбранных контактов.
     const handleClearSelection = () => {
         setSelectedContacts([])
     }
 
     // Открываем подтверждение блокировки: сохраняем выбранный контакт в state
-    // и показываем модалку. Это упрощает повторные клики/повторные подтверждения.
+    // и показываем модалку. Это упрощает повторные клики и повторное подтверждение.
     const handleOpenBlock = (
         uid: string,
         name: string,
@@ -342,6 +367,8 @@ export default memo(function ContactsList() {
         }
     }
 
+    // Отмена блокировки: закрываем модалку и чистим выбранный контакт.
+    // Best practice: очищать state при закрытии модалки, чтобы не блокировать неверный контакт.
     const handleCancelBlock = () => {
         setBlockModalOpen(false) // Для теста чёрного списка
         setContactToBlock(null) // Для теста чёрного списка
@@ -642,7 +669,7 @@ export default memo(function ContactsList() {
             />
 
             {/* Модалка подтверждения блокировки.
-                рендерим один экземпляр и управляем им через state,
+                Best practice: рендерим один экземпляр и управляем им через state,
                 чтобы исключить расхождение состояния между списком и модалкой. */}
             <BlockModal
                 open={blockModalOpen}

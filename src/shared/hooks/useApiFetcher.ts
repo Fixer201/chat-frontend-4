@@ -1,4 +1,6 @@
 'use client'
+// Унифицированный fetcher с авторизацией, refresh‑логикой и безопасным парсингом.
+// Best practice: вся работа с токенами и ошибками централизована в одном месте.
 import { useCallback } from 'react'
 import Cookies from 'js-cookie'
 
@@ -7,6 +9,8 @@ interface FetchOptions extends RequestInit {
 }
 
 export const useApiFetcher = () => {
+    // Обновление access token по refresh token.
+    // Возвращает новый access token или null, если refresh недоступен.
     const refreshAccessToken = useCallback(async () => {
         const refreshToken = Cookies.get('refresh_token')
         if (!refreshToken) {
@@ -17,6 +21,8 @@ export const useApiFetcher = () => {
         }
 
         try {
+            // Запрос на refresh идёт через локальный API роут,
+            // чтобы скрыть детали авторизации от клиента.
             const response = await fetch(
                 '/api/auth/refresh',
                 {
@@ -31,6 +37,7 @@ export const useApiFetcher = () => {
             )
             if (response.ok) {
                 const data = await response.json()
+                // Best practice: обновляем access token с разумным TTL.
                 Cookies.set('access_token', data.access, {
                     expires: 7,
                 })
@@ -61,6 +68,7 @@ export const useApiFetcher = () => {
 
     const fetchData = useCallback(
         async (url: string, options: FetchOptions = {}) => {
+            // Защита от некорректного URL (ранняя ошибка вместо падения fetch).
             if (
                 !url ||
                 typeof url !== 'string' ||
@@ -81,6 +89,7 @@ export const useApiFetcher = () => {
                 )
             }
 
+            // Базовые заголовки: авторизация, CSRF и content-type при наличии body.
             const baseHeaders: Record<string, string> = {
                 accept: 'application/json',
                 Authorization: `Bearer ${accessToken}`,
@@ -92,6 +101,7 @@ export const useApiFetcher = () => {
                 }),
             }
 
+            // Позволяем вызывающему коду переопределять заголовки при необходимости.
             const headers: Record<string, string> = {
                 ...baseHeaders,
                 ...(options.headers as Record<
@@ -107,6 +117,7 @@ export const useApiFetcher = () => {
             })
 
             if (response.status === 401) {
+                // Токен истёк — пробуем refresh и повторяем запрос.
                 console.log('Token истек, обновление')
                 try {
                     const newAccessToken =
@@ -133,6 +144,7 @@ export const useApiFetcher = () => {
             }
 
             if (!response.ok) {
+                // Собираем максимум диагностической информации без утечки токена.
                 let errorBody = ''
                 try {
                     errorBody = await response
@@ -161,6 +173,8 @@ export const useApiFetcher = () => {
                     {},
                 )
 
+                // Best practice: логируем контекст ошибки целиком,
+                // чтобы быстрее найти причину (endpoint, метод, payload).
                 console.error('Ошибка API (подробно):', {
                     url,
                     method: options.method ?? 'GET',
@@ -178,18 +192,22 @@ export const useApiFetcher = () => {
                 )
             }
 
+            // 204 No Content — валидный успешный ответ без тела.
             if (response.status === 204) {
                 return null
             }
 
+            // Читаем тело как текст, чтобы корректно обработать non‑JSON ответы.
             const responseText = await response.text()
             if (!responseText) {
                 return null
             }
 
             try {
+                // Парсим JSON только если это действительно JSON.
                 return JSON.parse(responseText)
             } catch (parseError) {
+                // Best practice: возвращаем текст как есть, если JSON некорректен.
                 console.warn(
                     'Ответ API не является JSON:',
                     parseError,

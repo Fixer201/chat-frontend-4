@@ -29,6 +29,9 @@ const BlacklistContactsList = memo(
         const [blacklist, setBlacklist] = useState<
             Contact[]
         >([])
+        // Поиск по чёрному списку.
+        // Best practice: используем те же поля, что и в контактах,
+        // чтобы пользователь получал предсказуемый результат.
         const { filteredValue: filteredContacts } =
             useSearch(blacklist, searchValue, [
                 (contact) =>
@@ -36,8 +39,12 @@ const BlacklistContactsList = memo(
                 (contact) => `${contact.phone}`,
                 (contact) => `${contact.nickname}`,
             ])
+        // Единый fetcher с обработкой токенов/ошибок.
+        // Best practice: все API-вызовы проходят через него.
         const fetchData = useApiFetcher()
 
+        // Загружаем чёрный список один раз при монтировании.
+        // Best practice: держим side-effect в useEffect и чисто маппим данные.
         useEffect(() => {
             const loadBlacklist = async () => {
                 try {
@@ -53,8 +60,11 @@ const BlacklistContactsList = memo(
                             : data?.results || []
 
                     // API чёрного списка возвращает объекты с полем blocked_user.
-                    // Best practice: маппим данные строго из blocked_user (fallback на item)
-                    // чтобы UI не падал на undefined и был устойчив к формату ответа.
+                    // Best practice: маппим данные строго из blocked_user (fallback на item),
+                    // чтобы UI:
+                    // 1) не падал на undefined,
+                    // 2) был устойчив к изменению формата ответа,
+                    // 3) работал одинаково с массивом и пагинацией.
                     const mappedBlacklist: Contact[] =
                         contactsData.map(
                             (item: ApiContact) => {
@@ -113,21 +123,27 @@ const BlacklistContactsList = memo(
         }, [fetchData, router])
 
         const handleOpenModal = (uid: string) => {
+            // Открываем модалку удаления по uid выбранного пользователя.
+            // Best practice: не сохраняем весь объект, чтобы не хранить лишние поля.
             setSelectedContactUid(uid)
             setIsModalOpen(true)
         }
 
         const handleCloseModal = () => {
+            // Сбрасываем состояние модалки и выбранного контакта.
+            // Best practice: чистим uid, чтобы избежать удаления не того контакта.
             setIsModalOpen(false)
             setSelectedContactUid(null)
         }
 
         // Удаление из чёрного списка: удаляем на сервере и синхронно чистим локальный state.
-        // Best practice: оптимистично обновляем UI только после успешного ответа.
+        // Best practice: обновляем UI только после успешного ответа сервера,
+        // чтобы избежать рассинхрона, если запрос завершится ошибкой.
         const handleConfirmDelete = async () => {
             try {
                 if (!selectedContactUid) return
 
+                // API требует uid в path-param; метод DELETE не содержит body.
                 await fetchData(
                     `https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/delete/${selectedContactUid}/`,
                     {
@@ -135,6 +151,7 @@ const BlacklistContactsList = memo(
                     },
                 )
 
+                // Локально удаляем элемент для мгновенного отклика UI.
                 setBlacklist((prev) =>
                     prev.filter(
                         (contact) =>
@@ -163,6 +180,8 @@ const BlacklistContactsList = memo(
             }
         }
 
+        // Ранний рендер состояния загрузки.
+        // Best practice: минимизируем вложенность JSX.
         if (loading) {
             return (
                 <div className="flex h-full items-center justify-center">
@@ -174,7 +193,11 @@ const BlacklistContactsList = memo(
 
         return (
             <>
-                <div className="mt-2 flex h-1/12 min-h-15 items-center gap-3 px-4">
+                <div
+                    className={`
+                      mt-2 flex h-1/12 min-h-15 items-center gap-3 px-4
+                    `}
+                >
                     <Search
                         value={searchValue}
                         onChange={setSearchValue}
@@ -210,7 +233,10 @@ const BlacklistContactsList = memo(
                                                     )
                                                 }
                                                 className={cn(
-                                                    'flex h-10 w-10 items-center',
+                                                    `
+                                                      flex h-10 w-10
+                                                      items-center
+                                                    `,
                                                     'justify-center rounded-md',
                                                     'cursor-pointer',
                                                 )}
@@ -239,18 +265,18 @@ const BlacklistContactsList = memo(
                           searchValue.trim() ? (
                             <div
                                 className={`
-                              flex h-full flex-col items-center justify-center
-                              p-4 text-center
-                            `}
+                                  flex h-full flex-col items-center
+                                  justify-center p-4 text-center
+                                `}
                             >
                                 <EmptySearchState />
                             </div>
                         ) : (
                             <div
                                 className={`
-                              flex h-full flex-col items-center justify-center
-                              p-4 text-center
-                            `}
+                                  flex h-full flex-col items-center
+                                  justify-center p-4 text-center
+                                `}
                             >
                                 <Image
                                     src="/images/search/nullContacts.svg"
