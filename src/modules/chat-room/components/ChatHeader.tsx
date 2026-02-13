@@ -28,6 +28,7 @@ export default function ChatHeader({
     chat,
     onBack,
     onSearchOpen,
+    onCall,
     isSearchOpen = false,
     searchQuery = '',
     onSearchQueryChange,
@@ -39,6 +40,7 @@ export default function ChatHeader({
     chat: ChatItem
     onBack?: () => void
     onSearchOpen?: () => void
+    onCall?: () => void
     isSearchOpen?: boolean
     searchQuery?: string
     onSearchQueryChange?: (query: string) => void
@@ -213,6 +215,7 @@ export default function ChatHeader({
                         </button>
                         <button
                             aria-label="Call"
+                            onClick={onCall}
                             className={`
                               cursor-pointer rounded-lg p-1 transition-colors
                               hover:bg-gray-main
