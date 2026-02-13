@@ -11,6 +11,11 @@ import {
 import { Message, MessageFile } from '@shared/types/message'
 import { ConnectionStatus } from '@shared/types/webSocket'
 import { MOCK_MESSAGES } from '@shared/mocks/messages'
+import {
+    useAppDispatch,
+    useAppSelector,
+} from '@redux/store'
+import { updateChat } from '@redux/slices/chatsSlice'
 
 const MAX_RECONNECT_ATTEMPTS = 3
 
@@ -19,6 +24,10 @@ const MAX_RECONNECT_ATTEMPTS = 3
 const USE_MOCK = false
 
 export function useWebSocketChat() {
+    const dispatch = useAppDispatch()
+    const chats = useAppSelector(
+        (state) => state.chats.items,
+    )
     // Ссылка на websocket подключение
     const wsRef = useRef<WebSocket | null>(null)
     // ссылка для переподключения, чтобы не плодить кучу подключений
@@ -68,46 +77,180 @@ export function useWebSocketChat() {
         }
     }, [])
 
-    function onMessage(event: MessageEvent) {
-        console.log('Received: ', event)
+    const normalizeIncomingMessage = useCallback(
+        (payload: unknown): Message | null => {
+            if (!payload || typeof payload !== 'object') {
+                return null
+            }
 
-        // получаем ответ сервера и парсим его
-        const data = JSON.parse(event.data)
+            const data = payload as Record<string, unknown>
+            const messageData =
+                (data.message as
+                    | Record<string, unknown>
+                    | undefined) ??
+                (data.object as
+                    | Record<string, unknown>
+                    | undefined) ??
+                data
 
-        if (
-            // если удачно получили сообщение
-            data.action === 'create_text_message' &&
-            data.status === 'success'
-        ) {
-            setMessages((prev) => [...prev, data.message])
-        }
+            const chatKey = messageData.chat_key
+            const content = messageData.content
 
-        if (
-            // если удачно обновили сообщение
-            data.action === 'update_message' &&
-            data.status === 'OK'
-        ) {
-            setMessages((prev) =>
-                prev.map((msg) =>
-                    msg.uid === data.object.uid
-                        ? data.object
-                        : msg,
-                ),
+            if (
+                typeof chatKey !== 'string' ||
+                typeof content !== 'string'
+            ) {
+                console.debug('[WebSocket] skip payload', {
+                    payload,
+                })
+                return null
+            }
+
+            const normalized: Message = {
+                uid: messageData.uid as string | undefined,
+                chatKey,
+                content,
+                status: 'publish',
+                from_user:
+                    (
+                        messageData.from_user as
+                            | { uid?: string }
+                            | undefined
+                    )?.uid ??
+                    (messageData.from_user as
+                        | string
+                        | undefined),
+                toUserId:
+                    (
+                        messageData.to_user as
+                            | { uid?: string }
+                            | undefined
+                    )?.uid ??
+                    (messageData.to_user_uid as
+                        | string
+                        | undefined),
+                created_at: messageData.created_at as
+                    | number
+                    | undefined,
+                updated_at: messageData.updated_at as
+                    | number
+                    | undefined,
+                delivered_at: messageData.created_at as
+                    | number
+                    | undefined,
+                read_at:
+                    messageData.new === true
+                        ? undefined
+                        : (messageData.created_at as
+                              | number
+                              | undefined),
+                files:
+                    (messageData.files_list as
+                        | MessageFile[]
+                        | undefined) ??
+                    (messageData.files as
+                        | MessageFile[]
+                        | undefined) ??
+                    [],
+                repliedMessages:
+                    (messageData.replied_messages as Message['repliedMessages']) ??
+                    (messageData.repliedMessages as Message['repliedMessages']) ??
+                    [],
+                forwardedMessages:
+                    (messageData.forwarded_messages as Message['forwardedMessages']) ??
+                    (messageData.forwardedMessages as Message['forwardedMessages']) ??
+                    [],
+            }
+
+            console.debug(
+                '[WebSocket] normalized message',
+                normalized,
             )
-        }
 
-        if (
-            // если удачно удалили сообщение
-            data.action === 'delete_message' &&
-            data.status === 'OK'
-        ) {
-            setMessages((prev) =>
-                prev.filter(
-                    (msg) => msg.uid !== data.object.uid,
-                ),
-            )
-        }
-    }
+            return normalized
+        },
+        [],
+    )
+
+    const onMessage = useCallback(
+        (event: MessageEvent) => {
+            console.log('Received: ', event)
+
+            // получаем ответ сервера и парсим его
+            const data = JSON.parse(event.data)
+            console.debug('[WebSocket] payload', data)
+
+            if (
+                data.action === 'update_message' &&
+                data.status === 'OK'
+            ) {
+                setMessages((prev) =>
+                    prev.map((msg) =>
+                        msg.uid === data.object.uid
+                            ? data.object
+                            : msg,
+                    ),
+                )
+                return
+            }
+
+            if (
+                data.action === 'delete_message' &&
+                data.status === 'OK'
+            ) {
+                setMessages((prev) =>
+                    prev.filter(
+                        (msg) =>
+                            msg.uid !== data.object.uid,
+                    ),
+                )
+                return
+            }
+
+            const normalized =
+                normalizeIncomingMessage(data)
+            if (!normalized) return
+
+            setMessages((prev) => [...prev, normalized])
+            console.info('[WebSocket] message stored', {
+                chatKey: normalized.chatKey,
+                toUserId: normalized.toUserId,
+                uid: normalized.uid,
+            })
+
+            if (normalized.toUserId && normalized.chatKey) {
+                const tempChat = chats.find(
+                    (chat) =>
+                        chat.isTemporary &&
+                        chat.tempContactUid ===
+                            normalized.toUserId,
+                )
+
+                if (
+                    tempChat &&
+                    tempChat.chatKey !== normalized.chatKey
+                ) {
+                    console.info(
+                        '[WebSocket] update temp chat',
+                        {
+                            tempChatId: tempChat.id,
+                            fromChatKey: tempChat.chatKey,
+                            toChatKey: normalized.chatKey,
+                        },
+                    )
+                    dispatch(
+                        updateChat({
+                            ...tempChat,
+                            isTemporary: false,
+                            tempContactUid: undefined,
+                            chatKey: normalized.chatKey,
+                        }),
+                    )
+                }
+            }
+        },
+        [chats, dispatch, normalizeIncomingMessage],
+    )
 
     // Вспомогательная функция для получения токена из LocalStorage
     const getAccessToken = useCallback(() => {
@@ -149,7 +292,7 @@ export function useWebSocketChat() {
         }
 
         wsRef.current = socket
-    }, [getAccessToken, onError])
+    }, [getAccessToken, onError, onMessage])
 
     // при монтировании компонента открываем ws соединение или загружаем моки
     useLayoutEffect(() => {

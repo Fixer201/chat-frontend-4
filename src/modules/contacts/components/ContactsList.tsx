@@ -29,6 +29,12 @@ export default memo(function ContactsList() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<Contact[]>([])
+    const [blacklistUids, setBlacklistUids] = useState<
+        Set<string>
+    >(new Set())
+    const [blacklistPhones, setBlacklistPhones] = useState<
+        Set<string>
+    >(new Set())
     // Состояние модалки блокировки и выбранного контакта.
     // Best practice: храним минимум данных, чтобы исключить рассинхрон UI/данных.
     const [blockModalOpen, setBlockModalOpen] =
@@ -47,8 +53,23 @@ export default memo(function ContactsList() {
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
     )
+    const isBlacklisted = (contact: Contact) =>
+        blacklistUids.has(contact.userUid ?? contact.uid) ||
+        blacklistUids.has(contact.uid) ||
+        (contact.phone
+            ? blacklistPhones.has(contact.phone)
+            : false)
+
+    const visibleContacts = contactsList.filter(
+        (contact) => !isBlacklisted(contact),
+    )
+
+    const visibleUsers = users.filter(
+        (user) => !isBlacklisted(user),
+    )
+
     const { filteredValue: filteredContacts } = useSearch(
-        contactsList,
+        visibleContacts,
         searchValue,
         [
             (contact) =>
@@ -58,7 +79,7 @@ export default memo(function ContactsList() {
         ],
     )
     const { filteredValue: filteredUsers } = useSearch(
-        users,
+        visibleUsers,
         searchValue,
         [
             (user) =>
@@ -93,10 +114,13 @@ export default memo(function ContactsList() {
 
                         return {
                             // uid — локальный идентификатор контакта,
-                            // userUid — идентификатор пользователя для блокировки.
+                            // userUid — идентификатор пользователя (контакта).
+                            // Для чатов используем uid системного контакта, а owner_user — это текущий пользователь.
                             uid: item.uid,
                             userUid:
-                                item.owner_user ?? item.uid,
+                                systemContact?.uid ??
+                                item.owner_user ??
+                                item.uid,
                             username: '',
                             nickname: item.nickname ?? '',
                             phone: item.phone,
@@ -231,6 +255,53 @@ export default memo(function ContactsList() {
         loadUsers()
     }, [searchValue, fetchData, router])
 
+    // Загрузка чёрного списка: исключаем заблокированных из списка контактов.
+    useEffect(() => {
+        const loadBlacklist = async () => {
+            try {
+                const data = await fetchData(
+                    'https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/',
+                    {
+                        method: 'GET',
+                    },
+                )
+                const blacklistData: ApiContact[] =
+                    Array.isArray(data)
+                        ? data
+                        : data?.results || []
+
+                const blockedUids = new Set<string>()
+                const blockedPhones = new Set<string>()
+
+                blacklistData.forEach((item) => {
+                    const blockedUser =
+                        (
+                            item as ApiContact & {
+                                blocked_user?: ApiContact
+                            }
+                        ).blocked_user ?? item
+
+                    if (blockedUser?.uid) {
+                        blockedUids.add(blockedUser.uid)
+                    }
+                    if (blockedUser?.phone) {
+                        blockedPhones.add(blockedUser.phone)
+                    }
+                })
+
+                setBlacklistUids(blockedUids)
+                setBlacklistPhones(blockedPhones)
+            } catch (error) {
+                console.error(
+                    'Ошибка загрузки чёрного списка:',
+                    error,
+                )
+            }
+        }
+
+        loadBlacklist()
+    }, [fetchData])
+
     // Сброс выделенного контакта при входе в режим удаления
     useEffect(() => {
         if (deleteMode) {
@@ -260,7 +331,14 @@ export default memo(function ContactsList() {
     // Функция подтверждения удаления
     const handleConfirmDelete = () => {
         try {
+            console.info('[Contacts][Delete] confirm', {
+                selectedContacts,
+                selectedCount: selectedContacts.length,
+            })
             dispatch(removeContacts(selectedContacts))
+            console.info('[Contacts][Delete] dispatched', {
+                selectedContacts,
+            })
             setSelectedContacts([])
             setDeleteMode(false)
             setIsModalOpen(false)
@@ -352,6 +430,20 @@ export default memo(function ContactsList() {
                     method: 'POST',
                 },
             ) // Для теста чёрного списка
+
+            // После успешной блокировки убираем контакт из списка.
+            setBlacklistUids((prev) => {
+                const next = new Set(prev)
+                next.add(userUid)
+                return next
+            })
+            if (contactToBlock.phone) {
+                setBlacklistPhones((prev) => {
+                    const next = new Set(prev)
+                    next.add(contactToBlock.phone!)
+                    return next
+                })
+            }
         } catch (error) {
             console.error(
                 'Ошибка блокировки контакта (test):',
@@ -367,6 +459,14 @@ export default memo(function ContactsList() {
     const handleCancelBlock = () => {
         setBlockModalOpen(false) // Для теста чёрного списка
         setContactToBlock(null) // Для теста чёрного списка
+    }
+
+    const handleOpenChat = (contact: Contact) => {
+        const contactId = contact.userUid ?? contact.uid
+        dispatch(setSelectedContact(contact.uid))
+        router.push(
+            `/chats?contactId=${encodeURIComponent(contactId)}`,
+        )
     }
 
     if (loading) {
@@ -494,14 +594,8 @@ export default memo(function ContactsList() {
                                 onSelectContact={
                                     handleSelectContact
                                 }
-                                onSetSelectedContact={(
-                                    uid: string,
-                                ) =>
-                                    dispatch(
-                                        setSelectedContact(
-                                            uid,
-                                        ),
-                                    )
+                                onSetSelectedContact={() =>
+                                    handleOpenChat(contact)
                                 }
                                 onBlock={() =>
                                     handleOpenBlock(
@@ -610,13 +704,9 @@ export default memo(function ContactsList() {
                                                 searchValue
                                             }
                                             onSelectContact={() => {}}
-                                            onSetSelectedContact={(
-                                                uid: string,
-                                            ) =>
-                                                dispatch(
-                                                    setSelectedContact(
-                                                        uid,
-                                                    ),
+                                            onSetSelectedContact={() =>
+                                                handleOpenChat(
+                                                    user,
                                                 )
                                             }
                                             onBlock={() =>
