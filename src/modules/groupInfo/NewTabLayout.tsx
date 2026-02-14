@@ -115,7 +115,7 @@ export default function NewTabLayout({
         <div
             className={`
               flex max-h-[calc(100vh-112px)] min-h-0 flex-col overflow-hidden
-              rounded-md bg-white-bg
+              rounded-md bg-gray-main
             `}
             onWheel={handleWheel}
         >

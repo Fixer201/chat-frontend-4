@@ -15,27 +15,28 @@ export default function FileItem({
     return (
         <div
             className={`
-        group flex items-center border-b border-gray-200 p-3 transition-colors
-        hover:bg-gray-50
-      `}
+              group flex items-center border-b border-gray-200 p-3
+              transition-colors
+              hover:bg-gray-50
+            `}
         >
             <div className="flex items-center justify-center text-2xl">
                 {/* ВСЕГДА рендерим кнопку, меняем только её содержимое */}
                 <button
                     onClick={() => onDownload(file.id)}
                     className={`
-            relative flex h-10 w-10 items-center justify-center rounded-full
-            transition-colors
-            hover:cursor-pointer
-            ${
-                file.isLoading
-                    ? 'bg-white-bg'
-                    : `
-              bg-accent-violet
-              hover:bg-accent-violet-dark
-            `
-            }
-          `}
+                      relative flex h-10 w-10 items-center justify-center
+                      rounded-full transition-colors
+                      hover:cursor-pointer
+                      ${
+                          file.isLoading
+                              ? 'bg-white-bg'
+                              : `
+                      bg-accent-violet
+                      hover:bg-accent-violet-dark
+                    `
+                      }
+                    `}
                 >
                     {file.isLoading ? (
                         // Анимированная иконка загрузки
@@ -74,8 +75,9 @@ export default function FileItem({
                                                 100)
                                     }
                                     className={`
-                    origin-center -rotate-90 transition-all duration-100
-                  `}
+                                      origin-center -rotate-90 transition-all
+                                      duration-100
+                                    `}
                                     style={{
                                         transformOrigin:
                                             'center',

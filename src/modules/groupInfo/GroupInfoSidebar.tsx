@@ -18,7 +18,12 @@ import MediaContent from './tabs/MediaContent'
 import FilesContent from './tabs/FilesContent'
 import VoiceContent from './tabs/VoiceContent'
 import LinksContent from './tabs/LinksContent'
-
+import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu'
+import Modal from '@shared/ui/modal/Modal'
+import type { ModalButtonConfig } from '@shared/ui/modal/Modal'
+import ClearChatModal from './modals/ClearChatModal'
+import LeaveGroupModal from './modals/LeaveGroupModal'
+import DeleteGroupModal from './modals/DeleteGroupModal'
 type TabId =
     | 'participants'
     | 'media'
@@ -681,6 +686,55 @@ export default function GroupInfoSidebar() {
         }
     }
 
+    // Состояния для модальных окон
+    const [clearChatModalOpen, setClearChatModalOpen] =
+        useState(false)
+    const [leaveGroupModalOpen, setLeaveGroupModalOpen] =
+        useState(false)
+    const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
+        useState(false)
+
+    // Обработчики для каждой операции
+    const handleClearChat = useCallback(
+        async (deleteForEveryone?: boolean) => {
+            console.log(
+                'Чат очищен',
+                deleteForEveryone
+                    ? 'для всех'
+                    : 'только для себя',
+            )
+            setClearChatModalOpen(false)
+            // вызов API
+        },
+        [],
+    )
+
+    const handleClearChatCancel = useCallback(() => {
+        setClearChatModalOpen(false)
+    }, [])
+
+    const handleLeaveGroup = useCallback(async () => {
+        console.log('Пользователь покинул группу')
+        setLeaveGroupModalOpen(false)
+    }, [])
+
+    const handleLeaveGroupCancel = useCallback(() => {
+        setLeaveGroupModalOpen(false)
+    }, [])
+
+    const handleDeleteGroup = useCallback(async () => {
+        console.log('Группа удалена')
+        setDeleteGroupModalOpen(false)
+        // можно добавить редирект или закрытие сайдбара
+    }, [])
+
+    const handleDeleteGroupCancel = useCallback(() => {
+        setDeleteGroupModalOpen(false)
+    }, [])
+
+    // Название группы (можно вынести в пропсы или стейт)
+    const groupName = 'Рабочая группа' // позже можно получать из контекста/пропсов
+
     // Функция для получения контента таба
     const getTabContent = (tabId: TabId) => {
         switch (tabId) {
@@ -729,7 +783,7 @@ export default function GroupInfoSidebar() {
         <div
             className={`
               relative flex h-full flex-col overflow-hidden rounded-md
-              bg-white-bg
+              bg-gray-main
             `}
             onMouseEnter={() => setIsMouseOver(true)}
             onMouseLeave={() => setIsMouseOver(false)}
@@ -792,26 +846,72 @@ export default function GroupInfoSidebar() {
                             height={24}
                         />
                     </Button>
-                    <Button
-                        onClick={() =>
-                            console.log('Настройки')
+
+                    <DropdownMenuButton
+                        triggerIcon={
+                            <Image
+                                src="/icons/detailInfo/detailInfoDropdown.svg"
+                                alt="Настройки"
+                                width={24}
+                                height={24}
+                                className="hover:cursor-pointer"
+                            />
                         }
-                        aria-label="Настройки"
-                        variant="ghost"
-                        size="sm"
-                        className={`
-                          flex items-center justify-center rounded-full p-0
-                          text-text-black
-                          hover:bg-accent-violet-ultra-light
-                        `}
-                    >
-                        <Image
-                            src="/icons/detailInfo/detailInfoDropdown.svg"
-                            alt="Настройки"
-                            width={24}
-                            height={24}
-                        />
-                    </Button>
+                        triggerClassName="flex items-center justify-center rounded-full p-0 text-text-black hover:bg-accent-violet-ultra-light"
+                        menuWidth={220}
+                        placement="bottom-right"
+                        ariaLabel="Настройки группы"
+                        items={[
+                            {
+                                label: 'Очистить чат',
+                                icon: (
+                                    <Image
+                                        src="/icons/clean.svg"
+                                        alt=""
+                                        width={24}
+                                        height={24}
+                                    />
+                                ),
+                                onClick: () =>
+                                    setClearChatModalOpen(
+                                        true,
+                                    ),
+                            },
+                            {
+                                label: 'Покинуть группу',
+                                icon: (
+                                    <Image
+                                        src="/icons/leave.svg"
+                                        alt=""
+                                        width={24}
+                                        height={24}
+                                    />
+                                ),
+                                onClick: () =>
+                                    setLeaveGroupModalOpen(
+                                        true,
+                                    ),
+                                hasDivider: true,
+                            },
+                            {
+                                label: 'Удалить группу',
+                                icon: (
+                                    <Image
+                                        src="/icons/delete.svg"
+                                        alt=""
+                                        width={24}
+                                        height={24}
+                                    />
+                                ),
+                                onClick: () =>
+                                    setDeleteGroupModalOpen(
+                                        true,
+                                    ),
+                                hasDivider: true,
+                                isDanger: true,
+                            },
+                        ]}
+                    />
                 </div>
             </div>
 
@@ -1044,22 +1144,36 @@ export default function GroupInfoSidebar() {
                     {/* Preview контента активного таба */}
                     <div
                         className={`
-                      relative mt-2 max-h-48 overflow-hidden rounded-b-md
+                      relative mt-2 h-full max-h-full overflow-hidden
+                      rounded-b-md
                     `}
                     >
                         <TabContentPreview
                             activeTab={activeTab}
                         />
-                        {/* Градиент для указания на продолжение */}
-                        <div
-                            className={`
-      pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t
-      from-white-bg to-transparent
-    `}
-                        ></div>
                     </div>
                 </div>
             </div>
+            <ClearChatModal
+                open={clearChatModalOpen}
+                onClose={handleClearChatCancel}
+                onConfirm={handleClearChat}
+                groupName="Рабочая группа"
+            />
+
+            <LeaveGroupModal
+                open={leaveGroupModalOpen}
+                onClose={handleLeaveGroupCancel}
+                onConfirm={handleLeaveGroup}
+                groupName="Рабочая группа"
+            />
+
+            <DeleteGroupModal
+                open={deleteGroupModalOpen}
+                onClose={handleDeleteGroupCancel}
+                onConfirm={handleDeleteGroup}
+                groupName="Рабочая группа"
+            />
         </div>
     )
 }

@@ -204,7 +204,7 @@ export default function FilesContent() {
     return (
         <div>
             {/* Заголовок с общим размером */}
-            <div className="border-b border-gray-200 p-4">
+            <div className="border-b border-gray-main p-4">
                 <div className="flex items-center justify-between">
                     <h3 className="font-medium text-text-black">
                         Файлы ({filesState.length})

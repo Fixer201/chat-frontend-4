@@ -39,15 +39,8 @@ export default function TabContentPreview({
     }
 
     return (
-        <div className="relative max-h-48 overflow-hidden">
+        <div className="relative h-full max-h-full overflow-hidden">
             {getPreviewComponent()}
-            {/* Градиент для указания на продолжение */}
-            <div
-                className={`
-              pointer-events-none absolute right-0 bottom-0 left-0 h-12
-              bg-gradient-to-t from-white-bg to-transparent
-            `}
-            ></div>
         </div>
     )
 }
