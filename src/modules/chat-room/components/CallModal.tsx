@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ChatItem } from '@shared/types/chat'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 import { createEscapeKeyHandler } from '@shared/lib/keyboard-handlers'
@@ -41,6 +41,7 @@ export default function CallModal({
 
     const handleKeyDown = createEscapeKeyHandler(onClose)
     const isIncoming = variant === 'incoming'
+    const [isFullscreen, setIsFullscreen] = useState(false)
 
     if (!open) return null
 
@@ -48,14 +49,23 @@ export default function CallModal({
         <div
             className={cn(
                 'fixed',
-                'inset-0',
+                isFullscreen
+                    ? cn(
+                          'top-[72px]',
+                          'bottom-[8px]',
+                          'left-1/2',
+                          'w-full',
+                          'max-w-[1200px]',
+                          '-translate-x-1/2',
+                      )
+                    : 'inset-0',
                 'z-50',
                 'flex',
                 'items-center',
                 'justify-center',
                 'bg-transparent',
-                'px-4',
-                'py-6',
+                isFullscreen ? 'px-0' : 'px-4',
+                isFullscreen ? 'py-0' : 'py-6',
             )}
             role="dialog"
             aria-modal="true"
@@ -67,17 +77,21 @@ export default function CallModal({
                     'relative',
                     'flex',
                     'flex-col',
-                    'h-[770px]',
-                    'w-[388px]',
-                    'max-h-[90vh]',
-                    'max-w-[90vw]',
+                    isFullscreen ? 'h-full' : 'h-[770px]',
+                    isFullscreen ? 'w-full' : 'w-[388px]',
+                    isFullscreen
+                        ? 'max-h-none'
+                        : 'max-h-[90vh]',
+                    isFullscreen
+                        ? 'max-w-none'
+                        : 'max-w-[90vw]',
                     'overflow-y-auto',
                     'rounded-lg',
                     isIncoming
                         ? 'bg-[color:var(--color-call-modal-incoming-bg)]'
                         : 'bg-accent-violet-dark',
-                    'px-6',
-                    'py-8',
+                    isFullscreen ? 'px-12' : 'px-6',
+                    isFullscreen ? 'py-10' : 'py-8',
                     'text-white',
                     'shadow-context-shadow',
                 )}
@@ -87,65 +101,72 @@ export default function CallModal({
                 }
                 role="presentation"
             >
-                <div className="flex items-center justify-between">
-                    <button
-                        type="button"
-                        aria-label="Развернуть окно звонка"
-                        className={cn(
-                            'rounded-full',
-                            'cursor-pointer',
-                            'p-2',
-                            'text-white/80',
-                            'transition',
-                            'hover:bg-white/10',
-                        )}
-                    >
-                        <Image
-                            src="/icons/call/FullSize.svg"
-                            alt="Развернуть"
-                            width={17}
-                            height={17}
-                        />
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="Закрыть звонок"
-                        onClick={onClose}
-                        className={cn(
-                            'rounded-full',
-                            'p-2',
-                            'text-white/80',
-                            'transition',
-                            'hover:bg-white/10',
-                            'cursor-pointer',
-                        )}
-                    >
-                        <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
+                {!isIncoming && (
+                    <div className="flex items-center justify-between">
+                        <button
+                            type="button"
+                            aria-label="Развернуть окно звонка"
+                            onClick={() =>
+                                setIsFullscreen(
+                                    (prev) => !prev,
+                                )
+                            }
+                            className={cn(
+                                'rounded-full',
+                                'cursor-pointer',
+                                'p-2',
+                                'text-white/80',
+                                'transition',
+                                'hover:bg-white/10',
+                            )}
                         >
-                            <line
-                                x1="18"
-                                y1="6"
-                                x2="6"
-                                y2="18"
+                            <Image
+                                src="/icons/call/FullSize.svg"
+                                alt="Развернуть"
+                                width={17}
+                                height={17}
                             />
-                            <line
-                                x1="6"
-                                y1="6"
-                                x2="18"
-                                y2="18"
-                            />
-                        </svg>
-                    </button>
-                </div>
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Закрыть звонок"
+                            onClick={onClose}
+                            className={cn(
+                                'rounded-full',
+                                'p-2',
+                                'text-white/80',
+                                'transition',
+                                'hover:bg-white/10',
+                                'cursor-pointer',
+                            )}
+                        >
+                            <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                            >
+                                <line
+                                    x1="18"
+                                    y1="6"
+                                    x2="6"
+                                    y2="18"
+                                />
+                                <line
+                                    x1="6"
+                                    y1="6"
+                                    x2="18"
+                                    y2="18"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                )}
 
                 <div
                     className={cn(
