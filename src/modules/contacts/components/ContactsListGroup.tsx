@@ -124,9 +124,9 @@ export default memo(function ContactsListGroup({
                     />
                     <p
                         className={`
-                      text-accent-violet transition-colors duration-200
-                      hover:text-accent-violet-dark
-                    `}
+                          text-accent-violet transition-colors duration-200
+                          hover:text-accent-violet-dark
+                        `}
                     >
                         Пригласить в группу
                     </p>
@@ -152,9 +152,9 @@ export default memo(function ContactsListGroup({
                         <>
                             <div
                                 className={`
-                              flex h-9 w-full justify-between gap-1 pt-2.5 pr-4
-                              pb-2.5 pl-4 text-text-gray
-                            `}
+                                  flex h-9 w-full justify-between gap-1 pt-2.5
+                                  pr-4 pb-2.5 pl-4 text-text-gray
+                                `}
                             >
                                 <p className="text-sm">
                                     Владелец
@@ -188,9 +188,9 @@ export default memo(function ContactsListGroup({
                     {/* Участники */}
                     <div
                         className={`
-                      flex h-9 w-full justify-between gap-1 pt-2.5 pr-4 pb-2.5
-                      pl-4 text-text-gray
-                    `}
+                          flex h-9 w-full justify-between gap-1 pt-2.5 pr-4
+                          pb-2.5 pl-4 text-text-gray
+                        `}
                     >
                         <p className="text-sm">Участники</p>
                     </div>
@@ -231,18 +231,18 @@ export default memo(function ContactsListGroup({
                       searchValue.trim() ? (
                         <div
                             className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                              flex h-full flex-col items-center justify-center
+                              p-4 text-center
+                            `}
                         >
                             <EmptySearchState />
                         </div>
                     ) : (
                         <div
                             className={`
-                          flex h-full flex-col items-center justify-center p-4
-                          text-center
-                        `}
+                              flex h-full flex-col items-center justify-center
+                              p-4 text-center
+                            `}
                         >
                             <Image
                                 src="/images/search/nullContacts.svg"

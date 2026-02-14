@@ -206,9 +206,9 @@ export default function ParticipantsContent({
     return (
         <div
             className={`
-          flex h-full flex-col transition-opacity duration-200
-          ${visible ? 'opacity-100' : 'opacity-0'}
-        `}
+              flex h-full flex-col transition-opacity duration-200
+              ${visible ? 'opacity-100' : 'opacity-0'}
+            `}
         >
             {currentView === 'participants' ? (
                 <ContactsListGroup

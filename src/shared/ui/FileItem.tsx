@@ -32,9 +32,9 @@ export default function FileItem({
                           file.isLoading
                               ? 'bg-white-bg'
                               : `
-                      bg-accent-violet
-                      hover:bg-accent-violet-dark
-                    `
+                                bg-accent-violet
+                                hover:bg-accent-violet-dark
+                              `
                       }
                     `}
                 >

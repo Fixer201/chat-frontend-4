@@ -12,6 +12,10 @@ import type {
     MockFile,
 } from '@shared/types/file'
 import FileItem from '../../../shared/ui/FileItem'
+// Импорты для поиска
+import { useSearch } from '@shared/hooks/useSearch'
+import Search from '@shared/ui/Search'
+import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 
 export default function FilesContent() {
     const [visible, setVisible] = useState(false)
@@ -19,6 +23,8 @@ export default function FilesContent() {
         BaseFile[]
     >([])
     const [loading, setLoading] = useState(true)
+    // Состояние для строки поиска
+    const [searchValue, setSearchValue] = useState('')
 
     // Создаем ref для хранения интервалов загрузки
     const downloadIntervalsRef = useRef<{
@@ -77,6 +83,13 @@ export default function FilesContent() {
             setLoading(false)
         }
     }
+
+    // Фильтрация файлов по имени с помощью хука useSearch
+    const { filteredValue: filteredFiles } = useSearch(
+        filesState,
+        searchValue,
+        [(file) => file.name.toLowerCase()], // поиск по имени файла
+    )
 
     // Функция для имитации загрузки файла
     const simulateDownload = (id: number) => {
@@ -203,16 +216,16 @@ export default function FilesContent() {
 
     return (
         <div>
-            {/* Заголовок с общим размером */}
-            <div className="border-b border-gray-main p-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-text-black">
-                        Файлы ({filesState.length})
-                    </h3>
-                    <span className="text-sm text-text-gray">
-                        {totalSize}
-                    </span>
-                </div>
+            {/* Поле поиска (аналогично ContactsListGroup) */}
+            <div className="mt-2 flex h-1/12 items-center px-4">
+                <Search
+                    value={searchValue}
+                    onChange={setSearchValue}
+                    placeholder="Поиск"
+                    clearIconSrc="/images/search/iconsClose.svg"
+                    showClearButton={true}
+                    bgColor="bg-accent-violet-ultra-light"
+                />
             </div>
 
             <div className="space-y-0">
@@ -220,8 +233,13 @@ export default function FilesContent() {
                     <div className="p-8 text-center text-text-gray">
                         Файлы не найдены
                     </div>
+                ) : filteredFiles.length === 0 ? (
+                    // Показываем заглушку, если поиск не дал результатов
+                    <div className="p-8">
+                        <EmptySearchState />
+                    </div>
                 ) : (
-                    filesState.map((file) => (
+                    filteredFiles.map((file) => (
                         <FileItem
                             key={file.id}
                             file={file}
