@@ -12,25 +12,25 @@ const iconBaseClass = 'h-8 w-8 transition-colors'
 const navItems = [
     {
         id: 'messages',
-        label: 'Messages',
+        label: 'Чаты',
         Icon: MessageIcon,
         path: '/chats',
     },
     {
         id: 'service',
-        label: 'Services',
+        label: 'Сервисы',
         Icon: ServiceIcon,
         path: '/test-components',
     },
     {
         id: 'contacts',
-        label: 'Contacts',
+        label: 'Контакты',
         Icon: ContactsIcon,
         path: '/contacts',
     },
     {
         id: 'settings',
-        label: 'Settings',
+        label: 'Настройки',
         Icon: SettingsIcon,
         path: '/settings',
     },
@@ -43,7 +43,11 @@ export default function AppSidebar() {
     return (
         <nav
             className={`
-              flex h-[228px] w-12 flex-col items-center justify-between gap-3
+              fixed right-0 bottom-0 left-0 flex h-16 w-full flex-row
+              items-center justify-around gap-3 border-t border-app-divider
+              bg-white p-2
+              md:static md:h-57 md:w-12 md:flex-col md:justify-between md:gap-3
+              md:border-0 md:bg-transparent md:p-0
             `}
         >
             {navItems.map(({ id, label, Icon, path }) => {
@@ -63,8 +67,10 @@ export default function AppSidebar() {
                         aria-pressed={isActive}
                         className={cn(
                             `
-                              flex h-12 w-12 cursor-pointer items-center
-                              justify-center rounded-lg transition-colors
+                              flex h-16 w-12 cursor-pointer flex-col
+                              items-center justify-center gap-1 rounded-lg
+                              transition-colors
+                              md:h-12 md:flex-row md:justify-center md:gap-0
                             `,
                             isActive
                                 ? 'border border-app-divider bg-gray-main'
@@ -83,7 +89,14 @@ export default function AppSidebar() {
                             )}
                             aria-hidden
                         />
-                        <span className="sr-only">
+                        <span
+                            className={`
+                          block text-center text-[14px] text-text-gray
+                          md:hidden
+                        `}
+                        >
+                            {' '}
+                            {/* Подпись только на мобильных */}
                             {label}
                         </span>
                     </button>

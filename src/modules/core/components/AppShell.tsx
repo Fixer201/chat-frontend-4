@@ -11,6 +11,7 @@ export default function AppShell({
     children: React.ReactNode
 }) {
     const [isOnline, setIsOnline] = useState(true)
+    const [isMobile, setIsMobile] = useState(false)
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsOnline(navigator.onLine)
@@ -25,6 +26,19 @@ export default function AppShell({
             window.removeEventListener('offline', goOffline)
         }
     }, [])
+    // эффект для определения мобильного режима
+    useEffect(() => {
+        const checkMobile = () =>
+            setIsMobile(window.innerWidth <= 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () =>
+            window.removeEventListener(
+                'resize',
+                checkMobile,
+            )
+    }, [])
+
     if (!isOnline) {
         return <OfflineStub /> // Показываем вместо всего интерфейса
     }
@@ -35,16 +49,21 @@ export default function AppShell({
               md:gap-4 md:p-2
             `}
         >
-            <AppHeader />
+            {!isMobile && <AppHeader />}
             <div
                 className={`
-                  mx-auto flex h-full w-full max-w-[1200px] flex-row gap-2
+                  mx-auto flex h-full w-full max-w-300 flex-col gap-2
                   overflow-hidden
-                  md:gap-4
+                  md:flex-row md:gap-4
                 `}
             >
                 <AppSidebar />
-                <div className="flex h-full flex-1 overflow-hidden">
+                <div
+                    className={`
+                  flex h-full flex-1 overflow-hidden
+                  md:w-auto
+                `}
+                >
                     {children}
                 </div>
             </div>
