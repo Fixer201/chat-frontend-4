@@ -111,19 +111,21 @@ export default function SupportRequestForm({
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-                  login-container relative flex h-screen w-(--app-login-width)
-                  flex-col items-center justify-center bg-none
-                  md:bg-app-login-background
-                `}
+                      login-container relative flex h-screen
+                      w-(--app-login-width) flex-col items-center justify-center
+                      bg-none
+                      md:bg-app-login-background
+                    `}
                 >
                     <div
                         className={`
-                      start-screen-inner flex flex-col items-center
-                      justify-start gap-4 bg-white
-                      md:absolute md:h-190 md:w-122 md:flex-col md:items-center
-                      md:justify-center md:rounded-2xl md:bg-app-login-start
-                      md:filter-app-start-screen-shadow
-                    `}
+                          start-screen-inner flex flex-col items-center
+                          justify-start gap-4 bg-white
+                          md:absolute md:h-190 md:w-122 md:flex-col
+                          md:items-center md:justify-center md:rounded-2xl
+                          md:bg-app-login-start
+                          md:filter-app-start-screen-shadow
+                        `}
                     >
                         <div
                             className={`
@@ -134,10 +136,10 @@ export default function SupportRequestForm({
                         >
                             <div
                                 className={`
-                              relative flex h-17 w-90 items-center
-                              justify-between
-                              md:justify-center
-                            `}
+                                  relative flex h-17 w-90 items-center
+                                  justify-between
+                                  md:justify-center
+                                `}
                             >
                                 <Image
                                     src="/images/login/back.svg"
@@ -173,13 +175,13 @@ export default function SupportRequestForm({
                             >
                                 <div
                                     className={`
-                                  flex w-90 items-center justify-center
-                                `}
+                                      flex w-90 items-center justify-center
+                                    `}
                                 >
                                     <p
                                         className={`
-                                      text-center text-[32px] font-bold
-                                    `}
+                                          text-center text-[32px] font-bold
+                                        `}
                                     >
                                         Служба поддержки
                                     </p>
