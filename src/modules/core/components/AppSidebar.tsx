@@ -91,9 +91,9 @@ export default function AppSidebar() {
                         />
                         <span
                             className={`
-                          block text-center text-[14px] text-text-gray
-                          md:hidden
-                        `}
+                              block text-center text-[14px] text-text-gray
+                              md:hidden
+                            `}
                         >
                             {' '}
                             {/* Подпись только на мобильных */}
