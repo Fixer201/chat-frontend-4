@@ -1,3 +1,4 @@
+/* eslint-disable better-tailwindcss/no-unregistered-classes */
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 
 'use client'
@@ -284,13 +285,8 @@ export default function LoginForm() {
         console.log('Личные данные:', data)
         setLoading(true)
         setError('')
-        // const csrfToken = document.cookie
-        //     .split('; ')
-        //     .find((row) => row.startsWith('csrftoken='))
-        //     ?.split('=')[1]
-        const accessToken =
-            // localStorage.getItem('access_token')
-            Cookies.get('access_token')
+
+        const accessToken = Cookies.get('access_token')
         const apiKey = process.env.NEXT_PUBLIC_API_KEY
         const url = apiKey
             ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/?api_key=${apiKey}`
@@ -392,17 +388,30 @@ export default function LoginForm() {
                     className={`
                       relative flex h-screen w-(--app-login-width) flex-col
                       items-center justify-center bg-transparent
-                      md:bg-(--app-login-background)
                     `}
+                    style={{
+                        backgroundImage: isMobile
+                            ? 'none'
+                            : 'var(--app-login-background)',
+                    }}
                 >
                     <div
                         className={`
-                         flex flex-col items-center justify-center gap-4 bg-white
-                      md:absolute md:h-48 md:w-30 md:flex-col
-                      md:items-center md:justify-center md:rounded-2xl
-                      md:bg-(--app-login-start)
-                      md:filter-app-start-screen-shadow
+                     start-screen-inner flex flex-col items-center
+                      justify-center gap-4 bg-app-login-start
+                      filter-app-start-screen-shadow
+                      md:absolute md:h-190 md:w-122 md:flex-col md:items-center
+                      md:justify-center md:rounded-2xl
+                     
                         `}
+                        style={{
+                            backgroundImage: isMobile
+                                ? 'none'
+                                : 'var(--app-login-start)',
+                            filter: isMobile
+                                ? 'none'
+                                : 'var(--app-start-screen-shadow)',
+                        }}
                     >
                         <div
                             className={`
@@ -435,9 +444,7 @@ export default function LoginForm() {
                                     width={78}
                                     height={70}
                                     className={`
-                                      absolute right-0 h-14 w-14
-                                      md:absolute md:right-40 md:left-0 md:h-18
-                                      md:w-20
+                                     absolute left-1/2 h-14 w-14 -translate-x-1/2 transform md:h-18 md:w-20
                                     `}
                                     loading="eager"
                                 />

@@ -229,8 +229,7 @@ const RegisterForm = memo(function RegisterForm({
                     <div
                         className={`
                           absolute flex flex-col items-center justify-between
-                          gap-6
-                          md:justify-between
+                          gap-4 md:justify-between md:gap-6
                         `}
                     >
                         <div
@@ -258,8 +257,8 @@ const RegisterForm = memo(function RegisterForm({
                                 width={78}
                                 height={70}
                                 className={`
-                                  h-14 w-14
-                                  md:right-40 md:h-18 md:w-20
+                                absolute right-0 h-14 w-14
+      md:absolute md:left-1/2 md:h-18 md:w-20 md:-translate-x-1/2 md:transform
                                 `}
                                 loading="eager"
                             />
@@ -268,8 +267,8 @@ const RegisterForm = memo(function RegisterForm({
                         <div
                             className={`
                               flex h-126 w-90 flex-col items-center
-                              justify-between gap-6
-                              md:justify-between
+                              justify-between gap-4 md:justify-between
+                              md:gap-6
                             `}
                         >
                             <div
