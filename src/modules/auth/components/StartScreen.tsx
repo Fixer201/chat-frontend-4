@@ -51,7 +51,7 @@ export default function StartScreen() {
                         {/* Контент: flexbox на мобильных, абсолютное на десктопе */}
                         <div
                             className={`
-                          content-mobile flex flex-col justify-between gap-4
+                          content-mobile flex flex-col items-center justify-between gap-4
                           md:absolute md:top-74 md:left-16 md:h-95 md:w-90
                         `}
                         >

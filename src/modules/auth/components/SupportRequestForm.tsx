@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
+/* eslint-disable better-tailwindcss/no-unregistered-classes */
+
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
@@ -11,6 +11,7 @@ import Cookies from 'js-cookie'
 import Textarea from '@shared/ui/textarea/Textarea'
 import CodeConfirmForm from './CodeConfirmForm'
 import SuccessSupport from './SuccessSupport'
+import '@app/globals.css'
 
 interface SupportRequestFormProps {
     phoneNumber: string
@@ -67,7 +68,19 @@ export default function SupportRequestForm({
     const handleSubmit = () => {
         setShowSuccessSupport(true)
     }
-
+    // Определение мобильного режима (ширина ≤768px)
+    const [isMobile, setIsMobile] = useState(false)
+    useEffect(() => {
+        const checkMobile = () =>
+            setIsMobile(window.innerWidth <= 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () =>
+            window.removeEventListener(
+                'resize',
+                checkMobile,
+            )
+    }, [])
     // const handleSubmit = async () => {
 
     //     setLoading(true)
@@ -98,39 +111,42 @@ export default function SupportRequestForm({
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-            relative hidden h-screen w-(--app-login-width)
-            flex-col items-center justify-center
-            md:flex
-          `}
-                    style={{
-                        backgroundImage:
-                            'var(--app-login-background)',
-                    }}
+                  login-container relative flex h-screen w-(--app-login-width)
+                  flex-col items-center justify-center bg-none
+                  md:bg-app-login-background
+                `}
                 >
                     <div
                         className={`
-              absolute flex h-190 w-122 flex-col items-center justify-center
-              rounded-2xl
-            `}
-                        style={{
-                            filter: 'var(--app-start-screen-shadow)',
-                            backgroundImage:
-                                'var(--app-login-start)',
-                        }}
+                      start-screen-inner flex flex-col items-center
+                      justify-start gap-4 bg-white
+                      md:absolute md:h-190 md:w-122 md:flex-col md:items-center
+                      md:justify-center md:rounded-2xl md:bg-app-login-start
+                      md:filter-app-start-screen-shadow
+                    `}
                     >
                         <div
                             className={`
-              absolute flex flex-col items-center justify-between
-              gap-6
-            `}
+                              absolute flex flex-col items-center
+                              justify-between gap-4
+                              md:justify-between md:gap-6
+                            `}
                         >
-                            <div className="relative flex h-17 w-90 items-center">
+                            <div
+                                className={`
+                              relative flex h-17 w-90 items-center
+                              justify-between
+                              md:justify-center
+                            `}
+                            >
                                 <Image
                                     src="/images/login/back.svg"
                                     alt="Back"
                                     width={32}
                                     height={32}
-                                    className="absolute top-0 left-0 cursor-pointer"
+                                    className={`
+                                      absolute top-0 left-0 cursor-pointer
+                                    `}
                                     loading="eager"
                                     onClick={
                                         handleBackToForm
@@ -141,24 +157,38 @@ export default function SupportRequestForm({
                                     alt="Logo"
                                     width={78}
                                     height={70}
-                                    className="mx-auto"
+                                    className={`
+                                      absolute right-0 h-14 w-14
+                                      md:absolute md:left-1/2 md:h-18 md:w-20
+                                      md:-translate-x-1/2 md:transform
+                                    `}
                                     loading="eager"
                                 />
                             </div>
                             <div
                                 className={`
-                flex h-126 w-90 flex-col items-center justify-between gap-6
-              `}
+                                  flex h-126 w-90 flex-col items-center
+                                  justify-between gap-6
+                                `}
                             >
-                                <div className="flex w-90 items-center justify-center">
-                                    <p className="text-center text-[32px] font-bold">
+                                <div
+                                    className={`
+                                  flex w-90 items-center justify-center
+                                `}
+                                >
+                                    <p
+                                        className={`
+                                      text-center text-[32px] font-bold
+                                    `}
+                                    >
                                         Служба поддержки
                                     </p>
                                 </div>
                                 <div
                                     className={`
-                  flex h-112 w-90 flex-col items-center justify-between
-                `}
+                                      flex h-112 w-90 flex-col items-center
+                                      justify-between
+                                    `}
                                 >
                                     <div className="flex w-full flex-col gap-1">
                                         <Input
@@ -220,10 +250,10 @@ export default function SupportRequestForm({
                                         Ознакомьтесь со{' '}
                                         <span
                                             className={`
-                                          cursor-pointer
-                                          text-(--color-accent-violet-primary)
-                                          hover:underline
-                                        `}
+                                              cursor-pointer
+                                              text-(--color-accent-violet-primary)
+                                              hover:underline
+                                            `}
                                             onClick={() =>
                                                 handleDownload()
                                             }

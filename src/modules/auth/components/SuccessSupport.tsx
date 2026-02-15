@@ -2,9 +2,10 @@
 
 'use client'
 import { Button } from '@shared/ui/button/Button'
-
+import '@app/globals.css'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface SuccessSupportProps {
     onBack: () => void
@@ -18,31 +19,36 @@ export default function SuccessSupport({
     const handleStartClick = () => {
         router.push('/auth/login')
     }
-
+    // Определение мобильного режима (ширина ≤768px)
+    const [isMobile, setIsMobile] = useState(false)
+    useEffect(() => {
+        const checkMobile = () =>
+            setIsMobile(window.innerWidth <= 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        console.log('isMobile:', isMobile)
+        return () =>
+            window.removeEventListener(
+                'resize',
+                checkMobile,
+            )
+    }, [isMobile])
     return (
         <>
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-                      relative hidden h-screen
-                      w-(--app-login-width) flex-col items-center justify-center
-                      md:flex
-                    `}
-                    style={{
-                        backgroundImage:
-                            'var(--app-login-background)',
-                    }}
+                  relative flex h-screen w-(--app-login-width) flex-col
+                  items-center justify-center bg-white
+                  md:bg-app-login-background
+                `}
                 >
                     <div
                         className={`
-                          absolute flex h-190 w-122 flex-col items-center
-                          justify-center rounded-2xl
-                        `}
-                        style={{
-                            filter: 'var(--app-start-screen-shadow)',
-                            backgroundImage:
-                                'var(--app-login-start)',
-                        }}
+                      absolute flex h-190 w-122 flex-col items-center
+                      justify-center rounded-2xl bg-white
+                      md:bg-app-login-start md:filter-app-start-screen-shadow
+                    `}
                     >
                         <div
                             className={`
@@ -50,35 +56,37 @@ export default function SuccessSupport({
                               justify-between gap-6
                             `}
                         >
-                            <div
-                                className={`
+                            {!isMobile && (
+                                <div
+                                    className={`
                               relative flex h-17 w-90 items-center
                             `}
-                            >
-                                <Image
-                                    src="/images/login/back.svg"
-                                    alt="Back"
-                                    width={32}
-                                    height={32}
-                                    className={`
+                                >
+                                    <Image
+                                        src="/images/login/back.svg"
+                                        alt="Back"
+                                        width={32}
+                                        height={32}
+                                        className={`
                                       absolute top-0 left-0 cursor-pointer
                                     `}
-                                    loading="eager"
-                                    onClick={onBack}
-                                />
-                                <Image
-                                    src="/images/login/Logo.svg"
-                                    alt="Logo"
-                                    width={78}
-                                    height={70}
-                                    className="mx-auto"
-                                    loading="eager"
-                                />
-                            </div>
+                                        loading="eager"
+                                        onClick={onBack}
+                                    />
+                                    <Image
+                                        src="/images/login/Logo.svg"
+                                        alt="Logo"
+                                        width={78}
+                                        height={70}
+                                        className="mx-auto"
+                                        loading="eager"
+                                    />
+                                </div>
+                            )}
 
                             <div
                                 className={`
-                                  flex h-126 w-90 flex-col items-center justify-between gap-6
+                                 flex h-126 w-90 flex-col items-center justify-start gap-4 md:justify-between md:gap-6
                                 `}
                             >
                                 <div className="flex w-90 items-center justify-center">
@@ -89,10 +97,10 @@ export default function SuccessSupport({
 
                                 <div
                                     className={`
-                                      flex h-112 w-90 flex-col items-center justify-between
+                                      flex h-112 w-90 flex-col items-center justify-start md:justify-between
                                     `}
                                 >
-                                    <div className="flex flex-col items-center gap-6">
+                                    <div className="flex h-112 w-90 flex-col items-center justify-start gap-4 md:justify-between">
                                         <Image
                                             src="/images/Check.svg"
                                             alt="Check"
@@ -129,7 +137,8 @@ export default function SuccessSupport({
                                     <Button
                                         variant="primary"
                                         size="md"
-                                        className="w-full"
+                                        className="mt-4 w-full
+                                      md:mt-0"
                                         onClick={
                                             handleStartClick
                                         }
