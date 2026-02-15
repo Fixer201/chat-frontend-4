@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable better-tailwindcss/no-unregistered-classes */
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Button } from '@shared/ui/button/Button'
@@ -11,6 +11,7 @@ import CodeConfirmForm from './CodeConfirmForm'
 import RegisterForm from './RegisterForm'
 import SuccessRegister from './SuccessRegister'
 import Cookies from 'js-cookie'
+import '@app/globals.css'
 
 export default function LoginForm() {
     const router = useRouter()
@@ -27,6 +28,19 @@ export default function LoginForm() {
         useState(false)
     const [showSuccessRegister, setShowSuccessRegister] =
         useState(false)
+    // Определение мобильного режима (ширина ≤768px)
+    const [isMobile, setIsMobile] = useState(false)
+    useEffect(() => {
+        const checkMobile = () =>
+            setIsMobile(window.innerWidth <= 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () =>
+            window.removeEventListener(
+                'resize',
+                checkMobile,
+            )
+    }, [])
 
     const handleStartClick = () => {
         router.push('/auth/login')
@@ -105,6 +119,7 @@ export default function LoginForm() {
         const requestBody = {
             phone_number: `+${phoneNumber.replace(/\D/g, '')}`,
         }
+
         console.log('Отправка запроса:', requestBody)
 
         try {
@@ -119,6 +134,7 @@ export default function LoginForm() {
                 },
             )
             const data = await response.json()
+
             console.log('Ответ:', response.status, data)
             if (response.ok) {
                 setIsModalOpen(false)
@@ -130,6 +146,7 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
+
             console.error('Fetch error:', err)
         } finally {
             setLoading(false)
@@ -197,6 +214,7 @@ export default function LoginForm() {
             phone_number: `+${phoneNumber.replace(/\D/g, '')}`,
             code: code,
         }
+
         console.log(
             'Отправка запроса на верификацию:',
             requestBody,
@@ -214,6 +232,7 @@ export default function LoginForm() {
             )
 
             const data = await response.json()
+
             console.log(
                 'Ответ на верификацию:',
                 response.status,
@@ -244,6 +263,7 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError('Ошибка сети. Проверьте подключение.')
+
             console.error('Verify error:', err)
         } finally {
             setLoading(false)
@@ -370,39 +390,42 @@ export default function LoginForm() {
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-            relative hidden h-screen w-(--app-login-width)
-            flex-col items-center justify-center
-            md:flex
-          `}
-                    style={{
-                        backgroundImage:
-                            'var(--app-login-background)',
-                    }}
+                      login-container relative flex h-screen
+                      w-(--app-login-width) flex-col items-center justify-center
+                      bg-none
+                      md:bg-app-login-background
+                    `}
                 >
                     <div
                         className={`
-              absolute flex h-190 w-122 flex-col items-center justify-center
-              rounded-2xl
-            `}
-                        style={{
-                            filter: 'var(--app-start-screen-shadow)',
-                            backgroundImage:
-                                'var(--app-login-start)',
-                        }}
+                          start-screen-inner flex flex-col items-center
+                          justify-center gap-4 bg-white
+                          md:absolute md:h-190 md:w-122 md:flex-col
+                          md:items-center md:justify-center md:rounded-2xl
+                          md:bg-app-login-start
+                          md:filter-app-start-screen-shadow
+                        `}
                     >
                         <div
                             className={`
-              absolute flex flex-col items-center justify-between
-              gap-6
-            `}
+                              absolute flex flex-col items-center
+                              justify-between gap-6
+                              md:justify-between
+                            `}
                         >
-                            <div className="relative flex h-17 w-90 items-center">
+                            <div
+                                className={`
+                              relative flex h-17 w-90 items-center
+                            `}
+                            >
                                 <Image
                                     src="/images/login/back.svg"
                                     alt="Back"
                                     width={32}
                                     height={32}
-                                    className="absolute top-0 left-0 cursor-pointer"
+                                    className={`
+                                      absolute top-0 left-0 cursor-pointer
+                                    `}
                                     loading="eager"
                                     onClick={
                                         handleStartClick
@@ -413,24 +436,51 @@ export default function LoginForm() {
                                     alt="Logo"
                                     width={78}
                                     height={70}
-                                    className="mx-auto"
+                                    className={`
+                                      absolute right-0 h-14 w-14
+                                      md:absolute md:right-40 md:left-0 md:h-18
+                                      md:w-20
+                                    `}
                                     loading="eager"
                                 />
                             </div>
+                            {/* Блок с "А-чат" только на мобильных */}
                             <div
                                 className={`
-                flex h-126 w-90 flex-col items-center justify-between gap-6
-              `}
+                              block text-center text-[32px] font-bold
+                              md:hidden
+                            `}
                             >
-                                <div className="flex w-90 items-center justify-center">
-                                    <p className="text-center text-[32px] font-bold">
+                                А-чат
+                            </div>
+
+                            <div
+                                className={`
+                                  flex h-126 w-90 flex-col items-center
+                                  justify-between gap-6
+                                  md:justify-between
+                                `}
+                            >
+                                <div
+                                    className={`
+                                  flex w-90 items-center justify-center
+                                `}
+                                >
+                                    <p
+                                        className={`
+                                      text-center text-[25px] font-bold
+                                      md:text-[32px]
+                                    `}
+                                    >
                                         Вход/регистрация
                                     </p>
                                 </div>
                                 <div
                                     className={`
-                  flex h-112 w-90 flex-col items-center justify-between
-                `}
+                                      flex h-112 w-90 flex-col items-center
+                                      justify-start gap-4
+                                      md:justify-between
+                                    `}
                                 >
                                     <div className="flex w-full flex-col gap-1">
                                         <Input
@@ -464,6 +514,8 @@ export default function LoginForm() {
                                             onFocus={
                                                 handleFocus
                                             }
+                                            inputMode="tel" //  оптимизирует клавиатуру для телефонов (цифровая)
+                                            autoComplete="tel"
                                         />
                                     </div>
                                     <Button
@@ -498,17 +550,19 @@ export default function LoginForm() {
                 title={`${phoneNumber}`}
                 description="Номер телефона указан верно? "
                 descriptionColor="muted"
-                titleAlign="left"
+                titleAlign={isMobile ? 'center' : 'left'}
                 buttons={[
                     {
                         label: 'Изменить',
                         variant: 'ghost',
                         color: 'primary',
                         onClick: handleCloseModal,
+                        className:
+                            'border-accent-violet-primary md:border-0',
                     },
                     {
                         label: 'Верно',
-                        variant: 'primary',
+                        variant: 'solid',
                         color: 'primary',
                         onClick: handleSendCode,
                         disabled: loading,

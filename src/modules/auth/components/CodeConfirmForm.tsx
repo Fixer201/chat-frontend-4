@@ -1,3 +1,5 @@
+/* eslint-disable better-tailwindcss/no-unregistered-classes */
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 import { useState, useEffect, useRef } from 'react'
@@ -6,6 +8,7 @@ import Image from 'next/image'
 import Modal from '@shared/ui/modal/Modal'
 import { Button } from '@shared/ui/button/Button'
 import SupportRequestForm from './SupportRequestForm'
+import '@app/globals.css'
 
 interface CodeConfirmFormProps {
     phoneNumber: string
@@ -177,30 +180,25 @@ export default function CodeConfirmForm({
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-                  relative hidden h-screen w-(--app-login-width) flex-col
-                  items-center justify-center
-                  md:flex
+                  login-container relative flex h-screen w-(--app-login-width)
+                  flex-col items-center justify-center bg-none
+                  md:bg-app-login-background
                 `}
-                style={{
-                    backgroundImage:
-                        'var(--app-login-background)',
-                }}
             >
                 <div
                     className={`
-                      absolute flex h-190 w-122 flex-col items-center
-                      justify-center rounded-2xl
+                      start-screen-inner flex flex-col items-center
+                      justify-center gap-4 bg-white
+                      md:absolute md:h-190 md:w-122 md:flex-col md:items-center
+                      md:justify-center md:rounded-2xl md:bg-app-login-start
+                      md:filter-app-start-screen-shadow
                     `}
-                    style={{
-                        filter: 'var(--app-start-screen-shadow)',
-                        backgroundImage:
-                            'var(--app-login-start)',
-                    }}
                 >
                     <div
                         className={`
                           absolute flex flex-col items-center justify-between
                           gap-6
+                          md:justify-between
                         `}
                     >
                         <div className="relative flex h-17 w-90 items-center">
@@ -218,15 +216,27 @@ export default function CodeConfirmForm({
                                 alt="Logo"
                                 width={78}
                                 height={70}
-                                className="mx-auto"
+                                className={`
+                                  mx-auto h-14 w-14
+                                  md:h-18 md:w-20
+                                `}
                                 loading="eager"
                             />
                         </div>
-
+                        {/* Блок с "А-чат" только на мобильных */}
+                        <div
+                            className={`
+                              block text-center text-[32px] font-bold
+                              md:hidden
+                            `}
+                        >
+                            А-чат
+                        </div>
                         <div
                             className={`
                               flex h-126 w-90 flex-col items-center
                               justify-between gap-6
+                              md:justify-between
                             `}
                         >
                             <div
@@ -234,14 +244,20 @@ export default function CodeConfirmForm({
                                   flex w-90 items-center justify-center
                                 `}
                             >
-                                <p className="text-center text-[32px] font-bold">
+                                <p
+                                    className={`
+                                      text-center text-[25px] font-bold
+                                      md:text-[32px]
+                                    `}
+                                >
                                     Подтвердите вход
                                 </p>
                             </div>
                             <div
                                 className={`
                                   flex h-112 w-90 flex-col items-center
-                                  justify-between gap-6
+                                  justify-between gap-2
+                                  md:gap-4
                                 `}
                             >
                                 <span className="text-center text-lg">

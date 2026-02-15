@@ -46,6 +46,29 @@ const chatsSlice = createSlice({
     name: 'chats',
     initialState,
     reducers: {
+        // Гидрация локально сохранённых чатов (например, созданных без API)
+        hydrateLocalChats: (
+            state,
+            action: PayloadAction<
+                Array<
+                    ChatItem & { settings?: ChatSettings }
+                >
+            >,
+        ) => {
+            action.payload.forEach((chat) => {
+                const existing = state.items.find(
+                    (item) => item.id === chat.id,
+                )
+                if (!existing) {
+                    const { settings, ...chatData } = chat
+                    state.items.unshift(chatData)
+                    if (settings) {
+                        state.chatSettings[chat.id] =
+                            settings
+                    }
+                }
+            })
+        },
         // Установка выбранного чата
         setSelectedChat: (
             state,
@@ -239,6 +262,13 @@ const chatsSlice = createSlice({
             action: PayloadAction<number>,
         ) => {
             const chatId = action.payload
+            console.info(
+                '[ChatsSlice][markAsDeleted] start',
+                {
+                    chatId,
+                    beforeCount: state.items.length,
+                },
+            )
             const chat = state.items.find(
                 (c) => c.id === chatId,
             )
@@ -263,6 +293,15 @@ const chatsSlice = createSlice({
                 state.items[chatIndex].settings =
                     updatedSettings
             }
+            console.info(
+                '[ChatsSlice][markAsDeleted] done',
+                {
+                    chatId,
+                    isDeleted:
+                        state.chatSettings[chatId]
+                            ?.isDeleted,
+                },
+            )
         },
         // Добавление чата в контакты
         addToContacts: (
@@ -318,6 +357,7 @@ export {
     createChat,
 }
 export const {
+    hydrateLocalChats,
     setSelectedChat,
     updateChat,
     updateChatSettings,

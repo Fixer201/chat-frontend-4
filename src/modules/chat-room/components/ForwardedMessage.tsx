@@ -64,10 +64,8 @@ const ForwardedMessage = memo(function ForwardedMessage({
 
     return (
         <div
-
             className="mb-1"
             aria-label={`Переслано от ${authorName}`}
-
         >
             {/* Метка «Переслано от» — фиолетовый акцентный цвет для визуального отличия
                 от обычных сообщений. Мелкий шрифт — второстепенная информация. */}
@@ -82,9 +80,9 @@ const ForwardedMessage = memo(function ForwardedMessage({
                 {/* Аватар 20×20px — компактный, но различимый размер внутри пузыря */}
                 <div
                     className={`
-                  relative h-5 w-5 shrink-0 overflow-hidden rounded-full
-                  bg-gray-main
-                `}
+                      relative h-5 w-5 shrink-0 overflow-hidden rounded-full
+                      bg-gray-main
+                    `}
                 >
                     <Image
                         src={avatarUrl}
@@ -97,8 +95,8 @@ const ForwardedMessage = memo(function ForwardedMessage({
                 {/* Имя автора в фиолетовом полужирном — акцент на источнике пересылки */}
                 <span
                     className={`
-                  truncate text-sm font-semibold text-accent-violet-primary
-                `}
+                      truncate text-sm font-semibold text-accent-violet-primary
+                    `}
                 >
                     {authorName}
                 </span>

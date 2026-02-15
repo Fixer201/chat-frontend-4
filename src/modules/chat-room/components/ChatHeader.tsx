@@ -5,32 +5,25 @@ import { ChatItem } from '@shared/types/chat'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 import { useMemo } from 'react'
 import { getStatusText } from '@shared/lib/getStatusText'
+import InChatSearch from '@modules/search/components/InChatSearch'
 
 import {
     useContactData,
     Contact,
 } from '@shared/hooks/useContactData'
+import { useSelector } from 'react-redux'
+import { RootState } from '@redux/store'
 
 /**
  * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
  *
- * Данные контакта берутся из API для актуальности.
- * secondaryText вычисляется декларативно с useMemo, чтобы избежать setState в эффекте.
-
-import InChatSearch from '@modules/search/components/InChatSearch'
-
-/**
- * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
- *
- * Статус (secondaryText) вычисляется в useEffect, а не при рендере,
- * чтобы избежать hydration mismatch: getStatusText зависит от new Date(),
- * которая даёт разные значения на сервере (SSR) и клиенте.
+ * Статус (secondaryText) вычисляется в useMemo, чтобы избежать гидрации
+ * с разными значениями от new Date() на сервере и клиенте.
  *
  * Кнопка «Назад» видна только на мобильных устройствах (md:hidden)
  * и передаётся через опциональный колбэк onBack.
  *
  * Режим поиска: при isSearchOpen === true отображает InChatSearch вместо обычной шапки.
-
  */
 export default function ChatHeader({
     chat,
@@ -63,10 +56,19 @@ export default function ChatHeader({
         loading,
         error,
     } = useContactData(shouldLoadData ? chat.chat.uid : '')
+    const contactsList = useSelector(
+        (state: RootState) => state.contacts.list,
+    )
+    const contactMatch = contactsList.find(
+        (contact) =>
+            contact.userUid === chat.chat.uid ||
+            contact.uid === chat.chat.uid,
+    )
 
     // Используем данные из API или fallback на chat.chat (с добавлением userUid)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const currentContact: Contact =
+        contactMatch ||
         contactData ||
         ({
             ...chat.chat,
@@ -164,8 +166,11 @@ export default function ChatHeader({
                     <div className="flex min-w-0 flex-col">
                         {/* Имя: используем currentContact */}
                         <h2 className="truncate font-semibold">
-                            {currentContact.firstName}{' '}
-                            {currentContact.lastName}
+                            {`${currentContact.firstName || ''} ${currentContact.lastName || ''}`.trim() ||
+                                currentContact.nickname ||
+                                currentContact.phone ||
+                                currentContact.username ||
+                                'Контакт'}
                         </h2>
                         <p className="text-sm text-text-gray">
                             {loading

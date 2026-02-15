@@ -1,9 +1,10 @@
+/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import '@app/globals.css'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 
 export default function SuccessRegister() {
@@ -37,10 +38,6 @@ export default function SuccessRegister() {
                 Cookies.set('access_token', data.access, {
                     expires: 7,
                 })
-                // localStorage.setItem(
-                //     'access_token',
-                //     data.access,
-                // )
                 return data.access
             } else {
                 console.error(
@@ -55,9 +52,7 @@ export default function SuccessRegister() {
         }
     }
     const fetchProfile = async () => {
-        const accessToken =
-            // localStorage.getItem('access_token')
-            Cookies.get('access_token')
+        const accessToken = Cookies.get('access_token')
         if (!accessToken) {
             console.error('Access token не найден')
             return false
@@ -99,10 +94,6 @@ export default function SuccessRegister() {
             }
             if (response.ok) {
                 const profileData = await response.json()
-                // localStorage.setItem(
-                //     'user_profile',
-                //     JSON.stringify(profileData),
-                // )
                 Cookies.set(
                     'user_profile',
                     JSON.stringify(profileData),
@@ -136,33 +127,42 @@ export default function SuccessRegister() {
             )
         }
     }
-
+    // Определение мобильного режима (ширина ≤768px)
+    const [isMobile, setIsMobile] = useState(false)
+    useEffect(() => {
+        const checkMobile = () =>
+            setIsMobile(window.innerWidth <= 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        console.log('isMobile:', isMobile)
+        return () =>
+            window.removeEventListener(
+                'resize',
+                checkMobile,
+            )
+    }, [isMobile])
     return (
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-                  relative hidden h-screen w-(--app-login-width) flex-col
-                  items-center justify-center
-                  md:flex
+                  relative flex h-screen w-(--app-login-width) flex-col
+                  items-center justify-center bg-white
+                  md:bg-app-login-background
                 `}
-                style={{
-                    backgroundImage:
-                        'var(--app-login-background)',
-                }}
             >
                 <div
                     className={`
                       absolute flex h-190 w-122 flex-col items-center
-                      justify-center rounded-2xl
+                      justify-center rounded-2xl bg-white
+                      md:bg-app-login-start md:filter-app-start-screen-shadow
                     `}
-                    style={{
-                        filter: 'var(--app-start-screen-shadow)',
-                        backgroundImage:
-                            'var(--app-login-start)',
-                    }}
                 >
                     <Image
-                        src="/images/login/Logo.svg"
+                        src={
+                            isMobile
+                                ? '/images/login/CheckSuccess.svg'
+                                : '/images/login/Logo.svg'
+                        }
                         alt="Logo"
                         width={179}
                         height={161}
@@ -172,13 +172,15 @@ export default function SuccessRegister() {
                     <div
                         className={`
                           absolute top-74 left-16 flex h-95 w-90 flex-col
-                          justify-between gap-4
+                          justify-start gap-4
+                          md:justify-between
                         `}
                     >
                         <div className="flex flex-col items-center gap-6">
                             <span
                                 className={`
-                                  text-3xl font-bold text-accent-violet-primary
+                                  text-3xl font-bold text-text-black
+                                  md:text-accent-violet-primary
                                 `}
                             >
                                 Поздравляем!

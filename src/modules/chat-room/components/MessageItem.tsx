@@ -473,7 +473,6 @@ export default function MessageItem({
                         ) : null}
 
                         <div className="flex items-end justify-between gap-2">
-
                             {/*
                                 Текст сообщения пользователя.
                                 Рендерится только если есть content (не пустая строка).
@@ -530,7 +529,6 @@ export default function MessageItem({
                                         </>
                                     ) : (
                                         message.content
-
                                     )}
                                     {message.updated_at &&
                                         message.updated_at !==

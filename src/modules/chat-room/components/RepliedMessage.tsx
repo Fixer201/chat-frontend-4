@@ -88,9 +88,9 @@ const RepliedMessage = memo(function RepliedMessage({
               ${
                   isClickable
                       ? `
-                cursor-pointer
-                hover:bg-accent-violet-primary/20
-              `
+                        cursor-pointer
+                        hover:bg-accent-violet-primary/20
+                      `
                       : `cursor-default`
               }
             `}
