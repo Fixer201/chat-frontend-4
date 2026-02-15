@@ -17,9 +17,22 @@ const contactsSlice = createSlice({
             state,
             action: PayloadAction<string[]>,
         ) => {
+            console.info(
+                '[ContactsSlice][removeContacts] start',
+                {
+                    payload: action.payload,
+                    beforeCount: state.list.length,
+                },
+            )
             state.list = state.list.filter(
                 (contact) =>
                     !action.payload.includes(contact.uid),
+            )
+            console.info(
+                '[ContactsSlice][removeContacts] done',
+                {
+                    afterCount: state.list.length,
+                },
             )
         },
         addContacts: (

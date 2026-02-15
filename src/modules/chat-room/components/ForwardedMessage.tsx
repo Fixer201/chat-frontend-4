@@ -3,6 +3,7 @@
 import { memo } from 'react'
 import Image from 'next/image'
 import { ForwardedMessage as ForwardedMessageType } from '@shared/types/message'
+import { cn } from '@shared/lib/utils'
 
 /** Пропсы компонента пересланного сообщения */
 interface ForwardedMessageProps {

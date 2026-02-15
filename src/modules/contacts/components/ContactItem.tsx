@@ -1,9 +1,14 @@
 // src/modules/contacts/components/ContactItem.tsx
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, {
+    useCallback,
+    useEffect,
+    useState,
+} from 'react'
 import { Contact } from '@shared/types/contact'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
 import { getStatusText } from '@shared/lib/getStatusText'
+import { ContactContextMenu } from './ContactContextMenu'
 
 interface ContactItemProps {
     contact: Contact
@@ -12,9 +17,11 @@ interface ContactItemProps {
     selectedContacts: string[]
     searchValue: string
     onSelectContact?: (uid: string) => void
-    onSetSelectedContact: (contact: Contact) => void
-    //  onSetSelectedContact: (userUid: string) => void
+    // onSetSelectedContact получает uid, чтобы не привязывать компонент к форме данных.
+    onSetSelectedContact: (uid: string) => void
     onContextMenu?: (e: React.MouseEvent) => void
+    rightElement?: React.ReactNode
+    onBlock?: () => void
 }
 
 const STYLES = {
@@ -33,8 +40,27 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     onSelectContact,
     onSetSelectedContact,
     onContextMenu,
+    rightElement,
+    onBlock,
 }) => {
     const [secondaryText, setSecondaryText] = useState('')
+    const [contextMenuOpen, setContextMenuOpen] =
+        useState(false)
+    const [contextMenuPosition, setContextMenuPosition] =
+        useState({ top: 0, left: 0 })
+
+    const handleContextMenu = useCallback(
+        (event: React.MouseEvent<HTMLDivElement>) => {
+            onContextMenu?.(event)
+            event.preventDefault()
+            setContextMenuPosition({
+                left: event.clientX,
+                top: event.clientY,
+            })
+            setContextMenuOpen(true)
+        },
+        [onContextMenu],
+    )
     useEffect(() => {
         // Вычисляем secondaryText на клиенте после гидрации для избежания mismatch.
         // getStatusText() использует getContactWebStatus(), который зависит от new Date(),
@@ -48,7 +74,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
     return (
         <div
             className={STYLES.container}
-            onContextMenu={onContextMenu} // Добавлено для контекстного меню
+            onContextMenu={handleContextMenu}
         >
             <div className={STYLES.divider} />
             <ContactAvatar
@@ -65,7 +91,7 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                 onClick={() =>
                     deleteMode
                         ? onSelectContact?.(contact.uid)
-                        : onSetSelectedContact(contact)
+                        : onSetSelectedContact(contact.uid)
                 }
                 selected={
                     deleteMode
@@ -87,6 +113,17 @@ export const ContactItem: React.FC<ContactItemProps> = ({
                           )
                         : false
                 }
+                rightElement={rightElement}
+            />
+
+            <ContactContextMenu
+                open={contextMenuOpen}
+                onOpenChange={setContextMenuOpen}
+                position={contextMenuPosition}
+                onBlock={() => {
+                    onBlock?.()
+                    setContextMenuOpen(false)
+                }}
             />
         </div>
     )

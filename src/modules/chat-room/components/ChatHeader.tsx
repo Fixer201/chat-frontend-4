@@ -1,4 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 // @modules/chat-room/components/ChatHeader.tsx
 import Image from 'next/image'
 import { ChatItem } from '@shared/types/chat'

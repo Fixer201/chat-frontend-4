@@ -5,6 +5,7 @@ import {
 } from '../../redux/store'
 import {
     fetchChats,
+    hydrateLocalChats,
     setSelectedChat,
     updateChat,
     updateChatSettings,
@@ -50,6 +51,18 @@ export const useChats = () => {
     const selectChat = useCallback(
         (chatId: number | null) => {
             dispatch(setSelectedChat(chatId))
+        },
+        [dispatch],
+    )
+
+    // Гидрация локально сохранённых чатов
+    const hydrateChats = useCallback(
+        (
+            chats: Array<
+                ChatItem & { settings?: ChatSettings }
+            >,
+        ) => {
+            dispatch(hydrateLocalChats(chats))
         },
         [dispatch],
     )
@@ -202,6 +215,7 @@ export const useChats = () => {
         selectedChatId,
         chatSettings,
         loadChats,
+        hydrateChats,
         selectChat,
         updateChat: updateChatData,
         updateChatSettings: updateChatSettingsData,

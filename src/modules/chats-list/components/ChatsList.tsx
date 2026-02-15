@@ -16,12 +16,15 @@ import EmptySearchState from '../../../shared/ui/emptySearchState/EmptySearchSta
 import EmptyChatsState from './emptyChatsState/EmptyChatsState'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { useRouter } from 'next/navigation'
+import { useSelector } from 'react-redux'
+import { RootState } from '@redux/store'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
 // import { Contact } from '@shared/types/contact'
 import { toast } from 'react-hot-toast'
 import { useDebounce } from '@shared/hooks/useDebounce'
+import getAvatarSrc from '@shared/lib/getAvatarSrc'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
@@ -33,6 +36,9 @@ export default React.memo(function ChatsList({
     onCreateChannel,
 }: ChatsListProps) {
     const router = useRouter()
+    const contactsList = useSelector(
+        (state: RootState) => state.contacts.list,
+    )
 
     // Состояния для управления UI
     const [searchValue, setSearchValue] = useState('')
@@ -145,7 +151,14 @@ export default React.memo(function ChatsList({
                 setTimeout(resolve, 1000),
             )
 
+            console.info('[Chats][Delete] confirm', {
+                chatId: chatToDelete.id,
+                chatName: chatToDelete.name,
+            })
             deleteChat(chatToDelete.id)
+            console.info('[Chats][Delete] dispatched', {
+                chatId: chatToDelete.id,
+            })
             setDeleteModalOpen(false)
             setChatToDelete(null)
         } catch (error) {
@@ -312,6 +325,23 @@ export default React.memo(function ChatsList({
                             <div className="flex flex-col">
                                 {sortedChats?.map(
                                     (chat, index) => {
+                                        const contactMatch =
+                                            chat.chatType ===
+                                            'chat'
+                                                ? contactsList.find(
+                                                      (
+                                                          contact,
+                                                      ) =>
+                                                          contact.userUid ===
+                                                              chat
+                                                                  .chat
+                                                                  .uid ||
+                                                          contact.uid ===
+                                                              chat
+                                                                  .chat
+                                                                  .uid,
+                                                  )
+                                                : undefined
                                         const settings =
                                             chatSettings[
                                                 chat.id
@@ -360,12 +390,53 @@ export default React.memo(function ChatsList({
                                         }
 
                                         // Определение URL аватарки с fallback
-                                        let avatarSrc =
+                                        const avatarSrc =
+                                            contactMatch
+                                                ? getAvatarSrc(
+                                                      contactMatch,
+                                                  )
+                                                : getAvatarSrc(
+                                                      chat.chat,
+                                                  )
+
+                                        const contactName =
+                                            contactMatch
+                                                ? `${contactMatch.firstName || ''} ${contactMatch.lastName || ''}`.trim() ||
+                                                  contactMatch.nickname ||
+                                                  contactMatch.phone ||
+                                                  chat.chat
+                                                      .nickname ||
+                                                  chat.chat
+                                                      .username
+                                                : ''
+                                        const fallbackChatName =
+                                            `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
                                             chat.chat
-                                                .avatarUrl ||
+                                                .nickname ||
                                             chat.chat
-                                                .avatar ||
-                                            '/images/chatHeader/userAvatar.svg'
+                                                .username
+
+                                        const contactLastSeenMs =
+                                            contactMatch?.wasOnlineAt
+                                                ? typeof contactMatch.wasOnlineAt ===
+                                                  'number'
+                                                    ? contactMatch.wasOnlineAt *
+                                                      1000
+                                                    : new Date(
+                                                          contactMatch.wasOnlineAt,
+                                                      ).getTime()
+                                                : undefined
+                                        const fallbackLastSeenMs =
+                                            chat.chat
+                                                .wasOnlineAt
+                                                ? chat.chat
+                                                      .wasOnlineAt *
+                                                  1000
+                                                : undefined
+                                        const isContactOnline =
+                                            contactMatch?.isOnline ??
+                                            chat.chat
+                                                .isOnline
 
                                         // Формирование превью сообщения в зависимости от типа чата
                                         let messagePreview =
@@ -402,52 +473,15 @@ export default React.memo(function ChatsList({
                                                     ?.content ||
                                                 'Нет сообщений' // Добавлена проверка
                                         }
-                                        // Проверка валидности URL аватарки
-                                        if (
-                                            !avatarSrc ||
-                                            avatarSrc.trim() ===
-                                                '' ||
-                                            (avatarSrc.startsWith(
-                                                'http',
-                                            ) &&
-                                                !avatarSrc.includes(
-                                                    'randomuser.me',
-                                                ))
-                                        ) {
-                                            // Используем стандартную аватарку для некорректных URL
-                                            avatarSrc =
-                                                '/images/chatHeader/userAvatar.svg'
-                                        }
-
-                                        // Использование специальных иконок для групп и каналов
-                                        if (
-                                            chat.chatType.includes(
-                                                'group',
-                                            ) &&
-                                            avatarSrc ===
-                                                '/images/chatHeader/userAvatar.svg'
-                                        ) {
-                                            avatarSrc =
-                                                '/images/chatHeader/userAvatar.svg'
-                                        } else if (
-                                            chat.chatType.includes(
-                                                'channel',
-                                            ) &&
-                                            avatarSrc ===
-                                                '/images/chatHeader/userAvatar.svg'
-                                        ) {
-                                            avatarSrc =
-                                                '/images/chatHeader/userAvatar.svg'
-                                        }
-
                                         return (
                                             <ChatListItem
                                                 src={
                                                     avatarSrc
                                                 }
                                                 name={
+                                                    contactName ||
+                                                    fallbackChatName ||
                                                     chat.name ||
-                                                    `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
                                                     'Неизвестный чат'
                                                 }
                                                 messagePreview={
@@ -457,16 +491,17 @@ export default React.memo(function ChatsList({
                                                     chat.chatType
                                                 }
                                                 timestamp={
-                                                    chat
-                                                        .chat
-                                                        .isOnline
-                                                        ? ''
-                                                        : formatLastSeen(
-                                                              chat
-                                                                  .chat
-                                                                  .wasOnlineAt *
-                                                                  1000,
-                                                          )
+                                                    isContactOnline
+                                                        ? 'в сети'
+                                                        : contactLastSeenMs
+                                                          ? formatLastSeen(
+                                                                contactLastSeenMs,
+                                                            )
+                                                          : fallbackLastSeenMs
+                                                            ? formatLastSeen(
+                                                                  fallbackLastSeenMs,
+                                                              )
+                                                            : ''
                                                 }
                                                 unreadCount={
                                                     badgeCount

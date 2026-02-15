@@ -13,12 +13,23 @@ function getAvatarSrc(chat: ChatAvatar): string {
     const isValidUrl = (url: unknown): url is string =>
         typeof url === 'string' && url.length > 0
 
+    const isRemoteUrl = (url: string) =>
+        url.startsWith('http://') ||
+        url.startsWith('https://')
+
     const isLocalPath = (path: unknown): path is string =>
         typeof path === 'string' && path.startsWith('/')
 
-    if (isValidUrl(chat.avatarWebpUrl))
+    if (
+        isValidUrl(chat.avatarWebpUrl) &&
+        isRemoteUrl(chat.avatarWebpUrl)
+    )
         return chat.avatarWebpUrl
-    if (isValidUrl(chat.avatarUrl)) return chat.avatarUrl
+    if (
+        isValidUrl(chat.avatarUrl) &&
+        isRemoteUrl(chat.avatarUrl)
+    )
+        return chat.avatarUrl
     if (isLocalPath(chat.avatarWebp)) return chat.avatarWebp
     if (isLocalPath(chat.avatar)) return chat.avatar
 

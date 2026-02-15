@@ -184,11 +184,42 @@ export const handleFetchChats = (
                 state.loading = false
 
                 // Разделение данных чата и настроек для хранения в разных структурах
-                state.items = action.payload.map(
+                const fetchedItems = action.payload.map(
                     // Деструктуризация для исключения settings из данных чата
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     ({ settings, ...chatData }) => chatData,
                 )
+
+                // Сохраняем локально созданные чаты, которых нет в ответе API
+                const fetchedIds = new Set(
+                    fetchedItems.map((chat) => chat.id),
+                )
+                const fetchedContactUids = new Set(
+                    fetchedItems.map(
+                        (chat) => chat.chat.uid,
+                    ),
+                )
+                const localOnlyItems = state.items.filter(
+                    (chat) => {
+                        if (fetchedIds.has(chat.id))
+                            return false
+                        if (
+                            chat.isTemporary &&
+                            chat.tempContactUid &&
+                            fetchedContactUids.has(
+                                chat.tempContactUid,
+                            )
+                        ) {
+                            return false
+                        }
+                        return true
+                    },
+                )
+
+                state.items = [
+                    ...localOnlyItems,
+                    ...fetchedItems,
+                ]
 
                 // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {
