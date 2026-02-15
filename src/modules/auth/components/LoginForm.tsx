@@ -1,5 +1,5 @@
-/* eslint-disable better-tailwindcss/no-unregistered-classes */
 /* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
+
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
@@ -390,20 +390,18 @@ export default function LoginForm() {
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-                      login-container relative flex h-screen
-                      w-(--app-login-width) flex-col items-center justify-center
-                      bg-none
-                      md:bg-app-login-background
+                      relative flex h-screen w-(--app-login-width) flex-col
+                      items-center justify-center bg-transparent
+                      md:bg-(--app-login-background)
                     `}
                 >
                     <div
                         className={`
-                          start-screen-inner flex flex-col items-center
-                          justify-center gap-4 bg-white
-                          md:absolute md:h-190 md:w-122 md:flex-col
-                          md:items-center md:justify-center md:rounded-2xl
-                          md:bg-app-login-start
-                          md:filter-app-start-screen-shadow
+                         flex flex-col items-center justify-center gap-4 bg-white
+                      md:absolute md:h-48 md:w-30 md:flex-col
+                      md:items-center md:justify-center md:rounded-2xl
+                      md:bg-(--app-login-start)
+                      md:filter-app-start-screen-shadow
                         `}
                     >
                         <div
@@ -415,8 +413,8 @@ export default function LoginForm() {
                         >
                             <div
                                 className={`
-                              relative flex h-17 w-90 items-center
-                            `}
+                                  relative flex h-17 w-90 items-center
+                                `}
                             >
                                 <Image
                                     src="/images/login/back.svg"
@@ -447,9 +445,9 @@ export default function LoginForm() {
                             {/* Блок с "А-чат" только на мобильных */}
                             <div
                                 className={`
-                              block text-center text-[32px] font-bold
-                              md:hidden
-                            `}
+                                  block text-center text-[32px] font-bold
+                                  md:hidden
+                                `}
                             >
                                 А-чат
                             </div>
@@ -463,14 +461,14 @@ export default function LoginForm() {
                             >
                                 <div
                                     className={`
-                                  flex w-90 items-center justify-center
-                                `}
+                                      flex w-90 items-center justify-center
+                                    `}
                                 >
                                     <p
                                         className={`
-                                      text-center text-[25px] font-bold
-                                      md:text-[32px]
-                                    `}
+                                          text-center text-[25px] font-bold
+                                          md:text-[32px]
+                                        `}
                                     >
                                         Вход/регистрация
                                     </p>
