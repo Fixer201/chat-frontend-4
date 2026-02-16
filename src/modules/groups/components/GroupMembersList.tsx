@@ -71,7 +71,11 @@ export default function GroupMembersList({
     }
 
     return (
-        <div className="flex h-full min-h-0 flex-col rounded-md bg-gray-main">
+        <div
+            className={`
+          flex h-(--screen-height-list) min-h-0 flex-col rounded-md bg-gray-main
+        `}
+        >
             {/* Шапка с кнопкой назад и заголовком */}
             <div
                 className={`
@@ -140,7 +144,7 @@ export default function GroupMembersList({
             <div className="flex items-center justify-center px-4 pt-4 pb-8">
                 <Button
                     onClick={handleFinishClick}
-                    disabled={!name.trim() || isCreating}
+                    //disabled={!name.trim() || isCreating}
                     variant="solid"
                     size="md"
                     className={`

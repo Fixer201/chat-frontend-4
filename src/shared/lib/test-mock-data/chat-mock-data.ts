@@ -8,6 +8,76 @@
 import { ApiChatItem } from '@shared/types/chat'
 import { generateAvatarUrl } from './avatarGenerator'
 import { AVATAR_SOURCES } from './avatarSources'
+import { saveGroupParticipants } from '@shared/lib/localStorageGroupParticipants'
+import { GroupParticipant } from '@shared/types/contact'
+
+// Функция генерации моковых участников группы
+function generateMockGroupParticipants(
+    chat: ApiChatItem,
+    seed: number,
+): GroupParticipant[] {
+    const firstNames = [
+        'Алексей',
+        'Мария',
+        'Сергей',
+        'Екатерина',
+        'Дмитрий',
+        'Ольга',
+        'Иван',
+        'Анна',
+        'Михаил',
+        'Наталья',
+    ]
+    const lastNames = [
+        'Петров',
+        'Иванова',
+        'Смирнов',
+        'Кузнецова',
+        'Федоров',
+        'Николаева',
+        'Воробьев',
+        'Павлова',
+        'Козлов',
+        'Орлова',
+    ]
+
+    const count = 2 + (seed % 5) // от 2 до 6 участников
+    const participants: GroupParticipant[] = []
+
+    // Владелец (создатель)
+    participants.push({
+        uid: `owner-${chat.id}`,
+        firstName: 'Создатель',
+        lastName: '',
+        avatarUrl: '/images/chatHeader/userAvatar.svg',
+        avatarWebpUrl: '/images/chatHeader/userAvatar.svg',
+        isOwner: true,
+        isBlocked: false,
+        isOnline: true,
+        wasOnlineAt: Date.now(),
+        isInContacts: true,
+    })
+
+    for (let i = 1; i < count; i++) {
+        const idx = (seed + i) % firstNames.length
+        participants.push({
+            uid: `participant-${chat.id}-${i}`,
+            firstName: firstNames[idx],
+            lastName: lastNames[idx],
+            avatarUrl: '/images/chatHeader/userAvatar.svg',
+            avatarWebpUrl:
+                '/images/chatHeader/userAvatar.svg',
+            isOwner: false,
+            isBlocked: false,
+            isOnline: Math.random() > 0.5,
+            wasOnlineAt:
+                Date.now() -
+                Math.floor(Math.random() * 3600000),
+            isInContacts: Math.random() > 0.3,
+        })
+    }
+    return participants
+}
 
 // Функция генерации моковых данных чатов
 // Используется для разработки и тестирования без бэкенда
@@ -345,6 +415,20 @@ export function generateLocalMockChatItems(
                         Math.floor(Math.random() * 60),
                 },
             }
+
+            // Сохраняем участников для групп
+            if (chatType.includes('group')) {
+                const participants =
+                    generateMockGroupParticipants(
+                        chatItem,
+                        index,
+                    )
+                saveGroupParticipants(
+                    chatItem.chat_key,
+                    participants,
+                )
+            }
+
             return chatItem
         })
 }

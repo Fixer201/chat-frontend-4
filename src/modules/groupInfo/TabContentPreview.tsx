@@ -16,15 +16,21 @@ type TabId =
 
 interface TabContentPreviewProps {
     activeTab: TabId
+    chatKey: string
 }
 
 export default function TabContentPreview({
     activeTab,
+    chatKey,
 }: TabContentPreviewProps) {
     const getPreviewComponent = () => {
         switch (activeTab) {
             case 'participants':
-                return <ParticipantsContent />
+                return (
+                    <ParticipantsContent
+                        chatKey={chatKey}
+                    />
+                )
             case 'media':
                 return <MediaContent />
             case 'files':

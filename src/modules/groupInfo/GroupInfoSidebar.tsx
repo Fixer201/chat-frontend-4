@@ -17,6 +17,7 @@ import ClearChatModal from './modals/ClearChatModal'
 import LeaveGroupModal from './modals/LeaveGroupModal'
 import DeleteGroupModal from './modals/DeleteGroupModal'
 import { useGroupInfoSidebar } from './useGroupInfoSidebar'
+import { getNoun } from '@shared/lib/getNoun'
 
 type TabId =
     | 'participants'
@@ -25,16 +26,16 @@ type TabId =
     | 'voice'
     | 'links'
 
-const GROUP_NAME = 'Рабочая группа'
-
 function getTabContent(
     tabId: TabId,
+    chatKey: string,
     setDynamicTabTitle: (t: string | null) => void,
 ) {
     switch (tabId) {
         case 'participants':
             return (
                 <ParticipantsContent
+                    chatKey={chatKey}
                     onTitleChange={setDynamicTabTitle}
                 />
             )
@@ -50,10 +51,42 @@ function getTabContent(
             return null
     }
 }
-
-export default function GroupInfoSidebar() {
-    const [notificationsEnabled, setNotificationsEnabled] =
-        useState(true)
+interface GroupInfoSidebarProps {
+    chatKey: string
+    /** Название группы */
+    name: string
+    /** Количество участников */
+    participantsCount: number
+    /** Описание группы (опционально) */
+    description?: string
+    /** Ссылка-приглашение (опционально) */
+    inviteLink?: string
+    /** Текущее состояние уведомлений */
+    notificationsEnabled: boolean
+    /** Колбэк при изменении уведомлений */
+    onNotificationsChange?: (enabled: boolean) => void
+    /** Колбэк при закрытии сайдбара */
+    onClose?: () => void
+    /** Колбэк при очистке чата */
+    onClearChat?: (deleteForEveryone: boolean) => void
+    /** Колбэк при выходе из группы */
+    onLeaveGroup?: () => void
+    /** Колбэк при удалении группы */
+    onDeleteGroup?: () => void
+}
+export default function GroupInfoSidebar({
+    chatKey,
+    name,
+    participantsCount,
+    description,
+    inviteLink,
+    notificationsEnabled,
+    onNotificationsChange,
+    onClose,
+    onClearChat,
+    onLeaveGroup,
+    onDeleteGroup,
+}: GroupInfoSidebarProps) {
     const [isCopied, setIsCopied] = useState(false)
 
     // Модальные окна
@@ -92,32 +125,36 @@ export default function GroupInfoSidebar() {
     } = useGroupInfoSidebar()
 
     const handleCopyLink = useCallback(() => {
+        if (!inviteLink) return
+        navigator.clipboard.writeText(inviteLink)
         setIsCopied(true)
         setTimeout(() => setIsCopied(false), 700)
-    }, [])
+    }, [inviteLink])
 
-    const handleClearChat = useCallback(
-        async (deleteForEveryone?: boolean) => {
-            console.log(
-                'Чат очищен',
-                deleteForEveryone
-                    ? 'для всех'
-                    : 'только для себя',
-            )
+    const handleToggleNotifications = useCallback(() => {
+        onNotificationsChange?.(!notificationsEnabled)
+    }, [notificationsEnabled, onNotificationsChange])
+
+    // Обработчики для модалок
+    const handleClearChatConfirm = useCallback(
+        async (deleteForEveryone: boolean) => {
+            await onClearChat?.(deleteForEveryone)
             setClearChatModalOpen(false)
         },
-        [],
+        [onClearChat],
     )
 
-    const handleLeaveGroup = useCallback(async () => {
-        console.log('Пользователь покинул группу')
-        setLeaveGroupModalOpen(false)
-    }, [])
+    const handleLeaveGroupConfirm =
+        useCallback(async () => {
+            await onLeaveGroup?.()
+            setLeaveGroupModalOpen(false)
+        }, [onLeaveGroup])
 
-    const handleDeleteGroup = useCallback(async () => {
-        console.log('Группа удалена')
-        setDeleteGroupModalOpen(false)
-    }, [])
+    const handleDeleteGroupConfirm =
+        useCallback(async () => {
+            await onDeleteGroup?.()
+            setDeleteGroupModalOpen(false)
+        }, [onDeleteGroup])
 
     // Режим таба — отдельный layout
     if (viewMode === 'tab') {
@@ -137,6 +174,7 @@ export default function GroupInfoSidebar() {
             >
                 {getTabContent(
                     activeTab,
+                    chatKey,
                     setDynamicTabTitle,
                 )}
             </TabLayout>
@@ -161,7 +199,7 @@ export default function GroupInfoSidebar() {
             `}
             >
                 <Button
-                    onClick={() => console.log('Закрыть')}
+                    onClick={onClose}
                     aria-label="Закрыть"
                     variant="ghost"
                     size="sm"
@@ -315,10 +353,16 @@ export default function GroupInfoSidebar() {
                     `}
                     >
                         <h3 className="text-2xl font-semibold text-white">
-                            {GROUP_NAME}
+                            {name}
                         </h3>
                         <p className="mt-1 text-lg text-white/90">
-                            5 участников
+                            {participantsCount}{' '}
+                            {getNoun(
+                                participantsCount,
+                                'участник',
+                                'участника',
+                                'участников',
+                            )}
                         </p>
                     </div>
                 </div>
@@ -331,10 +375,8 @@ export default function GroupInfoSidebar() {
                             Уведомление
                         </span>
                         <button
-                            onClick={() =>
-                                setNotificationsEnabled(
-                                    (v) => !v,
-                                )
+                            onClick={
+                                handleToggleNotifications
                             }
                             aria-label={
                                 notificationsEnabled
@@ -372,78 +414,86 @@ export default function GroupInfoSidebar() {
                     </div>
 
                     {/* Описание */}
-                    <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
-                        <div
-                            className={`
-                          flex flex-col justify-between p-0.5 pr-8
-                        `}
-                        >
-                            <span
+                    {description && (
+                        <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
+                            <div
                                 className={`
-                              p-0 text-xs font-medium tracking-extra-tight
-                              text-text-gray
+                              flex flex-col justify-between p-0.5 pr-8
                             `}
                             >
-                                Описание
-                            </span>
-                            <span className="p-0 text-base text-black">
-                                Группа создана для общения
-                                между дизайнерами, передачи
-                                знаний и опыта, помощи и
-                                активного взаимодействия!
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Ссылка */}
-                    <div className="mx-0 my-1 rounded-md bg-white-bg p-1">
-                        <div className="flex flex-col justify-between p-0.5">
-                            <span
-                                className={`
-                              mb-1 p-0 text-xs font-medium tracking-extra-tight
-                              text-text-gray
-                            `}
-                            >
-                                Ссылка на приглашение в
-                                группу
-                            </span>
-                            <div className="flex items-center justify-between">
                                 <span
                                     className={`
-                                  pr-2 text-base break-all
-                                  text-accent-violet-primary
+                                  p-0 text-xs font-medium tracking-extra-tight
+                                  text-text-gray
                                 `}
                                 >
-                                    http://a-chat.su/fGHgfdYUfjsf
+                                    Описание
                                 </span>
-                                <Button
-                                    onClick={handleCopyLink}
-                                    aria-label="Копировать ссылку"
-                                    variant="ghost"
-                                    size="sm"
-                                    className={`
-                                      flex shrink-0 items-center justify-center
-                                      rounded-full p-0 text-text-black
-                                      hover:bg-accent-violet-ultra-light
-                                    `}
-                                >
-                                    <Image
-                                        src="/icons/detailInfo/copyLink.svg"
-                                        alt="Копировать ссылку"
-                                        width={24}
-                                        height={24}
-                                        className={cn(
-                                            isCopied
-                                                ? 'opacity-50'
-                                                : `
-                                          opacity-100
-                                        `,
-                                        )}
-                                    />
-                                </Button>
+                                <span className="p-0 text-base text-black">
+                                    {description}
+                                </span>
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Ссылка-приглашение */}
+                    {inviteLink && (
+                        <div className="mx-0 my-1 rounded-md bg-white-bg p-1">
+                            <div className="flex flex-col justify-between p-0.5">
+                                <span
+                                    className={`
+                                  mb-1 p-0 text-xs font-medium
+                                  tracking-extra-tight text-text-gray
+                                `}
+                                >
+                                    Ссылка на приглашение в
+                                    группу
+                                </span>
+                                <div
+                                    className={`
+                                  flex items-center justify-between
+                                `}
+                                >
+                                    <span
+                                        className={`
+                                      pr-2 text-base break-all
+                                      text-accent-violet-primary
+                                    `}
+                                    >
+                                        {inviteLink}
+                                    </span>
+                                    <Button
+                                        onClick={
+                                            handleCopyLink
+                                        }
+                                        aria-label="Копировать ссылку"
+                                        variant="ghost"
+                                        size="sm"
+                                        className={`
+                                          flex shrink-0 items-center
+                                          justify-center rounded-full p-0
+                                          text-text-black
+                                          hover:bg-accent-violet-ultra-light
+                                        `}
+                                    >
+                                        <Image
+                                            src="/icons/detailInfo/copyLink.svg"
+                                            alt="Копировать ссылку"
+                                            width={24}
+                                            height={24}
+                                            className={cn(
+                                                isCopied
+                                                    ? `
+                                              opacity-50
+                                            `
+                                                    : `opacity-100`,
+                                            )}
+                                        />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Табы */}
                     <div
@@ -522,6 +572,7 @@ export default function GroupInfoSidebar() {
                     `}
                     >
                         <TabContentPreview
+                            chatKey={chatKey}
                             activeTab={activeTab}
                         />
                     </div>
@@ -532,24 +583,24 @@ export default function GroupInfoSidebar() {
             <ClearChatModal
                 open={clearChatModalOpen}
                 onClose={() => setClearChatModalOpen(false)}
-                onConfirm={handleClearChat}
-                groupName={GROUP_NAME}
+                onConfirm={handleClearChatConfirm}
+                groupName={name}
             />
             <LeaveGroupModal
                 open={leaveGroupModalOpen}
                 onClose={() =>
                     setLeaveGroupModalOpen(false)
                 }
-                onConfirm={handleLeaveGroup}
-                groupName={GROUP_NAME}
+                onConfirm={handleLeaveGroupConfirm}
+                groupName={name}
             />
             <DeleteGroupModal
                 open={deleteGroupModalOpen}
                 onClose={() =>
                     setDeleteGroupModalOpen(false)
                 }
-                onConfirm={handleDeleteGroup}
-                groupName={GROUP_NAME}
+                onConfirm={handleDeleteGroupConfirm}
+                groupName={name}
             />
         </div>
     )

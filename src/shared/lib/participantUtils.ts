@@ -4,6 +4,7 @@ import {
     GroupParticipant,
     Contact,
 } from '../types/contact'
+import { getAvatarUrl } from './getAvatarUrl'
 
 // Функция преобразования API участника в GroupParticipant
 export const apiParticipantToContact = (
@@ -52,6 +53,7 @@ export const separateOwnerAndParticipants = (
 //  Преобразование Contact в GroupParticipant
 export const contactToGroupParticipant = (
     contact: Contact,
+    isOwner: boolean = false,
 ): GroupParticipant => {
     return {
         uid: contact.uid,
@@ -61,17 +63,17 @@ export const contactToGroupParticipant = (
         nickname: contact.nickname,
         phone: contact.phone,
         patronymic: contact.patronymic,
-        avatar: contact.avatar,
-        avatarUrl: contact.avatarUrl,
-        avatarWebp: contact.avatarWebp,
-        avatarWebpUrl: contact.avatarWebpUrl,
+        avatar: getAvatarUrl(contact.avatarWebpUrl),
+        avatarUrl: getAvatarUrl(contact.avatarUrl),
+        avatarWebp: getAvatarUrl(contact.avatarWebpUrl),
+        avatarWebpUrl: getAvatarUrl(contact.avatarWebpUrl),
         additionalInformation:
             contact.additionalInformation,
         birthday: contact.birthday,
         chatId: contact.chatId,
         isOnline: contact.isOnline,
         wasOnlineAt: contact.wasOnlineAt,
-        isOwner: false, // новые участники не владельцы
+        isOwner,
         isBlocked: false,
         isInContacts: true, // раз мы их выбрали из контактов, они в контактах
     }

@@ -233,9 +233,9 @@ export default function VoiceContent() {
     return (
         <div
             className={`
-              transition-opacity duration-200
-              ${visible ? 'opacity-100' : 'opacity-0'}
-            `}
+          transition-opacity duration-200
+          ${visible ? 'opacity-100' : 'opacity-0'}
+        `}
         >
             <div className="space-y-0">
                 {audioMessages.map((message) => {
@@ -273,13 +273,13 @@ export default function VoiceContent() {
                                       ${
                                           message.isPlaying
                                               ? `
-                                                bg-blue-600
-                                                hover:bg-blue-700
-                                              `
+                                          bg-blue-600
+                                          hover:bg-blue-700
+                                        `
                                               : `
-                                                bg-blue-100
-                                                hover:bg-blue-200
-                                              `
+                                          bg-blue-100
+                                          hover:bg-blue-200
+                                        `
                                       }
                                     `}
                                 >
@@ -305,13 +305,13 @@ export default function VoiceContent() {
                                 <div className="flex-1">
                                     <div
                                         className={`
-                                          mb-1 flex items-center justify-between
-                                        `}
+                                      mb-1 flex items-center justify-between
+                                    `}
                                     >
                                         <span
                                             className={`
-                                              font-medium text-text-black
-                                            `}
+                                          font-medium text-text-black
+                                        `}
                                         >
                                             {message.name}
                                         </span>
@@ -330,9 +330,9 @@ export default function VoiceContent() {
                                     <div
                                         className={cn(
                                             `
-                                              flex items-center gap-2 text-sm
-                                              text-text-gray
-                                            `,
+                                          flex items-center gap-2 text-sm
+                                          text-text-gray
+                                        `,
                                         )}
                                     >
                                         <span className="text-sm text-text-gray">

@@ -78,14 +78,15 @@ export default function InviteMembersContent({
             {error && (
                 <div
                     className={`
-                      mx-4 mt-4 mb-4 rounded-md bg-system-red-surface p-3
-                    `}
+                  mx-4 mt-4 mb-4 rounded-md bg-system-red-surface p-3
+                `}
                 >
                     <p className="text-sm text-system-red">
                         {error}
                     </p>
                 </div>
             )}
+
             {/* Список контактов */}
             <div className="flex-1 overflow-hidden">
                 <ContactsListInvitation
@@ -100,8 +101,9 @@ export default function InviteMembersContent({
                     }
                 />
             </div>
+
             {/* Кнопка приглашения - фиксированная внизу */}
-            (
+
             <div
                 className={`
                   sticky bottom-0 flex shrink-0 items-center justify-center
@@ -117,9 +119,9 @@ export default function InviteMembersContent({
                     variant="solid"
                     size="md"
                     className={`
-                      h-14 w-full max-w-82 rounded-md
-                      disabled:cursor-not-allowed disabled:opacity-50
-                    `}
+                          h-14 w-full max-w-82 rounded-md
+                          disabled:cursor-not-allowed disabled:opacity-50
+                        `}
                 >
                     {isInviting ? (
                         <span className="flex items-center gap-2">
@@ -151,7 +153,6 @@ export default function InviteMembersContent({
                     )}
                 </Button>
             </div>
-            )
         </>
     )
 }

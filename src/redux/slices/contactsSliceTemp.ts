@@ -1,17 +1,26 @@
-import { ContactsListDB } from '@shared/config/constants'
+// src/redux/slices/contactsSliceTemp.ts
 import {
     createSlice,
     PayloadAction,
 } from '@reduxjs/toolkit'
+import { Contact } from '@shared/types/contact'
+import {
+    initializeContacts,
+    saveContactsToStorage,
+} from '@shared/lib/localStorageContacts'
 
 const contactsTemp = createSlice({
     name: 'contactsTemp',
     initialState: {
-        list: ContactsListDB,
+        list: initializeContacts(), // теперь загружается из localStorage или базы
     },
     reducers: {
-        setContacts: (state, action) => {
+        setContacts: (
+            state,
+            action: PayloadAction<Contact[]>,
+        ) => {
             state.list = action.payload
+            saveContactsToStorage(action.payload) // синхронизация с localStorage
         },
         removeContacts: (
             state,
@@ -21,6 +30,7 @@ const contactsTemp = createSlice({
                 (contact) =>
                     !action.payload.includes(contact.uid),
             )
+            saveContactsToStorage(state.list) // сохраняем после удаления
         },
     },
 })

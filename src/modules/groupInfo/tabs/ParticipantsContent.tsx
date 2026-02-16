@@ -1,29 +1,30 @@
+// src/modules/groupInfo/tabs/ParticipantsContent.tsx
 'use client'
 
+import { useEffect, useState } from 'react'
+import {
+    findGroupParticipantsByChatKey,
+    saveGroupParticipants,
+} from '@shared/lib/localStorageGroupParticipants'
+import {
+    GroupParticipant,
+    Contact,
+} from '@shared/types/contact'
+import { contactsToGroupParticipants } from '@shared/lib/participantUtils'
 import ContactsListGroup from '@modules/contacts/components/ContactsListGroup'
 import InviteMembersContent from './InviteMembersContent'
-import { useState, useEffect } from 'react'
-import {
-    ApiGroupParticipant,
-    Contact,
-    GroupParticipant,
-} from '@shared/types/contact'
-import {
-    transformParticipants,
-    separateOwnerAndParticipants,
-    contactsToGroupParticipants, // НОВЫЙ ИМПОРТ
-} from '@shared/lib/participantUtils'
 
 type View = 'participants' | 'invite'
 
 interface ParticipantsContentProps {
-    onTitleChange?: (title: string) => void
+    chatKey: string
+    onTitleChange?: (title: string | null) => void
 }
 
 export default function ParticipantsContent({
+    chatKey,
     onTitleChange,
 }: ParticipantsContentProps) {
-    const [visible, setVisible] = useState(false)
     const [loading, setLoading] = useState(true)
     const [owner, setOwner] =
         useState<GroupParticipant | null>(null)
@@ -37,16 +38,26 @@ export default function ParticipantsContent({
         string | null
     >(null)
 
+    // Загрузка участников из localStorage
     useEffect(() => {
-        const t = setTimeout(() => setVisible(true), 10)
+        setLoading(true)
+        const data = findGroupParticipantsByChatKey(chatKey)
+        if (data) {
+            const ownerData =
+                data.find((p) => p.isOwner) || null
+            const otherParticipants = data.filter(
+                (p) => !p.isOwner,
+            )
+            setOwner(ownerData)
+            setParticipants(otherParticipants)
+        } else {
+            setOwner(null)
+            setParticipants([])
+        }
+        setLoading(false)
+    }, [chatKey])
 
-        // Загружаем участников
-        loadParticipants()
-
-        return () => clearTimeout(t)
-    }, [])
-
-    // Обновляем заголовок при изменении view
+    // Обновление заголовка при смене вида
     useEffect(() => {
         if (onTitleChange) {
             const title =
@@ -57,73 +68,7 @@ export default function ParticipantsContent({
         }
     }, [currentView, onTitleChange])
 
-    // Моковые данные в формате API (начальные участники)
-    const mockApiParticipants: ApiGroupParticipant[] = [
-        {
-            uid: '1',
-            first_name: 'Иван',
-            last_name: 'Иванов',
-            avatar_url: 'AvatarWeb1.png',
-            avatar_webp_url: 'AvatarWeb1.webp',
-            is_owner: true,
-            is_blocked: false,
-            is_online: true,
-            was_online_at: Date.now(),
-            is_in_contacts: true,
-        },
-        {
-            uid: '2',
-            first_name: 'Петр',
-            last_name: 'Петров',
-            avatar_url: 'AvatarWeb2.png',
-            avatar_webp_url: 'AvatarWeb2.webp',
-            is_owner: false,
-            is_blocked: false,
-            is_online: false,
-            was_online_at: Date.now() - 3600000,
-            is_in_contacts: true,
-        },
-        {
-            uid: '3',
-            first_name: 'Сидор',
-            last_name: 'Сидоров',
-            avatar_url: 'AvatarWeb3.png',
-            avatar_webp_url: 'AvatarWeb3.webp',
-            is_owner: false,
-            is_blocked: false,
-            is_online: true,
-            was_online_at: Date.now(),
-            is_in_contacts: false,
-        },
-    ]
-
-    // Функция загрузки участников
-    const loadParticipants = async () => {
-        setLoading(true)
-
-        try {
-            const transformedParticipants =
-                transformParticipants(mockApiParticipants)
-            const {
-                owner: ownerData,
-                participants: participantsData,
-            } = separateOwnerAndParticipants(
-                transformedParticipants,
-            )
-
-            setOwner(ownerData)
-            setParticipants(participantsData)
-        } catch (error) {
-            console.error(
-                'Ошибка загрузки участников:',
-                error,
-            )
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // ОБНОВЛЕННЫЙ Обработчик приглашения участников
+    // Приглашение новых участников
     const handleInvite = async (
         selectedContacts: Contact[],
     ) => {
@@ -131,58 +76,56 @@ export default function ParticipantsContent({
         setInviteError(null)
 
         try {
-            // Симуляция API запроса
+            // Симуляция API (можно убрать)
             await new Promise((resolve) =>
-                setTimeout(resolve, 1000),
+                setTimeout(resolve, 500),
             )
 
-            // Преобразуем выбранные контакты в GroupParticipant
+            // Преобразуем контакты в участников
             const newParticipants =
                 contactsToGroupParticipants(
                     selectedContacts,
                 )
 
-            console.log(
-                'Приглашены участники:',
-                selectedContacts,
-            )
-            console.log(
-                'Преобразованные участники:',
-                newParticipants,
-            )
-
-            // ДОБАВЛЯЕМ новых участников к существующим (убираем дубликаты по uid)
-            setParticipants((prev) => {
-                const existingUids = new Set(
-                    prev.map((p) => p.uid),
-                )
-                const uniqueNewParticipants =
-                    newParticipants.filter(
-                        (p) => !existingUids.has(p.uid),
+            // Объединяем с существующими, убирая дубликаты по uid
+            const allParticipants = [...participants]
+            for (const newP of newParticipants) {
+                if (
+                    !allParticipants.some(
+                        (p) => p.uid === newP.uid,
                     )
-                return [...prev, ...uniqueNewParticipants]
-            })
+                ) {
+                    allParticipants.push(newP)
+                }
+            }
 
-            // Возвращаемся к списку участников
+            // Сохраняем в localStorage
+            const fullList = owner
+                ? [owner, ...allParticipants]
+                : allParticipants
+            saveGroupParticipants(chatKey, fullList)
+
+            // Обновляем состояние
+            setParticipants(allParticipants)
             setCurrentView('participants')
         } catch (error) {
-            const errorMessage =
+            setInviteError(
                 error instanceof Error
                     ? error.message
-                    : 'Ошибка при приглашении участников'
-            setInviteError(errorMessage)
+                    : 'Ошибка при приглашении',
+            )
         } finally {
             setIsInviting(false)
         }
     }
 
-    // Обработчик отмены приглашения
+    // Отмена приглашения
     const handleCancelInvite = () => {
         setCurrentView('participants')
         setInviteError(null)
     }
 
-    // Переключение на режим приглашения
+    // Переход к приглашению
     const handleShowInvite = () => {
         setCurrentView('invite')
         setInviteError(null)
@@ -198,18 +141,13 @@ export default function ParticipantsContent({
         )
     }
 
-    // Все текущие участники (владелец + участники)
+    // Все участники (для передачи в InviteMembersContent как текущие)
     const allParticipants = owner
         ? [owner, ...participants]
         : participants
 
     return (
-        <div
-            className={`
-              flex h-full flex-col transition-opacity duration-200
-              ${visible ? 'opacity-100' : 'opacity-0'}
-            `}
-        >
+        <div className="flex h-full flex-col">
             {currentView === 'participants' ? (
                 <ContactsListGroup
                     owner={owner}

@@ -45,7 +45,7 @@ export interface ApiGroupParticipant {
     is_owner: boolean
     is_blocked: boolean
     is_online: boolean
-    was_online_at: number
+    was_online_at: number | string | Date
     is_in_contacts: boolean
 }
 
