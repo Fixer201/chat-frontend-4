@@ -1,5 +1,3 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
-
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import '@app/globals.css'
@@ -38,17 +36,18 @@ export default function SuccessSupport({
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-                  relative flex h-screen w-(--app-login-width) flex-col
-                  items-center justify-center bg-white
-                  md:bg-app-login-background
-                `}
+                      relative flex h-screen w-(--app-login-width) flex-col
+                      items-center justify-center bg-white
+                      md:bg-app-login-background
+                    `}
                 >
                     <div
                         className={`
-                      absolute flex h-190 w-122 flex-col items-center
-                      justify-center rounded-2xl bg-white
-                      md:bg-app-login-start md:filter-app-start-screen-shadow
-                    `}
+                          absolute flex h-190 w-122 flex-col items-center
+                          justify-center rounded-2xl bg-white
+                          md:bg-app-login-start
+                          md:filter-app-start-screen-shadow
+                        `}
                     >
                         <div
                             className={`
@@ -59,8 +58,8 @@ export default function SuccessSupport({
                             {!isMobile && (
                                 <div
                                     className={`
-                              relative flex h-17 w-90 items-center
-                            `}
+                                      relative flex h-17 w-90 items-center
+                                    `}
                                 >
                                     <Image
                                         src="/images/login/back.svg"
@@ -68,8 +67,8 @@ export default function SuccessSupport({
                                         width={32}
                                         height={32}
                                         className={`
-                                      absolute top-0 left-0 cursor-pointer
-                                    `}
+                                          absolute top-0 left-0 cursor-pointer
+                                        `}
                                         loading="eager"
                                         onClick={onBack}
                                     />
@@ -86,21 +85,39 @@ export default function SuccessSupport({
 
                             <div
                                 className={`
-                                 flex h-126 w-90 flex-col items-center justify-start gap-4 md:justify-between md:gap-6
+                                  flex h-126 w-90 flex-col items-center
+                                  justify-start gap-4
+                                  md:justify-between md:gap-6
                                 `}
                             >
-                                <div className="flex w-90 items-center justify-center">
-                                    <p className="text-center text-[32px] font-bold">
+                                <div
+                                    className={`
+                                  flex w-90 items-center justify-center
+                                `}
+                                >
+                                    <p
+                                        className={`
+                                      text-center text-[32px] font-bold
+                                    `}
+                                    >
                                         Служба поддержки
                                     </p>
                                 </div>
 
                                 <div
                                     className={`
-                                      flex h-112 w-90 flex-col items-center justify-start md:justify-between
+                                      flex h-112 w-90 flex-col items-center
+                                      justify-start
+                                      md:justify-between
                                     `}
                                 >
-                                    <div className="flex h-112 w-90 flex-col items-center justify-start gap-4 md:justify-between">
+                                    <div
+                                        className={`
+                                      flex h-112 w-90 flex-col items-center
+                                      justify-start gap-4
+                                      md:justify-between
+                                    `}
+                                    >
                                         <Image
                                             src="/images/Check.svg"
                                             alt="Check"
@@ -110,13 +127,25 @@ export default function SuccessSupport({
                                             loading="eager"
                                         />
 
-                                        <div className="flex flex-col gap-2 text-center">
-                                            <span className="text-center text-[24px] font-bold">
+                                        <div
+                                            className={`
+                                          flex flex-col gap-2 text-center
+                                        `}
+                                        >
+                                            <span
+                                                className={`
+                                              text-center text-[24px] font-bold
+                                            `}
+                                            >
                                                 {' '}
                                                 Обращение
                                                 отправлено!
                                             </span>
-                                            <span className="text-center text-lg">
+                                            <span
+                                                className={`
+                                              text-center text-lg
+                                            `}
+                                            >
                                                 <p className="text-center">
                                                     В
                                                     ближайшее
@@ -137,8 +166,10 @@ export default function SuccessSupport({
                                     <Button
                                         variant="primary"
                                         size="md"
-                                        className="mt-4 w-full
-                                      md:mt-0"
+                                        className={`
+                                          mt-4 w-full
+                                          md:mt-0
+                                        `}
                                         onClick={
                                             handleStartClick
                                         }

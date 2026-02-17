@@ -1,9 +1,7 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import '@app/globals.css'
 import { useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 
@@ -12,9 +10,7 @@ export default function SuccessRegister() {
     const [loading, setLoading] = useState(false)
 
     const refreshAccessToken = async () => {
-        const refreshToken =
-            // localStorage.getItem('refresh_token')
-            Cookies.get('refresh_token')
+        const refreshToken = Cookies.get('refresh_token')
         if (!refreshToken) {
             console.error('Refresh token не найден')
             return null

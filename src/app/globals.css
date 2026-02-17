@@ -9,13 +9,19 @@ body {
 }
 
 @theme inline {
-    --radius-sm: calc(var(--radius) - 4px); /* 6px */
-    --radius-md: calc(var(--radius) - 2px); /* 8px */
-    --radius-lg: var(--radius); /* 10px */
-    --radius-xl: calc(var(--radius) + 4px); /* 14px */
-    --radius-3xl: calc(var(--radius) + 10px); /* 20px */
+    --radius-sm: calc(var(--radius) - 4px);
+    /* 6px */
+    --radius-md: calc(var(--radius) - 2px);
+    /* 8px */
+    --radius-lg: var(--radius);
+    /* 10px */
+    --radius-xl: calc(var(--radius) + 4px);
+    /* 14px */
+    --radius-3xl: calc(var(--radius) + 10px);
+    /* 20px */
     --screen-height-list: var(--chat-list-container-height);
-    --message-max-width: 70%; /* Максимальная ширина сообщения */
+    --message-max-width: 70%;
+    /* Максимальная ширина сообщения */
     /* UI Component Colors */
     /* Custom App Colors - Primary */
     --color-white-bg: var(--app-white-bg);
@@ -80,7 +86,8 @@ body {
 }
 
 :root {
-    --radius: 0.625rem; /* 10px */
+    --radius: 0.625rem;
+    /* 10px */
     --chat-list-container-height: calc(100vh - 112px);
     --chat-list-divider-left: calc(60px + 12px + 8px);
     --app-login-background: url(/images/login/Background.svg);
@@ -160,19 +167,12 @@ body {
     --dropdown-max-width: 400px;
     --dropdown-extra-padding: 96px;
     --create-menu-width: 200px;
-    /* Call Modal Window */ /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
-    --app-call-modal-red: hsla(
-        359,
-        100%,
-        61%,
-        1
-    ); /* Colors/Red */
-    --app-call-modal-green: hsla(
-        135,
-        59%,
-        49%,
-        1
-    ); /* Colors/Green */
+    /* Call Modal Window */
+    /* Figma Frame Name: Chat Tab_Call_t_Opponent's profile full_In contacts_Maximum info */
+    --app-call-modal-red: hsla(359, 100%, 61%, 1);
+    /* Colors/Red */
+    --app-call-modal-green: hsla(135, 59%, 49%, 1);
+    /* Colors/Green */
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
     --app-call-timer-green: hsla(140, 100%, 37%, 1);
@@ -417,43 +417,47 @@ body {
     :root {
         --chat-list-divider-left: calc(50px + 8px + 4px);
     }
-    .login-container {
-        height: 100vh !important;
-        width: 100vw !important;
-        background-image: none !important;
+
+    body .login-container {
+        height: 100vh;
+        width: 100vw;
+        background-image: none;
     }
-    .start-screen-inner {
-        height: 100% !important;
-        width: 100% !important;
-        position: static !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 16px !important;
-        border-radius: 0 !important;
+
+    body .start-screen-inner {
+        height: 100%;
+        width: 100%;
+        position: static;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        border-radius: 0;
     }
-    .logo-mobile {
-        position: static !important;
-        width: 60vw !important;
-        height: 30vh !important;
-        max-width: 210px !important;
-        max-height: 185px !important;
-        margin-top: -40px !important;
-        transform: none !important;
+
+    body .logo-mobile {
+        position: static;
+        width: 60vw;
+        height: 30vh;
+        max-width: 210px;
+        max-height: 185px;
+        margin-top: -40px;
+        transform: none;
     }
-    .content-mobile {
-        position: static !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 16px !important;
-        height: auto !important;
-        width: 100% !important;
-        padding: 0 16px !important;
-        transform: none !important;
-        gap: 10px !important;
+
+    body .content-mobile {
+        position: static;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between t;
+        gap: 16px;
+        height: auto;
+        width: 100%;
+        padding: 0 16px;
+        transform: none;
+        gap: 10px;
     }
 }
 
@@ -462,6 +466,7 @@ body {
         opacity: 0;
         transform: translateY(-100%);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -473,6 +478,7 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+
     to {
         opacity: 0;
         transform: translateY(-100%);

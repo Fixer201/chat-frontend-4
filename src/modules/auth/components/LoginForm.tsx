@@ -1,6 +1,3 @@
-/* eslint-disable better-tailwindcss/no-unregistered-classes */
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
-
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
@@ -12,7 +9,6 @@ import CodeConfirmForm from './CodeConfirmForm'
 import RegisterForm from './RegisterForm'
 import SuccessRegister from './SuccessRegister'
 import Cookies from 'js-cookie'
-import '@app/globals.css'
 
 export default function LoginForm() {
     const router = useRouter()
@@ -287,10 +283,6 @@ export default function LoginForm() {
         setError('')
 
         const accessToken = Cookies.get('access_token')
-        const apiKey = process.env.NEXT_PUBLIC_API_KEY
-        const url = apiKey
-            ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/?api_key=${apiKey}`
-            : 'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/'
         try {
             const response = await fetch(
                 '/api/auth/profile',
@@ -397,12 +389,10 @@ export default function LoginForm() {
                 >
                     <div
                         className={`
-                     start-screen-inner flex flex-col items-center
-                      justify-center gap-4 bg-app-login-start
-                      filter-app-start-screen-shadow
-                      md:absolute md:h-190 md:w-122 md:flex-col md:items-center
-                      md:justify-center md:rounded-2xl
-                     
+                          flex flex-col items-center justify-center gap-4
+                          bg-app-login-start filter-app-start-screen-shadow
+                          md:absolute md:h-190 md:w-122 md:flex-col
+                          md:items-center md:justify-center md:rounded-2xl
                         `}
                         style={{
                             backgroundImage: isMobile
@@ -444,7 +434,9 @@ export default function LoginForm() {
                                     width={78}
                                     height={70}
                                     className={`
-                                     absolute left-1/2 h-14 w-14 -translate-x-1/2 transform md:h-18 md:w-20
+                                      absolute left-1/2 h-14 w-14
+                                      -translate-x-1/2 transform
+                                      md:h-18 md:w-20
                                     `}
                                     loading="eager"
                                 />

@@ -1,11 +1,8 @@
-/* eslint-disable better-tailwindcss/no-unregistered-classes */
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
 import { useState, useEffect, memo } from 'react'
-import '@app/globals.css'
 
 interface RegisterFormProps {
     phoneNumber: string
@@ -212,15 +209,14 @@ const RegisterForm = memo(function RegisterForm({
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-                  login-container relative flex h-screen w-(--app-login-width)
-                  flex-col items-center justify-center bg-none
+                  relative flex h-screen w-(--app-login-width) flex-col
+                  items-center justify-center bg-none
                   md:bg-app-login-background
                 `}
             >
                 <div
                     className={`
-                      start-screen-inner flex flex-col items-center
-                      justify-center gap-4 bg-white
+                      flex flex-col items-center justify-center gap-4 bg-white
                       md:absolute md:h-190 md:w-122 md:flex-col md:items-center
                       md:justify-center md:rounded-2xl md:bg-app-login-start
                       md:filter-app-start-screen-shadow
@@ -229,14 +225,16 @@ const RegisterForm = memo(function RegisterForm({
                     <div
                         className={`
                           absolute flex flex-col items-center justify-between
-                          gap-4 md:justify-between md:gap-6
+                          gap-4
+                          md:justify-between md:gap-6
                         `}
                     >
                         <div
                             className={`
-                           relative flex h-17 w-90 items-center justify-between
-                           md:justify-center
-                         `}
+                              relative flex h-17 w-90 items-center
+                              justify-between
+                              md:justify-center
+                            `}
                         >
                             <Image
                                 src="/images/login/back.svg"
@@ -244,9 +242,8 @@ const RegisterForm = memo(function RegisterForm({
                                 width={32}
                                 height={32}
                                 className={`
-                                                          absolute top-0 left-0
-                                                          cursor-pointer
-                                                        `}
+                                  absolute top-0 left-0 cursor-pointer
+                                `}
                                 loading="eager"
                                 onClick={onBack}
                             />
@@ -257,8 +254,9 @@ const RegisterForm = memo(function RegisterForm({
                                 width={78}
                                 height={70}
                                 className={`
-                                absolute right-0 h-14 w-14
-      md:absolute md:left-1/2 md:h-18 md:w-20 md:-translate-x-1/2 md:transform
+                                  absolute right-0 h-14 w-14
+                                  md:absolute md:left-1/2 md:h-18 md:w-20
+                                  md:-translate-x-1/2 md:transform
                                 `}
                                 loading="eager"
                             />
@@ -267,8 +265,8 @@ const RegisterForm = memo(function RegisterForm({
                         <div
                             className={`
                               flex h-126 w-90 flex-col items-center
-                              justify-between gap-4 md:justify-between
-                              md:gap-6
+                              justify-between gap-4
+                              md:justify-between md:gap-6
                             `}
                         >
                             <div

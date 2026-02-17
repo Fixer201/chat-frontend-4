@@ -1,14 +1,76 @@
-/* eslint-disable better-tailwindcss/no-unregistered-classes */
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
-/* eslint-disable react-hooks/set-state-in-effect */
-'use client'
-import { useState, useEffect, useRef } from 'react'
+﻿'use client'
+import {
+    useState,
+    useEffect,
+    useRef,
+    useReducer,
+    useLayoutEffect,
+} from 'react'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
 import Modal from '@shared/ui/modal/Modal'
 import { Button } from '@shared/ui/button/Button'
 import SupportRequestForm from './SupportRequestForm'
-import '@app/globals.css'
+
+// Редьюсер для управления состоянием модального окна
+function modalReducer(
+    state: { open: boolean; message: string },
+    action: { type: string; message?: string },
+) {
+    switch (action.type) {
+        case 'open':
+            return {
+                open: true,
+                message: action.message || '',
+            }
+        case 'close':
+            return { open: false, message: '' }
+        default:
+            return state
+    }
+}
+
+// Редьюсер для управления кодом
+function codeReducer(
+    state: string[],
+    action: {
+        type: string
+        index?: number
+        value?: string
+    },
+) {
+    switch (action.type) {
+        case 'clear':
+            return ['', '', '', '', '']
+        case 'set_digit':
+            if (
+                action.index !== undefined &&
+                action.value !== undefined
+            ) {
+                const newCode = [...state]
+                newCode[action.index] = action.value
+                return newCode
+            }
+            return state
+        default:
+            return state
+    }
+}
+
+// Редьюсер для управления таймером
+function timeLeftReducer(
+    state: number,
+    action: { type: string },
+) {
+    switch (action.type) {
+        case 'reset':
+            return 60
+        case 'decrement':
+            return state > 0 ? state - 1 : 0
+        default:
+            return state
+    }
+}
 
 interface CodeConfirmFormProps {
     phoneNumber: string
@@ -31,7 +93,7 @@ export default function CodeConfirmForm({
     isBlocked,
     blockTime,
 }: CodeConfirmFormProps) {
-    const [code, setCode] = useState<string[]>([
+    const [code, dispatchCode] = useReducer(codeReducer, [
         '',
         '',
         '',
@@ -45,12 +107,16 @@ export default function CodeConfirmForm({
         null,
         null,
     ])
-    const [timeLeft, setTimeLeft] = useState(60) // Таймер 60 сек
     const [showTooltip, setShowTooltip] = useState(false)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [modalMessage, setModalMessage] = useState(
-        'Не приходит код?',
+    const [modalState, dispatch] = useReducer(
+        modalReducer,
+        { open: false, message: 'Не приходит код?' },
     )
+    const [timeLeft, dispatchTimeLeft] = useReducer(
+        timeLeftReducer,
+        60,
+    )
+
     const [
         showSupportRequestForm,
         setShowSupportRequestForm,
@@ -63,7 +129,7 @@ export default function CodeConfirmForm({
     useEffect(() => {
         if (timeLeft > 0) {
             const timer = setInterval(() => {
-                setTimeLeft((prev) => prev - 1)
+                dispatchTimeLeft({ type: 'decrement' })
             }, 1000)
             return () => clearInterval(timer)
         }
@@ -71,14 +137,12 @@ export default function CodeConfirmForm({
 
     // Открываем модальное окно при isBlocked (только один раз)
     useEffect(() => {
-        console.log(
-            'useEffect isBlocked triggered, isBlocked:',
-            isBlocked,
-        )
         if (isBlocked && !modalOpenedRef.current) {
             modalOpenedRef.current = true
-            setModalMessage('Лимит исчерпан')
-            setIsModalOpen(true)
+            dispatch({
+                type: 'open',
+                message: 'Лимит исчерпан',
+            })
         }
     }, [isBlocked])
 
@@ -90,10 +154,11 @@ export default function CodeConfirmForm({
             !canResend &&
             !modalOpenedRef.current
         ) {
-            console.log('useEffect expired triggered')
             modalOpenedRef.current = true
-            setModalMessage('Срок действия кода истек')
-            setIsModalOpen(true)
+            dispatch({
+                type: 'open',
+                message: 'Срок действия кода истек',
+            })
         }
     }, [timeLeft, code, canResend])
 
@@ -104,14 +169,13 @@ export default function CodeConfirmForm({
             return () => clearInterval(timer)
         }
     }, [blockTime])
-    //эффект для возврата фокуса после неудачной попытки
-    useEffect(() => {
+    // Эффект для возврата фокуса после неудачной попытки
+    useLayoutEffect(() => {
         if (error) {
-            setCode(['', '', '', '', '']) // Очистка кода после неудачи
+            dispatchCode({ type: 'clear' }) // Очистка кода после неудачи через dispatch
             inputRefs.current[0]?.focus() // Фокус на первое окошко
         }
     }, [error])
-
     const handleInputChange = (
         index: number,
         value: string,
@@ -121,9 +185,13 @@ export default function CodeConfirmForm({
             .replace(/\D/g, '')
             .slice(0, 1)
 
+        dispatchCode({
+            type: 'set_digit',
+            index,
+            value: sanitizedValue,
+        })
         const newCode = [...code]
         newCode[index] = sanitizedValue // Всегда заменяем цифру в текущем окошке
-        setCode(newCode)
 
         // Автоматический переход к следующему окошку, если ввели цифру
         if (sanitizedValue && index < 4) {
@@ -150,20 +218,22 @@ export default function CodeConfirmForm({
     }
 
     const handleResendCode = () => {
-        setTimeLeft(60) // Сброс таймера
-        setCode(['', '', '', '', '']) // Очистка кода
+        dispatchTimeLeft({ type: 'reset' }) // Сброс таймера через dispatch
+        dispatchCode({ type: 'clear' }) // Очистка кода через dispatch
         onResendCode()
     }
 
     // Открытие модального окна (для "Не приходит код?")
     const handleOpenModal = () => {
-        setModalMessage('Не приходит код?')
-        setIsModalOpen(true)
+        dispatch({
+            type: 'open',
+            message: 'Не приходит код?',
+        })
     }
 
     // Закрытие модального окна
     const handleCloseModal = () => {
-        setIsModalOpen(false)
+        dispatch({ type: 'close' })
         modalOpenedRef.current = false // Сбрасываем флаг при закрытии
     }
 
@@ -180,15 +250,14 @@ export default function CodeConfirmForm({
         <div className="flex min-h-screen items-center justify-center">
             <div
                 className={`
-                  login-container relative flex h-screen w-(--app-login-width)
-                  flex-col items-center justify-center bg-none
+                  relative flex h-screen w-(--app-login-width) flex-col
+                  items-center justify-center bg-none
                   md:bg-app-login-background
                 `}
             >
                 <div
                     className={`
-                      start-screen-inner flex flex-col items-center
-                      justify-center gap-4 bg-white
+                      flex flex-col items-center justify-center gap-4 bg-white
                       md:absolute md:h-190 md:w-122 md:flex-col md:items-center
                       md:justify-center md:rounded-2xl md:bg-app-login-start
                       md:filter-app-start-screen-shadow
@@ -498,14 +567,14 @@ export default function CodeConfirmForm({
                 </div>
             </div>
             <Modal
-                open={isModalOpen}
+                open={modalState.open}
                 onClose={handleCloseModal}
                 title=""
                 descriptionColor="muted"
                 titleAlign="center"
             >
                 <div className="text-center text-lg text-[24px] font-bold">
-                    {modalMessage}
+                    {modalState.message}
                 </div>
 
                 <Button

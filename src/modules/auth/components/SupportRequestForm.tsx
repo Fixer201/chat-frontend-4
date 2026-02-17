@@ -1,17 +1,11 @@
-/* eslint-disable better-tailwindcss/no-unregistered-classes */
-
 'use client'
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
-import Modal from '@shared/ui/modal/Modal'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
-import Cookies from 'js-cookie'
 import Textarea from '@shared/ui/textarea/Textarea'
-import CodeConfirmForm from './CodeConfirmForm'
 import SuccessSupport from './SuccessSupport'
-import '@app/globals.css'
 
 interface SupportRequestFormProps {
     phoneNumber: string
@@ -25,6 +19,7 @@ export default function SupportRequestForm({
     const router = useRouter()
     const [email, setEmail] = useState('')
     const [message, setMessage] = useState('')
+    const [loading, setLoading] = useState(false)
     const [emailError, setEmailError] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
     const [showSuccessSupport, setShowSuccessSupport] =
@@ -65,43 +60,57 @@ export default function SupportRequestForm({
     const handleDownload = () => {
         window.open('/listSolutions.pdf', '_blank')
     }
-    const handleSubmit = () => {
-        setShowSuccessSupport(true)
-    }
-    // Определение мобильного режима (ширина ≤768px)
-    const [isMobile, setIsMobile] = useState(false)
-    useEffect(() => {
-        const checkMobile = () =>
-            setIsMobile(window.innerWidth <= 768)
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        return () =>
-            window.removeEventListener(
-                'resize',
-                checkMobile,
-            )
-    }, [])
-    // const handleSubmit = async () => {
-
-    //     setLoading(true)
-    //     try {
-    //         const response = await fetch('/api/support/request', {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({ phoneNumber, email, message }),
-    //         })
-    //         if (response.ok) {
-    //             alert('Запрос отправлен. Мы свяжемся с вами.')
-    //             router.push('/auth/login') // Или onBack()
-    //         } else {
-    //             setEmailError('Ошибка отправки. Попробуйте позже.')
-    //         }
-    //     } catch (err) {
-    //         setEmailError('Ошибка сети.')
-    //     } finally {
-    //         setLoading(false)
-    //     }
+    // const handleSubmit = () => {
+    //     setShowSuccessSupport(true)
     // }
+    // Определение мобильного режима (ширина ≤768px)
+    // const [isMobile, setIsMobile] = useState(false)
+    // useEffect(() => {
+    //     const checkMobile = () =>
+    //         setIsMobile(window.innerWidth <= 768)
+    //     checkMobile()
+    //     window.addEventListener('resize', checkMobile)
+    //     return () =>
+    //         window.removeEventListener(
+    //             'resize',
+    //             checkMobile,
+    //         )
+    // }, [])
+    const handleSubmit = async () => {
+        setLoading(true)
+        try {
+            const response = await fetch(
+                '/api/support/request',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        phoneNumber,
+                        email,
+                        message,
+                    }),
+                },
+            )
+            if (response.ok) {
+                alert(
+                    'Запрос отправлен. Мы свяжемся с вами.',
+                )
+                router.push('/auth/login') // Или onBack()
+            } else {
+                setEmailError(
+                    'Ошибка отправки. Попробуйте позже.',
+                )
+            }
+        } catch (error) {
+            setEmailError('Ошибка сети.')
+        } finally {
+            setLoading(false)
+            // в любом случае появляется успех отправки так как не реализовано на бэкенде
+            setShowSuccessSupport(true)
+        }
+    }
     if (showSuccessSupport) {
         return <SuccessSupport onBack={onBack} />
     }
@@ -111,16 +120,15 @@ export default function SupportRequestForm({
             <div className="flex min-h-screen items-center justify-center">
                 <div
                     className={`
-                      login-container relative flex h-screen
-                      w-(--app-login-width) flex-col items-center justify-center
-                      bg-none
+                      relative flex h-screen w-(--app-login-width) flex-col
+                      items-center justify-center bg-none
                       md:bg-app-login-background
                     `}
                 >
                     <div
                         className={`
-                          start-screen-inner flex flex-col items-center
-                          justify-start gap-4 bg-white
+                          flex flex-col items-center justify-start gap-4
+                          bg-white
                           md:absolute md:h-190 md:w-122 md:flex-col
                           md:items-center md:justify-center md:rounded-2xl
                           md:bg-app-login-start
