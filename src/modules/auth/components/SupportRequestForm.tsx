@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import Textarea from '@shared/ui/textarea/Textarea'
 import SuccessSupport from './SuccessSupport'
+import useIsMobile from '@shared/hooks/useIsMobile'
 
 interface SupportRequestFormProps {
     phoneNumber: string
@@ -63,19 +64,7 @@ export default function SupportRequestForm({
     // const handleSubmit = () => {
     //     setShowSuccessSupport(true)
     // }
-    // Определение мобильного режима (ширина ≤768px)
-    // const [isMobile, setIsMobile] = useState(false)
-    // useEffect(() => {
-    //     const checkMobile = () =>
-    //         setIsMobile(window.innerWidth <= 768)
-    //     checkMobile()
-    //     window.addEventListener('resize', checkMobile)
-    //     return () =>
-    //         window.removeEventListener(
-    //             'resize',
-    //             checkMobile,
-    //         )
-    // }, [])
+    const isMobile = useIsMobile()
     const handleSubmit = async () => {
         setLoading(true)
         try {

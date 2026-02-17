@@ -1,9 +1,8 @@
 'use client'
 import { Button } from '@shared/ui/button/Button'
-import '@app/globals.css'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import useIsMobile from '@shared/hooks/useIsMobile'
 
 interface SuccessSupportProps {
     onBack: () => void
@@ -17,20 +16,8 @@ export default function SuccessSupport({
     const handleStartClick = () => {
         router.push('/auth/login')
     }
-    // Определение мобильного режима (ширина ≤768px)
-    const [isMobile, setIsMobile] = useState(false)
-    useEffect(() => {
-        const checkMobile = () =>
-            setIsMobile(window.innerWidth <= 768)
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        console.log('isMobile:', isMobile)
-        return () =>
-            window.removeEventListener(
-                'resize',
-                checkMobile,
-            )
-    }, [isMobile])
+    // Определение мобильного режима
+    const isMobile = useIsMobile()
     return (
         <>
             <div className="flex min-h-screen items-center justify-center">
@@ -92,13 +79,13 @@ export default function SuccessSupport({
                             >
                                 <div
                                     className={`
-                                  flex w-90 items-center justify-center
-                                `}
+                                      flex w-90 items-center justify-center
+                                    `}
                                 >
                                     <p
                                         className={`
-                                      text-center text-[32px] font-bold
-                                    `}
+                                          text-center text-[32px] font-bold
+                                        `}
                                     >
                                         Служба поддержки
                                     </p>
@@ -113,10 +100,10 @@ export default function SuccessSupport({
                                 >
                                     <div
                                         className={`
-                                      flex h-112 w-90 flex-col items-center
-                                      justify-start gap-4
-                                      md:justify-between
-                                    `}
+                                          flex h-112 w-90 flex-col items-center
+                                          justify-start gap-4
+                                          md:justify-between
+                                        `}
                                     >
                                         <Image
                                             src="/images/Check.svg"
@@ -129,22 +116,21 @@ export default function SuccessSupport({
 
                                         <div
                                             className={`
-                                          flex flex-col gap-2 text-center
-                                        `}
+                                              flex flex-col gap-2 text-center
+                                            `}
                                         >
                                             <span
                                                 className={`
-                                              text-center text-[24px] font-bold
-                                            `}
+                                                  text-center text-[24px]
+                                                  font-bold
+                                                `}
                                             >
                                                 {' '}
                                                 Обращение
                                                 отправлено!
                                             </span>
                                             <span
-                                                className={`
-                                              text-center text-lg
-                                            `}
+                                                className={`text-center text-lg`}
                                             >
                                                 <p className="text-center">
                                                     В
@@ -173,7 +159,6 @@ export default function SuccessSupport({
                                         onClick={
                                             handleStartClick
                                         }
-                                        // disabled={loading}
                                     >
                                         На главную
                                     </Button>

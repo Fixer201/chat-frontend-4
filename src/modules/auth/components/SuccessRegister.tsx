@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
+import useIsMobile from '@shared/hooks/useIsMobile'
 
 export default function SuccessRegister() {
     const router = useRouter()
@@ -124,19 +125,8 @@ export default function SuccessRegister() {
         }
     }
     // Определение мобильного режима (ширина ≤768px)
-    const [isMobile, setIsMobile] = useState(false)
-    useEffect(() => {
-        const checkMobile = () =>
-            setIsMobile(window.innerWidth <= 768)
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        console.log('isMobile:', isMobile)
-        return () =>
-            window.removeEventListener(
-                'resize',
-                checkMobile,
-            )
-    }, [isMobile])
+    const isMobile = useIsMobile()
+
     return (
         <div className="flex min-h-screen items-center justify-center">
             <div
