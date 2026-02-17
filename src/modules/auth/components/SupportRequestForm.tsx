@@ -1,43 +1,79 @@
 'use client'
+
+// Этот компонент представляет собой форму запроса в службу поддержки (SupportRequestForm).
+// Он позволяет пользователю ввести email, описать проблему и отправить запрос.
+// Основные функции:
+// - Валидация email в реальном времени.
+// - Отправка данных на API.
+// - Адаптивный дизайн: Полноэкранный на мобильных, модальное окно на десктопе.
+// - Навигация: Возврат к предыдущему шагу или успех.
+
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import Textarea from '@shared/ui/textarea/Textarea'
 import SuccessSupport from './SuccessSupport'
-import useIsMobile from '@shared/hooks/useIsMobile'
+
+// Интерфейс пропсов: Определяет типы для phoneNumber (номер телефона) и onBack (функция возврата).
 
 interface SupportRequestFormProps {
     phoneNumber: string
     onBack: () => void
 }
 
+// Принимает пропсы phoneNumber и onBack.
+
 export default function SupportRequestForm({
     phoneNumber,
     onBack,
 }: SupportRequestFormProps) {
+    // Хук useRouter: Получаем экземпляр роутера для программной навигации.
+    // Используется для перехода на '/auth/login' после отправки.
     const router = useRouter()
+
+    // Состояние email: Хранит введенный email пользователя.
+    // Инициализируется пустой строкой.
     const [email, setEmail] = useState('')
+
+    // Состояние message: Хранит текст описания проблемы.
+    // Инициализируется пустой строкой.
     const [message, setMessage] = useState('')
+
+    // Состояние loading: Указывает, идет ли отправка запроса (для блокировки UI).
+    // Инициализируется false.
     const [loading, setLoading] = useState(false)
+
+    // Состояние emailError: Хранит текст ошибки валидации email.
+    // Инициализируется пустой строкой.
     const [emailError, setEmailError] = useState('')
+
+    // Ref для input: Позволяет программно управлять фокусом или позицией курсора.
+    // Инициализируется null.
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // Состояние showSuccessSupport: Управляет показом компонента успеха.
+    // Инициализируется false.
     const [showSuccessSupport, setShowSuccessSupport] =
         useState(false)
 
-    // проверка: email
+    // Валидация email: Регулярное выражение проверяет формат email.
+    // isEmailValid: true, если email соответствует формату.
+    // showEmailError: true, если email введен, но невалиден.
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
         email,
     )
     const showEmailError = email.length > 0 && !isEmailValid
 
+    // Обработчик изменения email: Обновляет состояние и валидирует в реальном времени.
+    // Устанавливает emailError, если email невалиден.
     const handleEmailChange = (
         e: React.ChangeEvent<HTMLInputElement>,
     ) => {
         const value = e.target.value
         setEmail(value)
-        // обновлять ошибку в реальном времени
+        // Обновляем ошибку в реальном времени для лучшего UX.
         if (
             value &&
             value.length > 0 &&
@@ -49,22 +85,29 @@ export default function SupportRequestForm({
         }
     }
 
+    // Обработчик возврата: Переходит на '/auth/login'.
+    // Используется для кнопки "назад".
     const handleBackToForm = () => {
         router.push('/auth/login')
     }
 
+    // Обработчик потери фокуса email: Устанавливает ошибку, если email невалиден.
+    // Вызывается при onBlur для финальной проверки.
     const handleEmailBlur = () => {
         if (showEmailError) {
             setEmailError('Некорректный email')
         }
     }
+
+    // Обработчик скачивания PDF: Открывает файл в новой вкладке.
+    // Используется для ссылки на "список известных проблем".
     const handleDownload = () => {
         window.open('/listSolutions.pdf', '_blank')
     }
-    // const handleSubmit = () => {
-    //     setShowSuccessSupport(true)
-    // }
-    const isMobile = useIsMobile()
+
+    // Обработчик отправки формы: Отправляет данные на API.
+    // Устанавливает loading, обрабатывает ответ, показывает успех или ошибку.
+    // В finally всегда показывает успех (как указано в комментарии, поскольку бэкенд не реализован).
     const handleSubmit = async () => {
         setLoading(true)
         try {
@@ -96,17 +139,26 @@ export default function SupportRequestForm({
             setEmailError('Ошибка сети.')
         } finally {
             setLoading(false)
-            // в любом случае появляется успех отправки так как не реализовано на бэкенде
+            // В любом случае появляется успех отправки, так как не реализовано на бэкенде.
             setShowSuccessSupport(true)
         }
     }
+
+    // Условный рендер: Если showSuccessSupport true, показываем SuccessSupport.
+    // Иначе рендерим форму.
     if (showSuccessSupport) {
         return <SuccessSupport onBack={onBack} />
     }
 
+    // Возврат JSX: Рендер формы.
+    // Используем Tailwind CSS для адаптивного дизайна.
     return (
         <>
+            {/* Внешний контейнер: Центрирует контент по экрану.
+            min-h-screen: Минимальная высота экрана для центрирования. */}
             <div className="flex min-h-screen items-center justify-center">
+                {/* Внутренний контейнер: Полноэкранный на мобильке, с фоном на десктопе.
+                w-(--app-login-width): Кастомная ширина из CSS-переменных. */}
                 <div
                     className={`
                       relative flex h-screen w-(--app-login-width) flex-col
@@ -114,9 +166,12 @@ export default function SupportRequestForm({
                       md:bg-app-login-background
                     `}
                 >
+                    {/* Контейнер формы: Белый фон на мобильке, модальное окно на десктопе.
+                    Изменение: justify-start заменено на justify-center для мобильки, чтобы центрировать контент вертикально и предотвратить "съезжание вниз".
+                    На десктопе md:justify-center уже есть, так что не трогаем. */}
                     <div
                         className={`
-                          flex flex-col items-center justify-start gap-4
+                          flex flex-col items-center justify-center gap-4
                           bg-white
                           md:absolute md:h-190 md:w-122 md:flex-col
                           md:items-center md:justify-center md:rounded-2xl
@@ -124,6 +179,8 @@ export default function SupportRequestForm({
                           md:filter-app-start-screen-shadow
                         `}
                     >
+                        {/* Абсолютный контейнер для элементов: Распределяет заголовок, форму и кнопку.
+                        gap-4 на мобильке, md:gap-6 на десктопе. */}
                         <div
                             className={`
                               absolute flex flex-col items-center
@@ -131,6 +188,8 @@ export default function SupportRequestForm({
                               md:justify-between md:gap-6
                             `}
                         >
+                            {/* Заголовок с кнопкой назад и логотипом.
+                            justify-between на мобильке, md:justify-center на десктопе. */}
                             <div
                                 className={`
                                   relative flex h-17 w-90 items-center
@@ -138,6 +197,7 @@ export default function SupportRequestForm({
                                   md:justify-center
                                 `}
                             >
+                                {/* Кнопка назад: Изображение с onClick для навигации. */}
                                 <Image
                                     src="/images/login/back.svg"
                                     alt="Back"
@@ -151,6 +211,7 @@ export default function SupportRequestForm({
                                         handleBackToForm
                                     }
                                 />
+                                {/* Логотип: Центрирован на десктопе, справа на мобильке. */}
                                 <Image
                                     src="/images/login/Logo.svg"
                                     alt="Logo"
@@ -164,12 +225,14 @@ export default function SupportRequestForm({
                                     loading="eager"
                                 />
                             </div>
+                            {/* Основной контент: Заголовок и форма. */}
                             <div
                                 className={`
                                   flex h-126 w-90 flex-col items-center
                                   justify-between gap-6
                                 `}
                             >
+                                {/* Заголовок формы. */}
                                 <div
                                     className={`
                                       flex w-90 items-center justify-center
@@ -183,12 +246,14 @@ export default function SupportRequestForm({
                                         Служба поддержки
                                     </p>
                                 </div>
+                                {/* Форма: Поля ввода, ссылка и кнопка. */}
                                 <div
                                     className={`
                                       flex h-112 w-90 flex-col items-center
                                       justify-between
                                     `}
                                 >
+                                    {/* Поле email: С валидацией и ошибками. */}
                                     <div className="flex w-full flex-col gap-1">
                                         <Input
                                             ref={inputRef}
@@ -224,12 +289,10 @@ export default function SupportRequestForm({
                                         />
                                     </div>
 
+                                    {/* Поле сообщения: Textarea для описания проблемы. */}
                                     <div className="flex w-full flex-col gap-1">
                                         <Textarea
-                                            // resize-none
-                                            label={
-                                                'Опишите Вашу проблему'
-                                            }
+                                            label="Опишите Вашу проблему"
                                             placeholder=""
                                             borderColor="gray"
                                             textColor="gray"
@@ -243,9 +306,8 @@ export default function SupportRequestForm({
                                         />
                                     </div>
 
-                                    <span
-                                    // className={`text-[14px]`}
-                                    >
+                                    {/* Ссылка на скачивание PDF: Интерактивная, с клавиатурной поддержкой. */}
+                                    <span>
                                         Ознакомьтесь со{' '}
                                         <span
                                             className={`
@@ -253,8 +315,8 @@ export default function SupportRequestForm({
                                               text-(--color-accent-violet-primary)
                                               hover:underline
                                             `}
-                                            onClick={() =>
-                                                handleDownload()
+                                            onClick={
+                                                handleDownload
                                             }
                                             onKeyDown={(
                                                 e,
@@ -279,6 +341,7 @@ export default function SupportRequestForm({
                                         </span>
                                     </span>
 
+                                    {/* Кнопка отправки: Активна только при валидном email. */}
                                     <Button
                                         variant="solid"
                                         size="lg"
@@ -287,7 +350,7 @@ export default function SupportRequestForm({
                                                 ? 'primary'
                                                 : 'light-gray'
                                         }
-                                        className={`w-full`}
+                                        className="w-full"
                                         onClick={
                                             handleSubmit
                                         }
