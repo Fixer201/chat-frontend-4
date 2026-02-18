@@ -96,6 +96,12 @@ function formatDividerDate(timestampSec: number): string {
  *
  * Рендерится как <li> внутри <ul> списка сообщений.
  *
+ * Поведение «sticky»: при прокрутке сообщений конкретного дня
+ * таблетка прилипает к верхнему краю области прокрутки (overflow-контейнер
+ * в ChatRoom). Когда следующий DateDivider достигает верха, он естественным
+ * образом вытесняет предыдущий — это стандартное поведение CSS sticky
+ * для соседних элементов с одинаковым `top`.
+ *
  * @param timestampSec — Unix-timestamp первого сообщения дня (секунды).
  *   Передаётся из MessagesList, который определяет границы дней
  *   через вспомогательную функцию isSameDay().
@@ -109,7 +115,7 @@ function DateDivider({
         <li
             role="separator"
             aria-label={label}
-            className="flex justify-center py-2 select-none"
+            className="sticky top-0 z-10 flex justify-center py-2 select-none"
         >
             {/*
              * <time> с атрибутом dateTime в ISO-формате (YYYY-MM-DD)
