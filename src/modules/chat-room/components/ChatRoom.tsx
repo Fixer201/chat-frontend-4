@@ -1,6 +1,7 @@
 'use client'
 
 import ChatHeader from './ChatHeader'
+import CallModal from './CallModal'
 import MessagesList from './MessagesList'
 import SelectionToolbar from './SelectionToolbar'
 import ForwardMessageModal from './ForwardMessageModal'
@@ -14,6 +15,7 @@ import { useWebSocket } from '@shared/context/websocketContext'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
 import { useMessages } from '@shared/hooks/useMessages'
+import { cn } from '@shared/lib/utils'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -66,6 +68,17 @@ export default function ChatRoom({
         deleteSelectedModalOpen,
         setDeleteSelectedModalOpen,
     ] = useState(false)
+    const [isCallModalOpen, setIsCallModalOpen] =
+        useState(false)
+    // ВРЕМЕННО: модалка выбора типа звонка для тестов UI.
+    const [
+        isCallTypeSelectorOpen,
+        setIsCallTypeSelectorOpen,
+    ] = useState(false)
+    // ВРЕМЕННО: выбранный тип звонка для тестов UI.
+    const [callVariant, setCallVariant] = useState<
+        'outgoing' | 'incoming'
+    >('outgoing')
 
     // --- Состояние режима поиска ---
     /** Флаг активности режима поиска. При true ChatHeader показывает InChatSearch. */
@@ -227,6 +240,25 @@ export default function ChatRoom({
         setTotalSearchResults(0)
     }, [])
 
+    const handleCallOpen = useCallback(() => {
+        // ВРЕМЕННО: открываем модалку выбора типа звонка.
+        setIsCallTypeSelectorOpen(true)
+    }, [])
+
+    const handleCallClose = useCallback(() => {
+        setIsCallModalOpen(false)
+    }, [])
+
+    // ВРЕМЕННО: выбор типа звонка для тестов UI.
+    const handleCallTypeSelect = useCallback(
+        (variant: 'outgoing' | 'incoming') => {
+            setCallVariant(variant)
+            setIsCallTypeSelectorOpen(false)
+            setIsCallModalOpen(true)
+        },
+        [],
+    )
+
     /**
      * Закрытие режима поиска.
      * Полностью очищаем состояние поиска и возвращаемся к обычному виду шапки.
@@ -340,6 +372,7 @@ export default function ChatRoom({
                 chat={chat || null}
                 onBack={onBack}
                 onSearchOpen={handleSearchOpen}
+                onCall={handleCallOpen}
                 isSearchOpen={isSearchOpen}
                 searchQuery={searchQuery}
                 onSearchQueryChange={
@@ -350,6 +383,91 @@ export default function ChatRoom({
                 currentMatchIndex={currentMatchIndex}
                 totalSearchResults={totalSearchResults}
             />
+
+            <CallModal
+                open={isCallModalOpen}
+                onClose={handleCallClose}
+                chat={chat}
+                variant={callVariant}
+            />
+
+            {/* ВРЕМЕННО: модалка выбора типа звонка для тестов UI. */}
+            {isCallTypeSelectorOpen && (
+                <div
+                    className={cn(
+                        'fixed',
+                        'inset-0',
+                        'z-[60]',
+                        'flex',
+                        'items-center',
+                        'justify-center',
+                        'bg-black/40',
+                    )}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Выбор типа звонка"
+                >
+                    <div
+                        className={cn(
+                            'w-[320px]',
+                            'rounded-xl',
+                            'bg-white',
+                            'px-6',
+                            'py-5',
+                            'text-center',
+                            'shadow-lg',
+                        )}
+                    >
+                        <p className="text-base font-semibold text-text-black">
+                            Тесты звонков
+                        </p>
+                        <div className="mt-5 flex flex-col gap-3">
+                            <button
+                                type="button"
+                                className={cn(
+                                    'rounded-lg',
+                                    'bg-accent-violet-primary',
+                                    'px-4',
+                                    'py-2',
+                                    'text-sm',
+                                    'font-semibold',
+                                    'text-white',
+                                )}
+                                onClick={() =>
+                                    handleCallTypeSelect(
+                                        'incoming',
+                                    )
+                                }
+                            >
+                                Тебе звонят
+                            </button>
+                            <button
+                                type="button"
+                                className={cn(
+                                    'rounded-lg',
+                                    'border',
+                                    'border-accent-violet-primary',
+                                    'px-4',
+                                    'py-2',
+                                    'text-sm',
+                                    'font-semibold',
+                                    'text-accent-violet-primary',
+                                )}
+                                onClick={() =>
+                                    handleCallTypeSelect(
+                                        'outgoing',
+                                    )
+                                }
+                            >
+                                Ты звонишь
+                            </button>
+                        </div>
+                        <p className="mt-4 text-xs text-text-gray">
+                            Только для тестов звонков
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div
                 role="presentation"
