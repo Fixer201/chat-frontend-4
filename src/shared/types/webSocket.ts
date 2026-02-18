@@ -21,6 +21,10 @@ export type WebSocketContextType = {
         chatKey: string
         forAll: boolean
     }) => void
+    markMessagesRead: (params: {
+        chatKey: string
+        messageUids: string[]
+    }) => void
     messages: Message[]
     status: ConnectionStatus
     error: string | null

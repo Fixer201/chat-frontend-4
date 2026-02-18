@@ -29,6 +29,12 @@ const SendFileModal = dynamic(
 type MessageComposerProps = {
     chatKey: string
     toUserId: string
+    chatType?:
+        | 'chat'
+        | 'public-group'
+        | 'private-group'
+        | 'public-channel'
+        | 'private-channel'
     editingMessage?: Message | null
     replyingMessage?: Message | null
     onCancelEdit?: () => void
@@ -38,6 +44,7 @@ type MessageComposerProps = {
 export default function MessageComposer({
     chatKey,
     toUserId,
+    chatType,
     editingMessage,
     replyingMessage,
     onCancelEdit,
@@ -186,6 +193,7 @@ export default function MessageComposer({
                 content: inputValue,
                 toUserId: toUserId,
                 status: 'publish',
+                chatType,
                 repliedMessages,
             })
 

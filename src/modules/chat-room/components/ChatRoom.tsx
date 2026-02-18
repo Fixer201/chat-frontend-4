@@ -10,12 +10,22 @@ import CopyToast from './CopyToast'
 import MessageComposer from '@modules/message-composer/components/MessageComposer'
 import { ChatItem } from '@shared/types/chat'
 import { Message } from '@shared/types/message'
-import { useCallback, useState } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
 import { useMessages } from '@shared/hooks/useMessages'
 import { cn } from '@shared/lib/utils'
+import Cookies from 'js-cookie'
+import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
+import { Spinner } from '@shared/ui/Spinner'
+import { useChats } from '@shared/hooks/useChats'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -43,7 +53,12 @@ export default function ChatRoom({
         (state) => state.user.currentUser,
     ) as { id?: string } | null
     const currentUserId =
-        currentUser?.id || MOCK_CURRENT_USER_ID
+        currentUser?.id ||
+        getUserIdFromToken(
+            localStorage.getItem('access_token') ||
+                Cookies.get('access_token'),
+        ) ||
+        MOCK_CURRENT_USER_ID
 
     // --- Состояние режимов работы с сообщениями ---
     /** Сообщение в режиме редактирования (null = режим неактивен) */
@@ -95,7 +110,9 @@ export default function ChatRoom({
     const [totalSearchResults, setTotalSearchResults] =
         useState(0)
 
-    const { sendMessage, deleteMessage } = useWebSocket()
+    const { sendMessage, deleteMessage, markMessagesRead } =
+        useWebSocket()
+    const { markAsRead, markAsReadOnServer } = useChats()
 
     /** Флаг режима выбора: активируется при первом выбранном сообщении */
     const isSelectionMode = selectedMessages.length > 0
@@ -224,7 +241,7 @@ export default function ChatRoom({
         setReplyingMessage(null)
     }
 
-    const isLocalChat = chat.id > 1000000000000
+    const isLocalChat = chat.isTemporary === true
 
     /**
      * Открытие режима поиска.
@@ -361,10 +378,100 @@ export default function ChatRoom({
 
     const chatName = chat.name
     // Загрузка сообщений из API
-    const { messages: apiMessages } = useMessages(
-        chat.chat.uid,
-        isLocalChat,
-    )
+    const {
+        messages: apiMessages,
+        loading: messagesLoading,
+        reloadMessages,
+    } = useMessages(chat.chat.uid, isLocalChat)
+
+    const readMessageUidsRef = useRef(new Set<string>())
+    const lastSeenRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (!isLocalChat) {
+            reloadMessages()
+        }
+    }, [chat.chatKey, isLocalChat, reloadMessages])
+
+    // Оптимистично считаем свои сообщения прочитанными, чтобы галочки не сбрасывались после перезагрузки
+    const optimisticApiMessages = useMemo(() => {
+        return apiMessages.map((message) => {
+            if (
+                message.from_user == currentUserId &&
+                !message.read_at
+            ) {
+                const readAt =
+                    message.created_at ||
+                    message.delivered_at
+
+                if (!readAt) {
+                    return message
+                }
+
+                return {
+                    ...message,
+                    delivered_at:
+                        message.delivered_at || readAt,
+                    read_at: readAt,
+                }
+            }
+
+            return message
+        })
+    }, [apiMessages, currentUserId])
+
+    useEffect(() => {
+        if (!chat?.id) return
+        if (apiMessages.length === 0) return
+
+        // Обновляем локальный state чатов, чтобы в списке не было непрочитанных
+        markAsRead(chat.id)
+
+        if (chat.lastMessage?.id) {
+            const lastSeenKey = `${chat.id}:${chat.lastMessage.id}`
+            if (lastSeenRef.current !== lastSeenKey) {
+                lastSeenRef.current = lastSeenKey
+                // Фиксируем на сервере last_seen_message, чтобы статус сохранялся после перезагрузки
+                markAsReadOnServer(
+                    chat.id,
+                    chat.lastMessage.id,
+                )
+            }
+        }
+
+        const unreadIncoming = apiMessages
+            .filter(
+                (message) =>
+                    message.uid &&
+                    !message.read_at &&
+                    message.from_user &&
+                    message.from_user !== currentUserId,
+            )
+            .map((message) => message.uid!)
+            .filter(
+                (uid) =>
+                    !readMessageUidsRef.current.has(uid),
+            )
+
+        if (unreadIncoming.length) {
+            unreadIncoming.forEach((uid) =>
+                readMessageUidsRef.current.add(uid),
+            )
+            markMessagesRead({
+                chatKey: chat.chatKey,
+                messageUids: unreadIncoming,
+            })
+        }
+    }, [
+        apiMessages,
+        chat.chatKey,
+        chat.id,
+        chat.lastMessage?.id,
+        currentUserId,
+        markAsRead,
+        markAsReadOnServer,
+        markMessagesRead,
+    ])
 
     return (
         <div className="relative flex h-full flex-col rounded-md bg-gray-light">
@@ -478,29 +585,51 @@ export default function ChatRoom({
                     }
                 }}
             >
-                <MessagesList
-                    chatKey={chat.chatKey}
-                    apiMessages={apiMessages}
-                    contactUid={
-                        chat.tempContactUid || chat.chat.uid
-                    }
-                    isTemporary={chat.isTemporary}
-                    onEditMessage={handleEditMessage}
-                    onReplyMessage={handleReplyMessage}
-                    onSelectMessage={handleSelectMessage}
-                    onForwardMessage={handleForwardMessage}
-                    isSelectionMode={isSelectionMode}
-                    selectedMessages={selectedMessages}
-                    chatName={chatName}
-                    searchQuery={
-                        isSearchOpen ? searchQuery : ''
-                    }
-                    currentMatchIndex={currentMatchIndex}
-                    onSearchMatchesFound={
-                        handleSearchMatchesFound
-                    }
-                    onSearchNavigate={setCurrentMatchIndex}
-                />
+                {messagesLoading &&
+                apiMessages.length === 0 ? (
+                    <div className="flex h-full items-center justify-center">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <MessagesList
+                        chatKey={chat.chatKey}
+                        apiMessages={optimisticApiMessages}
+                        contactUid={
+                            chat.tempContactUid ||
+                            chat.chat.uid
+                        }
+                        isTemporary={chat.isTemporary}
+                        currentUserId={currentUserId}
+                        peerUid={
+                            chat.chatType === 'chat'
+                                ? chat.chat.uid
+                                : undefined
+                        }
+                        onEditMessage={handleEditMessage}
+                        onReplyMessage={handleReplyMessage}
+                        onSelectMessage={
+                            handleSelectMessage
+                        }
+                        onForwardMessage={
+                            handleForwardMessage
+                        }
+                        isSelectionMode={isSelectionMode}
+                        selectedMessages={selectedMessages}
+                        chatName={chatName}
+                        searchQuery={
+                            isSearchOpen ? searchQuery : ''
+                        }
+                        currentMatchIndex={
+                            currentMatchIndex
+                        }
+                        onSearchMatchesFound={
+                            handleSearchMatchesFound
+                        }
+                        onSearchNavigate={
+                            setCurrentMatchIndex
+                        }
+                    />
+                )}
             </div>
 
             {/* Нижняя панель: в режиме выбора — тулбар с действиями,
@@ -515,13 +644,14 @@ export default function ChatRoom({
                 />
             ) : (
                 <MessageComposer
-                    key={
+                    key={`${chat.chatKey}-${
                         editingMessage?.uid ??
                         replyingMessage?.uid ??
                         'new'
-                    }
+                    }`}
                     toUserId={chat.chat.uid}
                     chatKey={chat.chatKey}
+                    chatType={chat.chatType}
                     editingMessage={editingMessage}
                     replyingMessage={replyingMessage}
                     onCancelEdit={handleCancelEdit}

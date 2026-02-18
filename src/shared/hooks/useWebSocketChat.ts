@@ -2,22 +2,32 @@
 
 import {
     useCallback,
+    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
     useState,
 } from 'react'
+import Cookies from 'js-cookie'
 
+import { ChatItem } from '@shared/types/chat'
 import { Message, MessageFile } from '@shared/types/message'
 import { ConnectionStatus } from '@shared/types/webSocket'
-import { MOCK_MESSAGES } from '@shared/mocks/messages'
+import {
+    MOCK_MESSAGES,
+    MOCK_CURRENT_USER_ID,
+} from '@shared/mocks/messages'
 import {
     useAppDispatch,
     useAppSelector,
 } from '@redux/store'
 import { updateChat } from '@redux/slices/chatsSlice'
+import { fetchChats } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
+import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 
 const MAX_RECONNECT_ATTEMPTS = 3
+const LOCAL_CHATS_STORAGE_KEY = 'localChats'
+const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 
 // TODO: Временный флаг для переключения между моковыми и реальными данными
 // Удалить после реализации контактов на бэкенде
@@ -28,6 +38,20 @@ export function useWebSocketChat() {
     const chats = useAppSelector(
         (state) => state.chats.items,
     )
+    const chatSettings = useAppSelector(
+        (state) => state.chats.chatSettings,
+    )
+    const chatsRef = useRef(chats)
+    const currentUser = useAppSelector(
+        (state) => state.user.currentUser,
+    ) as { id?: string } | null
+    const currentUserId =
+        currentUser?.id ||
+        getUserIdFromToken(
+            localStorage.getItem('access_token') ||
+                Cookies.get('access_token'),
+        ) ||
+        MOCK_CURRENT_USER_ID
     // Ссылка на websocket подключение
     const wsRef = useRef<WebSocket | null>(null)
     // ссылка для переподключения, чтобы не плодить кучу подключений
@@ -42,18 +66,123 @@ export function useWebSocketChat() {
     // сообщения для отправки на сервер от клиента
     const [messages, setMessages] = useState<Message[]>([])
 
+    // Соответствие request_uid -> временный uid сообщения
+    const pendingMessageMapRef = useRef(
+        new Map<string, string>(),
+    )
+
+    const ackSeenRef = useRef(new Set<string>())
+    const normalizeSeenRef = useRef(new Set<string>())
+    const storedSeenRef = useRef(new Set<string>())
+
+    const lastChatsRefreshRef = useRef(0)
+
+    // Обновляем lastMessage чата при отправке/получении сообщений для корректного превью списка
+    const updateChatPreview = useCallback(
+        (message: Message) => {
+            const chat = chatsRef.current.find(
+                (item) =>
+                    item.chatKey === message.chatKey ||
+                    (message.toUserId &&
+                        (item.chat.uid ===
+                            message.toUserId ||
+                            item.tempContactUid ===
+                                message.toUserId)),
+            )
+
+            if (!chat) return
+
+            const timestamp =
+                message.created_at ||
+                message.updated_at ||
+                Math.floor(Date.now() / 1000)
+
+            const lastMessage = {
+                ...chat.lastMessage,
+                uid: message.uid || chat.lastMessage.uid,
+                fromUser:
+                    message.from_user?.toString() ||
+                    chat.lastMessage.fromUser,
+                content: message.content || '',
+                filesSummary: {
+                    types:
+                        chat.lastMessage.filesSummary
+                            ?.types || [],
+                    count:
+                        message.files?.length ||
+                        chat.lastMessage.filesSummary
+                            ?.count ||
+                        0,
+                },
+                hasRepliedMessage:
+                    (message.repliedMessages?.length ?? 0) >
+                    0,
+                hasForwardedMessage:
+                    (message.forwardedMessages?.length ??
+                        0) > 0,
+                new: true,
+                createdAt: timestamp,
+                updatedAt: timestamp,
+            }
+
+            dispatch(
+                updateChat({
+                    ...chat,
+                    lastMessage,
+                    updatedAt: new Date(
+                        timestamp * 1000,
+                    ).toISOString(),
+                }),
+            )
+        },
+        [dispatch],
+    )
+
+    const persistLocalChatsSnapshot = useCallback(
+        (items: ChatItem[]) => {
+            if (typeof window === 'undefined') return
+
+            try {
+                const localChats = items
+                    .filter(
+                        (chat) =>
+                            chat.id >
+                            LOCAL_CHAT_ID_THRESHOLD,
+                    )
+                    .map((chat) => ({
+                        ...chat,
+                        settings: chatSettings[chat.id],
+                    }))
+                window.localStorage.setItem(
+                    LOCAL_CHATS_STORAGE_KEY,
+                    JSON.stringify(localChats),
+                )
+            } catch (error) {
+                console.warn(
+                    'Не удалось сохранить localChats:',
+                    error,
+                )
+            }
+        },
+        [chatSettings],
+    )
+
+    useEffect(() => {
+        chatsRef.current = chats
+    }, [chats])
+
     // сообщение об ошибке
     const [error, setError] = useState<string | null>(null)
 
     function onOpen() {
-        console.log('WebSocket opened')
+        console.info('[WebSocket] opened')
         // в случае успешного подключения нужно сбросить счётчик кол-ва реконектов
         reconnectCountRef.current = 0
         setStatus('OPEN')
     }
 
     function onClose() {
-        console.log('WebSocket closed')
+        console.info('[WebSocket] closed')
         setStatus('CLOSED')
     }
 
@@ -100,9 +229,6 @@ export function useWebSocketChat() {
                 typeof chatKey !== 'string' ||
                 typeof content !== 'string'
             ) {
-                console.debug('[WebSocket] skip payload', {
-                    payload,
-                })
                 return null
             }
 
@@ -162,11 +288,6 @@ export function useWebSocketChat() {
                     [],
             }
 
-            console.debug(
-                '[WebSocket] normalized message',
-                normalized,
-            )
-
             return normalized
         },
         [],
@@ -174,11 +295,8 @@ export function useWebSocketChat() {
 
     const onMessage = useCallback(
         (event: MessageEvent) => {
-            console.log('Received: ', event)
-
             // получаем ответ сервера и парсим его
             const data = JSON.parse(event.data)
-            console.debug('[WebSocket] payload', data)
 
             if (
                 data.action === 'update_message' &&
@@ -190,6 +308,58 @@ export function useWebSocketChat() {
                             ? data.object
                             : msg,
                     ),
+                )
+                return
+            }
+
+            if (
+                data.action === 'create_text_message' &&
+                data.status === 'OK'
+            ) {
+                const messageData =
+                    (data.message as
+                        | Record<string, unknown>
+                        | undefined) ??
+                    (data.object as
+                        | Record<string, unknown>
+                        | undefined)
+                const ackKey =
+                    (data.request_uid as
+                        | string
+                        | undefined) ??
+                    (messageData?.uid as string | undefined)
+                if (
+                    ackKey &&
+                    ackSeenRef.current.has(ackKey)
+                ) {
+                    return
+                }
+                if (ackKey) {
+                    ackSeenRef.current.add(ackKey)
+                }
+                console.info('[WebSocket] message ack', {
+                    chatKey: messageData?.chat_key,
+                    hasContent:
+                        typeof messageData?.content ===
+                        'string',
+                    objectKeys: messageData
+                        ? Object.keys(messageData)
+                        : [],
+                })
+            }
+
+            if (
+                data.action === 'create_text_message' &&
+                data.status &&
+                data.status !== 'OK'
+            ) {
+                console.error(
+                    '[WebSocket] message send failed',
+                    {
+                        status: data.status,
+                        error: data.error,
+                        object: data.object,
+                    },
                 )
                 return
             }
@@ -207,19 +377,143 @@ export function useWebSocketChat() {
                 return
             }
 
+            if (
+                data.action ===
+                    'change_status_read_message' &&
+                data.status === 'OK'
+            ) {
+                // Сервер подтвердил прочтение — обновляем read_at для галочек
+                const messageUid =
+                    data.object?.uid ||
+                    data.object?.message_uid
+                const readAt =
+                    data.object?.updated_at ||
+                    data.object?.created_at ||
+                    Math.floor(Date.now() / 1000)
+
+                if (messageUid) {
+                    setMessages((prev) =>
+                        prev.map((msg) =>
+                            msg.uid === messageUid
+                                ? {
+                                      ...msg,
+                                      read_at: readAt,
+                                      delivered_at:
+                                          msg.delivered_at ||
+                                          readAt,
+                                  }
+                                : msg,
+                        ),
+                    )
+                }
+
+                return
+            }
+
             const normalized =
                 normalizeIncomingMessage(data)
-            if (!normalized) return
+            if (!normalized) {
+                if (data.action === 'create_text_message') {
+                    console.warn(
+                        '[WebSocket] malformed message response',
+                        {
+                            action: data.action,
+                            status: data.status,
+                            object: data.object,
+                        },
+                    )
+                }
+                return
+            }
 
-            setMessages((prev) => [...prev, normalized])
-            console.info('[WebSocket] message stored', {
-                chatKey: normalized.chatKey,
-                toUserId: normalized.toUserId,
-                uid: normalized.uid,
+            if (normalized.uid) {
+                if (
+                    !normalizeSeenRef.current.has(
+                        normalized.uid,
+                    )
+                ) {
+                    normalizeSeenRef.current.add(
+                        normalized.uid,
+                    )
+                    console.info('[WebSocket] normalized', {
+                        uid: normalized.uid,
+                        chatKey: normalized.chatKey,
+                    })
+                }
+            }
+
+            const requestUid = data.request_uid as
+                | string
+                | undefined
+            const pendingUid = requestUid
+                ? pendingMessageMapRef.current.get(
+                      requestUid,
+                  )
+                : undefined
+
+            if (pendingUid && requestUid) {
+                pendingMessageMapRef.current.delete(
+                    requestUid,
+                )
+            }
+
+            setMessages((prev) => {
+                if (
+                    normalized.uid &&
+                    prev.some(
+                        (msg) => msg.uid === normalized.uid,
+                    )
+                ) {
+                    if (normalized.uid) {
+                        const skipKey = `skip:${normalized.uid}`
+                        if (
+                            !ackSeenRef.current.has(skipKey)
+                        ) {
+                            ackSeenRef.current.add(skipKey)
+                            console.info(
+                                '[WebSocket] message already stored',
+                                {
+                                    uid: normalized.uid,
+                                    chatKey:
+                                        normalized.chatKey,
+                                },
+                            )
+                        }
+                    }
+                    return prev
+                }
+                const withoutPending = pendingUid
+                    ? prev.filter(
+                          (msg) => msg.uid !== pendingUid,
+                      )
+                    : prev
+                if (normalized.uid) {
+                    if (
+                        !storedSeenRef.current.has(
+                            normalized.uid,
+                        )
+                    ) {
+                        storedSeenRef.current.add(
+                            normalized.uid,
+                        )
+                        console.info(
+                            '[WebSocket] message stored',
+                            {
+                                chatKey: normalized.chatKey,
+                                toUserId:
+                                    normalized.toUserId,
+                                uid: normalized.uid,
+                            },
+                        )
+                    }
+                }
+                return [...withoutPending, normalized]
             })
 
+            updateChatPreview(normalized)
+
             if (normalized.toUserId && normalized.chatKey) {
-                const tempChat = chats.find(
+                const tempChat = chatsRef.current.find(
                     (chat) =>
                         chat.isTemporary &&
                         chat.tempContactUid ===
@@ -230,39 +524,80 @@ export function useWebSocketChat() {
                     tempChat &&
                     tempChat.chatKey !== normalized.chatKey
                 ) {
+                    // Временный чат получил настоящий chatKey — обновляем и сохраняем локально
+                    const updatedTempChat: ChatItem = {
+                        ...tempChat,
+                        isTemporary: false,
+                        tempContactUid: undefined,
+                        chatKey: normalized.chatKey,
+                    }
                     console.info(
                         '[WebSocket] update temp chat',
                         {
                             tempChatId: tempChat.id,
                             fromChatKey: tempChat.chatKey,
                             toChatKey: normalized.chatKey,
+                            toUserId: normalized.toUserId,
                         },
                     )
-                    dispatch(
-                        updateChat({
-                            ...tempChat,
-                            isTemporary: false,
-                            tempContactUid: undefined,
-                            chatKey: normalized.chatKey,
-                        }),
+                    dispatch(updateChat(updatedTempChat))
+                    persistLocalChatsSnapshot(
+                        chatsRef.current.map((chat) =>
+                            chat.id === updatedTempChat.id
+                                ? updatedTempChat
+                                : chat,
+                        ),
                     )
+
+                    const now = Date.now()
+                    const isChatsPage =
+                        typeof window !== 'undefined' &&
+                        window.location.pathname.startsWith(
+                            '/chats',
+                        )
+
+                    if (
+                        isChatsPage &&
+                        now - lastChatsRefreshRef.current >
+                            3000
+                    ) {
+                        lastChatsRefreshRef.current = now
+                        dispatch(fetchChats({ count: 15 }))
+                    }
                 }
             }
         },
-        [chats, dispatch, normalizeIncomingMessage],
+        [
+            dispatch,
+            normalizeIncomingMessage,
+            persistLocalChatsSnapshot,
+            updateChatPreview,
+        ],
     )
 
     // Вспомогательная функция для получения токена из LocalStorage
     const getAccessToken = useCallback(() => {
-        return localStorage.getItem('access_token')
+        return (
+            localStorage.getItem('access_token') ||
+            Cookies.get('access_token') ||
+            null
+        )
     }, [])
 
     // Функция подключения
     const connectWebSocket = useCallback(() => {
+        if (
+            wsRef.current?.readyState === WebSocket.OPEN ||
+            wsRef.current?.readyState ===
+                WebSocket.CONNECTING
+        ) {
+            return
+        }
         // 1. Получить токен из localstorage из поля (access_token)
         const token = getAccessToken()
 
         if (!token) {
+            console.warn('[WebSocket] no auth token found')
             setError('No auth token found')
             return
         }
@@ -272,6 +607,8 @@ export function useWebSocketChat() {
 
         // Создать новое webSocket подключение с этим url
         const socket = new WebSocket(url)
+
+        console.info('[WebSocket] connecting', { url })
 
         // Обработка событий
         socket.onopen = () => {
@@ -287,7 +624,6 @@ export function useWebSocketChat() {
             onError(ev)
         }
         socket.onmessage = (data: MessageEvent) => {
-            console.log('onMessage вызван: ', data)
             onMessage(data)
         }
 
@@ -309,17 +645,25 @@ export function useWebSocketChat() {
         // Реальное WebSocket подключение
         reconnectRef.current = () => connectWebSocket()
 
-        const token = localStorage.getItem('access_token')
+        const token = getAccessToken()
         if (token) {
             queueMicrotask(() => {
                 connectWebSocket()
             })
+        } else {
+            console.warn(
+                '[WebSocket] token missing on mount',
+            )
         }
 
         return () => {
-            wsRef.current?.close()
+            if (
+                wsRef.current?.readyState === WebSocket.OPEN
+            ) {
+                wsRef.current?.close()
+            }
         }
-    }, [connectWebSocket])
+    }, [connectWebSocket, getAccessToken])
 
     // Функция отправки сообщения
     const sendMessage = useCallback(
@@ -330,25 +674,81 @@ export function useWebSocketChat() {
             files,
             repliedMessages,
             forwardedMessages,
+            chatKey,
         }: Message) => {
+            const requestUid = crypto.randomUUID()
+            const createdAt = Math.floor(Date.now() / 1000)
+            const tempUid = `local-${requestUid}`
+
+            if (content || (files && files.length > 0)) {
+                // Оптимистично добавляем сообщение и превью чата
+                const optimisticMessage: Message = {
+                    uid: tempUid,
+                    chatKey,
+                    content,
+                    status: status || 'publish',
+                    toUserId,
+                    from_user: currentUserId,
+                    created_at: createdAt,
+                    updated_at: createdAt,
+                    delivered_at: createdAt,
+                    files: files || [],
+                    repliedMessages,
+                    forwardedMessages,
+                }
+                pendingMessageMapRef.current.set(
+                    requestUid,
+                    tempUid,
+                )
+
+                setMessages((prev) => [
+                    ...prev,
+                    optimisticMessage,
+                ])
+                updateChatPreview(optimisticMessage)
+            }
             // создаём объект для отправки на backend
+            const isTemporaryChatKey =
+                typeof chatKey === 'string' &&
+                chatKey.startsWith('chat_key_')
+            const isDirectChat =
+                typeof chatKey === 'string' &&
+                chatKey.startsWith('chat_')
+            const messageObject: Record<string, unknown> = {
+                content: content,
+                status: status || 'publish',
+                files: files ?? [],
+                replied_messages: repliedMessages ?? [],
+                forwarded_messages: forwardedMessages ?? [],
+            }
+
+            if (isTemporaryChatKey || isDirectChat) {
+                messageObject.to_user_uid = toUserId
+            } else {
+                messageObject.chat_key = chatKey
+            }
+
             const messageObj = {
                 // тип действия -> отправка сообщения
                 action: 'create_text_message',
                 // генерируем уникальный идентификатор
-                request_uid: crypto.randomUUID(),
+                request_uid: requestUid,
                 // отправляем данные
-                object: {
-                    to_user_uid: toUserId,
-                    content: content,
-                    status: status,
-                    files: files,
-                    replied_messages: repliedMessages,
-                    forwarded_messages: forwardedMessages,
-                },
+                object: messageObject,
             }
 
-            console.log('Отправили на сервер: ', messageObj)
+            console.info('[WebSocket] send message', {
+                requestUid,
+                chatKey,
+                toUserId,
+                contentLength: content?.length ?? 0,
+                hasFiles: (files?.length ?? 0) > 0,
+                hasReplies:
+                    (repliedMessages?.length ?? 0) > 0,
+                hasForwards:
+                    (forwardedMessages?.length ?? 0) > 0,
+                readyState: wsRef.current?.readyState,
+            })
 
             // Отправляем только есть соединение
             if (
@@ -357,9 +757,49 @@ export function useWebSocketChat() {
                 wsRef.current?.send(
                     JSON.stringify(messageObj),
                 )
+            } else {
+                console.warn('[WebSocket] send skipped', {
+                    reason: 'socket not open',
+                    readyState: wsRef.current?.readyState,
+                })
             }
         },
-        [],
+        [currentUserId, updateChatPreview],
+    )
+
+    const markMessagesRead = useCallback(
+        ({
+            chatKey,
+            messageUids,
+        }: {
+            chatKey: string
+            messageUids: string[]
+        }) => {
+            if (
+                !messageUids.length ||
+                wsRef.current?.readyState !== WebSocket.OPEN
+            ) {
+                return
+            }
+
+            messageUids.forEach((uid) => {
+                const messageObj = {
+                    action: 'change_status_read_message',
+                    request_uid: crypto.randomUUID(),
+                    object: {
+                        uid,
+                        reader_uid: currentUserId,
+                        new_read_status: true,
+                        chat_key: chatKey,
+                    },
+                }
+
+                wsRef.current?.send(
+                    JSON.stringify(messageObj),
+                )
+            })
+        },
+        [currentUserId],
     )
 
     // Функция редактирования сообщения
@@ -447,6 +887,7 @@ export function useWebSocketChat() {
             sendMessage,
             updateMessage,
             deleteMessage,
+            markMessagesRead,
             messages,
             status,
             error,
@@ -455,6 +896,7 @@ export function useWebSocketChat() {
             sendMessage,
             updateMessage,
             deleteMessage,
+            markMessagesRead,
             messages,
             status,
             error,

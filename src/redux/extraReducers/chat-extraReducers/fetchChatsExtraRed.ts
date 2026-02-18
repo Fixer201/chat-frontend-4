@@ -183,6 +183,19 @@ export const handleFetchChats = (
             ) => {
                 state.loading = false
 
+                const selectedChat =
+                    state.selectedChatId != null
+                        ? state.items.find(
+                              (chat) =>
+                                  chat.id ===
+                                  state.selectedChatId,
+                          )
+                        : undefined
+                const selectedTempContactUid =
+                    selectedChat?.isTemporary
+                        ? selectedChat.tempContactUid
+                        : undefined
+
                 // Разделение данных чата и настроек для хранения в разных структурах
                 const fetchedItems = action.payload.map(
                     // Деструктуризация для исключения settings из данных чата
@@ -199,15 +212,25 @@ export const handleFetchChats = (
                         (chat) => chat.chat.uid,
                     ),
                 )
+                // Сохраняем локальные чаты, которых ещё нет на сервере
                 const localOnlyItems = state.items.filter(
                     (chat) => {
                         if (fetchedIds.has(chat.id))
                             return false
                         if (
                             chat.isTemporary &&
-                            chat.tempContactUid &&
                             fetchedContactUids.has(
-                                chat.tempContactUid,
+                                chat.tempContactUid ??
+                                    chat.chat.uid,
+                            )
+                        ) {
+                            return false
+                        }
+                        // Удаляем локальный чат, если сервер уже вернул чат с тем же пользователем
+                        if (
+                            chat.id > 1000000000000 &&
+                            fetchedContactUids.has(
+                                chat.chat.uid,
                             )
                         ) {
                             return false
@@ -220,6 +243,17 @@ export const handleFetchChats = (
                     ...localOnlyItems,
                     ...fetchedItems,
                 ]
+
+                if (selectedTempContactUid) {
+                    const realChat = fetchedItems.find(
+                        (chat) =>
+                            chat.chat.uid ===
+                            selectedTempContactUid,
+                    )
+                    if (realChat) {
+                        state.selectedChatId = realChat.id
+                    }
+                }
 
                 // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {

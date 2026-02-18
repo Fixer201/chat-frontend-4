@@ -4,7 +4,6 @@ import {
     PayloadAction,
 } from '@reduxjs/toolkit'
 import {
-    ApiChatItem,
     ChatItem,
     ChatsState,
     ChatSettings,
@@ -19,7 +18,6 @@ import {
     createChat,
     handleCreateChat,
 } from '@redux/extraReducers/chat-extraReducers/createChatExtraRed'
-import { transformFromApi } from '@shared/lib/transformChatData' // Добавлен импорт для маппинга
 
 // Начальное состояние slice чатов
 const initialState: ChatsState = {
@@ -61,7 +59,21 @@ const chatsSlice = createSlice({
                 )
                 if (!existing) {
                     const { settings, ...chatData } = chat
-                    state.items.unshift(chatData)
+                    // Нормализация локальных чатов: убираем мок "Создана ..." из lastMessage
+                    const normalizedChat =
+                        chatData.chatType === 'chat' &&
+                        chatData.lastMessage?.content?.startsWith(
+                            'Создана',
+                        )
+                            ? {
+                                  ...chatData,
+                                  lastMessage: {
+                                      ...chatData.lastMessage,
+                                      content: '',
+                                  },
+                              }
+                            : chatData
+                    state.items.unshift(normalizedChat)
                     if (settings) {
                         state.chatSettings[chat.id] =
                             settings

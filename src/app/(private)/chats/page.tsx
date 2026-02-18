@@ -9,7 +9,7 @@ import { useChats } from '@shared/hooks/useChats'
 import { cn } from '@shared/lib/utils'
 
 /** Количество чатов, загружаемых при первом рендере страницы */
-const INITIAL_CHATS_COUNT = '15'
+const INITIAL_CHATS_COUNT = 15
 
 /**
  * Главная страница чатов.
@@ -33,13 +33,27 @@ export default function ChatsPage() {
         null,
     )
     const chatsRef = useRef(chats)
+    const hasLoadedChatsRef = useRef(false)
+    const hasRequestedChatsRef = useRef(false)
 
     // Обновлять ref при изменении chats
     useEffect(() => {
         chatsRef.current = chats
     }, [chats])
 
-    /** Загрузка начального списка чатов при монтировании компонента */
+    useEffect(() => {
+        if (!loading && hasRequestedChatsRef.current) {
+            hasLoadedChatsRef.current = true
+        }
+    }, [loading])
+
+    /**
+     * Загрузка начального списка чатов при монтировании компонента.
+     *
+     * Важно: передаём пустой search, а count — отдельным параметром,
+     * чтобы не интерпретировать число как строку поиска (из-за этого
+     * ранее список был пустым до первого WebSocket события).
+     */
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const storedChats =
@@ -59,13 +73,21 @@ export default function ChatsPage() {
                 }
             }
         }
-        loadChats(INITIAL_CHATS_COUNT)
+        // hydrateChats — локальные временные чаты (созданные оффлайн/через контакты)
+        // loadChats — реальный список с сервера
+        loadChats('', INITIAL_CHATS_COUNT)
+        hasRequestedChatsRef.current = true
     }, [loadChats, hydrateChats])
 
-    /** Обработка query-параметра contactId для создания/выбора чата */
+    /**
+     * Обработка query-параметра contactId для создания/выбора чата.
+     * Если чат с этим пользователем уже есть — просто выбираем.
+     * Иначе создаём временный локальный чат и потом он будет синхронизирован.
+     */
     useEffect(() => {
         const contactId = searchParams.get('contactId')
         if (!contactId || loading) return
+        if (!hasLoadedChatsRef.current) return
 
         if (contactId === processedContactIdRef.current)
             return

@@ -3,6 +3,8 @@
 import { Message } from '@shared/types/message'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import Cookies from 'js-cookie'
+import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 import SentIcon from '@public/images/messageStatus/sent.svg'
 import DeliveredIcon from '@public/images/messageStatus/delivered.svg'
 import ReadIcon from '@public/images/messageStatus/read.svg'
@@ -41,6 +43,8 @@ import { highlightText } from '@shared/lib/highlightText'
  */
 interface MessageItemProps {
     readonly message: Message
+    readonly currentUserId?: string
+    readonly peerUid?: string
     readonly onEdit?: (message: Message) => void
     readonly onReply?: (message: Message) => void
     readonly onSelect?: (message: Message) => void
@@ -119,6 +123,8 @@ function ReadCheckmark({
 
 export default function MessageItem({
     message,
+    currentUserId: currentUserIdOverride,
+    peerUid,
     onEdit,
     onReply,
     onSelect,
@@ -134,11 +140,24 @@ export default function MessageItem({
         (state) => state.user.currentUser,
     ) as { id?: string } | null
 
+    const derivedUserId =
+        currentUser?.id ||
+        getUserIdFromToken(
+            localStorage.getItem('access_token') ||
+                Cookies.get('access_token'),
+        ) ||
+        MOCK_CURRENT_USER_ID
+
     const currentUserId =
-        currentUser?.id || MOCK_CURRENT_USER_ID
+        currentUserIdOverride || derivedUserId
 
     // Нестрогое сравнение (==) — from_user может быть числом, currentUserId — строкой
-    const isOwn = message.from_user == currentUserId
+    // Если не удалось определить currentUserId, в личном чате считаем все сообщения
+    // НЕ от peerUid своими (fallback для корректного выравнивания)
+    const isOwn =
+        currentUserId === MOCK_CURRENT_USER_ID && peerUid
+            ? message.from_user != peerUid
+            : message.from_user == currentUserId
     const readStatus = getReadStatus(message, isOwn)
 
     const { deleteMessage } = useWebSocket()
@@ -473,7 +492,6 @@ export default function MessageItem({
                         ) : null}
 
                         <div className="flex items-end justify-between gap-2">
-
                             {/*
                                 Текст сообщения пользователя.
                                 Рендерится только если есть content (не пустая строка).
@@ -530,7 +548,6 @@ export default function MessageItem({
                                         </>
                                     ) : (
                                         message.content
-
                                     )}
                                     {message.updated_at &&
                                         message.updated_at !==
