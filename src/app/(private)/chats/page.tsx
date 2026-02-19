@@ -47,13 +47,7 @@ export default function ChatsPage() {
         }
     }, [loading])
 
-    /**
-     * Загрузка начального списка чатов при монтировании компонента.
-     *
-     * Важно: передаём пустой search, а count — отдельным параметром,
-     * чтобы не интерпретировать число как строку поиска (из-за этого
-     * ранее список был пустым до первого WebSocket события).
-     */
+    /** Загрузка начального списка чатов при монтировании компонента */
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const storedChats =
@@ -73,17 +67,11 @@ export default function ChatsPage() {
                 }
             }
         }
-        // hydrateChats — локальные временные чаты (созданные оффлайн/через контакты)
-        // loadChats — реальный список с сервера
         loadChats('', INITIAL_CHATS_COUNT)
         hasRequestedChatsRef.current = true
     }, [loadChats, hydrateChats])
 
-    /**
-     * Обработка query-параметра contactId для создания/выбора чата.
-     * Если чат с этим пользователем уже есть — просто выбираем.
-     * Иначе создаём временный локальный чат и потом он будет синхронизирован.
-     */
+    /** Обработка query-параметра contactId для создания/выбора чата */
     useEffect(() => {
         const contactId = searchParams.get('contactId')
         if (!contactId || loading) return

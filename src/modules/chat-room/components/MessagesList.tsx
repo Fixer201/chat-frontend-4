@@ -98,9 +98,6 @@ export default function MessagesList({
 }>) {
     const { messages: wsMessages } = useWebSocket()
 
-    // currentUserId/peerUid нужны, чтобы MessageItem мог правильно
-    // вычислять "моё/чужое" сообщение даже при отсутствии профиля в store.
-
     /** Ref на контейнер списка для поиска DOM-элементов сообщений по uid */
     const listRef = useRef<HTMLUListElement>(null)
 

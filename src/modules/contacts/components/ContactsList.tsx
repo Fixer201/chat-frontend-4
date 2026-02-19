@@ -21,13 +21,7 @@ import { Spinner } from '@shared/ui/Spinner'
 import { ApiContact, Contact } from '@shared/types/contact'
 import { ContactItem } from './ContactItem'
 
-type ContactsListProps = {
-    onContactSelect?: (userUid: string) => void
-}
-
-export default memo(function ContactsList({
-    onContactSelect,
-}: ContactsListProps) {
+export default memo(function ContactsList() {
     const [searchValue, setSearchValue] = useState('')
     const [deleteMode, setDeleteMode] = useState(false)
     const [selectedContacts, setSelectedContacts] =
@@ -474,10 +468,6 @@ export default memo(function ContactsList({
     const handleOpenChat = (contact: Contact) => {
         const contactId = contact.userUid ?? contact.uid
         dispatch(setSelectedContact(contact.uid))
-        if (onContactSelect) {
-            onContactSelect(contactId)
-            return
-        }
         router.push(
             `/chats?contactId=${encodeURIComponent(contactId)}`,
         )
