@@ -38,7 +38,6 @@ export default function ParticipantsContent({
         string | null
     >(null)
 
-    // Загрузка участников из localStorage
     useEffect(() => {
         setLoading(true)
         const data = findGroupParticipantsByChatKey(chatKey)
@@ -57,7 +56,6 @@ export default function ParticipantsContent({
         setLoading(false)
     }, [chatKey])
 
-    // Обновление заголовка при смене вида
     useEffect(() => {
         if (onTitleChange) {
             const title =
@@ -68,7 +66,6 @@ export default function ParticipantsContent({
         }
     }, [currentView, onTitleChange])
 
-    // Приглашение новых участников
     const handleInvite = async (
         selectedContacts: Contact[],
     ) => {
@@ -76,18 +73,15 @@ export default function ParticipantsContent({
         setInviteError(null)
 
         try {
-            // Симуляция API (можно убрать)
             await new Promise((resolve) =>
                 setTimeout(resolve, 500),
             )
 
-            // Преобразуем контакты в участников
             const newParticipants =
                 contactsToGroupParticipants(
                     selectedContacts,
                 )
 
-            // Объединяем с существующими, убирая дубликаты по uid
             const allParticipants = [...participants]
             for (const newP of newParticipants) {
                 if (
@@ -99,13 +93,11 @@ export default function ParticipantsContent({
                 }
             }
 
-            // Сохраняем в localStorage
             const fullList = owner
                 ? [owner, ...allParticipants]
                 : allParticipants
             saveGroupParticipants(chatKey, fullList)
 
-            // Обновляем состояние
             setParticipants(allParticipants)
             setCurrentView('participants')
         } catch (error) {
@@ -119,13 +111,24 @@ export default function ParticipantsContent({
         }
     }
 
-    // Отмена приглашения
+    const handleParticipantRemoved = (
+        removedUid: string,
+    ) => {
+        const newParticipants = participants.filter(
+            (p) => p.uid !== removedUid,
+        )
+        setParticipants(newParticipants)
+        const fullList = owner
+            ? [owner, ...newParticipants]
+            : newParticipants
+        saveGroupParticipants(chatKey, fullList)
+    }
+
     const handleCancelInvite = () => {
         setCurrentView('participants')
         setInviteError(null)
     }
 
-    // Переход к приглашению
     const handleShowInvite = () => {
         setCurrentView('invite')
         setInviteError(null)
@@ -141,7 +144,6 @@ export default function ParticipantsContent({
         )
     }
 
-    // Все участники (для передачи в InviteMembersContent как текущие)
     const allParticipants = owner
         ? [owner, ...participants]
         : participants
@@ -153,6 +155,10 @@ export default function ParticipantsContent({
                     owner={owner}
                     participants={participants}
                     onInviteClick={handleShowInvite}
+                    chatKey={chatKey}
+                    onParticipantRemoved={
+                        handleParticipantRemoved
+                    }
                 />
             ) : (
                 <InviteMembersContent

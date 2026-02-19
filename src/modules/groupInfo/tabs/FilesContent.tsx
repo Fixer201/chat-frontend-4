@@ -1,3 +1,4 @@
+// src/modules/groupInfo/tabs/FilesContent.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -5,77 +6,88 @@ import {
     transformFiles,
     formatFileSize,
     formatFileDate,
-} from '../../../shared/lib/fileUtils'
+} from '@shared/lib/fileUtils'
 import type {
     BackendFile,
     BaseFile,
     MockFile,
 } from '@shared/types/file'
-import FileItem from '../../../shared/ui/FileItem'
-// Импорты для поиска
+import FileItem from '@shared/ui/FileItem'
 import { useSearch } from '@shared/hooks/useSearch'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
+import {
+    loadGroupFiles,
+    initGroupFiles,
+} from '@shared/lib/localStorageGroupFiles'
 
-export default function FilesContent() {
+// Моковые файлы по умолчанию (те же, что были)
+const DEFAULT_MOCK_FILES: MockFile[] = [
+    { url: '/mockFiles/_Info.txt' },
+    { url: '/mockFiles/задача для deepseek.docx' },
+    { url: '/mockFiles/CLI-COMMANDS.md' },
+    { url: '/mockFiles/COMMIT-STRUCTURE.md' },
+    { url: '/mockFiles/CSS-STYLING-GUIDE-DETAILED.md' },
+    { url: '/mockFiles/GIT-FLOW.md' },
+    { url: '/mockFiles/lorem.pdf' },
+    { url: '/mockFiles/README.ru.md' },
+]
+
+interface FilesContentProps {
+    chatUid: string // добавляем пропс
+}
+
+export default function FilesContent({
+    chatUid,
+}: FilesContentProps) {
     const [visible, setVisible] = useState(false)
     const [filesState, setFilesState] = useState<
         BaseFile[]
     >([])
     const [loading, setLoading] = useState(true)
-    // Состояние для строки поиска
     const [searchValue, setSearchValue] = useState('')
 
-    // Создаем ref для хранения интервалов загрузки
     const downloadIntervalsRef = useRef<{
         [key: number]: NodeJS.Timeout
     }>({})
 
     useEffect(() => {
         const t = setTimeout(() => setVisible(true), 10)
-
-        // Загружаем файлы
         loadFiles()
-
-        // Очистка интервалов при размонтировании компонента
         return () => {
             clearTimeout(t)
-            // Очищаем все интервалы загрузки
             Object.values(
                 downloadIntervalsRef.current,
             ).forEach((interval) => {
                 clearInterval(interval)
             })
         }
-    }, [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [chatUid]) // перезагружаем при смене чата
 
-    const mockFiles = [
-        { url: '/mockFiles/_Info.txt' },
-        { url: '/mockFiles/задача для deepseek.docx' },
-        { url: '/mockFiles/CLI-COMMANDS.md' },
-        { url: '/mockFiles/COMMIT-STRUCTURE.md' },
-        { url: '/mockFiles/CSS-STYLING-GUIDE-DETAILED.md' },
-        { url: '/mockFiles/GIT-FLOW.md' },
-        { url: '/mockFiles/lorem.pdf' },
-        { url: '/mockFiles/README.ru.md' },
-    ]
-
-    // Функция загрузки файлов (может загружать из разных источников)
+    // Функция загрузки файлов из localStorage
     const loadFiles = async () => {
         setLoading(true)
-
         try {
-            // Пример 1: Используем моковые файлы
+            // Пытаемся загрузить из localStorage
+            let filesData = loadGroupFiles(chatUid)
+            if (!filesData) {
+                // Если нет, инициализируем моковыми данными
+                filesData = initGroupFiles(
+                    chatUid,
+                    DEFAULT_MOCK_FILES,
+                )
+            }
             const transformedFiles = transformFiles(
-                mockFiles,
+                filesData.results,
                 'mock',
             )
             setFilesState(transformedFiles)
         } catch (error) {
             console.error('Ошибка загрузки файлов:', error)
-            // В случае ошибки все равно используем моковые данные
+            // В случае ошибки используем моковые данные напрямую
             const transformedFiles = transformFiles(
-                mockFiles,
+                DEFAULT_MOCK_FILES,
                 'mock',
             )
             setFilesState(transformedFiles)
@@ -88,7 +100,7 @@ export default function FilesContent() {
     const { filteredValue: filteredFiles } = useSearch(
         filesState,
         searchValue,
-        [(file) => file.name.toLowerCase()], // поиск по имени файла
+        [(file) => file.name.toLowerCase()],
     )
 
     // Функция для имитации загрузки файла
@@ -98,15 +110,12 @@ export default function FilesContent() {
 
         // Если файл уже загружается - останавливаем загрузку
         if (file.isLoading) {
-            // Останавливаем интервал
             if (downloadIntervalsRef.current[id]) {
                 clearInterval(
                     downloadIntervalsRef.current[id],
                 )
                 delete downloadIntervalsRef.current[id]
             }
-
-            // Сбрасываем состояние файла
             setFilesState((prev) =>
                 prev.map((f) =>
                     f.id === id
@@ -131,19 +140,15 @@ export default function FilesContent() {
             ),
         )
 
-        // Имитация загрузки
         let progress = 1
         const interval = setInterval(() => {
             progress += 1
-
             setFilesState((prev) =>
                 prev.map((f) => {
                     if (f.id === id) {
-                        // Вычисляем оставшийся размер
                         const remaining =
                             file.originalSize *
                             (1 - progress / 100)
-
                         return {
                             ...f,
                             progress,
@@ -157,12 +162,9 @@ export default function FilesContent() {
                 }),
             )
 
-            // Когда загрузка завершена
             if (progress >= 100) {
                 clearInterval(interval)
                 delete downloadIntervalsRef.current[id]
-
-                // Возвращаем исходное состояние через 500мс
                 setTimeout(() => {
                     setFilesState((prev) =>
                         prev.map((f) =>
@@ -180,20 +182,7 @@ export default function FilesContent() {
             }
         }, 50)
 
-        // Сохраняем ссылку на интервал для возможности остановки
         downloadIntervalsRef.current[id] = interval
-    }
-
-    // Функция для обновления файлов из другого источника
-    const updateFilesFromSource = (
-        files: BackendFile[] | MockFile[],
-        sourceType: 'backend' | 'mock' = 'mock',
-    ) => {
-        const transformedFiles = transformFiles(
-            files,
-            sourceType,
-        )
-        setFilesState(transformedFiles)
     }
 
     // Вычисляем общий размер файлов
@@ -234,7 +223,6 @@ export default function FilesContent() {
                         Файлы не найдены
                     </div>
                 ) : filteredFiles.length === 0 ? (
-                    // Показываем заглушку, если поиск не дал результатов
                     <div className="p-8">
                         <EmptySearchState />
                     </div>

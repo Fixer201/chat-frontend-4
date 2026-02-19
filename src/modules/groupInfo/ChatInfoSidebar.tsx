@@ -185,6 +185,7 @@ export default function ChatInfoSidebar() {
         return (
             <GroupInfoSidebar
                 chatKey={chatData.chatKey}
+                chatUid={chatData.chat.uid}
                 name={chatData.name}
                 participantsCount={participantsCount}
                 description={chatData.description}

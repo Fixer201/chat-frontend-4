@@ -29,6 +29,7 @@ type TabId =
 function getTabContent(
     tabId: TabId,
     chatKey: string,
+    chatUid: string,
     setDynamicTabTitle: (t: string | null) => void,
 ) {
     switch (tabId) {
@@ -40,19 +41,20 @@ function getTabContent(
                 />
             )
         case 'media':
-            return <MediaContent />
+            return <MediaContent chatUid={chatUid} />
         case 'files':
-            return <FilesContent />
+            return <FilesContent chatUid={chatUid} />
         case 'voice':
-            return <VoiceContent />
+            return <VoiceContent chatUid={chatUid} />
         case 'links':
-            return <LinksContent />
+            return <LinksContent chatUid={chatUid} />
         default:
             return null
     }
 }
 interface GroupInfoSidebarProps {
     chatKey: string
+    chatUid: string
     /** Название группы */
     name: string
     /** Количество участников */
@@ -76,6 +78,7 @@ interface GroupInfoSidebarProps {
 }
 export default function GroupInfoSidebar({
     chatKey,
+    chatUid,
     name,
     participantsCount,
     description,
@@ -175,6 +178,7 @@ export default function GroupInfoSidebar({
                 {getTabContent(
                     activeTab,
                     chatKey,
+                    chatUid,
                     setDynamicTabTitle,
                 )}
             </TabLayout>
@@ -573,6 +577,7 @@ export default function GroupInfoSidebar({
                     >
                         <TabContentPreview
                             chatKey={chatKey}
+                            chatUid={chatUid}
                             activeTab={activeTab}
                         />
                     </div>

@@ -74,3 +74,18 @@ export function saveGroupParticipants(
         `[saveGroupParticipants] Сохранено ${participants.length} участников для ключа ${chatKey}`,
     )
 }
+export function removeGroupParticipant(
+    chatKey: string,
+    uid: string,
+): void {
+    const entries = loadAllGroupsParticipants()
+    const entryIndex = entries.findIndex(
+        (e) => e.chatKey === chatKey,
+    )
+    if (entryIndex !== -1) {
+        entries[entryIndex].participants = entries[
+            entryIndex
+        ].participants.filter((p) => p.uid !== uid)
+        saveAllGroupsParticipants(entries)
+    }
+}

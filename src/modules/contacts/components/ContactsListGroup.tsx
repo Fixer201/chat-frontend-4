@@ -1,4 +1,6 @@
+// src/modules/contacts/components/ContactsListGroup.tsx
 'use client'
+
 import { useDispatch, useSelector } from 'react-redux'
 import Image from 'next/image'
 import { setSelectedContact } from '@redux/slices/selectedContactTempSlice'
@@ -17,27 +19,33 @@ import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 import { GroupParticipant } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
+import { removeGroupParticipant } from '@shared/lib/localStorageGroupParticipants'
 
 interface ContactsListGroupProps {
     owner: GroupParticipant | null
     participants: GroupParticipant[]
-    onInviteClick?: () => void // Новый проп
+    onInviteClick?: () => void
+    chatKey: string
+    onParticipantRemoved?: (uid: string) => void
 }
 
 export default memo(function ContactsListGroup({
     owner,
     participants,
     onInviteClick,
+    chatKey,
+    onParticipantRemoved,
 }: ContactsListGroupProps) {
     const [searchValue, setSearchValue] = useState('')
     const [deleteMode, setDeleteMode] = useState(false)
     const [selectedContacts, setSelectedContacts] =
         useState<string[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [participantToDelete, setParticipantToDelete] =
+        useState<GroupParticipant | null>(null)
 
     const dispatch = useDispatch()
 
-    // Получение данных из Redux store
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContactTemp.uid,
     )
@@ -50,14 +58,12 @@ export default memo(function ContactsListGroup({
             (contact) => `${contact.nickname || ''}`,
         ])
 
-    // Сброс выделенного контакта при входе в режим удаления
     useEffect(() => {
         if (deleteMode) {
             dispatch(setSelectedContact(null))
         }
     }, [deleteMode, dispatch])
 
-    // Функция для выбора контактов для удаления
     const handleSelectContact = (uid: string) => {
         setSelectedContacts((prev) =>
             prev.includes(uid)
@@ -66,42 +72,32 @@ export default memo(function ContactsListGroup({
         )
     }
 
-    // Функция открытия модального окна
-    const handleOpenModal = () => {
+    const handleDeleteParticipant = (
+        participant: GroupParticipant,
+    ) => {
+        setParticipantToDelete(participant)
         setIsModalOpen(true)
     }
 
-    // Функция закрытия модального окна
-    const handleCloseModal = () => {
+    const handleConfirmDeleteParticipant = () => {
+        if (!participantToDelete || !chatKey) return
+
+        removeGroupParticipant(
+            chatKey,
+            participantToDelete.uid,
+        )
+
+        if (onParticipantRemoved) {
+            onParticipantRemoved(participantToDelete.uid)
+        }
+
+        setParticipantToDelete(null)
         setIsModalOpen(false)
     }
 
-    // Функция подтверждения удаления
-    const handleConfirmDelete = () => {
-        try {
-            dispatch(removeContacts(selectedContacts))
-            setSelectedContacts([])
-            setDeleteMode(false)
-            setIsModalOpen(false)
-        } catch (error) {
-            console.error(
-                'Ошибка при удалении контактов:',
-                error,
-            )
-        }
-    }
-
-    // Функция для переключения режима удаления со сбросом выбранных контактов
-    const handleToggleDeleteMode = (mode: boolean) => {
-        setDeleteMode(mode)
-        if (mode) {
-            setSelectedContacts([])
-        }
-    }
-
-    // Функция для сброса выделения
-    const handleClearSelection = () => {
-        setSelectedContacts([])
+    const handleCloseModal = () => {
+        setIsModalOpen(false)
+        setParticipantToDelete(null)
     }
 
     return (
@@ -144,10 +140,8 @@ export default memo(function ContactsListGroup({
                 />
             </div>
 
-            {/* Контейнер контактов и пользователей */}
             <div className="flex flex-col">
                 <CustomScrollbar>
-                    {/* Владелец */}
                     {owner && (
                         <>
                             <div
@@ -185,7 +179,6 @@ export default memo(function ContactsListGroup({
                         </>
                     )}
 
-                    {/* Участники */}
                     <div
                         className={`
                       flex h-9 w-full justify-between gap-1 pt-2.5 pr-4 pb-2.5
@@ -224,6 +217,11 @@ export default memo(function ContactsListGroup({
                                             ),
                                         )
                                     }
+                                    onDelete={(contact) =>
+                                        handleDeleteParticipant(
+                                            contact as GroupParticipant,
+                                        )
+                                    }
                                 />
                             ),
                         )
@@ -260,17 +258,14 @@ export default memo(function ContactsListGroup({
                             </p>
                         </div>
                     )}
-
-                    {/* Панель удаления выбранных контактов */}
                 </CustomScrollbar>
             </div>
 
-            {/* Модальное окно для удаления контактов */}
             <Modal
                 open={isModalOpen}
                 onClose={handleCloseModal}
-                title="Удалить контакты"
-                description={`Вы уверены, что хотите удалить ${selectedContacts.length} ${getContactWord(selectedContacts.length)}?`}
+                title="Удалить участника"
+                description={`Вы уверены, что хотите удалить участника ${participantToDelete?.firstName} ${participantToDelete?.lastName} из группы?`}
                 descriptionColor="muted"
                 titleAlign="left"
                 buttons={[
@@ -283,8 +278,9 @@ export default memo(function ContactsListGroup({
                     {
                         label: 'Удалить',
                         variant: 'primary',
-                        color: 'primary',
-                        onClick: handleConfirmDelete,
+                        color: 'danger',
+                        onClick:
+                            handleConfirmDeleteParticipant,
                     },
                 ]}
             />

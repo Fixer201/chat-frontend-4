@@ -460,6 +460,14 @@ export const CustomScrollbar = forwardRef<
                 touchMoveHandler,
             )
             content.removeEventListener(
+                'touchstart',
+                touchStartHandler,
+            )
+            content.removeEventListener(
+                'touchmove',
+                touchMoveHandler,
+            )
+            content.removeEventListener(
                 'scroll',
                 scrollHandler,
             )
