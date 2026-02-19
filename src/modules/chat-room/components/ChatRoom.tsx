@@ -1,6 +1,7 @@
 'use client'
 
 import ChatHeader from './ChatHeader'
+import CallModal from './CallModal'
 import MessagesList from './MessagesList'
 import SelectionToolbar from './SelectionToolbar'
 import ForwardMessageModal from './ForwardMessageModal'
@@ -11,9 +12,9 @@ import { ChatItem } from '@shared/types/chat'
 import { Message } from '@shared/types/message'
 import { useCallback, useState } from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
-import { useAppSelector } from '@redux/store'
-import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import { useCurrentUserId } from '@shared/hooks/useCurrentUserId'
 import { useMessages } from '@shared/hooks/useMessages'
+import { cn } from '@shared/lib/utils'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -37,11 +38,7 @@ export default function ChatRoom({
     chat: ChatItem
     onBack?: () => void
 }>) {
-    const currentUser = useAppSelector(
-        (state) => state.user.currentUser,
-    ) as { id?: string } | null
-    const currentUserId =
-        currentUser?.id || MOCK_CURRENT_USER_ID
+    const currentUserId = useCurrentUserId()
 
     // --- Состояние режимов работы с сообщениями ---
     /** Сообщение в режиме редактирования (null = режим неактивен) */
@@ -66,6 +63,17 @@ export default function ChatRoom({
         deleteSelectedModalOpen,
         setDeleteSelectedModalOpen,
     ] = useState(false)
+    const [isCallModalOpen, setIsCallModalOpen] =
+        useState(false)
+    // ВРЕМЕННО: модалка выбора типа звонка для тестов UI.
+    const [
+        isCallTypeSelectorOpen,
+        setIsCallTypeSelectorOpen,
+    ] = useState(false)
+    // ВРЕМЕННО: выбранный тип звонка для тестов UI.
+    const [callVariant, setCallVariant] = useState<
+        'outgoing' | 'incoming'
+    >('outgoing')
 
     // --- Состояние режима поиска ---
     /** Флаг активности режима поиска. При true ChatHeader показывает InChatSearch. */
@@ -146,8 +154,11 @@ export default function ChatRoom({
                     chatKey,
                     content: '',
                     status: 'publish',
+                    // uid оригинального сообщения — бэкенд сам
+                    // подтянет контент и метаданные по UID
                     forwardedMessages: [
                         {
+                            uid: msg.uid,
                             content: msg.content,
                             from_user: msg.from_user,
                         },
@@ -211,7 +222,28 @@ export default function ChatRoom({
         setReplyingMessage(null)
     }
 
-    const isLocalChat = chat.id > 1000000000000
+    /**
+     * Определяем, является ли чат локальным (созданным только на клиенте).
+     *
+     * Локальные чаты — группы/каналы, созданные офлайн до первой
+     * синхронизации с сервером. Для них API-загрузка истории не нужна.
+     *
+     * Проверка: chatKey === 'chat_key_0' (дефолтный ключ до назначения
+     * сервером) И НЕ временный (isTemporary).
+     *
+     * ⚠️ Важно: нельзя проверять по chat.id > 1e12, потому что
+     * при переходе временного чата в реальный (после отправки первого
+     * сообщения) isTemporary сбрасывается в false, но id остаётся
+     * большим — такая проверка ошибочно классифицирует конвертированный
+     * чат как «локальный», и useMessages очистит историю (setMessages([])).
+     *
+     * Три типа чатов:
+     * 1. Временный (isTemporary=true, chatKey='chat_key_0') → загружать API-историю
+     * 2. Конвертированный (isTemporary=false, chatKey='chat_3401') → загружать
+     * 3. Локальный (isTemporary=false, chatKey='chat_key_0') → НЕ загружать
+     */
+    const isLocalChat =
+        chat.chatKey === 'chat_key_0' && !chat.isTemporary
 
     /**
      * Открытие режима поиска.
@@ -226,6 +258,25 @@ export default function ChatRoom({
         setCurrentMatchIndex(null)
         setTotalSearchResults(0)
     }, [])
+
+    const handleCallOpen = useCallback(() => {
+        // ВРЕМЕННО: открываем модалку выбора типа звонка.
+        setIsCallTypeSelectorOpen(true)
+    }, [])
+
+    const handleCallClose = useCallback(() => {
+        setIsCallModalOpen(false)
+    }, [])
+
+    // ВРЕМЕННО: выбор типа звонка для тестов UI.
+    const handleCallTypeSelect = useCallback(
+        (variant: 'outgoing' | 'incoming') => {
+            setCallVariant(variant)
+            setIsCallTypeSelectorOpen(false)
+            setIsCallModalOpen(true)
+        },
+        [],
+    )
 
     /**
      * Закрытие режима поиска.
@@ -340,6 +391,7 @@ export default function ChatRoom({
                 chat={chat || null}
                 onBack={onBack}
                 onSearchOpen={handleSearchOpen}
+                onCall={handleCallOpen}
                 isSearchOpen={isSearchOpen}
                 searchQuery={searchQuery}
                 onSearchQueryChange={
@@ -350,6 +402,91 @@ export default function ChatRoom({
                 currentMatchIndex={currentMatchIndex}
                 totalSearchResults={totalSearchResults}
             />
+
+            <CallModal
+                open={isCallModalOpen}
+                onClose={handleCallClose}
+                chat={chat}
+                variant={callVariant}
+            />
+
+            {/* ВРЕМЕННО: модалка выбора типа звонка для тестов UI. */}
+            {isCallTypeSelectorOpen && (
+                <div
+                    className={cn(
+                        'fixed',
+                        'inset-0',
+                        'z-[60]',
+                        'flex',
+                        'items-center',
+                        'justify-center',
+                        'bg-black/40',
+                    )}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Выбор типа звонка"
+                >
+                    <div
+                        className={cn(
+                            'w-[320px]',
+                            'rounded-xl',
+                            'bg-white',
+                            'px-6',
+                            'py-5',
+                            'text-center',
+                            'shadow-lg',
+                        )}
+                    >
+                        <p className="text-base font-semibold text-text-black">
+                            Тесты звонков
+                        </p>
+                        <div className="mt-5 flex flex-col gap-3">
+                            <button
+                                type="button"
+                                className={cn(
+                                    'rounded-lg',
+                                    'bg-accent-violet-primary',
+                                    'px-4',
+                                    'py-2',
+                                    'text-sm',
+                                    'font-semibold',
+                                    'text-white',
+                                )}
+                                onClick={() =>
+                                    handleCallTypeSelect(
+                                        'incoming',
+                                    )
+                                }
+                            >
+                                Тебе звонят
+                            </button>
+                            <button
+                                type="button"
+                                className={cn(
+                                    'rounded-lg',
+                                    'border',
+                                    'border-accent-violet-primary',
+                                    'px-4',
+                                    'py-2',
+                                    'text-sm',
+                                    'font-semibold',
+                                    'text-accent-violet-primary',
+                                )}
+                                onClick={() =>
+                                    handleCallTypeSelect(
+                                        'outgoing',
+                                    )
+                                }
+                            >
+                                Ты звонишь
+                            </button>
+                        </div>
+                        <p className="mt-4 text-xs text-text-gray">
+                            Только для тестов звонков
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div
                 role="presentation"
@@ -427,7 +564,7 @@ export default function ChatRoom({
                 }
                 onConfirm={handleDeleteSelectedConfirm}
                 isOwnMessage={selectedMessages.every(
-                    (m) => m.from_user == currentUserId,
+                    (m) => m.from_user === currentUserId,
                 )}
                 chatName={chatName}
             />

@@ -72,6 +72,10 @@ body {
     --color-call-modal-red: var(--app-call-modal-red);
     --color-call-modal-green: var(--app-call-modal-green);
     --color-call-timer-green: var(--app-call-timer-green);
+    --color-call-modal-border: var(--app-call-modal-border);
+    --color-call-modal-incoming-bg: var(
+        --app-call-modal-incoming-bg
+    );
 
     /* Custom App Colors - Shadows */
     --color-context-shadow: var(--app-context-shadow);
@@ -188,7 +192,7 @@ body {
     /* !Not Found! rgba(237, 235, 254, 1); hex: #EDEBFE; */
     --app-violet-shadow-dark: hsla(248, 85%, 75%, 0.4);
     /* !Not Found! rgba(149, 135, 245, 0.4); hex: #9587F566; */
-    /*========================================================================================================= */
+   
 }
 
 .dark {
@@ -249,6 +253,8 @@ body {
     /* Colors/Red */
     --app-call-modal-green: hsla(135, 59%, 49%, 1);
     /* Colors/Green */
+    --app-call-modal-incoming-bg: #d6d2f6;
+    --app-call-modal-border: #cec8ff4d;
 
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
@@ -482,6 +488,28 @@ body {
     to {
         opacity: 0;
         transform: translateY(-100%);
+    }
+}
+
+@keyframes call-dot-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.5);
+    }
+}
+
+@keyframes call-avatar-ring-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(206, 200, 255, 0.25);
+    }
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 0 6px rgba(206, 200, 255, 0.15);
     }
 }
 

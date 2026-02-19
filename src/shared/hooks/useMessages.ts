@@ -51,6 +51,7 @@ import {
     ApiMessage,
     RepliedMessage,
     ForwardedMessage,
+    normalizeFileItem,
 } from '@shared/types/message'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 
@@ -93,7 +94,11 @@ export const useMessages = (
                         read_at: item.new
                             ? undefined
                             : item.created_at, // Исправьте на undefined
-                        files: item.files_list, // Соответствует MessageFile[]
+                        // Сервер возвращает файлы в формате ApiFileItem
+                        // (file_url, file_type), маппим в MessageFile (filename, file_url)
+                        files: item.files_list?.map(
+                            normalizeFileItem,
+                        ),
                         repliedMessages:
                             item.replied_messages.map(
                                 (r): RepliedMessage => ({
@@ -104,7 +109,9 @@ export const useMessages = (
                                         r.first_name,
                                     last_name: r.last_name,
                                     files_list:
-                                        r.files_list,
+                                        r.files_list?.map(
+                                            normalizeFileItem,
+                                        ),
                                 }),
                             ),
                         forwardedMessages:
@@ -117,15 +124,20 @@ export const useMessages = (
                                         f.first_name,
                                     last_name: f.last_name,
                                     avatar_url:
-                                        f.avatar_webp_url, // Или f.avatar_url
+                                        f.avatar_webp_url,
                                     avatar_webp_url:
                                         f.avatar_webp_url,
                                     files_list:
-                                        f.files_list,
+                                        f.files_list?.map(
+                                            normalizeFileItem,
+                                        ),
                                 }),
                             ),
-                        // Опциональные поля: установите undefined или подходящие значения
-                        toUserId: undefined,
+                        // UID получателя — нужен для фильтрации сообщений
+                        // во временных чатах, где chatKey ещё не назначен сервером.
+                        // MessagesList использует toUserId для сопоставления
+                        // исходящих сообщений с контактом (msg.toUserId === contactUid).
+                        toUserId: item.to_user?.uid,
                         status: 'publish', // Или другое значение по умолчанию
                     }),
                 )
