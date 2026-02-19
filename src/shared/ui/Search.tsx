@@ -1,4 +1,5 @@
 'use client'
+import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
 
 type SearchProps = {
@@ -11,6 +12,7 @@ type SearchProps = {
     className?: string
     inputClassName?: string
     ariaLabel?: string
+    bgColor?: string
 }
 
 export default function Search({
@@ -23,6 +25,7 @@ export default function Search({
     className = '',
     inputClassName = '',
     ariaLabel = 'Поиск',
+    bgColor = 'bg-white-bg',
 }: SearchProps) {
     return (
         <div
@@ -32,10 +35,13 @@ export default function Search({
             `}
         >
             <div
-                className={`
-                  relative flex h-11 w-full min-w-0 items-center gap-2
-                  rounded-lg border border-gray-border bg-white-bg px-3 pr-10
-                `}
+                className={cn(
+                    `
+                      relative flex h-11 w-full min-w-0 items-center gap-2
+                      rounded-lg border border-gray-border px-3 pr-10
+                    `,
+                    bgColor,
+                )}
             >
                 {leftIconSrc && (
                     <Image

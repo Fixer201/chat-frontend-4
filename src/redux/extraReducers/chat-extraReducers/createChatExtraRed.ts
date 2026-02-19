@@ -2,6 +2,9 @@ import {
     createAsyncThunk,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
+import { addChatToStorage } from '@shared/lib/localStorageChats'
+import { saveGroupParticipants } from '@shared/lib/localStorageGroupParticipants'
+import { contactToGroupParticipant } from '@shared/lib/participantUtils'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import {
@@ -9,7 +12,7 @@ import {
     ChatItem,
     ChatsState,
 } from '@shared/types/chat'
-import { Contact } from '@shared/types/contact'
+import { Contact, GroupParticipant } from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
 
 // Типы для payload при создании группы и канала
@@ -201,62 +204,143 @@ const createMockChatFromResponse = (
 }
 
 // Thunk для создания группы с обработкой ошибок через rejectWithValue
+// export const createGroup = createAsyncThunk<
+//     ChatWithSettings,
+//     CreateGroupPayload,
+//     { rejectValue: string }
+// >(
+//     'chats/createGroup',
+//     async ({ groupData, members }, { rejectWithValue }) => {
+//         try {
+//             // Определение типа чата на основе выбранного типа группы
+//             const chatType =
+//                 groupData.type === 'open'
+//                     ? 'public-group'
+//                     : 'private-group'
+
+//             const photoUrl = createPhotoUrl(groupData.photo)
+
+//             // Создание моковых данных для нового чата
+//             const mockData = createMockChatFromResponse(
+//                 groupData.name,
+//                 groupData.description,
+//                 chatType,
+//                 photoUrl,
+//                 members,
+//             )
+//             // Сохраняем в localStorage
+//             addChatToStorage(mockData)
+//             // Трансформация API данных в формат приложения
+//             const transformedData =
+//                 transformFromApi<ApiChatItem>(mockData)
+
+//             // Дополнение данных чата
+//             const enhancedChat: ChatItem = {
+//                 ...transformedData,
+//                 chat: {
+//                     ...transformedData.chat,
+//                     isInContacts: true,
+//                 },
+//             }
+
+//             return {
+//                 chat: enhancedChat,
+//                 settings: {
+//                     isFavorite: false,
+//                     isChatRead: true,
+//                     notificationsEnabled: true,
+//                     isDeleted: false,
+//                     originalUnreadCount: 0,
+//                 },
+//             }
+//         } catch (error) {
+//             const errorMessage =
+//                 error instanceof Error
+//                     ? error.message
+//                     : 'Ошибка при создании группы'
+//             return rejectWithValue(errorMessage)
+//         }
+//     },
+// )
+
 export const createGroup = createAsyncThunk<
-    ChatWithSettings,
-    CreateGroupPayload,
-    { rejectValue: string }
+  ChatWithSettings,
+  CreateGroupPayload,
+  { rejectValue: string }
 >(
-    'chats/createGroup',
-    async ({ groupData, members }, { rejectWithValue }) => {
-        try {
-            // Определение типа чата на основе выбранного типа группы
-            const chatType =
-                groupData.type === 'open'
-                    ? 'public-group'
-                    : 'private-group'
+  'chats/createGroup',
+  async ({ groupData, members }, { rejectWithValue }) => {
+    try {
+      const chatType =
+        groupData.type === 'open' ? 'public-group' : 'private-group'
 
-            const photoUrl = createPhotoUrl(groupData.photo)
+      const photoUrl = createPhotoUrl(groupData.photo)
 
-            // Создание моковых данных для нового чата
-            const mockData = createMockChatFromResponse(
-                groupData.name,
-                groupData.description,
-                chatType,
-                photoUrl,
-                members,
-            )
+      const mockData = createMockChatFromResponse(
+        groupData.name,
+        groupData.description,
+        chatType,
+        photoUrl,
+        members,
+      )
 
-            // Трансформация API данных в формат приложения
-            const transformedData =
-                transformFromApi<ApiChatItem>(mockData)
+      // Сохраняем сам чат в localStorage
+      addChatToStorage(mockData)
+        
+      // --- НОВЫЙ КОД ---
+      // Преобразуем members в детальных участников
+      const detailedParticipants: GroupParticipant[] = members.map(
+        (contact, index) => contactToGroupParticipant(contact, index === 0)
+      )
 
-            // Дополнение данных чата
-            const enhancedChat: ChatItem = {
-                ...transformedData,
-                chat: {
-                    ...transformedData.chat,
-                    isInContacts: true,
-                },
-            }
+      // Добавляем текущего пользователя как владельца, если его нет
+      const currentUser: GroupParticipant = {
+        uid: 'current-user-uid', // TODO: заменить на реальный uid
+        firstName: 'Я',
+        lastName: '',
+        avatarUrl: '/images/chatHeader/userAvatar.svg',
+        avatarWebpUrl: '/images/chatHeader/userAvatar.svg',
+        isOwner: true,
+        isBlocked: false,
+        isOnline: true,
+        wasOnlineAt: Date.now(),
+        isInContacts: true,
+      }
 
-            return {
-                chat: enhancedChat,
-                settings: {
-                    isFavorite: false,
-                    isChatRead: true,
-                    notificationsEnabled: true,
-                    isDeleted: false,
-                    originalUnreadCount: 0,
-                },
-            }
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'Ошибка при создании группы'
-            return rejectWithValue(errorMessage)
-        }
-    },
+      if (!detailedParticipants.some(p => p.uid === currentUser.uid)) {
+        detailedParticipants.unshift(currentUser)
+      }
+
+      // Сохраняем детальных участников
+     saveGroupParticipants(mockData.chat_key, detailedParticipants)
+      // --- КОНЕЦ НОВОГО КОДА ---
+
+      const transformedData = transformFromApi<ApiChatItem>(mockData)
+
+      const enhancedChat: ChatItem = {
+        ...transformedData,
+        chat: {
+          ...transformedData.chat,
+          isInContacts: true,
+        },
+      }
+
+      return {
+        chat: enhancedChat,
+        settings: {
+          isFavorite: false,
+          isChatRead: true,
+          notificationsEnabled: true,
+          isDeleted: false,
+          originalUnreadCount: 0,
+        },
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Ошибка при создании группы'
+      return rejectWithValue(errorMessage)
+    }
+  }
 )
 
 // Thunk для создания канала с обработкой ошибок через rejectWithValue

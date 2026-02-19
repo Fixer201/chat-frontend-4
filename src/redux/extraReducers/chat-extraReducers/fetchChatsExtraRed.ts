@@ -3,6 +3,7 @@ import {
     PayloadAction,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
+import { generateAndCacheChats, loadChatsFromStorage } from '@shared/lib/localStorageChats'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import {
@@ -40,11 +41,20 @@ export const fetchChats = createAsyncThunk(
     async (count: number = 15, { rejectWithValue }) => {
         try {
             // Генерация моковых данных (в реальном приложении здесь был бы API запрос)
-            const mockData =
-                generateLocalMockChatItems(count)
-
+            // const mockData =
+            //     generateLocalMockChatItems(count)
+            // Пытаемся загрузить из localStorage
+      let apiChats = loadChatsFromStorage()
+      
+      if (!apiChats) {
+        // Если нет, генерируем и кэшируем
+        apiChats = generateAndCacheChats(count)
+      } else {
+        // Можно опционально обрезать/дополнить до нужного количества,
+        // но для простоты используем как есть
+      }
             // Фильтрация валидных данных
-            const validData = mockData.filter(
+            const validData = apiChats.filter(
                 (item): item is ApiChatItem =>
                     item !== null &&
                     item !== undefined &&
