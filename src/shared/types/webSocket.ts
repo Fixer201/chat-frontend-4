@@ -25,6 +25,7 @@ export type WebSocketContextType = {
         chatKey: string
         messageUids: string[]
     }) => void
+
     messages: Message[]
     status: ConnectionStatus
     error: string | null

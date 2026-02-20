@@ -18,8 +18,7 @@ import {
     useState,
 } from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
-import { useAppSelector } from '@redux/store'
-import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import { useCurrentUserId } from '@shared/hooks/useCurrentUserId'
 import { useMessages } from '@shared/hooks/useMessages'
 import { cn } from '@shared/lib/utils'
 import Cookies from 'js-cookie'
@@ -176,8 +175,11 @@ export default function ChatRoom({
                     chatKey,
                     content: '',
                     status: 'publish',
+                    // uid оригинального сообщения — бэкенд сам
+                    // подтянет контент и метаданные по UID
                     forwardedMessages: [
                         {
+                            uid: msg.uid,
                             content: msg.content,
                             from_user: msg.from_user,
                         },
@@ -241,7 +243,28 @@ export default function ChatRoom({
         setReplyingMessage(null)
     }
 
+
     const isLocalChat = chat.isTemporary === true
+    /**
+     * Определяем, является ли чат локальным (созданным только на клиенте).
+     *
+     * Локальные чаты — группы/каналы, созданные офлайн до первой
+     * синхронизации с сервером. Для них API-загрузка истории не нужна.
+     *
+     * Проверка: chatKey === 'chat_key_0' (дефолтный ключ до назначения
+     * сервером) И НЕ временный (isTemporary).
+     *
+     * ⚠️ Важно: нельзя проверять по chat.id > 1e12, потому что
+     * при переходе временного чата в реальный (после отправки первого
+     * сообщения) isTemporary сбрасывается в false, но id остаётся
+     * большим — такая проверка ошибочно классифицирует конвертированный
+     * чат как «локальный», и useMessages очистит историю (setMessages([])).
+     *
+     * Три типа чатов:
+     * 1. Временный (isTemporary=true, chatKey='chat_key_0') → загружать API-историю
+     * 2. Конвертированный (isTemporary=false, chatKey='chat_3401') → загружать
+     * 3. Локальный (isTemporary=false, chatKey='chat_key_0') → НЕ загружать
+     */
 
     /**
      * Открытие режима поиска.
@@ -675,7 +698,7 @@ export default function ChatRoom({
                 }
                 onConfirm={handleDeleteSelectedConfirm}
                 isOwnMessage={selectedMessages.every(
-                    (m) => m.from_user == currentUserId,
+                    (m) => m.from_user === currentUserId,
                 )}
                 chatName={chatName}
             />
