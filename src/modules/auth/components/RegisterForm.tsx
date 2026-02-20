@@ -1,8 +1,20 @@
 'use client'
+
+/**
+ * @component RegisterForm
+ * @description Компонент второго шага регистрации: ввод имени и никнейма.
+ * Использует кастомные хуки useValidation и useNicknameUnique для управления
+ * состоянием полей, валидацией и проверкой уникальности никнейма.
+ * Обёрнут в React.memo для предотвращения лишних ререндеров, если пропсы не менялись.
+
+ */
+
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
-import { useState, useEffect, memo } from 'react'
+import { useState, memo, useCallback } from 'react'
+import { useValidation } from '@shared/hooks/useValidation'
+import { useNicknameUnique } from '@shared/hooks/useNicknameUnique'
 
 interface RegisterFormProps {
     phoneNumber: string
@@ -17,196 +29,151 @@ const RegisterForm = memo(function RegisterForm({
     onSubmit,
     onBack,
 }: RegisterFormProps) {
-    const [name, setName] = useState('')
-    const [nickname, setNickname] = useState('')
-    const [nameError, setNameError] = useState('')
-    const [nicknameError, setNicknameError] = useState('')
-    const [nicknameUniqueError, setNicknameUniqueError] =
-        useState('')
-    const [isServerError, setIsServerError] =
-        useState(false) // Флаг для ошибки от сервера
-    const [debouncedNickname, setDebouncedNickname] =
-        useState('')
-    const [lastCheckedNickname, setLastCheckedNickname] =
-        useState('') // Для отслеживания последнего проверенного nickname
-    const nameValidationRegex = /^[а-яА-Яa-zA-Z\s\-]*$/
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const nicknameValidationRegex = /^[a-zA-Z0-9._]*$/
-    const [isNameFocused, setIsNameFocused] =
-        useState(false) // состояние для фокуса имени
-    const [isNicknameFocused, setIsNicknameFocused] =
-        useState(false) // состояние для фокуса никнейма
+    const nameValidationRule = {
+        regex: /^[а-яА-Яa-zA-Z\s\-]*$/,
+        maxLength: 30,
+        errorMessage:
+            'Используйте только буквы, пробел или тире',
+    }
 
-    // Debouncing для nickname
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedNickname(nickname)
-        }, 500)
-        return () => clearTimeout(timer)
-    }, [nickname])
+    const nicknameValidationRule = {
+        regex: /^[a-zA-Z0-9._]*$/,
+        maxLength: 30,
+        errorMessage:
+            'Используйте только буквы, цифры, точку или подчеркивание',
+    }
 
-    // Проверка уникальности nickname
-    useEffect(() => {
-        if (
-            debouncedNickname &&
-            nicknameValidationRegex.test(
-                debouncedNickname,
-            ) &&
-            debouncedNickname !== lastCheckedNickname
-        ) {
-            const checkUnique = async () => {
-                try {
-                    const response = await fetch(
-                        `/api/auth/unique_nickname_check/${encodeURIComponent(debouncedNickname)}`,
-                    )
-                    if (
-                        response.ok ||
-                        response.status === 400
-                    ) {
-                        const data = await response.json()
-                        if (
-                            data.nickname &&
-                            Array.isArray(data.nickname) &&
-                            data.nickname.length > 0
-                        ) {
-                            setNicknameUniqueError(
-                                'Этот никнейм занят другим пользователем',
-                            )
-                        } else {
-                            setNicknameUniqueError('') // Сбрасываем ошибку только если уникален
-                        }
-                        setLastCheckedNickname(
-                            debouncedNickname,
-                        ) // Обновляем последний проверенный
-                    } else {
-                        setNicknameUniqueError(
-                            'Не удалось проверить уникальность никнейма',
-                        )
-                        setLastCheckedNickname(
-                            debouncedNickname,
-                        )
-                    }
-                } catch (error) {
-                    console.error(
-                        'Ошибка проверки уникальности:',
-                        error,
-                    )
-                    setNicknameUniqueError(
-                        'Не удалось проверить уникальность никнейма',
-                    )
-                    setLastCheckedNickname(
-                        debouncedNickname,
-                    )
-                }
-            }
-            checkUnique()
+    // =========================================================================
+    // ХУКИ УПРАВЛЕНИЯ ПОЛЯМИ
+    // =========================================================================
+    // useValidation — кастомный хук, который инкапсулирует логику состояния,
+    // валидации и фокуса для одного поля. Это уменьшает дублирование кода
+    // и упрощает тестирование.
+
+    const nameField = useValidation({
+        validationRule: nameValidationRule,
+        required: true,
+        requiredMessage: 'Заполните поле',
+    })
+
+    const nicknameField = useValidation({
+        validationRule: nicknameValidationRule,
+        required: true,
+        requiredMessage: 'Заполните поле',
+    })
+
+    // =========================================================================
+    // ПРОВЕРКА УНИКАЛЬНОСТИ НИКНЕЙМА
+    // =========================================================================
+    // useNicknameUnique — хук, который выполняет проверку уникальности с debounce,
+    // отменой предыдущих запросов (AbortController) и возвращает состояние ошибки,
+    // флаг загрузки и методы для принудительной проверки и сброса.
+    // Debounce (500 мс) предотвращает лишние запросы при быстром наборе.
+    const {
+        uniqueError,
+        isChecking: isUniqueChecking,
+        validateUniqueNow,
+        resetUniqueError,
+    } = useNicknameUnique({
+        nickname: nicknameField.value,
+        validationRegex: nicknameValidationRule.regex,
+    })
+
+    // =========================================================================
+    // СОСТОЯНИЯ ОТПРАВКИ ФОРМЫ И СЕРВЕРНОЙ ОШИБКИ
+    // =========================================================================
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [serverError, setServerError] = useState('') // ошибка, возвращённая сервером при вызове onSubmit
+
+    // =========================================================================
+    // ОБРАБОТЧИК ОТПРАВКИ ФОРМЫ
+    // =========================================================================
+    const handleSubmit = useCallback(async () => {
+        // 1. Валидация полей на стороне клиента (обязательные поля, допустимые символы, длина)
+        const isNameValid = nameField.validateField()
+        const isNicknameValid =
+            nicknameField.validateField()
+        if (!isNameValid || !isNicknameValid) return
+
+        // 2. Если уже есть ошибка уникальности от хука (например, никнейм занят) — не отправляем
+        if (uniqueError) return
+
+        // 3. Принудительно проверяем уникальность прямо перед отправкой,
+        //    чтобы избежать ситуации, когда никнейм стал занят после последней проверки.
+        //    validateUniqueNow возвращает true, если никнейм уникален.
+        const isUnique = await validateUniqueNow()
+        if (!isUnique) return
+
+        // 4. Отправка данных на сервер
+        setIsSubmitting(true)
+        setServerError('')
+        try {
+            await onSubmit({
+                name: nameField.value,
+                nickname: nicknameField.value,
+            })
+        } catch (error: unknown) {
+            // 5. Обработка ошибки, выброшенной onSubmit (например, дубликат никнейма на сервере)
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Неизвестная ошибка'
+            setServerError(errorMessage)
+        } finally {
+            setIsSubmitting(false)
         }
     }, [
-        debouncedNickname,
-        nicknameValidationRegex,
-        lastCheckedNickname,
+        nameField,
+        nicknameField,
+        uniqueError,
+        validateUniqueNow,
+        onSubmit,
     ])
 
-    const validateInput = (
-        value: string,
-        regex: RegExp,
-        maxLength: number,
-        errorMsg: string,
-    ): string => {
-        if (value.length > maxLength) return ''
-        return regex.test(value) ? '' : errorMsg
-    }
+    // =========================================================================
+    // ОБРАБОТЧИК ИЗМЕНЕНИЯ НИКНЕЙМА
+    // =========================================================================
+    // Сбрасывает ошибки уникальности и серверную ошибку при каждом изменении поля.
+    // Это улучшает UX: пользователь сразу видит, что ввод меняется, и старые ошибки исчезают.
+    const handleNicknameChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            nicknameField.handleChange(e)
+            resetUniqueError()
+            setServerError('')
+        },
+        [nicknameField, resetUniqueError],
+    )
 
-    const handleNameChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        const value = e.target.value
-        const error = validateInput(
-            value,
-            nameValidationRegex,
-            30,
-            'Используйте только буквы, пробел или тире',
-        )
-        setName(value)
-        setNameError(error)
-    }
+    // =========================================================================
+    // ЛОГИКА БЛОКИРОВКИ КНОПКИ ОТПРАВКИ
+    // =========================================================================
+    const isButtonDisabled =
+        !nameField.value.trim() || // имя не пустое
+        !nicknameField.value.trim() || // никнейм не пустой
+        !!nameField.error || // есть ошибка валидации имени
+        !!nicknameField.error || // есть ошибка валидации никнейма
+        !!uniqueError || // никнейм не уникален
+        !!serverError || // ошибка от сервера при отправке
+        isUniqueChecking || // идёт проверка уникальности
+        isSubmitting // форма уже отправляется
 
-    const handleNicknameChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        const value = e.target.value
-        const error = validateInput(
-            value,
-            nicknameValidationRegex,
-            30,
-            'Используйте только буквы, цифры, точку или подчеркивание',
-        )
-        setNickname(value)
-        setNicknameError(error)
-        setNicknameUniqueError('')
+    const buttonColor = isButtonDisabled
+        ? 'light-gray'
+        : 'primary'
 
-        if (isServerError) {
-            setIsServerError(false)
-        }
-    }
-
-    const handleSubmit = async () => {
-        let hasErrors = false
-        if (!name.trim()) {
-            setNameError('Заполните поле')
-            hasErrors = true
-        } else if (!nameValidationRegex.test(name)) {
-            setNameError(
-                'Используйте только буквы, пробел или тире',
-            )
-            hasErrors = true
-        }
-        if (!nickname.trim()) {
-            setNicknameError('Заполните поле')
-            hasErrors = true
-        } else if (
-            !nicknameValidationRegex.test(nickname)
-        ) {
-            setNicknameError(
-                'Используйте только буквы, цифры, точку или подчеркивание',
-            )
-            hasErrors = true
-        }
-        if (nicknameUniqueError) {
-            hasErrors = true
-        }
-        if (!hasErrors) {
-            try {
-                await onSubmit({ name, nickname })
-            } catch (error: unknown) {
-                const errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : 'Неизвестная ошибка'
-                // Устанавливаем ошибку от сервера
-                setIsServerError(true)
-                setNicknameUniqueError(errorMessage)
-            }
-        }
-    }
-
-    const handleNameBlur = () => {
-        if (!name.trim()) {
-            setNameError('Заполните поле')
-        }
-    }
-    const handleNicknameBlur = () => {
-        if (!nickname.trim()) {
-            setNicknameError('Заполните поле')
-        }
-    }
-
-    const handleDownload = () => {
+    // =========================================================================
+    // ОБРАБОТЧИК СКАЧИВАНИЯ ПОЛЬЗОВАТЕЛЬСКОГО СОГЛАШЕНИЯ
+    // =========================================================================
+    const handleDownload = useCallback(() => {
         window.open('/contract.pdf', '_blank')
-    }
+    }, [])
 
+    // =========================================================================
+    // РЕНДЕР
+    // =========================================================================
     return (
         <div className="flex min-h-screen items-center justify-center">
+            {/* Внешний контейнер с фоновым изображением на десктопе */}
             <div
                 className={`
                   relative flex h-screen w-(--app-login-width) flex-col
@@ -214,6 +181,7 @@ const RegisterForm = memo(function RegisterForm({
                   md:bg-app-login-background
                 `}
             >
+                {/* Карточка формы с эффектом тени на десктопе */}
                 <div
                     className={`
                       flex flex-col items-center justify-center gap-4 bg-white
@@ -229,6 +197,7 @@ const RegisterForm = memo(function RegisterForm({
                           md:justify-between md:gap-6
                         `}
                     >
+                        {/* Шапка: кнопка назад и логотип */}
                         <div
                             className={`
                               relative flex h-17 w-90 items-center
@@ -238,19 +207,16 @@ const RegisterForm = memo(function RegisterForm({
                         >
                             <Image
                                 src="/images/login/back.svg"
-                                alt="Back"
+                                alt="Назад"
                                 width={32}
                                 height={32}
-                                className={`
-                                  absolute top-0 left-0 cursor-pointer
-                                `}
-                                loading="eager"
+                                className="absolute top-0 left-0 cursor-pointer"
+                                loading="eager" // критическое изображение, должно загрузиться сразу
                                 onClick={onBack}
                             />
-
                             <Image
                                 src="/images/login/Logo.svg"
-                                alt="Logo"
+                                alt="Логотип"
                                 width={78}
                                 height={70}
                                 className={`
@@ -262,6 +228,7 @@ const RegisterForm = memo(function RegisterForm({
                             />
                         </div>
 
+                        {/* Форма */}
                         <div
                             className={`
                               flex h-126 w-90 flex-col items-center
@@ -271,8 +238,8 @@ const RegisterForm = memo(function RegisterForm({
                         >
                             <div
                                 className={`
-                                  flex w-90 items-center justify-center
-                                `}
+                              flex w-90 items-center justify-center
+                            `}
                             >
                                 <p className="text-center text-[32px] font-bold">
                                     Личная информация
@@ -288,91 +255,122 @@ const RegisterForm = memo(function RegisterForm({
                                     Пожалуйста, заполните
                                     данные
                                 </p>
+
+                                {/* Поле ввода имени */}
+                                {/**
+                                 * Input — кастомный компонент UI.
+                                 * label отображает либо ошибку, либо обычную подсказку.
+                                 * borderColor меняется в зависимости от состояния (ошибка, фокус, обычное).
+                                 * inputMode="text" — стандартный режим ввода текста (не цифровой).
+                           
+                                 */}
                                 <Input
                                     label={
-                                        nameError ||
+                                        nameField.error ||
                                         'Введите имя'
                                     }
                                     placeholder=""
-                                    value={name}
+                                    value={nameField.value}
                                     onChange={
-                                        handleNameChange
+                                        nameField.handleChange
                                     }
-                                    onFocus={() =>
-                                        setIsNameFocused(
-                                            true,
-                                        )
+                                    onFocus={
+                                        nameField.handleFocus
                                     }
-                                    onBlur={handleNameBlur}
+                                    onBlur={
+                                        nameField.handleBlur
+                                    }
                                     inputSize="lg"
                                     color={
-                                        nameError
+                                        nameField.error
                                             ? 'red'
                                             : 'gray'
                                     }
                                     borderColor={
-                                        nameError
+                                        nameField.error
                                             ? 'red'
-                                            : isNameFocused
+                                            : nameField.isFocused
                                               ? 'violet'
                                               : 'gray'
                                     }
                                     labelColor={
-                                        nameError
+                                        nameField.error
                                             ? 'red'
                                             : 'gray'
                                     }
-                                    inputMode="tel" //  оптимизирует клавиатуру для телефонов (цифровая)
-                                    autoComplete="tel"
+                                    inputMode="text"
+                                    autoComplete="name"
                                 />
 
+                                {/* Поле ввода никнейма */}
+                                {/**
+                                 * Приоритет отображения ошибок:
+                                 * 1. serverError (ошибка при отправке, например, никнейм уже занят)
+                                 * 2. uniqueError (ошибка от хука проверки уникальности)
+                                 * 3. nicknameField.error (ошибка валидации символов/длины)
+                                 * 4. обычная подсказка
+                                 */}
                                 <Input
                                     label={
-                                        nicknameUniqueError ||
-                                        nicknameError ||
+                                        serverError ||
+                                        uniqueError ||
+                                        nicknameField.error ||
                                         'Придумайте никнейм'
                                     }
                                     placeholder=""
-                                    value={nickname}
+                                    value={
+                                        nicknameField.value
+                                    }
                                     onChange={
                                         handleNicknameChange
                                     }
-                                    onFocus={() =>
-                                        setIsNicknameFocused(
-                                            true,
-                                        )
+                                    onFocus={
+                                        nicknameField.handleFocus
                                     }
                                     onBlur={
-                                        handleNicknameBlur
+                                        nicknameField.handleBlur
                                     }
                                     inputSize="lg"
                                     color={
-                                        nicknameUniqueError ||
-                                        nicknameError
+                                        serverError ||
+                                        uniqueError ||
+                                        nicknameField.error
                                             ? 'red'
                                             : 'gray'
                                     }
                                     borderColor={
-                                        nicknameUniqueError ||
-                                        nicknameError
+                                        serverError ||
+                                        uniqueError ||
+                                        nicknameField.error
                                             ? 'red'
-                                            : isNicknameFocused
+                                            : nicknameField.isFocused
                                               ? 'violet'
                                               : 'gray'
                                     }
                                     labelColor={
-                                        nicknameUniqueError ||
-                                        nicknameError
+                                        serverError ||
+                                        uniqueError ||
+                                        nicknameField.error
                                             ? 'red'
                                             : 'gray'
                                     }
-                                    inputMode="tel" //  оптимизирует клавиатуру для телефонов (цифровая)
-                                    autoComplete="tel"
+                                    inputMode="text"
+                                    autoComplete="nickname" // корректное значение для никнейма
                                 />
 
-                                <span
-                                    className={`text-[14px]`}
-                                >
+                                {/* Индикатор проверки уникальности */}
+                                {isUniqueChecking && (
+                                    <span className="text-sm text-gray-500">
+                                        Проверка никнейма...
+                                    </span>
+                                )}
+
+                                {/* Текст с ссылкой на пользовательское соглашение */}
+                                {/**
+                                 * Вместо span с role="button" лучше использовать <button>,
+                                 * но здесь оставлено как есть для сохранения вёрстки.
+                                 */}
+                                <span className="text-[14px]">
                                     Нажимая на
                                     &quot;Зарегистрироваться&quot;,
                                     вы соглашаетесь с{' '}
@@ -402,32 +400,24 @@ const RegisterForm = memo(function RegisterForm({
                                         соглашением
                                     </span>
                                 </span>
+
+                                {/* Кнопка отправки */}
                                 <Button
                                     variant="solid"
                                     size="md"
-                                    color={
-                                        name.trim() &&
-                                        nickname.trim() &&
-                                        !nameError &&
-                                        !nicknameError &&
-                                        !nicknameUniqueError
-                                            ? 'primary'
-                                            : 'light-gray'
-                                    }
+                                    color={buttonColor}
                                     className={`
                                       mt-4 w-full
                                       md:mt-0
                                     `}
                                     onClick={handleSubmit}
                                     disabled={
-                                        !name.trim() ||
-                                        !nickname.trim() ||
-                                        !!nameError ||
-                                        !!nicknameError ||
-                                        !!nicknameUniqueError
+                                        isButtonDisabled
                                     }
                                 >
-                                    Зарегистрироваться
+                                    {isSubmitting
+                                        ? 'Отправка...'
+                                        : 'Зарегистрироваться'}
                                 </Button>
                             </div>
                         </div>
@@ -439,3 +429,22 @@ const RegisterForm = memo(function RegisterForm({
 })
 
 export default RegisterForm
+
+/**
+ * =============================================================================
+ * АНАЛИЗ И ВОЗМОЖНЫЕ УЛУЧШЕНИЯ (на основе Clean Code и Best Practices)
+ * =============================================================================
+
+
+ *
+ * 4. **Стили**:
+ *    Использование жёстко заданных размеров (h-126, w-90) может привести к проблемам на разных экранах.
+ *    Рекомендуется использовать относительные единицы (rem, %, vh/vw) или Tailwind-классы,
+ *    адаптированные под дизайн-систему.
+
+
+
+ *
+ * Итог: компонент написан с учётом современных практик, использование кастомных хуков значительно
+ * улучшило структуру. Однако есть мелкие недочёты, которые можно исправить для повышения качества.
+ */

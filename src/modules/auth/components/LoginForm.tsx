@@ -1,63 +1,134 @@
 'use client'
+// Импортируем переиспользуемые компоненты из общей директории UI
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Modal from '@shared/ui/modal/Modal'
+// Импорт Next.js компонента Image
+// Используем next/image для оптимизации картинок (автоматический webp, lazy load)
+// Примечание: в данном компоненте используется статика, поэтому loading="eager" оправдан для LCP
 import Image from 'next/image'
+// Хуки маршрутизации Next.js App Router
 import { useRouter } from 'next/navigation'
+// Импорт React хуков для управления состоянием
 import { useState, useRef, useEffect } from 'react'
+// Импорт дочерних компонентов формы
+// Логика разбита на подкомпоненты для чистоты главного файла
 import CodeConfirmForm from './CodeConfirmForm'
 import RegisterForm from './RegisterForm'
 import SuccessRegister from './SuccessRegister'
+// Импорт библиотеки для работы с Cookies
+// ВНИМАНИЕ: Использование js-cookie (клиентские куки) для токенов небезопасно.
+// Предпочтительнее использовать HttpOnly куки, устанавливаемые сервером (Set-Cookie в ответе API).
+// Этот подход уязвим к XSS атакам, так как токены доступны через document.cookie.
 import Cookies from 'js-cookie'
+// Кастомный хук для определения мобильных устройств
+// Используется для адаптивного рендеринга (мобильная версия не имеет фонового изображения)
 import useIsMobile from '@shared/hooks/useIsMobile'
-
+// Компонент формы входа/регистрации
+// Основной компонент, управляющий состоянием всего процесса аутентификации.
+// Состояние меняется от ввода телефона -> подтверждения кода -> заполнения профиля -> успеха.
 export default function LoginForm() {
     const router = useRouter()
+
+    // Состояние: номер телефона (отформатированная строка)
+    // Храним отформатированную строку, чтобы не форматировать при каждом рендере,
+    // хотя для value в инпуте можно использовать и сырые данные, форматируя при выводе.
     const [phoneNumber, setPhoneNumber] = useState('')
+
+    // Ссылка на DOM-элемент инпута
+    // Нужен для программной установки курсора (каретки) в нужную позицию
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // Логика блокировки (Rate Limiting)
+    // attempts: количество неудачных попыток ввода кода.
     const [attempts, setAttempts] = useState(0)
+
+    // isBlocked: флаг, указывающий, заблокирован ли пользователь из-за частых ошибок.
     const [isBlocked, setIsBlocked] = useState(false)
+
+    // blockTime: оставшееся время блокировки в секундах.
     const [blockTime, setBlockTime] = useState(0)
+
+    // Состояния загрузки и ошибок
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+
+    // showCodeForm: показать форму ввода SMS-кода.
     const [showCodeForm, setShowCodeForm] = useState(false)
+
+    // isModalOpen: показать модальное окно подтверждения номера.
     const [isModalOpen, setIsModalOpen] = useState(false)
+
+    // ВНИМАНИЕ: Название переменной не соответствует логике!
+    // Эта переменная отвечает за показ ФОРМЫ РЕГИСТРАЦИИ (ввод имени и никнейма),
+    // но называется showLoginForm (Показать форму входа).
+    // Это запутывает код. Следует переименовать в showRegisterForm.
     const [showLoginForm, setShowLoginForm] =
         useState(false)
+
+    // showSuccessRegister: финальный экран после успешного заполнения профиля.
     const [showSuccessRegister, setShowSuccessRegister] =
         useState(false)
+
     // Определение мобильного режима (ширина ≤768px)
+    // Передается в стили для скрытия тяжелых фоновых изображений на телефонах.
     const isMobile = useIsMobile()
 
+    // Обработчик кнопки "Назад" (на главном экране ввода телефона)
+    // Перенаправляет пользователя на страницу выбора способа входа
     const handleStartClick = () => {
         router.push('/auth/login')
     }
 
-    //формат номера
+    // Форматирование номера телефона
+    // Логика: Мы принимаем только цифры, отбрасывая весь мусор (\D),
+    // а затем собираем строку в формате +7 (999) 999-99-99.
+    // ВАЖНО: Этот код жестко заточен под российские номера (+7).
     const handleInput = (
         e: React.ChangeEvent<HTMLInputElement>,
     ) => {
+        // 1. Удаляем все нечисловые символы
         const input = e.target.value.replace(/\D/g, '')
+
+        // Получаем длину "чистых" цифр
         const length = input.length
+
+        // Если пользователь стер все цифры - сбрасываем состояние
         if (length === 0) {
             setPhoneNumber('')
             return
         }
-        // Форматирование: +7 (999) 999-99-99
+
+        // Формируем строку: всегда начинаем с +7
+        // Почему +7? Это хардкод для РФ. В идеале должно браться из локали или API.
         let formatted = '+7 '
+
+        // Добавляем код оператора (3 цифры после +7)
+        // input.substring(1, 4) берет цифры со 2-й по 4-ю (пропускаем '7' в начале)
         if (length > 1) {
             formatted += '(' + input.substring(1, 4)
         }
+
+        // Добавляем первые 3 цифры номера
         if (length >= 5) {
             formatted += ') ' + input.substring(4, 7)
         }
+
+        // Добавляем следующие 2 цифры
         if (length >= 8) {
             formatted += ' ' + input.substring(7, 9)
         }
+
+        // Добавляем последние 2 цифры
         if (length >= 10) {
             formatted += ' ' + input.substring(9, 11)
         }
+
         setPhoneNumber(formatted)
+        // КОСТЫЛЬ (Workaround): setSelectionRange требует, чтобы DOM обновился.
+        // React обновляет состояние асинхронно. Поэтому мы используем setTimeout(0),
+        // чтобы переместить курсор ПОСЛЕ того, как React применит изменения к инпуту.
+        // Без этого курсор будет прыгать в начало или конец при вводе.
         setTimeout(() => {
             if (inputRef.current) {
                 inputRef.current.setSelectionRange(
@@ -67,11 +138,14 @@ export default function LoginForm() {
             }
         }, 0)
     }
-
+    // Управление фокусом (позиция курсора)
+    // При клике на инпут нам нужно, чтобы курсор стоял после кода страны +7,
+    // чтобы пользователь мог сразу вводить номер, а не стирать +7.
     const handleFocus = () => {
-        // устанавка курсора
         setTimeout(() => {
             if (inputRef.current) {
+                // Если номер уже введен (>2 символов), ставим курсор на позицию 3 (после "+7 ").
+                // Иначе на позицию 2 (после "+7").
                 const position =
                     phoneNumber.length > 2 ? 3 : 2
                 inputRef.current.setSelectionRange(
@@ -82,13 +156,17 @@ export default function LoginForm() {
         }, 0)
     }
 
-    // проверка: введено ли +7 + 10 цифр (всего 11 цифр: 7 + 10)
+    // Валидация номера
+    // Проверяем, что в номере ровно 11 цифр (7 - код страны + 10 цифр номера).
     const isPhoneValid =
         phoneNumber.replace(/\D/g, '').length === 11
+
+    // Показываем ошибку только если пользователь уже начал вводить (длина > 2)
+    // и номер при этом валидным не является.
     const showError =
         phoneNumber.length > 2 && !isPhoneValid
 
-    // открытие модального окна
+    // Открытие модального окна подтверждения
     const handleOpenModal = () => {
         setIsModalOpen(true)
     }
@@ -141,7 +219,23 @@ export default function LoginForm() {
     }
 
     // Функция для проверки профиля и навигации
+    // ВЫЗЫВАЕТ ВОПРОСЫ:
+    // 1. Почему GET запрос на получение профиля сделан как POST?
+    //    Скорее всего, бэкенд API спроектирован нестандартно или здесь ошибка архитектуры.
+    //    Обычно профиль получают через GET /api/auth/profile (без тела запроса).
+    //    Примечание: В коде ниже передается пустое тело JSON.stringify({}), что выглядит как костыль.
+    //
+    // 2. Почему мы проверяем профиль сразу после логина?
+    //    Потому что логин может означать:
+    //    а) Пользователь существует и профиль заполнен -> его сразу пускают в приложение (/contacts)
+    //    б) Пользователь существует, но профиль пустой -> его просят заполнить данные (RegisterForm)
     const checkProfileAndNavigate = async () => {
+        // Безопасность: Проблема XSS!
+        // Cookies.get() доступен JavaScript на клиенте. Это означает, что токен может быть
+        // украден через XSS атаку (Cross-Site Scripting).
+        // ПРАВИЛЬНЫЙ подход: Хранить access_token в HttpOnly cookie.
+        // Тогда браузер сам подставлял бы его в заголовки, но JS бы его не видел.
+        // Cookies.get() в таком случае вернул бы undefined (если не настроены другие куки).
         const accessToken = Cookies.get('access_token')
         if (!accessToken) {
             console.error('Access token не найден')
@@ -152,7 +246,7 @@ export default function LoginForm() {
             const response = await fetch(
                 '/api/auth/profile',
                 {
-                    method: 'POST', // Измените на GET для получения профиля
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${accessToken}`,
@@ -205,6 +299,10 @@ export default function LoginForm() {
         console.log(
             'Отправка запроса на верификацию:',
             requestBody,
+        )
+        console.log(
+            '[Parent] onVerify called with code:',
+            code,
         )
         try {
             const response = await fetch(
@@ -264,6 +362,8 @@ export default function LoginForm() {
     }
 
     // Функция для обработки данных из RegisterForm
+    // Вызывается после того, как пользователь ввел имя и никнейм.
+    // По сути это финальный шаг регистрации.
     const handleLoginSubmit = async (data: {
         name: string
         nickname: string
@@ -271,7 +371,7 @@ export default function LoginForm() {
         console.log('Личные данные:', data)
         setLoading(true)
         setError('')
-
+        // Берем токен, который могли сохранить ранее.
         const accessToken = Cookies.get('access_token')
         try {
             const response = await fetch(
@@ -280,6 +380,8 @@ export default function LoginForm() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        // Если токен есть (пользователь уже верифицировал телефон ранее),
+                        // передаем его для авторизации запроса.
                         ...(accessToken && {
                             Authorization: `Bearer ${accessToken}`,
                         }),
@@ -305,7 +407,14 @@ export default function LoginForm() {
             )
 
             if (response.ok) {
+                // Данные сохранены успешно.
+                // Показываем экран "Успешной регистрации".
                 setShowSuccessRegister(true) // показать SuccessRegister
+                // Обработка ошибок валидации.
+                // Бэкенд часто возвращает ошибки в специфичном формате.
+                // Здесь предполагается, что если никнейм занят, он вернет:
+                // { nickname: ["Этот никнейм уже занят"] }
+                // Проверяем именно это поле.
             } else {
                 const errorMessage =
                     responseData.nickname?.[0] ||
@@ -320,23 +429,39 @@ export default function LoginForm() {
     }
 
     // Таймер блокировки
+    // Таймер блокировки.
+    // В React useEffect срабатывает после рендера.
+    // Мы слушаем изменения blockTime. Если оно > 0, запускаем интервал.
     useEffect(() => {
         if (blockTime > 0) {
+            // Запускаем интервал, который уменьшает blockTime каждую секунду.
+            // setInterval работает независимо от рендеров компонента.
             const timer = setInterval(() => {
+                // Используем функциональную форму обновления state,
+                // чтобы не зависеть от внешней переменной blockTime (замыкание).
                 setBlockTime((prev) => prev - 1)
             }, 1000)
+            // ВАЖНО: Возвращаем функцию очистки.
+            // Если компонент размонтируется (пользователь уйдет со страницы),
+            // таймер остановится, чтобы не утекала память.
+            // Также таймер перезапустится, когда blockTime изменится (зависимость массива).
             return () => clearInterval(timer)
         } else {
+            // Если таймер дошел до 0, снимаем флаг блокировки.
+            // Теоретически, этот else можно убрать, если проверять isBlocked внутри рендера,
+            // но так мы явно сбрасываем состояние блока.
             setIsBlocked(false)
         }
     }, [blockTime])
 
     const handleBackToForm = () => setShowCodeForm(false)
-
+    // Экран 4: Успешная форма регистрации
     if (showSuccessRegister) {
         return <SuccessRegister />
     }
 
+    // Экран 3: Заполнение профиля (Имя, Никнейм).
+    // Показывается, если пользователь новый или нужно обновить данные.
     if (showLoginForm) {
         return (
             <RegisterForm
@@ -346,7 +471,8 @@ export default function LoginForm() {
             />
         )
     }
-
+    // Экран 2: Подтверждение кода (SMS).
+    // Показывается после успешной отправки номера.
     if (showCodeForm) {
         return (
             <CodeConfirmForm
@@ -362,7 +488,7 @@ export default function LoginForm() {
             />
         )
     }
-
+    // Экран 1: Ввод номера телефона (По умолчанию).
     return (
         <>
             <div className="flex min-h-screen items-center justify-center">
@@ -371,6 +497,9 @@ export default function LoginForm() {
                       relative flex h-screen w-(--app-login-width) flex-col
                       items-center justify-center bg-transparent
                     `}
+                    // Условный фон. Если мобильное устройство - фон отключаем (isMobile).
+                    // Это связано с тем, что на мобильных часто используется нативный фон страницы
+                    // или CSS переменные не работают корректно с background-image.
                     style={{
                         backgroundImage: isMobile
                             ? 'none'
