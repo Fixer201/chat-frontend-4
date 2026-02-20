@@ -258,8 +258,8 @@ export default function CodeConfirmForm({
                             {/* Заголовок */}
                             <div
                                 className={`
-                              flex w-90 items-center justify-center
-                            `}
+                                  flex w-90 items-center justify-center
+                                `}
                             >
                                 <p
                                     className={`
@@ -291,13 +291,13 @@ export default function CodeConfirmForm({
                                 {/* Подпись "Введите код" с иконкой подсказки */}
                                 <div
                                     className={`
-                                  flex flex-row items-center gap-1
-                                `}
+                                      flex flex-row items-center gap-1
+                                    `}
                                 >
                                     <span
                                         className={`
-                                      text-center text-lg font-bold
-                                    `}
+                                          text-center text-lg font-bold
+                                        `}
                                     >
                                         Введите код
                                     </span>
@@ -379,8 +379,8 @@ export default function CodeConfirmForm({
                                 {error && (
                                     <span
                                         className={`
-                                      text-center text-sm text-red-500
-                                    `}
+                                          text-center text-sm text-red-500
+                                        `}
                                     >
                                         {error}
                                     </span>
@@ -422,13 +422,14 @@ export default function CodeConfirmForm({
                                                     )
                                                 }
                                                 className={`
-                                              h-15 w-15 rounded-lg border
-                                              border-accent-violet-primary
-                                              bg-transparent text-center text-lg
-                                              focus:border-4
-                                              focus:border-accent-violet-primary
-                                              focus:outline-none
-                                            `}
+                                                  h-15 w-15 rounded-lg border
+                                                  border-accent-violet-primary
+                                                  bg-transparent text-center
+                                                  text-lg
+                                                  focus:border-4
+                                                  focus:border-accent-violet-primary
+                                                  focus:outline-none
+                                                `}
                                                 maxLength={
                                                     1
                                                 }
@@ -462,8 +463,8 @@ export default function CodeConfirmForm({
                                 {canResend && (
                                     <div
                                         className={`
-                                      flex flex-col items-center gap-2
-                                    `}
+                                          flex flex-col items-center gap-2
+                                        `}
                                     >
                                         <span
                                             className={`
@@ -563,14 +564,3 @@ export default function CodeConfirmForm({
         </div>
     )
 }
-
-/**
- 
- * В useEffect для истечения срока было условие !canResend, что противоречиво.
- *    Мы его сохранили для совместимости, но в реальности при timeLeft === 0 canResend = true,
- *    поэтому модальное окно "Срок действия кода истек" никогда не откроется.
- *    Возможно, это ошибка исходного компонента. Рекомендуется уточнить логику:
- *    Если код не введён и время истекло — показать сообщение.
- 
-
- */
