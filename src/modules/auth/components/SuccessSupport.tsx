@@ -1,29 +1,17 @@
 'use client'
-// Этот компонент представляет собой экран успеха отправки обращения в службу поддержки (SuccessSupport).
-// Он отображает подтверждение отправки, иконку успеха и кнопку для возврата на главную.
-// Основные функции:
-// - Адаптивный дизайн: Полноэкранный на мобильных, модальное окно на десктопе.
-// - Навигация: Кнопка "На главную" для перехода к логину.
-// - Условный рендер: Логотип и кнопка назад только на десктопе.
 
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import useIsMobile from '@shared/hooks/useIsMobile'
 
-// Интерфейс пропсов: Определяет тип для onBack (функция возврата).
-
 interface SuccessSupportProps {
     onBack: () => void
 }
 
-// Основная функция компонента SuccessSupport.
-// Принимает пропс onBack.
-
 export default function SuccessSupport({
     onBack,
 }: SuccessSupportProps) {
-    // Хук useRouter: Получаем экземпляр роутера для программной навигации.
     // Используется для перехода на '/auth/login'.
 
     const router = useRouter()
@@ -38,8 +26,6 @@ export default function SuccessSupport({
     // Используется для условного рендера (логотип и кнопка назад только на десктопе).
     const isMobile = useIsMobile()
 
-    // Возврат JSX: Рендер экрана успеха.
-    // Используем Tailwind CSS для адаптивного дизайна.
     return (
         <>
             {/* Внешний контейнер: Центрирует контент по экрану.

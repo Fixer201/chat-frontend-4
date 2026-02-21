@@ -1,13 +1,4 @@
 'use client'
-
-// Этот компонент представляет собой форму запроса в службу поддержки (SupportRequestForm).
-// Он позволяет пользователю ввести email, описать проблему и отправить запрос.
-// Основные функции:
-// - Валидация email в реальном времени.
-// - Отправка данных на API.
-// - Адаптивный дизайн: Полноэкранный на мобильных, модальное окно на десктопе.
-// - Навигация: Возврат к предыдущему шагу или успех.
-
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
@@ -29,8 +20,6 @@ export default function SupportRequestForm({
     phoneNumber,
     onBack,
 }: SupportRequestFormProps) {
-    // Хук useRouter: Получаем экземпляр роутера для программной навигации.
-    // Используется для перехода на '/auth/login' после отправки.
     const router = useRouter()
 
     // Состояние email: Хранит введенный email пользователя.
@@ -45,12 +34,8 @@ export default function SupportRequestForm({
     // Инициализируется false.
     const [loading, setLoading] = useState(false)
 
-    // Состояние emailError: Хранит текст ошибки валидации email.
-    // Инициализируется пустой строкой.
     const [emailError, setEmailError] = useState('')
 
-    // Ref для input: Позволяет программно управлять фокусом или позицией курсора.
-    // Инициализируется null.
     const inputRef = useRef<HTMLInputElement>(null)
 
     // Состояние showSuccessSupport: Управляет показом компонента успеха.
