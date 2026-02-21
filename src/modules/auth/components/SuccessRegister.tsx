@@ -1,16 +1,12 @@
-// Директива указывает, что компонент рендерится на клиенте.
-// Это необходимо, так как мы используем хуки (useState, useRouter, useIsMobile) и работаем с cookies.
 'use client'
-// Импорт кнопки из общего UI-кита.
-// Обеспечивает консистентность со стартовым экраном.
+
 import { Button } from '@shared/ui/button/Button'
-// Оптимизированный компонент изображения от Next.js.
-// Автоматически lazy load'ит изображения (если не указано иное), предотвращает сдвиги верстки (CLS).
+
 import Image from 'next/image'
-// Хук навигации для программного перехода (soft navigation).
+
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-// Утилита для работы с cookies на клиенте.
+
 import Cookies from 'js-cookie'
 import useIsMobile from '@shared/hooks/useIsMobile'
 import toast from 'react-hot-toast'

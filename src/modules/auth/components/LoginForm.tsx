@@ -1,28 +1,14 @@
 'use client'
-// Импортируем переиспользуемые компоненты из общей директории UI
 import { Button } from '@shared/ui/button/Button'
 import { Input } from '@shared/ui/Input'
 import Modal from '@shared/ui/modal/Modal'
-// Импорт Next.js компонента Image
-// Используем next/image для оптимизации картинок (автоматический webp, lazy load)
-// Примечание: в данном компоненте используется статика, поэтому loading="eager" оправдан для LCP
 import Image from 'next/image'
-// Хуки маршрутизации Next.js App Router
 import { useRouter } from 'next/navigation'
-// Импорт React хуков для управления состоянием
 import { useState, useRef, useEffect } from 'react'
-// Импорт дочерних компонентов формы
-// Логика разбита на подкомпоненты для чистоты главного файла
 import CodeConfirmForm from './CodeConfirmForm'
 import RegisterForm from './RegisterForm'
 import SuccessRegister from './SuccessRegister'
-// Импорт библиотеки для работы с Cookies
-// ВНИМАНИЕ: Использование js-cookie (клиентские куки) для токенов небезопасно.
-// Предпочтительнее использовать HttpOnly куки, устанавливаемые сервером (Set-Cookie в ответе API).
-// Этот подход уязвим к XSS атакам, так как токены доступны через document.cookie.
 import Cookies from 'js-cookie'
-// Кастомный хук для определения мобильных устройств
-// Используется для адаптивного рендеринга (мобильная версия не имеет фонового изображения)
 import useIsMobile from '@shared/hooks/useIsMobile'
 // Компонент формы входа/регистрации
 // Основной компонент, управляющий состоянием всего процесса аутентификации.
@@ -58,11 +44,6 @@ export default function LoginForm() {
 
     // isModalOpen: показать модальное окно подтверждения номера.
     const [isModalOpen, setIsModalOpen] = useState(false)
-
-    // ВНИМАНИЕ: Название переменной не соответствует логике!
-    // Эта переменная отвечает за показ ФОРМЫ РЕГИСТРАЦИИ (ввод имени и никнейма),
-    // но называется showLoginForm (Показать форму входа).
-    // Это запутывает код. Следует переименовать в showRegisterForm.
     const [showLoginForm, setShowLoginForm] =
         useState(false)
 
@@ -100,7 +81,7 @@ export default function LoginForm() {
         }
 
         // Формируем строку: всегда начинаем с +7
-        // Почему +7? Это хардкод для РФ. В идеале должно браться из локали или API.
+
         let formatted = '+7 '
 
         // Добавляем код оператора (3 цифры после +7)
@@ -217,25 +198,9 @@ export default function LoginForm() {
             setLoading(false)
         }
     }
-
     // Функция для проверки профиля и навигации
-    // ВЫЗЫВАЕТ ВОПРОСЫ:
-    // 1. Почему GET запрос на получение профиля сделан как POST?
-    //    Скорее всего, бэкенд API спроектирован нестандартно или здесь ошибка архитектуры.
-    //    Обычно профиль получают через GET /api/auth/profile (без тела запроса).
-    //    Примечание: В коде ниже передается пустое тело JSON.stringify({}), что выглядит как костыль.
-    //
-    // 2. Почему мы проверяем профиль сразу после логина?
-    //    Потому что логин может означать:
-    //    а) Пользователь существует и профиль заполнен -> его сразу пускают в приложение (/contacts)
-    //    б) Пользователь существует, но профиль пустой -> его просят заполнить данные (RegisterForm)
+
     const checkProfileAndNavigate = async () => {
-        // Безопасность: Проблема XSS!
-        // Cookies.get() доступен JavaScript на клиенте. Это означает, что токен может быть
-        // украден через XSS атаку (Cross-Site Scripting).
-        // ПРАВИЛЬНЫЙ подход: Хранить access_token в HttpOnly cookie.
-        // Тогда браузер сам подставлял бы его в заголовки, но JS бы его не видел.
-        // Cookies.get() в таком случае вернул бы undefined (если не настроены другие куки).
         const accessToken = Cookies.get('access_token')
         if (!accessToken) {
             console.error('Access token не найден')
@@ -429,9 +394,7 @@ export default function LoginForm() {
     }
 
     // Таймер блокировки
-    // Таймер блокировки.
-    // В React useEffect срабатывает после рендера.
-    // Мы слушаем изменения blockTime. Если оно > 0, запускаем интервал.
+
     useEffect(() => {
         if (blockTime > 0) {
             // Запускаем интервал, который уменьшает blockTime каждую секунду.
@@ -498,8 +461,7 @@ export default function LoginForm() {
                       items-center justify-center bg-transparent
                     `}
                     // Условный фон. Если мобильное устройство - фон отключаем (isMobile).
-                    // Это связано с тем, что на мобильных часто используется нативный фон страницы
-                    // или CSS переменные не работают корректно с background-image.
+
                     style={{
                         backgroundImage: isMobile
                             ? 'none'
