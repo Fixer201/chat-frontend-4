@@ -28,6 +28,7 @@
         "react": "19.2.0",
         "react-dom": "19.2.0",
         "react-easy-crop": "^5.2.1",
+        "react-hot-toast": "^2.6.0",
         "react-redux": "^9.2.0",
         "styled-components": "^6.1.19",
         "tailwind-merge": "^3.4.0",

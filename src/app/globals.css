@@ -52,6 +52,7 @@ body {
     );
     /* Custom App Colors - User Message */
     --color-teal-secondary: var(--app-teal-secondary);
+    --color-teal-dark: var(--app-teal-dark);
     --color-message-bg-other: var(--app-message-bg-other);
 
     /* Custom App Colors - System */
@@ -68,6 +69,10 @@ body {
     --color-call-modal-red: var(--app-call-modal-red);
     --color-call-modal-green: var(--app-call-modal-green);
     --color-call-timer-green: var(--app-call-timer-green);
+    --color-call-modal-border: var(--app-call-modal-border);
+    --color-call-modal-incoming-bg: var(
+        --app-call-modal-incoming-bg
+    );
 
     /* Custom App Colors - Shadows */
     --color-context-shadow: var(--app-context-shadow);
@@ -138,6 +143,8 @@ body {
     /* User Message Color */
     --app-teal-secondary: hsla(170, 59%, 90%, 1);
     /* Complementary/Teal Secondary */
+    --app-teal-dark: hsla(170, 45%, 40%, 1);
+    /* Complementary/Dark Teal */
     --app-message-bg-other: #eeeeee;
     /* Gray tone/Gray - фон сообщений собеседника */
 
@@ -173,6 +180,8 @@ body {
         49%,
         1
     ); /* Colors/Green */
+    --app-call-modal-border: #cec8ff4d;
+    --app-call-modal-incoming-bg: #d6d2f6;
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
     --app-call-timer-green: hsla(140, 100%, 37%, 1);
@@ -249,6 +258,8 @@ body {
     /* Colors/Red */
     --app-call-modal-green: hsla(135, 59%, 49%, 1);
     /* Colors/Green */
+    --app-call-modal-incoming-bg: #d6d2f6;
+    --app-call-modal-border: #cec8ff4d;
 
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
@@ -530,6 +541,58 @@ body {
         width: 100% !important;
         padding: 0 16px !important;
     }
+}
+
+@keyframes copy-toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes copy-toast-slide-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+}
+
+@keyframes call-dot-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.5);
+    }
+}
+
+@keyframes call-avatar-ring-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(206, 200, 255, 0.25);
+    }
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 0 6px rgba(206, 200, 255, 0.15);
+    }
+}
+
+@utility animate-copy-toast-in {
+    animation: copy-toast-slide-in 0.3s ease-out forwards;
+}
+
+@utility animate-copy-toast-out {
+    animation: copy-toast-slide-out 0.3s ease-in forwards;
 }
 
 @utility bg-app-login-background {
