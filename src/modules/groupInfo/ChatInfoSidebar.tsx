@@ -8,15 +8,10 @@ import { findGroupParticipantsByChatKey } from '@shared/lib/localStorageGroupPar
 import { transformFromApi } from '@shared/lib/transformChatData'
 import { ApiChatItem, ChatItem } from '@shared/types/chat'
 import GroupInfoSidebar from '@modules/groupInfo/GroupInfoSidebar'
+import ChannelInfoSidebar from '@modules/groupInfo/ChannelInfoSidebar' // импортируем новый компонент
 import { useChats } from '@shared/hooks/useChats'
 
 // Временные заглушки для других типов чатов
-const ChannelInfoPlaceholder = () => (
-    <div className="flex h-full items-center justify-center p-4 text-text-gray">
-        Информация о канале (в разработке)
-    </div>
-)
-
 const UserInfoPlaceholder = () => (
     <div className="flex h-full items-center justify-center p-4 text-text-gray">
         Информация о пользователе (в разработке)
@@ -50,7 +45,7 @@ export default function ChatInfoSidebar() {
     const [isCurrentUserOwner, setIsCurrentUserOwner] =
         useState(false)
 
-    // Загрузка данных из localStorage (добавляем updateTrigger в зависимости)
+    // Загрузка данных из localStorage
     useEffect(() => {
         if (!selectedChatId) {
             setChatData(null)
@@ -68,10 +63,13 @@ export default function ChatInfoSidebar() {
                         ) as ChatItem
                     setChatData(transformed)
 
-                    // Для групп проверяем, является ли текущий пользователь владельцем
+                    // Для групп и каналов проверяем, является ли текущий пользователь владельцем
                     if (
                         transformed.chatType.includes(
                             'group',
+                        ) ||
+                        transformed.chatType.includes(
+                            'channel',
                         )
                     ) {
                         const participants =
@@ -106,8 +104,8 @@ export default function ChatInfoSidebar() {
     }, [selectedChatId, updateTrigger])
 
     const handleGroupUpdated = useCallback(() => {
-        setUpdateTrigger((prev) => prev + 1) // для перезагрузки данных текущего чата
-        loadChats(15) // перезагружаем весь список чатов
+        setUpdateTrigger((prev) => prev + 1)
+        loadChats(15)
     }, [loadChats])
 
     const handleNotificationsChange = useCallback(
@@ -122,28 +120,29 @@ export default function ChatInfoSidebar() {
     const handleClearChat = useCallback(
         (deleteForEveryone: boolean) => {
             console.log('Очистка чата', deleteForEveryone)
-            // TODO: реализовать очистку чата, когда появится экшен
+            // TODO: реализовать очистку чата
         },
         [],
     )
+
     const handleCloseSidebar = useCallback(() => {
         selectChat(null)
     }, [selectChat])
-    const handleLeaveGroup = useCallback(async () => {
+
+    const handleLeaveChat = useCallback(async () => {
         if (selectedChatId) {
             await deleteChat(selectedChatId)
             handleCloseSidebar()
         }
     }, [selectedChatId, deleteChat, handleCloseSidebar])
 
-    const handleDeleteGroup = useCallback(async () => {
+    const handleDeleteChat = useCallback(async () => {
         if (selectedChatId) {
             await deleteChat(selectedChatId)
             handleCloseSidebar()
         }
     }, [selectedChatId, deleteChat, handleCloseSidebar])
 
-    // Обработка состояний загрузки/отсутствия выбранного чата
     if (!selectedChatId) {
         return <EmptyPlaceholder />
     }
@@ -172,20 +171,20 @@ export default function ChatInfoSidebar() {
         )
     }
 
-    // Определяем тип чата и рендерим соответствующий компонент
     const { chatType } = chatData
 
-    if (chatType.includes('group')) {
-        const participantsCount =
-            chatData.participants?.length || 0
-        const inviteLink = chatData.chatKey
-            ? `https://a-chat.su/invite/${chatData.chatKey}`
-            : undefined
-        const currentNotifications = selectedChatId
-            ? (chatSettings[selectedChatId]
-                  ?.notificationsEnabled ?? true)
-            : true
+    // Общие вычисляемые значения
+    const participantsCount =
+        chatData.participants?.length || 0
+    const inviteLink = chatData.chatKey
+        ? `https://a-chat.su/invite/${chatData.chatKey}`
+        : undefined
+    const currentNotifications = selectedChatId
+        ? (chatSettings[selectedChatId]
+              ?.notificationsEnabled ?? true)
+        : true
 
+    if (chatType.includes('group')) {
         return (
             <GroupInfoSidebar
                 chatId={chatData.id}
@@ -202,17 +201,39 @@ export default function ChatInfoSidebar() {
                 }
                 onClose={handleCloseSidebar}
                 onClearChat={handleClearChat}
-                onLeaveGroup={handleLeaveGroup}
-                onDeleteGroup={handleDeleteGroup}
+                onLeaveGroup={handleLeaveChat}
+                onDeleteGroup={handleDeleteChat}
                 avatarUrl={chatData.chat.avatarUrl}
                 onGroupUpdated={handleGroupUpdated}
-                isCurrentUserOwner={isCurrentUserOwner} // <-- новый пропс
+                isCurrentUserOwner={isCurrentUserOwner}
             />
         )
     }
 
     if (chatType.includes('channel')) {
-        return <ChannelInfoPlaceholder />
+        return (
+            <ChannelInfoSidebar
+                chatId={chatData.id}
+                chatType={chatData.chatType}
+                chatKey={chatData.chatKey}
+                chatUid={chatData.chat.uid}
+                name={chatData.name}
+                participantsCount={participantsCount}
+                description={chatData.description}
+                inviteLink={inviteLink}
+                notificationsEnabled={currentNotifications}
+                onNotificationsChange={
+                    handleNotificationsChange
+                }
+                onClose={handleCloseSidebar}
+                onClearChat={handleClearChat}
+                onLeaveChannel={handleLeaveChat}
+                onDeleteChannel={handleDeleteChat}
+                avatarUrl={chatData.chat.avatarUrl}
+                onChannelUpdated={handleGroupUpdated}
+                isCurrentUserOwner={isCurrentUserOwner}
+            />
+        )
     }
 
     if (chatType === 'chat') {

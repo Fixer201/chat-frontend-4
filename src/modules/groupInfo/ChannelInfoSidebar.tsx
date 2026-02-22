@@ -27,9 +27,8 @@ import {
     getChatByIdFromStorage,
     loadChatsFromStorage,
     saveChatsToStorage,
-    updateChatInStorage,
 } from '@shared/lib/localStorageChats'
-import EditGroupView from './EditGroupView'
+import EditChannelView from './EditChannelView' // предполагается, что создадите аналогичный компонент
 import { transformFromApi } from '@shared/lib/transformChatData'
 import { ApiChatItem } from '@shared/types/chat'
 import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
@@ -49,7 +48,7 @@ function getTabContent(
     chatUid: string,
     setDynamicTabTitle: (t: string | null) => void,
     onParticipantsChange?: (count: number) => void,
-    isCurrentUserOwner?: boolean, // добавлен пропс для передачи в ParticipantsContent
+    isCurrentUserOwner?: boolean,
 ) {
     switch (tabId) {
         case 'participants':
@@ -60,7 +59,7 @@ function getTabContent(
                     onParticipantsChange={
                         onParticipantsChange
                     }
-                    isCurrentUserOwner={isCurrentUserOwner} // передаём дальше
+                    isCurrentUserOwner={isCurrentUserOwner}
                 />
             )
         case 'media':
@@ -76,7 +75,7 @@ function getTabContent(
     }
 }
 
-interface GroupInfoSidebarProps {
+interface ChannelInfoSidebarProps {
     chatId: number
     chatType: string
     chatKey: string
@@ -89,14 +88,14 @@ interface GroupInfoSidebarProps {
     onNotificationsChange?: (enabled: boolean) => void
     onClose?: () => void
     onClearChat?: (deleteForEveryone: boolean) => void
-    onLeaveGroup?: () => void
-    onDeleteGroup?: () => void
+    onLeaveChannel?: () => void // переименовано для ясности
+    onDeleteChannel?: () => void // переименовано для ясности
     avatarUrl?: string | null
-    onGroupUpdated?: () => void
-    isCurrentUserOwner?: boolean // новый пропс
+    onChannelUpdated?: () => void // переименовано для ясности
+    isCurrentUserOwner?: boolean
 }
 
-export default function GroupInfoSidebar({
+export default function ChannelInfoSidebar({
     chatId,
     chatType,
     chatKey,
@@ -109,25 +108,28 @@ export default function GroupInfoSidebar({
     onNotificationsChange,
     onClose,
     onClearChat,
-    onLeaveGroup,
-    onDeleteGroup,
+    onLeaveChannel,
+    onDeleteChannel,
     avatarUrl,
-    onGroupUpdated,
-    isCurrentUserOwner = false, // по умолчанию false
-}: GroupInfoSidebarProps) {
+    onChannelUpdated,
+    isCurrentUserOwner = false,
+}: ChannelInfoSidebarProps) {
     const [isCopied, setIsCopied] = useState(false)
     const [clearChatModalOpen, setClearChatModalOpen] =
         useState(false)
-    const [leaveGroupModalOpen, setLeaveGroupModalOpen] =
-        useState(false)
-    const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
-        useState(false)
+    const [
+        leaveChannelModalOpen,
+        setLeaveChannelModalOpen,
+    ] = useState(false)
+    const [
+        deleteChannelModalOpen,
+        setDeleteChannelModalOpen,
+    ] = useState(false)
     const [
         participantsCountState,
         setParticipantsCountState,
     ] = useState(participantsCount)
     const [isEditing, setIsEditing] = useState(false)
-    // const [avatarError, setAvatarError] = useState(false)
     const [copied, copyToClipboard] =
         useCopyToClipboard(700)
     const [toastOpen, setToastOpen] = useState(false)
@@ -150,10 +152,11 @@ export default function GroupInfoSidebar({
         null,
     )
     const [avatarError, setAvatarError] = useState(false)
+
     const handleAvatarError = useCallback(() => {
         setAvatarError(true)
     }, [setAvatarError])
-    // Вычисляем src для отображения
+
     const avatarSrc = avatarError
         ? '/images/altImage.png'
         : avatarUrl || '/images/altImage.png'
@@ -161,7 +164,6 @@ export default function GroupInfoSidebar({
     const {
         activeTab,
         viewMode,
-        isTransitioning,
         isMouseOver,
         setIsMouseOver,
         dynamicTabTitle,
@@ -185,7 +187,7 @@ export default function GroupInfoSidebar({
         getTabTitle,
     } = useGroupInfoSidebar()
 
-    const handleEditGroup = useCallback(() => {
+    const handleEditChannel = useCallback(() => {
         setIsEditing(true)
     }, [])
 
@@ -243,7 +245,7 @@ export default function GroupInfoSidebar({
         async (updatedData: {
             name: string
             description: string
-            type: string
+            type: 'public' | 'private' // ожидаем 'public'/'private'
             notificationsEnabled: boolean
             avatarFile?: File | null
         }) => {
@@ -251,15 +253,15 @@ export default function GroupInfoSidebar({
                 getChatByIdFromStorage(chatId)
             if (!currentChat) return
 
+            // преобразуем 'public'/'private' в финальный тип канала
             const newChatType =
-                updatedData.type === 'open'
-                    ? 'public-group'
-                    : 'private-group'
+                updatedData.type === 'public'
+                    ? 'public-channel'
+                    : 'private-channel'
 
             const updatedChat: ApiChatItem = {
                 ...currentChat,
             }
-
             updatedChat.name = updatedData.name
             updatedChat.description =
                 updatedData.description
@@ -302,13 +304,13 @@ export default function GroupInfoSidebar({
             }
 
             setIsEditing(false)
-            onGroupUpdated?.()
+            onChannelUpdated?.()
         },
         [
             chatId,
             notificationsEnabled,
             onNotificationsChange,
-            onGroupUpdated,
+            onChannelUpdated,
             compressImage,
         ],
     )
@@ -331,7 +333,6 @@ export default function GroupInfoSidebar({
         onNotificationsChange?.(!notificationsEnabled)
     }, [notificationsEnabled, onNotificationsChange])
 
-    // Обработчик подтверждения очистки из модалки
     const handleClearChatConfirm = useCallback(
         async (deleteForEveryone: boolean) => {
             setClearChatModalOpen(false)
@@ -348,12 +349,9 @@ export default function GroupInfoSidebar({
                             clearTimerRef.current = null
                         }
                         setClearToastOpen(false)
-
-                        // Вызов реальной очистки в следующем цикле событий
                         setTimeout(() => {
                             onClearChat?.(deleteForEveryone)
                         }, 0)
-
                         return 0
                     }
                     return prev - 1
@@ -362,7 +360,7 @@ export default function GroupInfoSidebar({
         },
         [onClearChat],
     )
-    // Отмена очистки
+
     const handleCancelClear = useCallback(() => {
         if (clearTimerRef.current) {
             clearInterval(clearTimerRef.current)
@@ -371,7 +369,7 @@ export default function GroupInfoSidebar({
         setClearToastOpen(false)
         setClearCountdown(4)
     }, [])
-    // Очистка таймера при размонтировании
+
     useEffect(() => {
         return () => {
             if (clearTimerRef.current) {
@@ -379,10 +377,10 @@ export default function GroupInfoSidebar({
             }
         }
     }, [])
-    // Обработчик подтверждения выхода из модалки
-    const handleLeaveGroupConfirm =
+
+    const handleLeaveChannelConfirm =
         useCallback(async () => {
-            setLeaveGroupModalOpen(false)
+            setLeaveChannelModalOpen(false)
             setLeaveToastOpen(true)
             setLeaveCountdown(4)
 
@@ -396,19 +394,16 @@ export default function GroupInfoSidebar({
                             leaveTimerRef.current = null
                         }
                         setLeaveToastOpen(false)
-
-                        // Вызов реального выхода в следующем цикле событий
                         setTimeout(() => {
-                            onLeaveGroup?.()
+                            onLeaveChannel?.()
                         }, 0)
-
                         return 0
                     }
                     return prev - 1
                 })
             }, 1000)
-        }, [onLeaveGroup])
-    // Отмена выхода
+        }, [onLeaveChannel])
+
     const handleCancelLeave = useCallback(() => {
         if (leaveTimerRef.current) {
             clearInterval(leaveTimerRef.current)
@@ -417,7 +412,7 @@ export default function GroupInfoSidebar({
         setLeaveToastOpen(false)
         setLeaveCountdown(4)
     }, [])
-    // Очистка таймеров при размонтировании
+
     useEffect(() => {
         return () => {
             if (leaveTimerRef.current) {
@@ -425,10 +420,10 @@ export default function GroupInfoSidebar({
             }
         }
     }, [])
-    // Обработчик подтверждения удаления из модалки
-    const handleDeleteGroupConfirm =
+
+    const handleDeleteChannelConfirm =
         useCallback(async () => {
-            setDeleteGroupModalOpen(false)
+            setDeleteChannelModalOpen(false)
             setDeletionToastOpen(true)
             setCountdown(4)
 
@@ -442,21 +437,16 @@ export default function GroupInfoSidebar({
                             countdownTimerRef.current = null
                         }
                         setDeletionToastOpen(false)
-
-                        // ✅ Важно: выносим вызов удаления в следующий цикл событий
-                        // чтобы дать React завершить текущий рендер
                         setTimeout(() => {
-                            onDeleteGroup?.()
+                            onDeleteChannel?.()
                         }, 0)
-
                         return 0
                     }
                     return prev - 1
                 })
             }, 1000)
-        }, [onDeleteGroup])
+        }, [onDeleteChannel])
 
-    // Отмена удаления
     const handleCancelDeletion = useCallback(() => {
         if (countdownTimerRef.current) {
             clearInterval(countdownTimerRef.current)
@@ -465,7 +455,7 @@ export default function GroupInfoSidebar({
         setDeletionToastOpen(false)
         setCountdown(4)
     }, [])
-    // Очистка таймера при размонтировании
+
     useEffect(() => {
         return () => {
             if (countdownTimerRef.current) {
@@ -473,6 +463,7 @@ export default function GroupInfoSidebar({
             }
         }
     }, [])
+
     if (viewMode === 'tab') {
         return (
             <TabLayout
@@ -494,7 +485,7 @@ export default function GroupInfoSidebar({
                     chatUid,
                     setDynamicTabTitle,
                     handleParticipantsChange,
-                    isCurrentUserOwner, // передаём в таб участников
+                    isCurrentUserOwner,
                 )}
             </TabLayout>
         )
@@ -502,20 +493,20 @@ export default function GroupInfoSidebar({
 
     if (isEditing) {
         return (
-            <EditGroupView
+            <EditChannelView
                 initialName={name}
                 initialDescription={description || ''}
                 initialType={
-                    chatType.includes('public')
-                        ? 'open'
-                        : 'closed'
-                }
+                    chatType === 'public-channel'
+                        ? 'public'
+                        : 'private'
+                } // ← исправлено
                 initialAvatarUrl={avatarUrl}
                 initialNotificationsEnabled={
                     notificationsEnabled
                 }
                 inviteLink={inviteLink}
-                onSave={handleSaveEdit}
+                onSave={handleSaveEdit} // см. пункт 2
                 onCancel={() => setIsEditing(false)}
             />
         )
@@ -533,9 +524,9 @@ export default function GroupInfoSidebar({
             {/* Header */}
             <div
                 className={`
-                  flex items-center justify-between gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-4 py-4
-                `}
+              flex items-center justify-between gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-4 py-4
+            `}
             >
                 <Button
                     onClick={onClose}
@@ -558,19 +549,18 @@ export default function GroupInfoSidebar({
 
                 <h2
                     className={`
-                      ml-3 flex-1 text-left text-lg font-medium
-                      tracking-extra-tight text-text-black
-                    `}
+                  ml-3 flex-1 text-left text-lg font-medium tracking-extra-tight
+                  text-text-black
+                `}
                 >
-                    Информация о группе
+                    Информация о канале
                 </h2>
 
                 <div className="flex items-center gap-3">
-                    {/* Кнопка редактирования доступна только владельцу */}
                     {isCurrentUserOwner && (
                         <Button
-                            onClick={handleEditGroup}
-                            aria-label="Редактировать группу"
+                            onClick={handleEditChannel}
+                            aria-label="Редактировать канал"
                             variant="ghost"
                             size="sm"
                             className={`
@@ -601,7 +591,7 @@ export default function GroupInfoSidebar({
                         triggerClassName="flex items-center justify-center rounded-full p-0 text-text-black hover:bg-accent-violet-ultra-light"
                         menuWidth={220}
                         placement="bottom-right"
-                        ariaLabel="Настройки группы"
+                        ariaLabel="Настройки канала"
                         items={[
                             {
                                 label: 'Очистить чат',
@@ -618,9 +608,8 @@ export default function GroupInfoSidebar({
                                         true,
                                     ),
                             },
-                            // Пункт "Покинуть группу" для всех, кроме владельца
                             !isCurrentUserOwner && {
-                                label: 'Покинуть группу',
+                                label: 'Покинуть канал',
                                 icon: (
                                     <Image
                                         src="/icons/leave.svg"
@@ -630,14 +619,13 @@ export default function GroupInfoSidebar({
                                     />
                                 ),
                                 onClick: () =>
-                                    setLeaveGroupModalOpen(
+                                    setLeaveChannelModalOpen(
                                         true,
                                     ),
                                 hasDivider: true,
                             },
-                            // Пункт "Удалить группу" только для владельца
                             isCurrentUserOwner && {
-                                label: 'Удалить группу',
+                                label: 'Удалить канал',
                                 icon: (
                                     <Image
                                         src="/icons/delete.svg"
@@ -647,18 +635,18 @@ export default function GroupInfoSidebar({
                                     />
                                 ),
                                 onClick: () =>
-                                    setDeleteGroupModalOpen(
+                                    setDeleteChannelModalOpen(
                                         true,
                                     ),
                                 hasDivider: true,
                                 isDanger: true,
                             },
-                        ].filter(Boolean)} // отфильтровываем false
+                        ].filter(Boolean)}
                     />
                 </div>
             </div>
 
-            {/* Основной контент (без изменений) */}
+            {/* Основной контент */}
             <div
                 ref={mainContentRef}
                 className={cn(
@@ -684,9 +672,9 @@ export default function GroupInfoSidebar({
                     </div>
                     <div
                         className={`
-                          absolute right-0 bottom-0 left-0 rounded-b-md
-                          bg-gradient-to-t from-black/70 to-transparent p-4
-                        `}
+                      absolute right-0 bottom-0 left-0 rounded-b-md
+                      bg-gradient-to-t from-black/70 to-transparent p-4
+                    `}
                     >
                         <h3 className="text-2xl font-semibold text-white">
                             {name}
@@ -695,9 +683,9 @@ export default function GroupInfoSidebar({
                             {participantsCountState}{' '}
                             {getNoun(
                                 participantsCountState,
-                                'участник',
-                                'участника',
-                                'участников',
+                                'подписчик',
+                                'подписчика',
+                                'подписчиков',
                             )}
                         </p>
                     </div>
@@ -727,7 +715,9 @@ export default function GroupInfoSidebar({
                                 `,
                                 notificationsEnabled
                                     ? 'bg-blue-500'
-                                    : `bg-gray-300`,
+                                    : `
+                                  bg-gray-300
+                                `,
                             )}
                         >
                             <span
@@ -738,32 +728,33 @@ export default function GroupInfoSidebar({
                                     `,
                                     notificationsEnabled
                                         ? 'translate-x-6'
-                                        : `translate-x-1`,
+                                        : `
+                                      translate-x-1
+                                    `,
                                 )}
                             />
                         </button>
                     </div>
 
                     {/* Описание */}
-
                     <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
                         <div
                             className={`
-                              flex flex-col justify-between p-0.5 pr-8
-                            `}
+                          flex flex-col justify-between p-0.5 pr-8
+                        `}
                         >
                             <span
                                 className={`
-                                  p-0 text-xs font-medium tracking-extra-tight
-                                  text-text-gray
-                                `}
+                              p-0 text-xs font-medium tracking-extra-tight
+                              text-text-gray
+                            `}
                             >
                                 Описание
                             </span>
                             <span
                                 className={`
-                                  p-0 text-base break-words text-black
-                                `}
+                              p-0 text-base break-words text-black
+                            `}
                             >
                                 {description ||
                                     'пустое описание'}
@@ -772,37 +763,29 @@ export default function GroupInfoSidebar({
                     </div>
 
                     {/* Ссылка-приглашение */}
-                    {chatType === 'public-group' &&
+                    {chatType === 'public-channel' &&
                         inviteLink && (
-                            <div
-                                className={`
-                              mx-0 my-1 rounded-md bg-white-bg p-1
-                            `}
-                            >
-                                <div
-                                    className={`
-                                  flex flex-col justify-between p-0.5
-                                `}
-                                >
+                            <div className="mx-0 my-1 rounded-md bg-white-bg p-1">
+                                <div className="flex flex-col justify-between p-0.5">
                                     <span
                                         className={`
-                                          mb-1 p-0 text-xs font-medium
-                                          tracking-extra-tight text-text-gray
-                                        `}
+                                  mb-1 p-0 text-xs font-medium
+                                  tracking-extra-tight text-text-gray
+                                `}
                                     >
                                         Ссылка на
-                                        приглашение в группу
+                                        приглашение в канал
                                     </span>
                                     <div
                                         className={`
-                                          flex items-center justify-between
-                                        `}
+                                  flex items-center justify-between
+                                `}
                                     >
                                         <span
                                             className={`
-                                              pr-2 text-base break-all
-                                              text-accent-violet-primary
-                                            `}
+                                      pr-2 text-base break-all
+                                      text-accent-violet-primary
+                                    `}
                                         >
                                             {inviteLink}
                                         </span>
@@ -814,11 +797,11 @@ export default function GroupInfoSidebar({
                                             variant="ghost"
                                             size="sm"
                                             className={`
-                                              flex shrink-0 items-center
-                                              justify-center rounded-full p-0
-                                              text-text-black
-                                              hover:bg-accent-violet-ultra-light
-                                            `}
+                                          flex shrink-0 items-center
+                                          justify-center rounded-full p-0
+                                          text-text-black
+                                          hover:bg-accent-violet-ultra-light
+                                        `}
                                         >
                                             <Image
                                                 src="/icons/detailInfo/copyLink.svg"
@@ -828,7 +811,9 @@ export default function GroupInfoSidebar({
                                                 className={cn(
                                                     copied
                                                         ? 'opacity-50'
-                                                        : `opacity-100`,
+                                                        : `
+                                              opacity-100
+                                            `,
                                                 )}
                                             />
                                         </Button>
@@ -844,13 +829,15 @@ export default function GroupInfoSidebar({
                     >
                         <div
                             ref={containerRef}
-                            className={`scrollbar-hide flex overflow-x-auto`}
+                            className={`
+                          scrollbar-hide flex overflow-x-auto
+                        `}
                         >
                             <div
                                 className={`
-                                  flex space-x-4 border-b-2 border-b-gray-200
-                                  px-4 pb-0
-                                `}
+                              flex space-x-4 border-b-2 border-b-gray-200 px-4
+                              pb-0
+                            `}
                             >
                                 {tabs.map((tab, index) => (
                                     <button
@@ -893,10 +880,10 @@ export default function GroupInfoSidebar({
                                             tab.id && (
                                             <div
                                                 className={`
-                                                  absolute right-0 bottom-0
-                                                  left-0 h-1.5 rounded-full
-                                                  bg-accent-violet-primary
-                                                `}
+                                              absolute right-0 bottom-0 left-0
+                                              h-1.5 rounded-full
+                                              bg-accent-violet-primary
+                                            `}
                                             />
                                         )}
                                     </button>
@@ -908,9 +895,8 @@ export default function GroupInfoSidebar({
                     {/* Preview контента активного таба */}
                     <div
                         className={`
-                          relative mt-2 h-50 max-h-full overflow-hidden
-                          rounded-b-md
-                        `}
+                      relative mt-2 h-50 max-h-full overflow-hidden rounded-b-md
+                    `}
                     >
                         <TabContentPreview
                             chatKey={chatKey}
@@ -933,24 +919,25 @@ export default function GroupInfoSidebar({
             />
             {!isCurrentUserOwner && (
                 <LeaveGroupModal
-                    open={leaveGroupModalOpen}
+                    open={leaveChannelModalOpen}
                     onClose={() =>
-                        setLeaveGroupModalOpen(false)
+                        setLeaveChannelModalOpen(false)
                     }
-                    onConfirm={handleLeaveGroupConfirm}
+                    onConfirm={handleLeaveChannelConfirm}
                     groupName={name}
                 />
             )}
             {isCurrentUserOwner && (
                 <DeleteGroupModal
-                    open={deleteGroupModalOpen}
+                    open={deleteChannelModalOpen}
                     onClose={() =>
-                        setDeleteGroupModalOpen(false)
+                        setDeleteChannelModalOpen(false)
                     }
-                    onConfirm={handleDeleteGroupConfirm}
+                    onConfirm={handleDeleteChannelConfirm}
                     groupName={name}
                 />
             )}
+
             {/* Toast-уведомление */}
             <Toast
                 open={toastOpen}
@@ -966,7 +953,8 @@ export default function GroupInfoSidebar({
                     />
                 }
             />
-            {/* Toast для удаления группы */}
+
+            {/* Toast для удаления канала */}
             <Toast
                 open={deletionToastOpen}
                 onClose={handleCancelDeletion}
@@ -977,7 +965,7 @@ export default function GroupInfoSidebar({
                             seconds={countdown}
                         />
                         <span className="text-sm font-medium">
-                            Группа удалена
+                            Канал удалён
                         </span>
                     </div>
                     <button
@@ -991,7 +979,8 @@ export default function GroupInfoSidebar({
                     </button>
                 </div>
             </Toast>
-            {/* Toast для выхода из группы */}
+
+            {/* Toast для выхода из канала */}
             <Toast
                 open={leaveToastOpen}
                 onClose={handleCancelLeave}
@@ -1002,7 +991,7 @@ export default function GroupInfoSidebar({
                             seconds={leaveCountdown}
                         />
                         <span className="text-sm font-medium">
-                            Вы покинули Группу
+                            Вы покинули канал
                         </span>
                     </div>
                     <button
@@ -1016,6 +1005,7 @@ export default function GroupInfoSidebar({
                     </button>
                 </div>
             </Toast>
+
             {/* Toast для очистки чата */}
             <Toast
                 open={clearToastOpen}

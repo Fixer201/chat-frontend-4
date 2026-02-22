@@ -116,27 +116,27 @@ export default function LinksContent({
                             </div>
                             <div
                                 className={`
-                              min-w-0 flex-1 flex-col justify-between
-                            `}
+                                  min-w-0 flex-1 flex-col justify-between
+                                `}
                             >
                                 <h4
                                     className={`
-                                  mb-0.5 font-medium text-text-black
-                                `}
+                                      mb-0.5 font-medium text-text-black
+                                    `}
                                 >
                                     {link.title}
                                 </h4>
                                 <p
                                     className={`
-                                  mb-0.5 truncate text-sm text-blue-500
-                                `}
+                                      mb-0.5 truncate text-sm text-blue-500
+                                    `}
                                 >
                                     {link.url}
                                 </p>
                                 <div
                                     className={`
-                                  flex items-center text-sm text-text-gray
-                                `}
+                                      flex items-center text-sm text-text-gray
+                                    `}
                                 >
                                     <span className="truncate">
                                         {link.sender}

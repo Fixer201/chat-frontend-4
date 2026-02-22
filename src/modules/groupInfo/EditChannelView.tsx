@@ -20,23 +20,10 @@ import { Area } from 'react-easy-crop'
 import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
 import Modal from '@shared/ui/modal/Modal'
 
-// Тип для опции группы (можно вынести в shared/types)
-interface GroupTypeOptionProps {
-    value: string
+interface ChannelTypeOptionProps {
+    value: string // 'public' | 'private'
     optionName: string
     optionDescription: string
-}
-
-// Тип состояния формы
-interface FormState {
-    name: string
-    description: string
-    selectedOption: GroupTypeOptionProps
-    notificationsEnabled: boolean
-    photoFile: File | null
-    photoPreview: string | null
-    selectedFile: File | null
-    cropState: CropState
 }
 
 interface CropState {
@@ -47,13 +34,23 @@ interface CropState {
     originalFile: File | null
 }
 
-// Экшены для reducer'а
+interface FormState {
+    name: string
+    description: string
+    selectedOption: ChannelTypeOptionProps
+    notificationsEnabled: boolean
+    photoFile: File | null
+    photoPreview: string | null
+    selectedFile: File | null
+    cropState: CropState
+}
+
 type FormAction =
     | { type: 'SET_NAME'; payload: string }
     | { type: 'SET_DESCRIPTION'; payload: string }
     | {
           type: 'SET_SELECTED_OPTION'
-          payload: GroupTypeOptionProps
+          payload: ChannelTypeOptionProps
       }
     | {
           type: 'SET_NOTIFICATIONS_ENABLED'
@@ -70,22 +67,21 @@ type FormAction =
       }
     | { type: 'RESET_FROM_PROPS'; payload: FormState }
 
-const groupOptions: GroupTypeOptionProps[] = [
+const channelOptions: ChannelTypeOptionProps[] = [
     {
-        value: 'open',
-        optionName: 'Открытая',
+        value: 'public',
+        optionName: 'Публичный',
         optionDescription:
-            'Открытую группу можно найти через поиск. Присоединиться к ней может любой пользователь',
+            'Публичный канал можно найти через поиск. Подписаться на него может любой пользователь.',
     },
     {
-        value: 'closed',
-        optionName: 'Закрытая',
+        value: 'private',
+        optionName: 'Частный',
         optionDescription:
-            'В закрытую группу можно попасть только по приглашению или пригласительной ссылке',
+            'В частный канал можно попасть только по приглашению или пригласительной ссылке.',
     },
 ]
 
-// Редьюсер для формы
 function formReducer(
     state: FormState,
     action: FormAction,
@@ -140,24 +136,24 @@ function formReducer(
     }
 }
 
-interface EditGroupViewProps {
+interface EditChannelViewProps {
     initialName: string
     initialDescription: string
-    initialType: string // 'open' | 'closed'
+    initialType: 'public' | 'private' // ожидаем 'public' или 'private'
     initialAvatarUrl?: string | null
     initialNotificationsEnabled: boolean
     inviteLink?: string
     onSave: (data: {
         name: string
         description: string
-        type: string
+        type: 'public' | 'private'
         notificationsEnabled: boolean
         avatarFile?: File | null
     }) => void
     onCancel: () => void
 }
 
-export default function EditGroupView({
+export default function EditChannelView({
     initialName,
     initialDescription,
     initialType,
@@ -166,7 +162,7 @@ export default function EditGroupView({
     inviteLink,
     onSave,
     onCancel,
-}: EditGroupViewProps) {
+}: EditChannelViewProps) {
     const previousPreviewRef = useRef<string | null>(null)
     const prevInitialRef = useRef({
         name: initialName,
@@ -176,24 +172,19 @@ export default function EditGroupView({
         avatar: initialAvatarUrl,
     })
 
-    // Состояние для модалки подтверждения выхода
     const [isModalOpen, setIsModalOpen] = useState(false)
-    // Состояние для кадрирования (отдельно от формы)
     const [isCropperOpen, setIsCropperOpen] =
         useState(false)
-
-    // Хук для копирования ссылки
     const [copied, copyToClipboard] =
         useCopyToClipboard(700)
 
-    // Начальное состояние формы
     const initialFormState = (): FormState => ({
         name: initialName,
         description: initialDescription,
         selectedOption:
-            groupOptions.find(
+            channelOptions.find(
                 (opt) => opt.value === initialType,
-            ) || groupOptions[0],
+            ) || channelOptions[0],
         notificationsEnabled: initialNotificationsEnabled,
         photoFile: null,
         photoPreview:
@@ -215,13 +206,6 @@ export default function EditGroupView({
         initialFormState,
     )
 
-    // Проверка наличия изображения (не заглушка)
-    const hasImage = Boolean(
-        formState.photoPreview &&
-        !formState.photoPreview.includes('userAvatar.svg'),
-    )
-
-    // Функция проверки наличия изменений
     const hasChanges = useCallback(() => {
         if (formState.name !== initialName) return true
         if (formState.description !== initialDescription)
@@ -252,7 +236,6 @@ export default function EditGroupView({
         initialAvatarUrl,
     ])
 
-    // Восстановление исходных данных при сбросе
     const resetToInitial = useCallback(() => {
         dispatch({
             type: 'RESET_FROM_PROPS',
@@ -260,9 +243,9 @@ export default function EditGroupView({
                 name: initialName,
                 description: initialDescription,
                 selectedOption:
-                    groupOptions.find(
+                    channelOptions.find(
                         (opt) => opt.value === initialType,
-                    ) || groupOptions[0],
+                    ) || channelOptions[0],
                 notificationsEnabled:
                     initialNotificationsEnabled,
                 photoFile: null,
@@ -287,7 +270,6 @@ export default function EditGroupView({
         initialAvatarUrl,
     ])
 
-    // Обработчик нажатия на кнопку "Назад" или "Отмена"
     const handleCancelAttempt = useCallback(() => {
         if (hasChanges()) {
             setIsModalOpen(true)
@@ -296,19 +278,19 @@ export default function EditGroupView({
         }
     }, [hasChanges, onCancel])
 
-    // Обработчик кнопки "Сбросить" в модалке
     const handleDiscard = useCallback(() => {
         resetToInitial()
         setIsModalOpen(false)
         onCancel()
     }, [resetToInitial, onCancel])
 
-    // Обработчик кнопки "Применить" в модалке
     const handleApply = useCallback(() => {
         onSave({
             name: formState.name.trim(),
             description: formState.description.trim(),
-            type: formState.selectedOption.value,
+            type: formState.selectedOption.value as
+                | 'public'
+                | 'private',
             notificationsEnabled:
                 formState.notificationsEnabled,
             avatarFile: formState.photoFile,
@@ -317,7 +299,7 @@ export default function EditGroupView({
         onCancel()
     }, [formState, onSave, onCancel])
 
-    // Создание preview URL при изменении blob или файла
+    // Создание preview URL
     useEffect(() => {
         let isMounted = true
         let animationFrameId: number | null = null
@@ -379,7 +361,7 @@ export default function EditGroupView({
         initialAvatarUrl,
     ])
 
-    // Синхронизация с пропсами (сброс при изменении initial-данных)
+    // Синхронизация с пропсами
     useEffect(() => {
         const prev = prevInitialRef.current
         const newState: Partial<FormState> = {}
@@ -390,9 +372,9 @@ export default function EditGroupView({
             newState.description = initialDescription
         if (initialType !== prev.type) {
             newState.selectedOption =
-                groupOptions.find(
+                channelOptions.find(
                     (opt) => opt.value === initialType,
-                ) || groupOptions[0]
+                ) || channelOptions[0]
         }
         if (
             initialNotificationsEnabled !==
@@ -423,7 +405,6 @@ export default function EditGroupView({
             })
         }
 
-        // Обновляем ref
         prevInitialRef.current = {
             name: initialName,
             description: initialDescription,
@@ -502,7 +483,7 @@ export default function EditGroupView({
         ) => {
             const fileName =
                 formState.selectedFile?.name ||
-                'group-avatar.png'
+                'channel-avatar.png'
             const fileType =
                 blob.type ||
                 formState.selectedFile?.type ||
@@ -558,7 +539,9 @@ export default function EditGroupView({
         onSave({
             name: formState.name.trim(),
             description: formState.description.trim(),
-            type: formState.selectedOption.value,
+            type: formState.selectedOption.value as
+                | 'public'
+                | 'private',
             notificationsEnabled:
                 formState.notificationsEnabled,
             avatarFile: formState.photoFile,
@@ -573,12 +556,11 @@ export default function EditGroupView({
 
     return (
         <div className="flex h-full flex-col rounded-md bg-gray-main">
-            {/* Заголовок с кнопкой назад */}
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-6 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-6 py-4
+            `}
             >
                 <Button
                     onClick={handleCancelAttempt}
@@ -595,27 +577,27 @@ export default function EditGroupView({
                 </Button>
                 <h2
                     className={`
-                      text-lg font-medium tracking-extra-tight text-text-black
-                    `}
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
                 >
-                    Редактировать группу
+                    Редактировать канал
                 </h2>
             </div>
 
-            {/* Скроллируемая форма */}
             <CustomScrollbar className="flex-1">
                 <div className="flex justify-center p-4">
                     <form
                         onSubmit={handleSubmit}
-                        className={`w-full max-w-82 space-y-4`}
+                        className={`
+                      w-full max-w-82 space-y-4
+                    `}
                     >
-                        {/* Блок с выбором аватарки */}
                         <div className="flex flex-col items-center">
                             <AvatarPicker
                                 src={formState.photoPreview}
                                 name={
                                     formState.name ||
-                                    'Группа'
+                                    'Канал'
                                 }
                                 onFile={handleFileSelect}
                                 onImageClick={
@@ -624,7 +606,6 @@ export default function EditGroupView({
                             />
                         </div>
 
-                        {/* Поля ввода */}
                         <div className="w-full">
                             <div className="flex w-full flex-col">
                                 <FloatingTextarea
@@ -660,15 +641,14 @@ export default function EditGroupView({
                             </div>
                         </div>
 
-                        {/* Тип группы */}
                         <div>
                             <GroupTypeSelect
-                                selectLabel="Тип группы"
+                                selectLabel="Тип канала"
                                 value={
                                     formState.selectedOption
                                         .value
                                 }
-                                options={groupOptions}
+                                options={channelOptions}
                                 onChange={(option) =>
                                     dispatch({
                                         type: 'SET_SELECTED_OPTION',
@@ -678,12 +658,11 @@ export default function EditGroupView({
                             />
                         </div>
 
-                        {/* Переключатель уведомлений */}
                         <div className="flex items-center justify-between">
                             <span
                                 className={`
-                                  text-base font-medium text-text-black
-                                `}
+                              text-base font-medium text-text-black
+                            `}
                             >
                                 Уведомления
                             </span>
@@ -709,7 +688,9 @@ export default function EditGroupView({
                                       focus:outline-none
                                     `,
                                     formState.notificationsEnabled
-                                        ? `bg-blue-500`
+                                        ? `
+                                      bg-blue-500
+                                    `
                                         : `bg-gray-300`,
                                 )}
                             >
@@ -721,40 +702,41 @@ export default function EditGroupView({
                                           transition-transform
                                         `,
                                         formState.notificationsEnabled
-                                            ? `translate-x-6`
+                                            ? `
+                                          translate-x-6
+                                        `
                                             : `translate-x-1`,
                                     )}
                                 />
                             </button>
                         </div>
 
-                        {/* Пригласительная ссылка */}
                         {inviteLink && (
                             <div className="rounded-md bg-white-bg p-1">
                                 <div
                                     className={`
-                                      flex flex-col justify-between p-0.5
-                                    `}
+                                  flex flex-col justify-between p-0.5
+                                `}
                                 >
                                     <span
                                         className={`
-                                          mb-1 p-0 text-xs font-medium
-                                          tracking-extra-tight text-text-gray
-                                        `}
+                                      mb-1 p-0 text-xs font-medium
+                                      tracking-extra-tight text-text-gray
+                                    `}
                                     >
                                         Ссылка на
-                                        приглашение в группу
+                                        приглашение в канал
                                     </span>
                                     <div
                                         className={`
-                                          flex items-center justify-between
-                                        `}
+                                      flex items-center justify-between
+                                    `}
                                     >
                                         <span
                                             className={`
-                                              pr-2 text-base break-all
-                                              text-accent-violet-primary
-                                            `}
+                                          pr-2 text-base break-all
+                                          text-accent-violet-primary
+                                        `}
                                         >
                                             {inviteLink}
                                         </span>
@@ -780,7 +762,9 @@ export default function EditGroupView({
                                                 height={24}
                                                 className={cn(
                                                     copied
-                                                        ? `opacity-50`
+                                                        ? `
+                                                  opacity-50
+                                                `
                                                         : `opacity-100`,
                                                 )}
                                             />
@@ -790,7 +774,6 @@ export default function EditGroupView({
                             </div>
                         )}
 
-                        {/* Кнопки */}
                         <div className="flex justify-center gap-2 pt-4">
                             <Button
                                 type="button"
@@ -827,12 +810,11 @@ export default function EditGroupView({
                 </div>
             </CustomScrollbar>
 
-            {/* Модалка подтверждения выхода без сохранения */}
             <Modal
                 open={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Изменения не сохранены"
-                description="Вы изменили настройки группы, сохранить внесённые изменения?"
+                description="Вы изменили настройки канала, сохранить внесённые изменения?"
                 titleAlign="left"
                 buttons={[
                     {
@@ -850,7 +832,6 @@ export default function EditGroupView({
                 ]}
             />
 
-            {/* Модалка кадрирования */}
             <AvatarCropper
                 isOpen={isCropperOpen}
                 imageFile={

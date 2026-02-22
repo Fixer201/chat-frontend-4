@@ -10,8 +10,13 @@ import { generateAvatarUrl } from './avatarGenerator'
 import { AVATAR_SOURCES } from './avatarSources'
 import { saveGroupParticipants } from '@shared/lib/localStorageGroupParticipants'
 import { GroupParticipant } from '@shared/types/contact'
+
 const CURRENT_USER_UID = 'current-user-uid'
-// Функция генерации моковых участников группы
+
+/**
+ * Генерирует моковых участников для группы или канала.
+ * Подходит как для групп, так и для каналов (владелец/администратор и остальные участники/подписчики).
+ */
 function generateMockGroupParticipants(
     chat: ApiChatItem,
     seed: number,
@@ -43,9 +48,11 @@ function generateMockGroupParticipants(
 
     const count = 2 + (seed % 5) // от 2 до 6 участников
     const participants: GroupParticipant[] = []
-    // Определяем, будет ли владелец текущим пользователем (например, по чётности seed)
+
+    // Определяем, будет ли владелец текущим пользователем (по чётности seed)
     const isOwnerCurrentUser = seed % 2 === 0
-    // Владелец (создатель)
+
+    // Владелец (создатель / администратор)
     if (isOwnerCurrentUser) {
         participants.push({
             uid: CURRENT_USER_UID,
@@ -204,51 +211,41 @@ export function generateLocalMockChatItems(
     ]
 
     // Текущее время в секундах (Unix timestamp)
-    // Используется для генерации реалистичных временных меток
     const nowInSeconds = Math.floor(Date.now() / 1000)
-    const thirtyDaysInSeconds = 30 * 24 * 60 * 60 // 30 дней в секундах
-    const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER // Источник аватарок по умолчанию
+    const thirtyDaysInSeconds = 30 * 24 * 60 * 60
+    const AVATAR_SOURCE = AVATAR_SOURCES.RANDOM_USER
 
-    // Генерация массива чатов с помощью Array.fill и map
     return Array(count)
-        .fill(null) // Создаем массив из count элементов со значением null
+        .fill(null)
         .map((_, index) => {
-            // Массив возможных типов чатов
             const chatTypes = [
                 'chat',
                 'public-group',
                 'private-group',
                 'public-channel',
                 'private-channel',
-            ] as const // Используем as const для сохранения точного типа
+            ] as const
 
             let chatType: (typeof chatTypes)[number]
             const randomValue = Math.random()
 
             if (randomValue < 0.7) {
-                // 70% - личные чаты
                 chatType = 'chat'
             } else if (randomValue < 0.9) {
-                // 20% - группы (между 0.7 и 0.9)
-                // Равномерно распределяем между публичными и приватными группами
                 chatType =
                     Math.random() > 0.5
                         ? 'public-group'
                         : 'private-group'
             } else {
-                // 10% - каналы (между 0.9 и 1.0)
-                // Равномерно распределяем между публичными и приватными каналами
                 chatType =
                     Math.random() > 0.5
                         ? 'public-channel'
                         : 'private-channel'
             }
 
-            // Определяем источник аватарки - теперь только локальные
             let avatarSource =
                 '/images/chatHeader/userAvatar.svg'
 
-            // Для личных чатов можно оставить детерминированный выбор по индексу
             const firstName =
                 firstNames[index % firstNames.length]
             const lastName =
@@ -262,8 +259,8 @@ export function generateLocalMockChatItems(
             const message =
                 messages[index % messages.length]
             const baseId = (index + 1) * 100
+
             if (chatType === 'chat') {
-                // Для личного чата - имя человека
                 chatName = `${firstName} ${lastName}`
                 username = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`
                 avatarSeed = `avatar_${baseId}_${username}`
@@ -271,38 +268,30 @@ export function generateLocalMockChatItems(
                     avatarSeed,
                     300,
                     300,
-                    chatType === 'chat'
-                        ? AVATAR_SOURCE
-                        : 'useAvatar',
+                    AVATAR_SOURCE,
                 )
                 avatarSource = chatAvatarUrl
             } else if (chatType.includes('group')) {
-                // Для групп - берем название из массива groupNames
                 const groupName =
                     groupNames[index % groupNames.length]
                 chatName = groupName
                 username = `group_${index + 1}_${groupName.toLowerCase().replace(/ /g, '_')}`
-                // Для групп используем групповую иконку
                 avatarSource =
                     '/images/chatHeader/userAvatar.svg'
             } else {
-                // Для каналов - берем название из массива channelNames
                 const channelName =
                     channelNames[
                         index % channelNames.length
                     ]
                 chatName = channelName
                 username = `channel_${index + 1}_${channelName.toLowerCase().replace(/ /g, '_')}`
-                // Для каналов используем канальную иконку
                 avatarSource =
                     '/images/chatHeader/userAvatar.svg'
             }
 
-            // Всегда используем локальные аватарки
             const avatarUrl = avatarSource
             const avatarWebpUrl = avatarSource
 
-            // Генерация случайных временных меток
             const randomSecondsAgo = Math.floor(
                 Math.random() * thirtyDaysInSeconds,
             )
@@ -329,7 +318,6 @@ export function generateLocalMockChatItems(
                     ? Math.random() > 0.3
                     : Math.random() > 0.8
 
-            // Формирование объекта чата
             const chatItem: ApiChatItem = {
                 id: baseId,
                 chat: {
@@ -434,8 +422,11 @@ export function generateLocalMockChatItems(
                 },
             }
 
-            // Сохраняем участников для групп
-            if (chatType.includes('group')) {
+            // Сохраняем участников для групп И каналов
+            if (
+                chatType.includes('group') ||
+                chatType.includes('channel')
+            ) {
                 const participants =
                     generateMockGroupParticipants(
                         chatItem,

@@ -262,13 +262,13 @@ export default function VoiceContent({
                                       ${
                                           message.isPlaying
                                               ? `
-                              bg-blue-600
-                              hover:bg-blue-700
-                            `
+                                                bg-blue-600
+                                                hover:bg-blue-700
+                                              `
                                               : `
-                              bg-blue-100
-                              hover:bg-blue-200
-                            `
+                                                bg-blue-100
+                                                hover:bg-blue-200
+                                              `
                                       }
                                     `}
                                 >
@@ -294,13 +294,13 @@ export default function VoiceContent({
                                 <div className="flex-1">
                                     <div
                                         className={`
-                                      mb-1 flex items-center justify-between
-                                    `}
+                                          mb-1 flex items-center justify-between
+                                        `}
                                     >
                                         <span
                                             className={`
-                                          font-medium text-text-black
-                                        `}
+                                              font-medium text-text-black
+                                            `}
                                         >
                                             {message.name}
                                         </span>
