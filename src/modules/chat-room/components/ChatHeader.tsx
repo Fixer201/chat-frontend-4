@@ -73,16 +73,16 @@ export default function ChatHeader({
                 </div>
                 <div
                     className={`
-                  flex gap-1
-                  md:gap-2
-                `}
+                      flex gap-1
+                      md:gap-2
+                    `}
                 >
                     {/* Кнопки поиска, звонка и т.д. */}
                     <div
                         className={`
-                      flex gap-2 text-text-gray
-                      md:gap-4
-                    `}
+                          flex gap-2 text-text-gray
+                          md:gap-4
+                        `}
                     >
                         <button
                             aria-label="Search in chat"
