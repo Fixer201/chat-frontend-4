@@ -17,18 +17,19 @@ import EmptyChatsState from './emptyChatsState/EmptyChatsState'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { useRouter } from 'next/navigation'
 import Search from '@shared/ui/Search'
-import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
-import { Contact } from '@shared/types/contact'
-
+import Image from 'next/image'
+import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu'
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
+    onOpenInfoPanel?: (chatId: number) => void
 }
 
 export default function ChatsList({
     onCreateGroup,
     onCreateChannel,
+    onOpenInfoPanel,
 }: ChatsListProps) {
     const router = useRouter()
 
@@ -211,7 +212,7 @@ export default function ChatsList({
                         showClearButton={true}
                     />
 
-                    <CreateMenuButton
+                    {/* <CreateMenuButton
                         onSelectGroup={
                             onCreateGroup ||
                             (() => alert('Создать группу'))
@@ -220,6 +221,59 @@ export default function ChatsList({
                             onCreateChannel ||
                             (() => alert('Создать канал'))
                         }
+                    /> */}
+                    <DropdownMenuButton
+                        triggerIcon={
+                            <Image
+                                src="/icons/createCollab.svg"
+                                alt="Создать"
+                                width={20}
+                                height={20}
+                            />
+                        }
+                        triggerClassName="shrink-0 rounded-lg p-2 transition-colors hover:bg-gray-200"
+                        menuWidth={200}
+                        placement="bottom-right"
+                        ariaLabel="Создать"
+                        items={[
+                            {
+                                label: 'Создать группу',
+                                icon: (
+                                    <Image
+                                        src="/icons/chatList/createGroup.svg"
+                                        alt=""
+                                        width={16}
+                                        height={16}
+                                        className="opacity-80"
+                                    />
+                                ),
+                                onClick:
+                                    onCreateGroup ||
+                                    (() =>
+                                        alert(
+                                            'Создать группу',
+                                        )),
+                            },
+                            {
+                                label: 'Создать канал',
+                                icon: (
+                                    <Image
+                                        src="/icons/chatList/createChannel.svg"
+                                        alt=""
+                                        width={16}
+                                        height={16}
+                                        className="opacity-80"
+                                    />
+                                ),
+                                onClick:
+                                    onCreateChannel ||
+                                    (() =>
+                                        alert(
+                                            'Создать канал',
+                                        )),
+                                hasDivider: true,
+                            },
+                        ]}
                     />
                 </div>
 
@@ -472,6 +526,11 @@ export default function ChatsList({
                                                         chat
                                                             .chat
                                                             .lastName,
+                                                    )
+                                                }
+                                                onOpenInfoPanel={() =>
+                                                    onOpenInfoPanel?.(
+                                                        chat.id,
                                                     )
                                                 }
                                                 isFavorite={

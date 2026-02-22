@@ -46,7 +46,10 @@ body {
     --color-accent-violet-dark: var(
         --app-accent-violet-dark
     );
-
+    --color-accent-violet: var(--app-accent-violet-primary);
+    --color-accent-violet-hover: var(
+        --app-accent-violet-dark
+    );
     /* Custom App Colors - User Message */
     --color-teal-secondary: var(--app-teal-secondary);
     --color-message-bg-other: var(--app-message-bg-other);
@@ -297,7 +300,40 @@ body {
 @utility text-display-24 {
     font-size: var(--font-size-24);
 }
+@utility scrollbar-hide {
+    /* Для Firefox */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 
+    /* Для Chrome, Safari и Edge */
+    &::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+        background: transparent;
+    }
+
+    /* Для IE10+ */
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+
+    /* Для всех браузеров - скрываем скроллбар */
+    & {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+    }
+
+    &::-webkit-scrollbar,
+    &::-webkit-scrollbar-track,
+    &::-webkit-scrollbar-thumb,
+    &::-webkit-scrollbar-track-piece,
+    &::-webkit-scrollbar-corner {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+}
 @utility custom-scroll {
     overflow: scroll;
     scrollbar-width: none;
@@ -369,7 +405,65 @@ body {
     -ms-overflow-style: auto;
     /* IE/Edge: восстанавливает скролл */
 }
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+@supports (scrollbar-width: none) {
+    .scrollbar-hide {
+        scrollbar-width: none;
+    }
+}
 
+/* Улучшенные стили для скролла табов */
+.snap-x {
+    scroll-snap-type: x mandatory;
+}
+
+.snap-center {
+    scroll-snap-align: center;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Для плавного скролла в Firefox */
+@supports (scroll-behavior: smooth) {
+    .scroll-smooth {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Для мгновенного скролла при инициализации */
+.scroll-instant {
+    scroll-behavior: auto !important;
+}
+
+/* Улучшенное центрирование для табов */
+.tab-scroll-container {
+    scroll-padding: 0 32px;
+}
+
+.tab-button {
+    scroll-margin: 0 32px;
+}
+
+/* Отключаем скролл-анимацию при prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-smooth,
+    .scroll-smooth * {
+        scroll-behavior: auto !important;
+    }
+}
 @utility dropdown-item-content {
     flex: 1;
     overflow: hidden;
@@ -448,4 +542,250 @@ body {
 
 @utility bg-app-login-start {
     background-image: var(--app-login-start);
+}
+/* Класс для блокировки скролла при открытом GroupInfoSidebar */
+.group-info-sidebar-scroll-lock {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+}
+
+/* Стили для скрытия скроллбара в GroupInfoSidebar */
+.group-info-sidebar-scroll-lock
+    .custom-scroll::-webkit-scrollbar {
+    display: none !important;
+}
+
+.group-info-sidebar-scroll-lock .custom-scroll {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Общие стили для GroupInfoSidebar */
+.group-info-sidebar-container * {
+    box-sizing: border-box;
+}
+
+.group-info-sidebar-container .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Стили для предотвращения выделения при перетаскивании */
+.prevent-selection {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+/* Скрытие скроллбаров внутри GroupInfoSidebar */
+.group-info-sidebar-container .overflow-auto,
+.group-info-sidebar-container [class*='overflow-auto'] {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
+}
+
+.group-info-sidebar-container
+    .overflow-auto::-webkit-scrollbar,
+.group-info-sidebar-container
+    [class*='overflow-auto']::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+/* Для контейнера с основным контентом */
+.group-info-sidebar-container .flex-1.overflow-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.group-info-sidebar-container
+    .flex-1.overflow-auto::-webkit-scrollbar {
+    display: none;
+}
+
+/* Для контейнера с табами в главном режиме */
+.group-info-sidebar-container .flex.overflow-x-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.group-info-sidebar-container
+    .flex.overflow-x-auto::-webkit-scrollbar {
+    display: none;
+}
+
+/* Для контейнера с предпросмотром таба */
+.group-info-sidebar-container
+    .max-h-48.overflow-hidden
+    .overflow-auto,
+.group-info-sidebar-container
+    .max-h-48.overflow-hidden
+    [class*='overflow-auto'] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.group-info-sidebar-container
+    .max-h-48.overflow-hidden
+    .overflow-auto::-webkit-scrollbar,
+.group-info-sidebar-container
+    .max-h-48.overflow-hidden
+    [class*='overflow-auto']::-webkit-scrollbar {
+    display: none;
+}
+
+/* Общее правило для всех элементов внутри GroupInfoSidebar */
+.group-info-sidebar-container * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.group-info-sidebar-container *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Для TabLayout, если он рендерится внутри GroupInfoSidebar */
+.group-info-sidebar-container
+    .tab-layout-container
+    .overflow-auto,
+.group-info-sidebar-container
+    .tab-layout-container
+    [class*='overflow-auto'] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.group-info-sidebar-container
+    .tab-layout-container
+    .overflow-auto::-webkit-scrollbar,
+.group-info-sidebar-container
+    .tab-layout-container
+    [class*='overflow-auto']::-webkit-scrollbar {
+    display: none;
+}
+
+/* Улучшенное скрытие с !important для переопределения всех возможных стилей */
+.group-info-sidebar-container .scrollbar-hide {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}
+
+.group-info-sidebar-container
+    .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+/* Для поддержки -webkit-overflow-scrolling в классах */
+.webkit-overflow-scrolling-touch {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Для поддержки touch-action с несколькими значениями */
+.touch-pan-y {
+    touch-action: pan-y;
+}
+
+.touch-pinch-zoom {
+    touch-action: pinch-zoom;
+}
+
+/* Если нужно объединенное значение, можно добавить */
+.touch-pan-y-pinch-zoom {
+    touch-action: pan-y pinch-zoom;
+}
+
+/* Для overscroll-behavior */
+.overscroll-none {
+    overscroll-behavior: none;
+}
+
+/* Для скрытия скроллбара во всем компоненте */
+.group-info-sidebar-container .scrollbar-hide {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}
+
+.group-info-sidebar-container
+    .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* Для блокировки скролла при открытом GroupInfoSidebar */
+.group-info-sidebar-scroll-lock {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+}
+/* Для поддержки -webkit-overflow-scrolling в классах */
+.webkit-overflow-scrolling-touch {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Для поддержки touch-action с несколькими значениями */
+.touch-pan-y {
+    touch-action: pan-y;
+}
+
+.touch-pinch-zoom {
+    touch-action: pinch-zoom;
+}
+
+/* Для поддержки ms-overflow-style и scrollbar-width */
+.ms-overflow-style-none {
+    -ms-overflow-style: none;
+}
+
+.scrollbar-width-none {
+    scrollbar-width: none;
+}
+
+/* Стили для скрытия скроллбара в контейнерах табов */
+.tab-container-hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+/* Для CustomScrollbar в TabLayout */
+.tab-layout-scroll-content {
+    height: 100% !important;
+}
+
+/* Для поддержки max-height с кастомным свойством */
+.max-h-\[calc\(100vh-112px\)\] {
+    max-height: calc(100vh - 112px);
+}
+
+/* Общие стили для скрытия скроллбаров */
+.scrollbar-hide {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+
+/* Убедитесь, что CustomScrollbar работает правильно в контексте TabLayout */
+.group-info-sidebar-container .custom-scroll-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.group-info-sidebar-container
+    .custom-scroll-content::-webkit-scrollbar {
+    display: none !important;
 }
