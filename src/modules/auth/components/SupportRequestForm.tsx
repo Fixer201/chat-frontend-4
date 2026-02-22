@@ -7,39 +7,21 @@ import { useState, useRef } from 'react'
 import Textarea from '@shared/ui/textarea/Textarea'
 import SuccessSupport from './SuccessSupport'
 
-// Интерфейс пропсов: Определяет типы для phoneNumber (номер телефона) и onBack (функция возврата).
-
 interface SupportRequestFormProps {
     phoneNumber: string
     onBack: () => void
 }
-
-// Принимает пропсы phoneNumber и onBack.
 
 export default function SupportRequestForm({
     phoneNumber,
     onBack,
 }: SupportRequestFormProps) {
     const router = useRouter()
-
-    // Состояние email: Хранит введенный email пользователя.
-    // Инициализируется пустой строкой.
     const [email, setEmail] = useState('')
-
-    // Состояние message: Хранит текст описания проблемы.
-    // Инициализируется пустой строкой.
     const [message, setMessage] = useState('')
-
-    // Состояние loading: Указывает, идет ли отправка запроса (для блокировки UI).
-    // Инициализируется false.
     const [loading, setLoading] = useState(false)
-
     const [emailError, setEmailError] = useState('')
-
     const inputRef = useRef<HTMLInputElement>(null)
-
-    // Состояние showSuccessSupport: Управляет показом компонента успеха.
-    // Инициализируется false.
     const [showSuccessSupport, setShowSuccessSupport] =
         useState(false)
 

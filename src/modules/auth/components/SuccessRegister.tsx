@@ -1,12 +1,8 @@
 'use client'
-
 import { Button } from '@shared/ui/button/Button'
-
 import Image from 'next/image'
-
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
 import Cookies from 'js-cookie'
 import useIsMobile from '@shared/hooks/useIsMobile'
 import toast from 'react-hot-toast'
