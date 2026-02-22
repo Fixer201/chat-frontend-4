@@ -16,8 +16,13 @@ type View =
     | 'group-members'
     | 'create-channel'
     | 'channel-members'
+interface ChatsListWrapperProps {
+    onOpenInfoPanel?: (chatId: number) => void
+}
 
-export default function ChatsListWrapper() {
+export default function ChatsListWrapper({
+    onOpenInfoPanel,
+}: ChatsListWrapperProps) {
     const { createGroup, createChannel, loadChats } =
         useChats()
 
@@ -169,6 +174,7 @@ export default function ChatsListWrapper() {
                         onCreateChannel={
                             handleCreateChannel
                         }
+                        onOpenInfoPanel={onOpenInfoPanel}
                     />
                 )
 
@@ -252,6 +258,7 @@ export default function ChatsListWrapper() {
                         onCreateChannel={
                             handleCreateChannel
                         }
+                        onOpenInfoPanel={onOpenInfoPanel}
                     />
                 )
         }

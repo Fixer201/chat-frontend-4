@@ -524,9 +524,9 @@ export default function ChannelInfoSidebar({
             {/* Header */}
             <div
                 className={`
-              flex items-center justify-between gap-3 rounded-t-md border-b
-              border-app-divider bg-gray-main px-4 py-4
-            `}
+                  flex items-center justify-between gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-4 py-4
+                `}
             >
                 <Button
                     onClick={onClose}
@@ -549,9 +549,9 @@ export default function ChannelInfoSidebar({
 
                 <h2
                     className={`
-                  ml-3 flex-1 text-left text-lg font-medium tracking-extra-tight
-                  text-text-black
-                `}
+                      ml-3 flex-1 text-left text-lg font-medium
+                      tracking-extra-tight text-text-black
+                    `}
                 >
                     Информация о канале
                 </h2>
@@ -672,9 +672,9 @@ export default function ChannelInfoSidebar({
                     </div>
                     <div
                         className={`
-                      absolute right-0 bottom-0 left-0 rounded-b-md
-                      bg-gradient-to-t from-black/70 to-transparent p-4
-                    `}
+                          absolute right-0 bottom-0 left-0 rounded-b-md
+                          bg-gradient-to-t from-black/70 to-transparent p-4
+                        `}
                     >
                         <h3 className="text-2xl font-semibold text-white">
                             {name}
@@ -715,9 +715,7 @@ export default function ChannelInfoSidebar({
                                 `,
                                 notificationsEnabled
                                     ? 'bg-blue-500'
-                                    : `
-                                  bg-gray-300
-                                `,
+                                    : `bg-gray-300`,
                             )}
                         >
                             <span
@@ -728,9 +726,7 @@ export default function ChannelInfoSidebar({
                                     `,
                                     notificationsEnabled
                                         ? 'translate-x-6'
-                                        : `
-                                      translate-x-1
-                                    `,
+                                        : `translate-x-1`,
                                 )}
                             />
                         </button>
@@ -740,21 +736,21 @@ export default function ChannelInfoSidebar({
                     <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
                         <div
                             className={`
-                          flex flex-col justify-between p-0.5 pr-8
-                        `}
+                              flex flex-col justify-between p-0.5 pr-8
+                            `}
                         >
                             <span
                                 className={`
-                              p-0 text-xs font-medium tracking-extra-tight
-                              text-text-gray
-                            `}
+                                  p-0 text-xs font-medium tracking-extra-tight
+                                  text-text-gray
+                                `}
                             >
                                 Описание
                             </span>
                             <span
                                 className={`
-                              p-0 text-base break-words text-black
-                            `}
+                                  p-0 text-base break-words text-black
+                                `}
                             >
                                 {description ||
                                     'пустое описание'}
@@ -765,27 +761,35 @@ export default function ChannelInfoSidebar({
                     {/* Ссылка-приглашение */}
                     {chatType === 'public-channel' &&
                         inviteLink && (
-                            <div className="mx-0 my-1 rounded-md bg-white-bg p-1">
-                                <div className="flex flex-col justify-between p-0.5">
+                            <div
+                                className={`
+                              mx-0 my-1 rounded-md bg-white-bg p-1
+                            `}
+                            >
+                                <div
+                                    className={`
+                                  flex flex-col justify-between p-0.5
+                                `}
+                                >
                                     <span
                                         className={`
-                                  mb-1 p-0 text-xs font-medium
-                                  tracking-extra-tight text-text-gray
-                                `}
+                                          mb-1 p-0 text-xs font-medium
+                                          tracking-extra-tight text-text-gray
+                                        `}
                                     >
                                         Ссылка на
                                         приглашение в канал
                                     </span>
                                     <div
                                         className={`
-                                  flex items-center justify-between
-                                `}
+                                          flex items-center justify-between
+                                        `}
                                     >
                                         <span
                                             className={`
-                                      pr-2 text-base break-all
-                                      text-accent-violet-primary
-                                    `}
+                                              pr-2 text-base break-all
+                                              text-accent-violet-primary
+                                            `}
                                         >
                                             {inviteLink}
                                         </span>
@@ -797,11 +801,11 @@ export default function ChannelInfoSidebar({
                                             variant="ghost"
                                             size="sm"
                                             className={`
-                                          flex shrink-0 items-center
-                                          justify-center rounded-full p-0
-                                          text-text-black
-                                          hover:bg-accent-violet-ultra-light
-                                        `}
+                                              flex shrink-0 items-center
+                                              justify-center rounded-full p-0
+                                              text-text-black
+                                              hover:bg-accent-violet-ultra-light
+                                            `}
                                         >
                                             <Image
                                                 src="/icons/detailInfo/copyLink.svg"
@@ -811,9 +815,7 @@ export default function ChannelInfoSidebar({
                                                 className={cn(
                                                     copied
                                                         ? 'opacity-50'
-                                                        : `
-                                              opacity-100
-                                            `,
+                                                        : `opacity-100`,
                                                 )}
                                             />
                                         </Button>
@@ -829,15 +831,13 @@ export default function ChannelInfoSidebar({
                     >
                         <div
                             ref={containerRef}
-                            className={`
-                          scrollbar-hide flex overflow-x-auto
-                        `}
+                            className={`scrollbar-hide flex overflow-x-auto`}
                         >
                             <div
                                 className={`
-                              flex space-x-4 border-b-2 border-b-gray-200 px-4
-                              pb-0
-                            `}
+                                  flex space-x-4 border-b-2 border-b-gray-200
+                                  px-4 pb-0
+                                `}
                             >
                                 {tabs.map((tab, index) => (
                                     <button
@@ -880,10 +880,10 @@ export default function ChannelInfoSidebar({
                                             tab.id && (
                                             <div
                                                 className={`
-                                              absolute right-0 bottom-0 left-0
-                                              h-1.5 rounded-full
-                                              bg-accent-violet-primary
-                                            `}
+                                                  absolute right-0 bottom-0
+                                                  left-0 h-1.5 rounded-full
+                                                  bg-accent-violet-primary
+                                                `}
                                             />
                                         )}
                                     </button>
@@ -895,8 +895,9 @@ export default function ChannelInfoSidebar({
                     {/* Preview контента активного таба */}
                     <div
                         className={`
-                      relative mt-2 h-50 max-h-full overflow-hidden rounded-b-md
-                    `}
+                          relative mt-2 h-50 max-h-full overflow-hidden
+                          rounded-b-md
+                        `}
                     >
                         <TabContentPreview
                             chatKey={chatKey}

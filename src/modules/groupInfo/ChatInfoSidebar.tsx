@@ -26,8 +26,13 @@ const EmptyPlaceholder = () => (
 
 // Временный UID текущего пользователя (должен браться из стора/контекста)
 const CURRENT_USER_UID = 'current-user-uid'
+interface ChatInfoSidebarProps {
+    onClose?: () => void
+}
 
-export default function ChatInfoSidebar() {
+export default function ChatInfoSidebar({
+    onClose,
+}: ChatInfoSidebarProps) {
     const selectedChatId = useSelector(
         (state: RootState) => state.chats.selectedChatId,
     )
@@ -127,7 +132,8 @@ export default function ChatInfoSidebar() {
 
     const handleCloseSidebar = useCallback(() => {
         selectChat(null)
-    }, [selectChat])
+        onClose?.()
+    }, [selectChat, onClose])
 
     const handleLeaveChat = useCallback(async () => {
         if (selectedChatId) {
@@ -151,8 +157,8 @@ export default function ChatInfoSidebar() {
         return (
             <div
                 className={`
-              flex h-full items-center justify-center p-4 text-text-gray
-            `}
+                  flex h-full items-center justify-center p-4 text-text-gray
+                `}
             >
                 Загрузка...
             </div>
@@ -163,8 +169,8 @@ export default function ChatInfoSidebar() {
         return (
             <div
                 className={`
-              flex h-full items-center justify-center p-4 text-text-gray
-            `}
+                  flex h-full items-center justify-center p-4 text-text-gray
+                `}
             >
                 Чат не найден
             </div>
@@ -243,8 +249,8 @@ export default function ChatInfoSidebar() {
     return (
         <div
             className={`
-          flex h-full items-center justify-center p-4 text-text-gray
-        `}
+              flex h-full items-center justify-center p-4 text-text-gray
+            `}
         >
             Неизвестный тип чата
         </div>

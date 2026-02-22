@@ -776,13 +776,13 @@ export default function GroupInfoSidebar({
                         inviteLink && (
                             <div
                                 className={`
-                              mx-0 my-1 rounded-md bg-white-bg p-1
-                            `}
+                                  mx-0 my-1 rounded-md bg-white-bg p-1
+                                `}
                             >
                                 <div
                                     className={`
-                                  flex flex-col justify-between p-0.5
-                                `}
+                                      flex flex-col justify-between p-0.5
+                                    `}
                                 >
                                     <span
                                         className={`

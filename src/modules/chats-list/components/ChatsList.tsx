@@ -23,11 +23,13 @@ import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu'
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
+    onOpenInfoPanel?: (chatId: number) => void
 }
 
 export default function ChatsList({
     onCreateGroup,
     onCreateChannel,
+    onOpenInfoPanel,
 }: ChatsListProps) {
     const router = useRouter()
 
@@ -524,6 +526,11 @@ export default function ChatsList({
                                                         chat
                                                             .chat
                                                             .lastName,
+                                                    )
+                                                }
+                                                onOpenInfoPanel={() =>
+                                                    onOpenInfoPanel?.(
+                                                        chat.id,
                                                     )
                                                 }
                                                 isFavorite={

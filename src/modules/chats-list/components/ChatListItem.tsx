@@ -40,6 +40,7 @@ export const ChatListItem = forwardRef<
             onFavoriteChat,
             onMuteChat,
             onAddToContacts,
+            onOpenInfoPanel,
             notificationsEnabled,
             isFavorite = false,
             chatType,
@@ -165,6 +166,7 @@ export const ChatListItem = forwardRef<
                     onMarkAsUnread={onMarkAsUnread}
                     onDeleteChat={onDeleteChat}
                     onAddToContacts={onAddToContacts}
+                    onOpenInfoPanel={onOpenInfoPanel}
                     notificationsEnabled={
                         notificationsEnabled
                     }
