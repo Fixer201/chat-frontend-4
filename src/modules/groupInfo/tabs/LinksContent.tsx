@@ -88,36 +88,56 @@ export default function LinksContent({
     return (
         <div
             className={`
-      transition-opacity duration-200
-      ${visible ? 'opacity-100' : 'opacity-0'}
-    `}
+              transition-opacity duration-200
+              ${visible ? 'opacity-100' : 'opacity-0'}
+            `}
         >
             <div className="space-y-0">
                 {linksState.map((link) => (
                     <div
                         key={link.id}
-                        className="group border-b border-gray-border p-1 transition-colors"
+                        className={`
+                          group border-b border-gray-border p-1
+                          transition-colors
+                        `}
                     >
                         <div className="flex items-center gap-3">
                             <div
                                 className={`
-                flex h-12 w-12 items-center justify-center rounded-lg
-                bg-accent-violet-primary text-3xl font-bold text-white
-              `}
+                                  flex h-12 w-12 items-center justify-center
+                                  rounded-lg bg-accent-violet-primary text-3xl
+                                  font-bold text-white
+                                `}
                             >
                                 {link.senderInitials ||
                                     link.sender
                                         .charAt(0)
                                         .toUpperCase()}
                             </div>
-                            <div className="min-w-0 flex-1 flex-col justify-between">
-                                <h4 className="mb-0.5 font-medium text-text-black">
+                            <div
+                                className={`
+                              min-w-0 flex-1 flex-col justify-between
+                            `}
+                            >
+                                <h4
+                                    className={`
+                                  mb-0.5 font-medium text-text-black
+                                `}
+                                >
                                     {link.title}
                                 </h4>
-                                <p className="mb-0.5 truncate text-sm text-blue-500">
+                                <p
+                                    className={`
+                                  mb-0.5 truncate text-sm text-blue-500
+                                `}
+                                >
                                     {link.url}
                                 </p>
-                                <div className="flex items-center text-sm text-text-gray">
+                                <div
+                                    className={`
+                                  flex items-center text-sm text-text-gray
+                                `}
+                                >
                                     <span className="truncate">
                                         {link.sender}
                                     </span>

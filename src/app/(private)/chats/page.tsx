@@ -3,7 +3,6 @@
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
 import ChatInfoSidebar from '@modules/groupInfo/ChatInfoSidebar'
-import GroupInfoSidebar from '@modules/groupInfo/GroupInfoSidebar'
 import { RootState } from '@redux/store'
 import { cn } from '@shared/lib/utils'
 import { useSelector } from 'react-redux'

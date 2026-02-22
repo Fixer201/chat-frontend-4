@@ -95,15 +95,17 @@ export default function MediaContent({
     return (
         <div
             className={`
-      transition-opacity duration-200
-      ${visible ? 'opacity-100' : 'opacity-0'}
-    `}
+              transition-opacity duration-200
+              ${visible ? 'opacity-100' : 'opacity-0'}
+            `}
         >
             <div className="grid grid-cols-3 gap-0.5 px-[4px] py-[8px]">
                 {mediaItems.map((item) => (
                     <div
                         key={item.id}
-                        className={`flex h-full w-full items-center justify-center`}
+                        className={`
+                          flex h-full w-full items-center justify-center
+                        `}
                     >
                         {item.type === 'image' &&
                             item.url && (
@@ -117,9 +119,10 @@ export default function MediaContent({
                         {(!item.url || item.url === '') && (
                             <div
                                 className={`
-                flex h-[120px] w-[120px] items-center justify-center bg-gray-200
-                text-xs text-gray-500
-              `}
+                                  flex h-[120px] w-[120px] items-center
+                                  justify-center bg-gray-200 text-xs
+                                  text-gray-500
+                                `}
                             >
                                 No URL
                             </div>

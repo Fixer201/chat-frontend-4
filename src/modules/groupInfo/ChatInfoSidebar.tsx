@@ -1,10 +1,10 @@
-// src/modules/chat-info/components/ChatInfoSidebar.tsx
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@redux/store'
 import { getChatByIdFromStorage } from '@shared/lib/localStorageChats'
+import { findGroupParticipantsByChatKey } from '@shared/lib/localStorageGroupParticipants'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import { ApiChatItem, ChatItem } from '@shared/types/chat'
 import GroupInfoSidebar from '@modules/groupInfo/GroupInfoSidebar'
@@ -29,6 +29,9 @@ const EmptyPlaceholder = () => (
     </div>
 )
 
+// Временный UID текущего пользователя (должен браться из стора/контекста)
+const CURRENT_USER_UID = 'current-user-uid'
+
 export default function ChatInfoSidebar() {
     const selectedChatId = useSelector(
         (state: RootState) => state.chats.selectedChatId,
@@ -37,44 +40,17 @@ export default function ChatInfoSidebar() {
         chatSettings,
         toggleNotifications,
         deleteChat,
+        loadChats,
         selectChat,
     } = useChats()
     const [chatData, setChatData] =
         useState<ChatItem | null>(null)
     const [loading, setLoading] = useState(false)
+    const [updateTrigger, setUpdateTrigger] = useState(0)
+    const [isCurrentUserOwner, setIsCurrentUserOwner] =
+        useState(false)
 
-    // // Загрузка данных при изменении selectedChatId
-    // useEffect(() => {
-    //   if (!selectedChatId) {
-    //     setChatData(null)
-    //     return
-    //   }
-
-    //   setLoading(true)
-    //   // Имитация асинхронной загрузки (setTimeout, но можно и синхронно)
-    //   const loadData = () => {
-    //     try {
-    //       const rawData: ApiChatItem | null = getChatByIdFromStorage(selectedChatId)
-    //       if (rawData) {
-    //         const transformed = transformFromApi<ApiChatItem>(rawData) as ChatItem
-    //         setChatData(transformed)
-    //       } else {
-    //         setChatData(null)
-    //       }
-    //     } catch (error) {
-    //       console.error('Ошибка загрузки данных чата:', error)
-    //       setChatData(null)
-    //     } finally {
-    //       setLoading(false)
-    //     }
-    //   }
-
-    //   // Можно выполнить синхронно, но для единообразия используем setTimeout
-    //   const timer = setTimeout(loadData, 0)
-    //   return () => clearTimeout(timer)
-    // }, [selectedChatId])
-
-    // Загрузка данных из localStorage
+    // Загрузка данных из localStorage (добавляем updateTrigger в зависимости)
     useEffect(() => {
         if (!selectedChatId) {
             setChatData(null)
@@ -91,8 +67,29 @@ export default function ChatInfoSidebar() {
                             rawData,
                         ) as ChatItem
                     setChatData(transformed)
+
+                    // Для групп проверяем, является ли текущий пользователь владельцем
+                    if (
+                        transformed.chatType.includes(
+                            'group',
+                        )
+                    ) {
+                        const participants =
+                            findGroupParticipantsByChatKey(
+                                transformed.chatKey,
+                            )
+                        const owner = participants?.find(
+                            (p) => p.isOwner,
+                        )
+                        setIsCurrentUserOwner(
+                            owner?.uid === CURRENT_USER_UID,
+                        )
+                    } else {
+                        setIsCurrentUserOwner(false)
+                    }
                 } else {
                     setChatData(null)
+                    setIsCurrentUserOwner(false)
                 }
             } catch (error) {
                 console.error(
@@ -100,12 +97,19 @@ export default function ChatInfoSidebar() {
                     error,
                 )
                 setChatData(null)
+                setIsCurrentUserOwner(false)
             } finally {
                 setLoading(false)
             }
         }, 0)
         return () => clearTimeout(timer)
-    }, [selectedChatId])
+    }, [selectedChatId, updateTrigger])
+
+    const handleGroupUpdated = useCallback(() => {
+        setUpdateTrigger((prev) => prev + 1) // для перезагрузки данных текущего чата
+        loadChats(15) // перезагружаем весь список чатов
+    }, [loadChats])
+
     const handleNotificationsChange = useCallback(
         (enabled: boolean) => {
             if (selectedChatId) {
@@ -148,8 +152,8 @@ export default function ChatInfoSidebar() {
         return (
             <div
                 className={`
-        flex h-full items-center justify-center p-4 text-text-gray
-      `}
+              flex h-full items-center justify-center p-4 text-text-gray
+            `}
             >
                 Загрузка...
             </div>
@@ -160,8 +164,8 @@ export default function ChatInfoSidebar() {
         return (
             <div
                 className={`
-        flex h-full items-center justify-center p-4 text-text-gray
-      `}
+              flex h-full items-center justify-center p-4 text-text-gray
+            `}
             >
                 Чат не найден
             </div>
@@ -184,6 +188,8 @@ export default function ChatInfoSidebar() {
 
         return (
             <GroupInfoSidebar
+                chatId={chatData.id}
+                chatType={chatData.chatType}
                 chatKey={chatData.chatKey}
                 chatUid={chatData.chat.uid}
                 name={chatData.name}
@@ -198,6 +204,9 @@ export default function ChatInfoSidebar() {
                 onClearChat={handleClearChat}
                 onLeaveGroup={handleLeaveGroup}
                 onDeleteGroup={handleDeleteGroup}
+                avatarUrl={chatData.chat.avatarUrl}
+                onGroupUpdated={handleGroupUpdated}
+                isCurrentUserOwner={isCurrentUserOwner} // <-- новый пропс
             />
         )
     }
@@ -210,9 +219,12 @@ export default function ChatInfoSidebar() {
         return <UserInfoPlaceholder />
     }
 
-    // На случай неизвестного типа
     return (
-        <div className="flex h-full items-center justify-center p-4 text-text-gray">
+        <div
+            className={`
+          flex h-full items-center justify-center p-4 text-text-gray
+        `}
+        >
             Неизвестный тип чата
         </div>
     )

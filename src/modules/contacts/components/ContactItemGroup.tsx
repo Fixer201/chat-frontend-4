@@ -1,11 +1,6 @@
-// src/modules/contacts/components/ContactItemGroup.tsx
 'use client'
 
-import React, {
-    useEffect,
-    useState,
-    useCallback,
-} from 'react'
+import React, { useState, useCallback } from 'react'
 import {
     Contact,
     GroupParticipant,
@@ -16,13 +11,11 @@ import Dropdown from '@shared/ui/dropdown/Dropdown'
 
 interface ContactItemProps {
     contact: Contact | GroupParticipant
-    deleteMode: boolean
     selectedUid: string | null
-    selectedContacts: string[]
     searchValue: string
-    onSelectContact: (uid: string) => void
     onSetSelectedContact: (uid: string) => void
     onDelete?: (contact: Contact | GroupParticipant) => void
+    canDelete?: boolean
 }
 
 const STYLES = {
@@ -41,46 +34,41 @@ export const ContactItemGroup: React.FC<
     ContactItemProps
 > = ({
     contact,
-    deleteMode,
     selectedUid,
-    selectedContacts,
     searchValue,
-    onSelectContact,
     onSetSelectedContact,
     onDelete,
+    canDelete = false,
 }) => {
-    const [secondaryText, setSecondaryText] = useState('')
     const [contextMenuOpen, setContextMenuOpen] =
         useState(false)
     const [contextMenuPosition, setContextMenuPosition] =
         useState({ x: 0, y: 0 })
 
-    useEffect(() => {
-        const text = getStatusText(contact, searchValue)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSecondaryText(text)
-    }, [contact, searchValue])
+    // Вычисляем статус напрямую, без useEffect
+    const secondaryText = getStatusText(
+        contact,
+        searchValue,
+    )
 
     const handleContextMenu = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault()
-            // Проверяем, является ли контакт владельцем (только для GroupParticipant)
             const isOwner =
                 'isOwner' in contact && contact.isOwner
-            if (deleteMode || isOwner || !onDelete) return
+            if (!onDelete || !canDelete || isOwner) return
+
             setContextMenuPosition({
                 x: e.clientX,
                 y: e.clientY,
             })
             setContextMenuOpen(true)
         },
-        [deleteMode, contact, onDelete],
+        [contact, onDelete, canDelete],
     )
 
     const handleDelete = useCallback(() => {
-        if (onDelete) {
-            onDelete(contact)
-        }
+        onDelete?.(contact)
         setContextMenuOpen(false)
     }, [onDelete, contact])
 
@@ -94,46 +82,16 @@ export const ContactItemGroup: React.FC<
                 <ContactAvatar
                     src={`/images/contacts/${contact?.avatarUrl}`}
                     name={`${contact.firstName} ${contact.lastName}`}
-                    mode={
-                        deleteMode
-                            ? 'select-contact'
-                            : 'contact'
-                    }
+                    mode="contact"
                     isOnline={contact.isOnline}
                     statusText={secondaryText}
                     onClick={() =>
-                        deleteMode
-                            ? onSelectContact(contact.uid)
-                            : onSetSelectedContact(
-                                  contact.uid,
-                              )
+                        onSetSelectedContact(contact.uid)
                     }
-                    selected={
-                        deleteMode
-                            ? selectedContacts.includes(
-                                  contact.uid,
-                              )
-                            : contact.uid === selectedUid
-                    }
-                    onSelect={
-                        deleteMode
-                            ? () =>
-                                  onSelectContact(
-                                      contact.uid,
-                                  )
-                            : undefined
-                    }
-                    isSelected={
-                        deleteMode
-                            ? selectedContacts.includes(
-                                  contact.uid,
-                              )
-                            : false
-                    }
+                    selected={contact.uid === selectedUid}
                 />
             </div>
 
-            {/* Контекстное меню */}
             <Dropdown
                 open={contextMenuOpen}
                 onOpenChange={setContextMenuOpen}

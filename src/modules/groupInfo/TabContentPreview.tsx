@@ -18,12 +18,14 @@ interface TabContentPreviewProps {
     activeTab: TabId
     chatKey: string
     chatUid: string
+    onParticipantsChange?: (count: number) => void
 }
 
 export default function TabContentPreview({
     activeTab,
     chatKey,
     chatUid,
+    onParticipantsChange,
 }: TabContentPreviewProps) {
     const getPreviewComponent = () => {
         switch (activeTab) {
@@ -31,6 +33,9 @@ export default function TabContentPreview({
                 return (
                     <ParticipantsContent
                         chatKey={chatKey}
+                        onParticipantsChange={
+                            onParticipantsChange
+                        }
                     />
                 )
             case 'media':

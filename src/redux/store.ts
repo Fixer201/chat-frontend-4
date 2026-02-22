@@ -6,6 +6,7 @@ import contactsTempReducer from './slices/contactsSliceTemp'
 import uiReducer from './slices/uiSlice'
 import selectedContactReducer from './slices/selectedContactSlice'
 import selectedContactTempReducer from './slices/selectedContactTempSlice'
+import groupParticipantsReducer from './slices/groupParticipantsSlice'
 import {
     TypedUseSelectorHook,
     useDispatch,
@@ -21,6 +22,7 @@ export const store = configureStore({
         ui: uiReducer,
         SelectedContact: selectedContactReducer,
         SelectedContactTemp: selectedContactTempReducer,
+        groupParticipants: groupParticipantsReducer,
     },
 })
 export type RootState = ReturnType<typeof store.getState>

@@ -10,7 +10,7 @@ import { generateAvatarUrl } from './avatarGenerator'
 import { AVATAR_SOURCES } from './avatarSources'
 import { saveGroupParticipants } from '@shared/lib/localStorageGroupParticipants'
 import { GroupParticipant } from '@shared/types/contact'
-
+const CURRENT_USER_UID = 'current-user-uid'
 // Функция генерации моковых участников группы
 function generateMockGroupParticipants(
     chat: ApiChatItem,
@@ -43,20 +43,38 @@ function generateMockGroupParticipants(
 
     const count = 2 + (seed % 5) // от 2 до 6 участников
     const participants: GroupParticipant[] = []
-
+    // Определяем, будет ли владелец текущим пользователем (например, по чётности seed)
+    const isOwnerCurrentUser = seed % 2 === 0
     // Владелец (создатель)
-    participants.push({
-        uid: `owner-${chat.id}`,
-        firstName: 'Создатель',
-        lastName: '',
-        avatarUrl: '/images/chatHeader/userAvatar.svg',
-        avatarWebpUrl: '/images/chatHeader/userAvatar.svg',
-        isOwner: true,
-        isBlocked: false,
-        isOnline: true,
-        wasOnlineAt: Date.now(),
-        isInContacts: true,
-    })
+    if (isOwnerCurrentUser) {
+        participants.push({
+            uid: CURRENT_USER_UID,
+            firstName: 'Я',
+            lastName: '',
+            avatarUrl: '/images/chatHeader/userAvatar.svg',
+            avatarWebpUrl:
+                '/images/chatHeader/userAvatar.svg',
+            isOwner: true,
+            isBlocked: false,
+            isOnline: true,
+            wasOnlineAt: Date.now(),
+            isInContacts: true,
+        })
+    } else {
+        participants.push({
+            uid: `owner-${chat.id}`,
+            firstName: 'Создатель',
+            lastName: '',
+            avatarUrl: '/images/chatHeader/userAvatar.svg',
+            avatarWebpUrl:
+                '/images/chatHeader/userAvatar.svg',
+            isOwner: true,
+            isBlocked: false,
+            isOnline: true,
+            wasOnlineAt: Date.now(),
+            isInContacts: true,
+        })
+    }
 
     for (let i = 1; i < count; i++) {
         const idx = (seed + i) % firstNames.length

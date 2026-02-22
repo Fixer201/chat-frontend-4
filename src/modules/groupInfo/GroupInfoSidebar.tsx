@@ -3,7 +3,12 @@
 import { cn } from '@shared/lib/utils'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
-import { useState, useCallback } from 'react'
+import {
+    useState,
+    useCallback,
+    useEffect,
+    useRef,
+} from 'react'
 
 import TabContentPreview from './TabContentPreview'
 import TabLayout from './TabLayout'
@@ -18,6 +23,18 @@ import LeaveGroupModal from './modals/LeaveGroupModal'
 import DeleteGroupModal from './modals/DeleteGroupModal'
 import { useGroupInfoSidebar } from './useGroupInfoSidebar'
 import { getNoun } from '@shared/lib/getNoun'
+import {
+    getChatByIdFromStorage,
+    loadChatsFromStorage,
+    saveChatsToStorage,
+    updateChatInStorage,
+} from '@shared/lib/localStorageChats'
+import EditGroupView from './EditGroupView'
+import { transformFromApi } from '@shared/lib/transformChatData'
+import { ApiChatItem } from '@shared/types/chat'
+import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
+import { Toast } from '@shared/ui/toast/Toast'
+import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle'
 
 type TabId =
     | 'participants'
@@ -31,6 +48,8 @@ function getTabContent(
     chatKey: string,
     chatUid: string,
     setDynamicTabTitle: (t: string | null) => void,
+    onParticipantsChange?: (count: number) => void,
+    isCurrentUserOwner?: boolean, // добавлен пропс для передачи в ParticipantsContent
 ) {
     switch (tabId) {
         case 'participants':
@@ -38,6 +57,10 @@ function getTabContent(
                 <ParticipantsContent
                     chatKey={chatKey}
                     onTitleChange={setDynamicTabTitle}
+                    onParticipantsChange={
+                        onParticipantsChange
+                    }
+                    isCurrentUserOwner={isCurrentUserOwner} // передаём дальше
                 />
             )
         case 'media':
@@ -52,31 +75,30 @@ function getTabContent(
             return null
     }
 }
+
 interface GroupInfoSidebarProps {
+    chatId: number
+    chatType: string
     chatKey: string
     chatUid: string
-    /** Название группы */
     name: string
-    /** Количество участников */
     participantsCount: number
-    /** Описание группы (опционально) */
     description?: string
-    /** Ссылка-приглашение (опционально) */
     inviteLink?: string
-    /** Текущее состояние уведомлений */
     notificationsEnabled: boolean
-    /** Колбэк при изменении уведомлений */
     onNotificationsChange?: (enabled: boolean) => void
-    /** Колбэк при закрытии сайдбара */
     onClose?: () => void
-    /** Колбэк при очистке чата */
     onClearChat?: (deleteForEveryone: boolean) => void
-    /** Колбэк при выходе из группы */
     onLeaveGroup?: () => void
-    /** Колбэк при удалении группы */
     onDeleteGroup?: () => void
+    avatarUrl?: string | null
+    onGroupUpdated?: () => void
+    isCurrentUserOwner?: boolean // новый пропс
 }
+
 export default function GroupInfoSidebar({
+    chatId,
+    chatType,
     chatKey,
     chatUid,
     name,
@@ -89,16 +111,52 @@ export default function GroupInfoSidebar({
     onClearChat,
     onLeaveGroup,
     onDeleteGroup,
+    avatarUrl,
+    onGroupUpdated,
+    isCurrentUserOwner = false, // по умолчанию false
 }: GroupInfoSidebarProps) {
     const [isCopied, setIsCopied] = useState(false)
-
-    // Модальные окна
     const [clearChatModalOpen, setClearChatModalOpen] =
         useState(false)
     const [leaveGroupModalOpen, setLeaveGroupModalOpen] =
         useState(false)
     const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
         useState(false)
+    const [
+        participantsCountState,
+        setParticipantsCountState,
+    ] = useState(participantsCount)
+    const [isEditing, setIsEditing] = useState(false)
+    // const [avatarError, setAvatarError] = useState(false)
+    const [copied, copyToClipboard] =
+        useCopyToClipboard(700)
+    const [toastOpen, setToastOpen] = useState(false)
+    const [deletionToastOpen, setDeletionToastOpen] =
+        useState(false)
+    const [countdown, setCountdown] = useState(4)
+    const countdownTimerRef = useRef<NodeJS.Timeout | null>(
+        null,
+    )
+    const [leaveToastOpen, setLeaveToastOpen] =
+        useState(false)
+    const [leaveCountdown, setLeaveCountdown] = useState(4)
+    const leaveTimerRef = useRef<NodeJS.Timeout | null>(
+        null,
+    )
+    const [clearToastOpen, setClearToastOpen] =
+        useState(false)
+    const [clearCountdown, setClearCountdown] = useState(4)
+    const clearTimerRef = useRef<NodeJS.Timeout | null>(
+        null,
+    )
+    const [avatarError, setAvatarError] = useState(false)
+    const handleAvatarError = useCallback(() => {
+        setAvatarError(true)
+    }, [setAvatarError])
+    // Вычисляем src для отображения
+    const avatarSrc = avatarError
+        ? '/images/altImage.png'
+        : avatarUrl || '/images/altImage.png'
 
     const {
         activeTab,
@@ -127,39 +185,294 @@ export default function GroupInfoSidebar({
         getTabTitle,
     } = useGroupInfoSidebar()
 
+    const handleEditGroup = useCallback(() => {
+        setIsEditing(true)
+    }, [])
+
+    const compressImage = useCallback(
+        (
+            file: File,
+            maxWidth = 512,
+            maxHeight = 512,
+            quality = 0.8,
+        ): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const img = new window.Image()
+                img.onload = () => {
+                    const canvas =
+                        document.createElement('canvas')
+                    let width = img.width
+                    let height = img.height
+
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = Math.round(
+                                height * (maxWidth / width),
+                            )
+                            width = maxWidth
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = Math.round(
+                                width *
+                                    (maxHeight / height),
+                            )
+                            height = maxHeight
+                        }
+                    }
+
+                    canvas.width = width
+                    canvas.height = height
+                    const ctx = canvas.getContext('2d')
+                    ctx?.drawImage(img, 0, 0, width, height)
+                    resolve(
+                        canvas.toDataURL(
+                            'image/jpeg',
+                            quality,
+                        ),
+                    )
+                }
+                img.onerror = reject
+                img.src = URL.createObjectURL(file)
+            })
+        },
+        [],
+    )
+
+    const handleSaveEdit = useCallback(
+        async (updatedData: {
+            name: string
+            description: string
+            type: string
+            notificationsEnabled: boolean
+            avatarFile?: File | null
+        }) => {
+            const currentChat =
+                getChatByIdFromStorage(chatId)
+            if (!currentChat) return
+
+            const newChatType =
+                updatedData.type === 'open'
+                    ? 'public-group'
+                    : 'private-group'
+
+            const updatedChat: ApiChatItem = {
+                ...currentChat,
+            }
+
+            updatedChat.name = updatedData.name
+            updatedChat.description =
+                updatedData.description
+            updatedChat.chat_type = newChatType
+
+            if (updatedData.avatarFile) {
+                try {
+                    const compressedBase64 =
+                        await compressImage(
+                            updatedData.avatarFile,
+                        )
+                    updatedChat.chat = {
+                        ...currentChat.chat,
+                        avatar_url: compressedBase64,
+                    }
+                } catch (error) {
+                    console.error(
+                        'Ошибка сжатия аватара',
+                        error,
+                    )
+                }
+            }
+
+            const allChats = loadChatsFromStorage() || []
+            const index = allChats.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (index !== -1) {
+                allChats[index] = updatedChat
+                saveChatsToStorage(allChats)
+            }
+
+            if (
+                updatedData.notificationsEnabled !==
+                notificationsEnabled
+            ) {
+                onNotificationsChange?.(
+                    updatedData.notificationsEnabled,
+                )
+            }
+
+            setIsEditing(false)
+            onGroupUpdated?.()
+        },
+        [
+            chatId,
+            notificationsEnabled,
+            onNotificationsChange,
+            onGroupUpdated,
+            compressImage,
+        ],
+    )
+
+    const handleParticipantsChange = useCallback(
+        (newCount: number) => {
+            setParticipantsCountState(newCount)
+        },
+        [],
+    )
+
     const handleCopyLink = useCallback(() => {
-        if (!inviteLink) return
-        navigator.clipboard.writeText(inviteLink)
-        setIsCopied(true)
-        setTimeout(() => setIsCopied(false), 700)
-    }, [inviteLink])
+        if (inviteLink) {
+            copyToClipboard(inviteLink)
+            setToastOpen(true)
+        }
+    }, [inviteLink, copyToClipboard])
 
     const handleToggleNotifications = useCallback(() => {
         onNotificationsChange?.(!notificationsEnabled)
     }, [notificationsEnabled, onNotificationsChange])
 
-    // Обработчики для модалок
+    // Обработчик подтверждения очистки из модалки
     const handleClearChatConfirm = useCallback(
         async (deleteForEveryone: boolean) => {
-            await onClearChat?.(deleteForEveryone)
             setClearChatModalOpen(false)
+            setClearToastOpen(true)
+            setClearCountdown(4)
+
+            clearTimerRef.current = setInterval(() => {
+                setClearCountdown((prev) => {
+                    if (prev <= 1) {
+                        if (clearTimerRef.current) {
+                            clearInterval(
+                                clearTimerRef.current,
+                            )
+                            clearTimerRef.current = null
+                        }
+                        setClearToastOpen(false)
+
+                        // Вызов реальной очистки в следующем цикле событий
+                        setTimeout(() => {
+                            onClearChat?.(deleteForEveryone)
+                        }, 0)
+
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
         },
         [onClearChat],
     )
-
+    // Отмена очистки
+    const handleCancelClear = useCallback(() => {
+        if (clearTimerRef.current) {
+            clearInterval(clearTimerRef.current)
+            clearTimerRef.current = null
+        }
+        setClearToastOpen(false)
+        setClearCountdown(4)
+    }, [])
+    // Очистка таймера при размонтировании
+    useEffect(() => {
+        return () => {
+            if (clearTimerRef.current) {
+                clearInterval(clearTimerRef.current)
+            }
+        }
+    }, [])
+    // Обработчик подтверждения выхода из модалки
     const handleLeaveGroupConfirm =
         useCallback(async () => {
-            await onLeaveGroup?.()
             setLeaveGroupModalOpen(false)
-        }, [onLeaveGroup])
+            setLeaveToastOpen(true)
+            setLeaveCountdown(4)
 
+            leaveTimerRef.current = setInterval(() => {
+                setLeaveCountdown((prev) => {
+                    if (prev <= 1) {
+                        if (leaveTimerRef.current) {
+                            clearInterval(
+                                leaveTimerRef.current,
+                            )
+                            leaveTimerRef.current = null
+                        }
+                        setLeaveToastOpen(false)
+
+                        // Вызов реального выхода в следующем цикле событий
+                        setTimeout(() => {
+                            onLeaveGroup?.()
+                        }, 0)
+
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
+        }, [onLeaveGroup])
+    // Отмена выхода
+    const handleCancelLeave = useCallback(() => {
+        if (leaveTimerRef.current) {
+            clearInterval(leaveTimerRef.current)
+            leaveTimerRef.current = null
+        }
+        setLeaveToastOpen(false)
+        setLeaveCountdown(4)
+    }, [])
+    // Очистка таймеров при размонтировании
+    useEffect(() => {
+        return () => {
+            if (leaveTimerRef.current) {
+                clearInterval(leaveTimerRef.current)
+            }
+        }
+    }, [])
+    // Обработчик подтверждения удаления из модалки
     const handleDeleteGroupConfirm =
         useCallback(async () => {
-            await onDeleteGroup?.()
             setDeleteGroupModalOpen(false)
+            setDeletionToastOpen(true)
+            setCountdown(4)
+
+            countdownTimerRef.current = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        if (countdownTimerRef.current) {
+                            clearInterval(
+                                countdownTimerRef.current,
+                            )
+                            countdownTimerRef.current = null
+                        }
+                        setDeletionToastOpen(false)
+
+                        // ✅ Важно: выносим вызов удаления в следующий цикл событий
+                        // чтобы дать React завершить текущий рендер
+                        setTimeout(() => {
+                            onDeleteGroup?.()
+                        }, 0)
+
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
         }, [onDeleteGroup])
 
-    // Режим таба — отдельный layout
+    // Отмена удаления
+    const handleCancelDeletion = useCallback(() => {
+        if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current)
+            countdownTimerRef.current = null
+        }
+        setDeletionToastOpen(false)
+        setCountdown(4)
+    }, [])
+    // Очистка таймера при размонтировании
+    useEffect(() => {
+        return () => {
+            if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current)
+            }
+        }
+    }, [])
     if (viewMode === 'tab') {
         return (
             <TabLayout
@@ -180,12 +493,34 @@ export default function GroupInfoSidebar({
                     chatKey,
                     chatUid,
                     setDynamicTabTitle,
+                    handleParticipantsChange,
+                    isCurrentUserOwner, // передаём в таб участников
                 )}
             </TabLayout>
         )
     }
 
-    // Главный режим
+    if (isEditing) {
+        return (
+            <EditGroupView
+                initialName={name}
+                initialDescription={description || ''}
+                initialType={
+                    chatType.includes('public')
+                        ? 'open'
+                        : 'closed'
+                }
+                initialAvatarUrl={avatarUrl}
+                initialNotificationsEnabled={
+                    notificationsEnabled
+                }
+                inviteLink={inviteLink}
+                onSave={handleSaveEdit}
+                onCancel={() => setIsEditing(false)}
+            />
+        )
+    }
+
     return (
         <div
             className={`
@@ -231,28 +566,27 @@ export default function GroupInfoSidebar({
                 </h2>
 
                 <div className="flex items-center gap-3">
-                    <Button
-                        onClick={() =>
-                            console.log(
-                                'Дополнительные настройки',
-                            )
-                        }
-                        aria-label="Дополнительные настройки"
-                        variant="ghost"
-                        size="sm"
-                        className={`
-                          flex items-center justify-center rounded-full p-0
-                          text-text-black
-                          hover:bg-accent-violet-ultra-light
-                        `}
-                    >
-                        <Image
-                            src="/icons/detailInfo/detailInfoSettings.svg"
-                            alt="Детальные настройки"
-                            width={24}
-                            height={24}
-                        />
-                    </Button>
+                    {/* Кнопка редактирования доступна только владельцу */}
+                    {isCurrentUserOwner && (
+                        <Button
+                            onClick={handleEditGroup}
+                            aria-label="Редактировать группу"
+                            variant="ghost"
+                            size="sm"
+                            className={`
+                              flex items-center justify-center rounded-full p-0
+                              text-text-black
+                              hover:bg-accent-violet-ultra-light
+                            `}
+                        >
+                            <Image
+                                src="/icons/detailInfo/detailInfoSettings.svg"
+                                alt="Редактировать"
+                                width={24}
+                                height={24}
+                            />
+                        </Button>
+                    )}
 
                     <DropdownMenuButton
                         triggerIcon={
@@ -261,9 +595,7 @@ export default function GroupInfoSidebar({
                                 alt="Настройки"
                                 width={24}
                                 height={24}
-                                className={`
-                              hover:cursor-pointer
-                            `}
+                                className="hover:cursor-pointer"
                             />
                         }
                         triggerClassName="flex items-center justify-center rounded-full p-0 text-text-black hover:bg-accent-violet-ultra-light"
@@ -286,7 +618,8 @@ export default function GroupInfoSidebar({
                                         true,
                                     ),
                             },
-                            {
+                            // Пункт "Покинуть группу" для всех, кроме владельца
+                            !isCurrentUserOwner && {
                                 label: 'Покинуть группу',
                                 icon: (
                                     <Image
@@ -302,7 +635,8 @@ export default function GroupInfoSidebar({
                                     ),
                                 hasDivider: true,
                             },
-                            {
+                            // Пункт "Удалить группу" только для владельца
+                            isCurrentUserOwner && {
                                 label: 'Удалить группу',
                                 icon: (
                                     <Image
@@ -319,35 +653,33 @@ export default function GroupInfoSidebar({
                                 hasDivider: true,
                                 isDanger: true,
                             },
-                        ]}
+                        ].filter(Boolean)} // отфильтровываем false
                     />
                 </div>
             </div>
 
-            {/* Основной контент */}
+            {/* Основной контент (без изменений) */}
             <div
                 ref={mainContentRef}
                 className={cn(
                     'scrollbar-hide flex-1 overflow-auto',
-                    `
-                  h-[calc(100%-64px)] touch-none overscroll-none
-                `,
+                    'h-[calc(100%-64px)] touch-none overscroll-none',
                 )}
                 onWheel={handleMainWheel}
                 onTouchStart={handleMainTouchStart}
                 onTouchMove={handleMainTouchMove}
                 onScroll={handleMainScroll}
             >
-                {/* Обложка группы */}
                 <div className="relative">
                     <div className="relative h-60 w-full overflow-hidden">
                         <Image
-                            src="/images/tempSIdebarInfo.png"
-                            alt="Группа"
+                            key={avatarUrl}
+                            src={avatarSrc}
+                            alt={name}
                             fill
-                            className={`
-                          object-cover
-                        `}
+                            className="object-cover"
+                            onError={handleAvatarError}
+                            priority
                         />
                     </div>
                     <div
@@ -360,9 +692,9 @@ export default function GroupInfoSidebar({
                             {name}
                         </h3>
                         <p className="mt-1 text-lg text-white/90">
-                            {participantsCount}{' '}
+                            {participantsCountState}{' '}
                             {getNoun(
-                                participantsCount,
+                                participantsCountState,
                                 'участник',
                                 'участника',
                                 'участников',
@@ -371,7 +703,6 @@ export default function GroupInfoSidebar({
                     </div>
                 </div>
 
-                {/* Блок с уведомлениями и информацией */}
                 <div className="bg-gray-50 px-4 py-3">
                     {/* Уведомления */}
                     <div className="flex items-center justify-between">
@@ -404,100 +735,105 @@ export default function GroupInfoSidebar({
                             <span
                                 className={cn(
                                     `
-                                  inline-block h-6 w-6 transform rounded-full
-                                  bg-white transition-transform
-                                `,
+                                      inline-block h-6 w-6 transform
+                                      rounded-full bg-white transition-transform
+                                    `,
                                     notificationsEnabled
                                         ? 'translate-x-6'
                                         : `
-                                  translate-x-1
-                                `,
+                                      translate-x-1
+                                    `,
                                 )}
                             />
                         </button>
                     </div>
 
                     {/* Описание */}
-                    {description && (
-                        <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
-                            <div
-                                className={`
+
+                    <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
+                        <div
+                            className={`
                               flex flex-col justify-between p-0.5 pr-8
                             `}
-                            >
-                                <span
-                                    className={`
+                        >
+                            <span
+                                className={`
                                   p-0 text-xs font-medium tracking-extra-tight
                                   text-text-gray
                                 `}
-                                >
-                                    Описание
-                                </span>
-                                <span className="p-0 text-base text-black">
-                                    {description}
-                                </span>
-                            </div>
+                            >
+                                Описание
+                            </span>
+                            <span
+                                className={`
+                                  p-0 text-base break-words text-black
+                                `}
+                            >
+                                {description ||
+                                    'пустое описание'}
+                            </span>
                         </div>
-                    )}
+                    </div>
 
                     {/* Ссылка-приглашение */}
-                    {inviteLink && (
-                        <div className="mx-0 my-1 rounded-md bg-white-bg p-1">
-                            <div className="flex flex-col justify-between p-0.5">
-                                <span
-                                    className={`
+                    {chatType === 'public-group' &&
+                        inviteLink && (
+                            <div className="mx-0 my-1 rounded-md bg-white-bg p-1">
+                                <div className="flex flex-col justify-between p-0.5">
+                                    <span
+                                        className={`
                                   mb-1 p-0 text-xs font-medium
                                   tracking-extra-tight text-text-gray
                                 `}
-                                >
-                                    Ссылка на приглашение в
-                                    группу
-                                </span>
-                                <div
-                                    className={`
+                                    >
+                                        Ссылка на
+                                        приглашение в группу
+                                    </span>
+                                    <div
+                                        className={`
                                   flex items-center justify-between
                                 `}
-                                >
-                                    <span
-                                        className={`
+                                    >
+                                        <span
+                                            className={`
                                       pr-2 text-base break-all
                                       text-accent-violet-primary
                                     `}
-                                    >
-                                        {inviteLink}
-                                    </span>
-                                    <Button
-                                        onClick={
-                                            handleCopyLink
-                                        }
-                                        aria-label="Копировать ссылку"
-                                        variant="ghost"
-                                        size="sm"
-                                        className={`
+                                        >
+                                            {inviteLink}
+                                        </span>
+                                        <Button
+                                            onClick={
+                                                handleCopyLink
+                                            }
+                                            aria-label="Копировать ссылку"
+                                            variant="ghost"
+                                            size="sm"
+                                            className={`
                                           flex shrink-0 items-center
                                           justify-center rounded-full p-0
                                           text-text-black
                                           hover:bg-accent-violet-ultra-light
                                         `}
-                                    >
-                                        <Image
-                                            src="/icons/detailInfo/copyLink.svg"
-                                            alt="Копировать ссылку"
-                                            width={24}
-                                            height={24}
-                                            className={cn(
-                                                isCopied
-                                                    ? `
-                                              opacity-50
-                                            `
-                                                    : `opacity-100`,
-                                            )}
-                                        />
-                                    </Button>
+                                        >
+                                            <Image
+                                                src="/icons/detailInfo/copyLink.svg"
+                                                alt="Копировать ссылку"
+                                                width={24}
+                                                height={24}
+                                                className={cn(
+                                                    copied
+                                                        ? 'opacity-50'
+                                                        : `
+                                              opacity-100
+                                            `,
+                                                )}
+                                            />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
                     {/* Табы */}
                     <div
@@ -579,6 +915,9 @@ export default function GroupInfoSidebar({
                             chatKey={chatKey}
                             chatUid={chatUid}
                             activeTab={activeTab}
+                            onParticipantsChange={
+                                handleParticipantsChange
+                            }
                         />
                     </div>
                 </div>
@@ -591,22 +930,116 @@ export default function GroupInfoSidebar({
                 onConfirm={handleClearChatConfirm}
                 groupName={name}
             />
-            <LeaveGroupModal
-                open={leaveGroupModalOpen}
-                onClose={() =>
-                    setLeaveGroupModalOpen(false)
+            {!isCurrentUserOwner && (
+                <LeaveGroupModal
+                    open={leaveGroupModalOpen}
+                    onClose={() =>
+                        setLeaveGroupModalOpen(false)
+                    }
+                    onConfirm={handleLeaveGroupConfirm}
+                    groupName={name}
+                />
+            )}
+            {isCurrentUserOwner && (
+                <DeleteGroupModal
+                    open={deleteGroupModalOpen}
+                    onClose={() =>
+                        setDeleteGroupModalOpen(false)
+                    }
+                    onConfirm={handleDeleteGroupConfirm}
+                    groupName={name}
+                />
+            )}
+            {/* Toast-уведомление */}
+            <Toast
+                open={toastOpen}
+                onClose={() => setToastOpen(false)}
+                message="Ссылка-приглашение скопирована"
+                icon={
+                    <Image
+                        src="/icons/detailInfo/copyLink.svg"
+                        alt=""
+                        width={20}
+                        height={20}
+                        className="text-white"
+                    />
                 }
-                onConfirm={handleLeaveGroupConfirm}
-                groupName={name}
             />
-            <DeleteGroupModal
-                open={deleteGroupModalOpen}
-                onClose={() =>
-                    setDeleteGroupModalOpen(false)
-                }
-                onConfirm={handleDeleteGroupConfirm}
-                groupName={name}
-            />
+            {/* Toast для удаления группы */}
+            <Toast
+                open={deletionToastOpen}
+                onClose={handleCancelDeletion}
+            >
+                <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <CountdownCircle
+                            seconds={countdown}
+                        />
+                        <span className="text-sm font-medium">
+                            Группа удалена
+                        </span>
+                    </div>
+                    <button
+                        onClick={handleCancelDeletion}
+                        className={`
+                          text-sm font-medium text-white transition-colors
+                          hover:text-gray-200
+                        `}
+                    >
+                        Отмена
+                    </button>
+                </div>
+            </Toast>
+            {/* Toast для выхода из группы */}
+            <Toast
+                open={leaveToastOpen}
+                onClose={handleCancelLeave}
+            >
+                <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <CountdownCircle
+                            seconds={leaveCountdown}
+                        />
+                        <span className="text-sm font-medium">
+                            Вы покинули Группу
+                        </span>
+                    </div>
+                    <button
+                        onClick={handleCancelLeave}
+                        className={`
+        text-sm font-medium text-white transition-colors
+        hover:text-gray-200
+      `}
+                    >
+                        Отмена
+                    </button>
+                </div>
+            </Toast>
+            {/* Toast для очистки чата */}
+            <Toast
+                open={clearToastOpen}
+                onClose={handleCancelClear}
+            >
+                <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <CountdownCircle
+                            seconds={clearCountdown}
+                        />
+                        <span className="text-sm font-medium">
+                            Чат очищен
+                        </span>
+                    </div>
+                    <button
+                        onClick={handleCancelClear}
+                        className={`
+        text-sm font-medium text-white transition-colors
+        hover:text-gray-200
+      `}
+                    >
+                        Отмена
+                    </button>
+                </div>
+            </Toast>
         </div>
     )
 }

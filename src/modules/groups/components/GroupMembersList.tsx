@@ -73,8 +73,9 @@ export default function GroupMembersList({
     return (
         <div
             className={`
-          flex h-(--screen-height-list) min-h-0 flex-col rounded-md bg-gray-main
-        `}
+              flex h-(--screen-height-list) min-h-0 flex-col rounded-md
+              bg-gray-main
+            `}
         >
             {/* Шапка с кнопкой назад и заголовком */}
             <div

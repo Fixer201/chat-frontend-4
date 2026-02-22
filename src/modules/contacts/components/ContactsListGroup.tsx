@@ -1,4 +1,3 @@
-// src/modules/contacts/components/ContactsListGroup.tsx
 'use client'
 
 import { useDispatch, useSelector } from 'react-redux'
@@ -8,18 +7,12 @@ import { RootState } from '@redux/store'
 import { useEffect, useState, memo } from 'react'
 import { useSearch } from '@shared/hooks/useSearch'
 import Modal from '@shared/ui/modal/Modal'
-import {
-    removeContacts,
-    setContacts,
-} from '@redux/slices/contactsSliceTemp'
-import { getContactWord } from '@shared/lib/getContactWord'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 import { GroupParticipant } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
-import { removeGroupParticipant } from '@shared/lib/localStorageGroupParticipants'
 
 interface ContactsListGroupProps {
     owner: GroupParticipant | null
@@ -27,6 +20,7 @@ interface ContactsListGroupProps {
     onInviteClick?: () => void
     chatKey: string
     onParticipantRemoved?: (uid: string) => void
+    canRemoveParticipants?: boolean
 }
 
 export default memo(function ContactsListGroup({
@@ -35,17 +29,14 @@ export default memo(function ContactsListGroup({
     onInviteClick,
     chatKey,
     onParticipantRemoved,
+    canRemoveParticipants = false,
 }: ContactsListGroupProps) {
     const [searchValue, setSearchValue] = useState('')
-    const [deleteMode, setDeleteMode] = useState(false)
-    const [selectedContacts, setSelectedContacts] =
-        useState<string[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [participantToDelete, setParticipantToDelete] =
         useState<GroupParticipant | null>(null)
 
     const dispatch = useDispatch()
-
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContactTemp.uid,
     )
@@ -58,39 +49,23 @@ export default memo(function ContactsListGroup({
             (contact) => `${contact.nickname || ''}`,
         ])
 
-    useEffect(() => {
-        if (deleteMode) {
-            dispatch(setSelectedContact(null))
-        }
-    }, [deleteMode, dispatch])
-
-    const handleSelectContact = (uid: string) => {
-        setSelectedContacts((prev) =>
-            prev.includes(uid)
-                ? prev.filter((id) => id !== uid)
-                : [...prev, uid],
-        )
-    }
-
     const handleDeleteParticipant = (
         participant: GroupParticipant,
     ) => {
+        if (!canRemoveParticipants) return
         setParticipantToDelete(participant)
         setIsModalOpen(true)
     }
 
     const handleConfirmDeleteParticipant = () => {
-        if (!participantToDelete || !chatKey) return
-
-        removeGroupParticipant(
-            chatKey,
-            participantToDelete.uid,
+        if (
+            !participantToDelete ||
+            !chatKey ||
+            !onParticipantRemoved
         )
+            return
 
-        if (onParticipantRemoved) {
-            onParticipantRemoved(participantToDelete.uid)
-        }
-
+        onParticipantRemoved(participantToDelete.uid)
         setParticipantToDelete(null)
         setIsModalOpen(false)
     }
@@ -104,12 +79,10 @@ export default memo(function ContactsListGroup({
         <>
             <div className="mt-2 flex h-1/12 min-h-15 items-center px-4">
                 <button
-                    className={cn(
-                        `
-                          flex items-center gap-2 rounded-lg px-3 py-1
-                          hover:cursor-pointer
-                        `,
-                    )}
+                    className={cn(`
+                      flex items-center gap-2 rounded-lg px-3 py-1
+                      hover:cursor-pointer
+                    `)}
                     onClick={onInviteClick}
                 >
                     <Image
@@ -157,15 +130,8 @@ export default memo(function ContactsListGroup({
                             <ContactItemGroup
                                 key={owner.uid}
                                 contact={owner}
-                                deleteMode={deleteMode}
-                                selectedUid={selectedUid}
-                                selectedContacts={
-                                    selectedContacts
-                                }
                                 searchValue={searchValue}
-                                onSelectContact={
-                                    handleSelectContact
-                                }
+                                selectedUid={selectedUid}
                                 onSetSelectedContact={(
                                     uid: string,
                                 ) =>
@@ -174,6 +140,10 @@ export default memo(function ContactsListGroup({
                                             uid,
                                         ),
                                     )
+                                }
+                                canDelete={false}
+                                onDelete={
+                                    handleDeleteParticipant
                                 }
                             />
                         </>
@@ -195,18 +165,11 @@ export default memo(function ContactsListGroup({
                                 <ContactItemGroup
                                     key={contact.uid}
                                     contact={contact}
-                                    deleteMode={deleteMode}
-                                    selectedUid={
-                                        selectedUid
-                                    }
-                                    selectedContacts={
-                                        selectedContacts
-                                    }
                                     searchValue={
                                         searchValue
                                     }
-                                    onSelectContact={
-                                        handleSelectContact
+                                    selectedUid={
+                                        selectedUid
                                     }
                                     onSetSelectedContact={(
                                         uid: string,
@@ -217,10 +180,11 @@ export default memo(function ContactsListGroup({
                                             ),
                                         )
                                     }
-                                    onDelete={(contact) =>
-                                        handleDeleteParticipant(
-                                            contact as GroupParticipant,
-                                        )
+                                    canDelete={
+                                        canRemoveParticipants
+                                    }
+                                    onDelete={
+                                        handleDeleteParticipant
                                     }
                                 />
                             ),
@@ -261,26 +225,26 @@ export default memo(function ContactsListGroup({
                 </CustomScrollbar>
             </div>
 
+            {/* Модалка подтверждения удаления участника */}
             <Modal
                 open={isModalOpen}
                 onClose={handleCloseModal}
-                title="Удалить участника"
-                description={`Вы уверены, что хотите удалить участника ${participantToDelete?.firstName} ${participantToDelete?.lastName} из группы?`}
-                descriptionColor="muted"
+                title={`Удалить ${participantToDelete?.firstName || ''} ${participantToDelete?.lastName || ''} из группы?`}
+                description="Пользователь потеряет доступ ко всем сообщениям и не сможет вернуться без приглашения"
                 titleAlign="left"
                 buttons={[
-                    {
-                        label: 'Отмена',
-                        variant: 'ghost',
-                        color: 'primary',
-                        onClick: handleCloseModal,
-                    },
                     {
                         label: 'Удалить',
                         variant: 'primary',
                         color: 'danger',
                         onClick:
                             handleConfirmDeleteParticipant,
+                    },
+                    {
+                        label: 'Отменить',
+                        variant: 'ghost',
+                        color: 'primary',
+                        onClick: handleCloseModal,
                     },
                 ]}
             />

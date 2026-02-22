@@ -1,4 +1,3 @@
-// src/modules/groupInfo/tabs/FilesContent.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -7,6 +6,7 @@ import {
     formatFileSize,
     formatFileDate,
 } from '@shared/lib/fileUtils'
+import { downloadFileFromUrl } from '@shared/lib/downloadFile'
 import type {
     BackendFile,
     BaseFile,
@@ -21,7 +21,6 @@ import {
     initGroupFiles,
 } from '@shared/lib/localStorageGroupFiles'
 
-// Моковые файлы по умолчанию (те же, что были)
 const DEFAULT_MOCK_FILES: MockFile[] = [
     { url: '/mockFiles/_Info.txt' },
     { url: '/mockFiles/задача для deepseek.docx' },
@@ -34,7 +33,7 @@ const DEFAULT_MOCK_FILES: MockFile[] = [
 ]
 
 interface FilesContentProps {
-    chatUid: string // добавляем пропс
+    chatUid: string
 }
 
 export default function FilesContent({
@@ -58,21 +57,15 @@ export default function FilesContent({
             clearTimeout(t)
             Object.values(
                 downloadIntervalsRef.current,
-            ).forEach((interval) => {
-                clearInterval(interval)
-            })
+            ).forEach(clearInterval)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chatUid]) // перезагружаем при смене чата
+    }, [chatUid])
 
-    // Функция загрузки файлов из localStorage
     const loadFiles = async () => {
         setLoading(true)
         try {
-            // Пытаемся загрузить из localStorage
             let filesData = loadGroupFiles(chatUid)
             if (!filesData) {
-                // Если нет, инициализируем моковыми данными
                 filesData = initGroupFiles(
                     chatUid,
                     DEFAULT_MOCK_FILES,
@@ -85,7 +78,6 @@ export default function FilesContent({
             setFilesState(transformedFiles)
         } catch (error) {
             console.error('Ошибка загрузки файлов:', error)
-            // В случае ошибки используем моковые данные напрямую
             const transformedFiles = transformFiles(
                 DEFAULT_MOCK_FILES,
                 'mock',
@@ -96,14 +88,13 @@ export default function FilesContent({
         }
     }
 
-    // Фильтрация файлов по имени с помощью хука useSearch
     const { filteredValue: filteredFiles } = useSearch(
         filesState,
         searchValue,
         [(file) => file.name.toLowerCase()],
     )
 
-    // Функция для имитации загрузки файла
+    // Имитация загрузки с реальным скачиванием по завершению
     const simulateDownload = (id: number) => {
         const file = filesState.find((f) => f.id === id)
         if (!file) return
@@ -165,6 +156,11 @@ export default function FilesContent({
             if (progress >= 100) {
                 clearInterval(interval)
                 delete downloadIntervalsRef.current[id]
+
+                // Реальное скачивание файла после завершения имитации
+                downloadFileFromUrl(file.url, file.name)
+
+                // Сброс состояния после небольшой задержки
                 setTimeout(() => {
                     setFilesState((prev) =>
                         prev.map((f) =>
@@ -185,12 +181,12 @@ export default function FilesContent({
         downloadIntervalsRef.current[id] = interval
     }
 
-    // Вычисляем общий размер файлов
     const totalSize =
         filesState
-            .reduce((sum, file) => {
-                return sum + file.originalSize
-            }, 0)
+            .reduce(
+                (sum, file) => sum + file.originalSize,
+                0,
+            )
             .toFixed(1) + ' MB'
 
     if (loading) {
@@ -205,7 +201,6 @@ export default function FilesContent({
 
     return (
         <div>
-            {/* Поле поиска (аналогично ContactsListGroup) */}
             <div className="mt-2 flex h-1/12 items-center px-4">
                 <Search
                     value={searchValue}
@@ -231,7 +226,9 @@ export default function FilesContent({
                         <FileItem
                             key={file.id}
                             file={file}
-                            onDownload={simulateDownload}
+                            onDownload={() =>
+                                simulateDownload(file.id)
+                            }
                         />
                     ))
                 )}

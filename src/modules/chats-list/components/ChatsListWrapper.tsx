@@ -199,9 +199,7 @@ export default function ChatsListWrapper() {
                             onClick={() =>
                                 setCurrentView('chats')
                             }
-                            className={`
-              mt-4 rounded bg-gray-main px-4 py-2
-            `}
+                            className={`mt-4 rounded bg-gray-main px-4 py-2`}
                         >
                             Вернуться к чатам
                         </button>
@@ -240,9 +238,7 @@ export default function ChatsListWrapper() {
                             onClick={() =>
                                 setCurrentView('chats')
                             }
-                            className={`
-              mt-4 rounded bg-gray-main px-4 py-2
-            `}
+                            className={`mt-4 rounded bg-gray-main px-4 py-2`}
                         >
                             Вернуться к чатам
                         </button>
@@ -269,18 +265,18 @@ export default function ChatsListWrapper() {
             {successMessage && (
                 <div
                     className={`
-          fixed right-4 bottom-4 z-50 rounded-lg bg-green-500 p-4 text-white
-          shadow-lg
-        `}
+                      fixed right-4 bottom-4 z-50 rounded-lg bg-green-500 p-4
+                      text-white shadow-lg
+                    `}
                 >
                     <div className="flex items-center gap-2">
                         <span>{successMessage}</span>
                         <button
                             onClick={handleCloseToast}
                             className={`
-              ml-2 text-white
-              hover:text-gray-200
-            `}
+                              ml-2 text-white
+                              hover:text-gray-200
+                            `}
                         >
                             ×
                         </button>

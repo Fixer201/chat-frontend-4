@@ -91,3 +91,16 @@ export function getChatByIdFromStorage(
     if (!chats) return null
     return chats.find((chat) => chat.id === id) || null
 }
+// Добавляем функцию для обновления чата
+
+export function updateChatInStorage(
+    chatId: number,
+    updates: Partial<ApiChatItem>,
+): void {
+    const chats = loadChatsFromStorage()
+    if (!chats) return
+    const index = chats.findIndex((c) => c.id === chatId)
+    if (index === -1) return
+    chats[index] = { ...chats[index], ...updates }
+    saveChatsToStorage(chats)
+}

@@ -1,51 +1,48 @@
-// AvatarPicker.tsx
-import React, { useRef, KeyboardEvent } from 'react'
+import React, {
+    useRef,
+    KeyboardEvent,
+    useState,
+    useEffect,
+} from 'react'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 
-// Пропсы компонента AvatarPicker
 export interface AvatarPickerProps {
-    src?: string | null // URL изображения или null для дефолтной аватарки
-    name?: string // Имя для alt-текста
-    size?: number // Размер компонента в пикселях
-    onFile?: (file: File | null) => void // Колбэк при выборе/сбросе файла
-    onImageClick?: () => void // Колбэк при клике на существующее изображение
+    src?: string | null
+    name?: string
+    size?: number
+    onFile?: (file: File | null) => void
+    onImageClick?: () => void
 }
 
-// Компонент для выбора и предпросмотра аватарки
-export const AvatarPicker: React.FC<AvatarPickerProps> = ({
+const AvatarPicker: React.FC<AvatarPickerProps> = ({
     src,
     name = '',
     size = 200,
     onFile,
     onImageClick,
 }) => {
-    const inputRef = useRef<HTMLInputElement | null>(null) // Ref для доступа к скрытому input элементу
+    const inputRef = useRef<HTMLInputElement | null>(null)
+    const [hasError, setHasError] = useState(false)
 
-    // Обработчик клика по кнопке выбора - вызывает клик по скрытому input
     const handleChoose = () => inputRef.current?.click()
 
-    // Обработчик изменения файла в input
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement>,
     ) => {
-        const f = e.target.files?.[0] ?? null // Получаем первый файл или null
-        onFile?.(f) // Вызываем колбэк с выбранным файлом
-
-        // Сбрасываем значение input для возможности повторного выбора того же файла
+        const f = e.target.files?.[0] ?? null
+        onFile?.(f)
         if (inputRef.current) {
             inputRef.current.value = ''
         }
     }
 
-    // Обработчик клика по изображению - вызывается только если есть изображение и обработчик
     const handleImageClick = () => {
         if (onImageClick && hasImage) {
             onImageClick()
         }
     }
 
-    // Обработчик нажатия клавиши для доступности - позволяет кликать по изображению с клавиатуры
     const handleKeyDown = (
         e: KeyboardEvent<HTMLDivElement>,
     ) => {
@@ -59,100 +56,89 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
         }
     }
 
-    // Определяем, есть ли изображение (не дефолтное) - проверяем что src не null и не дефолтная иконка
-    const hasImage = Boolean(
-        src && src !== '/images/chatHeader/userAvatar.svg',
-    )
+    const handleImageError = () => {
+        setHasError(true)
+    }
 
-    // Определяем, можно ли кликать по изображению (только если есть изображение и передан обработчик)
+    const imageUrl = hasError
+        ? '/images/altImage.png'
+        : src || '/images/chatHeader/userAvatar.svg'
+
+    const hasImage =
+        Boolean(src && !src.includes('userAvatar.svg')) &&
+        !hasError
     const canClickImage = hasImage && Boolean(onImageClick)
 
     return (
         <div className="flex w-full flex-col items-center">
-            {/* Контейнер для предпросмотра аватарки */}
             <div
-                style={{ width: size, height: size }} // Динамический размер из пропсов
+                style={{ width: size, height: size }}
                 className={`
                   relative flex items-center justify-center overflow-hidden
                   rounded-full bg-accent-violet-light
                   ${
                       canClickImage
                           ? `
-                            cursor-pointer transition-all
-                            hover:opacity-90
-                            focus:ring-2 focus:ring-accent-violet-primary
-                            focus:outline-none
-                          `
+                    cursor-pointer transition-all
+                    hover:opacity-90
+                    focus:ring-2 focus:ring-accent-violet-primary
+                    focus:outline-none
+                  `
                           : ''
                   }
                 `}
                 onClick={
                     canClickImage
-                        ? handleImageClick // Клик только если можно
+                        ? handleImageClick
                         : undefined
                 }
                 onKeyDown={
                     canClickImage
-                        ? handleKeyDown // Обработка клавиатуры только если можно
+                        ? handleKeyDown
                         : undefined
                 }
-                role={canClickImage ? 'button' : undefined} // Семантическая роль для доступности
+                role={canClickImage ? 'button' : undefined}
                 aria-label={
                     canClickImage
-                        ? `Изменить аватар для ${name || 'группы'}` // Описание для скринридеров
+                        ? `Изменить аватар для ${name || 'группы'}`
                         : undefined
                 }
             >
-                {/* Изображение аватарки (если есть) или fallback */}
-                {src ? ( // Если есть src - показываем изображение
-                    <Image
-                        src={src}
-                        alt={name} // Alt текст из name
-                        className="h-full w-full object-cover" // Растягиваем на весь контейнер
-                        width={size}
-                        height={size}
-                        unoptimized={true} // Отключаем оптимизацию Next.js для Blob URL
-                        priority={true} // Приоритетная загрузка (LCP элемент)
-                    />
-                ) : (
-                    // Иначе - показываем дефолтную иконку
-                    <Image
-                        src="/images/chatHeader/userAvatar.svg"
-                        alt={name || 'Аватар по умолчанию'}
-                        className="h-full w-full object-cover"
-                        width={size}
-                        height={size}
-                        unoptimized={true}
-                        priority={true}
-                    />
-                )}
+                <Image
+                    key={src} // ✅ ключ заставляет пересоздавать компонент при смене src
+                    src={imageUrl}
+                    alt={name}
+                    className="h-full w-full object-cover"
+                    width={size}
+                    height={size}
+                    unoptimized={true}
+                    priority={true}
+                    onError={handleImageError}
+                />
             </div>
 
-            {/* Скрытый input для выбора файла */}
             <input
-                ref={inputRef} // Привязываем ref для программного доступа
+                ref={inputRef}
                 type="file"
-                accept="image/*" // Только изображения
-                className="hidden" // Скрываем визуально
-                onChange={handleChange} // Обработчик выбора файла
-                aria-label={`Выбрать аватар для ${name || 'группы'}`} // Описание для скринридеров
+                accept="image/*"
+                className="hidden"
+                onChange={handleChange}
+                aria-label={`Выбрать аватар для ${name || 'группы'}`}
             />
 
-            {/* Кнопка для выбора фотографии */}
             <Button
                 type="button"
-                onClick={handleChoose} // Вызывает клик по скрытому input
-                variant="ghost" // Стиль кнопки - прозрачная
-                size="md" // Средний размер
+                onClick={handleChoose}
+                variant="ghost"
+                size="md"
                 className={`
                   mt-1 w-full text-center text-base text-accent-violet-primary
                 `}
-                aria-label={`Выбрать фотографию для ${name || 'группы'}`} // Для доступности
+                aria-label={`Выбрать фотографию для ${name || 'группы'}`}
             >
                 Выбрать фотографию
             </Button>
         </div>
     )
 }
-
 export default AvatarPicker

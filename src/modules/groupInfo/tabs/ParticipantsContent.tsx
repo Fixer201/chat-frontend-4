@@ -1,7 +1,7 @@
-// src/modules/groupInfo/tabs/ParticipantsContent.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
 import {
     findGroupParticipantsByChatKey,
     saveGroupParticipants,
@@ -13,22 +13,31 @@ import {
 import { contactsToGroupParticipants } from '@shared/lib/participantUtils'
 import ContactsListGroup from '@modules/contacts/components/ContactsListGroup'
 import InviteMembersContent from './InviteMembersContent'
+import {
+    setParticipants,
+    removeParticipant,
+} from '@redux/slices/groupParticipantsSlice'
 
 type View = 'participants' | 'invite'
 
 interface ParticipantsContentProps {
     chatKey: string
     onTitleChange?: (title: string | null) => void
+    onParticipantsChange?: (count: number) => void
+    isCurrentUserOwner?: boolean // новый пропс
 }
 
 export default function ParticipantsContent({
     chatKey,
     onTitleChange,
+    onParticipantsChange,
+    isCurrentUserOwner = false,
 }: ParticipantsContentProps) {
+    const dispatch = useDispatch()
     const [loading, setLoading] = useState(true)
     const [owner, setOwner] =
         useState<GroupParticipant | null>(null)
-    const [participants, setParticipants] = useState<
+    const [participants, setParticipantsLocal] = useState<
         GroupParticipant[]
     >([])
     const [currentView, setCurrentView] =
@@ -38,6 +47,7 @@ export default function ParticipantsContent({
         string | null
     >(null)
 
+    // Загрузка данных из localStorage и синхронизация с Redux
     useEffect(() => {
         setLoading(true)
         const data = findGroupParticipantsByChatKey(chatKey)
@@ -48,13 +58,32 @@ export default function ParticipantsContent({
                 (p) => !p.isOwner,
             )
             setOwner(ownerData)
-            setParticipants(otherParticipants)
+            setParticipantsLocal(otherParticipants)
+            dispatch(
+                setParticipants({
+                    chatKey,
+                    participants: data,
+                }),
+            )
         } else {
             setOwner(null)
-            setParticipants([])
+            setParticipantsLocal([])
+            dispatch(
+                setParticipants({
+                    chatKey,
+                    participants: [],
+                }),
+            )
         }
         setLoading(false)
-    }, [chatKey])
+    }, [chatKey, dispatch])
+
+    // Обновление счётчика участников
+    useEffect(() => {
+        const totalCount =
+            (owner ? 1 : 0) + participants.length
+        onParticipantsChange?.(totalCount)
+    }, [owner, participants, onParticipantsChange])
 
     useEffect(() => {
         if (onTitleChange) {
@@ -81,24 +110,30 @@ export default function ParticipantsContent({
                 contactsToGroupParticipants(
                     selectedContacts,
                 )
-
-            const allParticipants = [...participants]
-            for (const newP of newParticipants) {
-                if (
-                    !allParticipants.some(
-                        (p) => p.uid === newP.uid,
-                    )
-                ) {
-                    allParticipants.push(newP)
-                }
-            }
-
+            const allParticipants = [
+                ...participants,
+                ...newParticipants,
+            ]
             const fullList = owner
                 ? [owner, ...allParticipants]
                 : allParticipants
+
             saveGroupParticipants(chatKey, fullList)
 
-            setParticipants(allParticipants)
+            setOwner(
+                fullList.find((p) => p.isOwner) || null,
+            )
+            setParticipantsLocal(
+                fullList.filter((p) => !p.isOwner),
+            )
+
+            dispatch(
+                setParticipants({
+                    chatKey,
+                    participants: fullList,
+                }),
+            )
+
             setCurrentView('participants')
         } catch (error) {
             setInviteError(
@@ -117,11 +152,20 @@ export default function ParticipantsContent({
         const newParticipants = participants.filter(
             (p) => p.uid !== removedUid,
         )
-        setParticipants(newParticipants)
         const fullList = owner
             ? [owner, ...newParticipants]
             : newParticipants
+
         saveGroupParticipants(chatKey, fullList)
+
+        setOwner(fullList.find((p) => p.isOwner) || null)
+        setParticipantsLocal(
+            fullList.filter((p) => !p.isOwner),
+        )
+
+        dispatch(
+            removeParticipant({ chatKey, uid: removedUid }),
+        )
     }
 
     const handleCancelInvite = () => {
@@ -159,6 +203,9 @@ export default function ParticipantsContent({
                     onParticipantRemoved={
                         handleParticipantRemoved
                     }
+                    canRemoveParticipants={
+                        isCurrentUserOwner
+                    } // передаём право на удаление
                 />
             ) : (
                 <InviteMembersContent
