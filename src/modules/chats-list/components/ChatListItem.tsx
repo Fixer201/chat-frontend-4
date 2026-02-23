@@ -12,13 +12,6 @@ import { cn } from '@shared/lib/utils'
 import { ChatListItemDropdown } from './ChatListItemDropdown'
 import { ChatListItemProps } from '@shared/types/chat'
 
-/** Позиция контекстного меню */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type ContextMenuPosition = Readonly<{
-    top: number
-    left: number
-}>
-
 /** Tailwind классы для компонента */
 const STYLES = {
     container:
@@ -38,6 +31,7 @@ export const ChatListItem = React.memo(
                 onFavoriteChat,
                 onMuteChat,
                 onAddToContacts,
+                onOpenInfoPanel,
                 notificationsEnabled,
                 isFavorite = false,
                 chatType,
@@ -64,8 +58,8 @@ export const ChatListItem = React.memo(
             const [hoveredItem, setHoveredItem] = useState<
                 string | null
             >(null)
+
             // Функция для объединения внешнего и внутреннего рефов
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const setRefs = useCallback(
                 (node: HTMLDivElement | null) => {
                     if (typeof ref === 'function') {
@@ -77,6 +71,7 @@ export const ChatListItem = React.memo(
                 },
                 [ref],
             )
+
             // Обработчик открытия контекстного меню по правому клику
             const handleContextMenu = useCallback(
                 (e: React.MouseEvent) => {
@@ -117,7 +112,7 @@ export const ChatListItem = React.memo(
 
             return (
                 <div
-                    ref={containerRef}
+                    ref={setRefs}
                     className={STYLES.container}
                     onClick={onClick}
                     onContextMenu={handleContextMenu}
@@ -144,18 +139,20 @@ export const ChatListItem = React.memo(
                             notificationsEnabled
                         }
                         className={cn(
-                            'bg-transparent',
-                            'hover:bg-transparent',
+                            `
+                bg-transparent
+                hover:bg-transparent
+              `,
                             selected &&
-                                'bg-accent-violet-primary',
-                            selected &&
-                                'hover:bg-accent-violet-primary',
+                                `
+                rounded-lg bg-accent-violet-primary
+                hover:bg-accent-violet-primary
+              `,
                             !selected &&
-                                'hover:bg-accent-violet-light',
-                            'hover:rounded-lg',
-                            selected && 'rounded-lg',
+                                'hover:rounded-lg hover:bg-accent-violet-light',
                         )}
                     />
+
                     {/* Выпадающее меню с действиями для чата */}
                     <ChatListItemDropdown
                         open={contextMenuOpen}
@@ -167,6 +164,7 @@ export const ChatListItem = React.memo(
                         onMarkAsUnread={onMarkAsUnread}
                         onDeleteChat={onDeleteChat}
                         onAddToContacts={onAddToContacts}
+                        onOpenInfoPanel={onOpenInfoPanel}
                         notificationsEnabled={
                             notificationsEnabled
                         }

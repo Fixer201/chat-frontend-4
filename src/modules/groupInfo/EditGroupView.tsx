@@ -626,7 +626,12 @@ export default function EditGroupView({
 
                         {/* Поля ввода */}
                         <div className="w-full">
-                            <div className="flex w-full flex-col">
+                            <div
+                                className={`
+                              overflow-hidden rounded-md border
+                              border-app-divider
+                            `}
+                            >
                                 <FloatingTextarea
                                     position="top"
                                     label="Название*"
@@ -640,6 +645,7 @@ export default function EditGroupView({
                                                     .value,
                                         })
                                     }
+                                    className="rounded-none border-0"
                                 />
                                 <FloatingTextarea
                                     position="bottom"
@@ -656,6 +662,10 @@ export default function EditGroupView({
                                                     .value,
                                         })
                                     }
+                                    className={`
+                                      rounded-none border-0 border-t
+                                      border-app-divider
+                                    `}
                                 />
                             </div>
                         </div>

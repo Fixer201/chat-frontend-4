@@ -1,5 +1,4 @@
-// CreateGroupForm.tsx
-'use client' // Указываем что это клиентский компонент Next.js
+'use client'
 
 import {
     useEffect,
@@ -7,35 +6,34 @@ import {
     useRef,
     useCallback,
 } from 'react'
-import FloatingTextarea from '@shared/ui/floating/FloatingTextarea' // Компонент текстового поля с плавающим лейблом
-import AvatarPicker from '@shared/ui/avatar/AvatarPicker' // Компонент выбора аватарки
-import { AvatarCropper } from '@shared/ui/avatarCropper/AvatarCropper' // Компонент кадрирования
-import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect' // Селект для выбора типа группы
-import { Button } from '@shared/ui/button/Button' // Компонент кнопки
-import BackIcon from '@public/icons/settings-sidebar/Back.svg' // Иконка назад
+import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
+import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
+import { AvatarCropper } from '@shared/ui/avatarCropper/AvatarCropper'
+import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
+import { Button } from '@shared/ui/button/Button'
+import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import {
     GroupTypeOptionProps,
     onNextProps,
-    CropParams, // Типы из shared типов
+    CropParams,
 } from '@shared/types/createGroup'
-import { Area } from 'react-easy-crop' // Тип области кадрирования
+import { Area } from 'react-easy-crop'
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
-// Интерфейс для внутреннего состояния кадрирования - хранит все параметры между сессиями
 interface CropState {
-    crop: { x: number; y: number } // Позиция кадрирования
-    zoom: number // Уровень масштабирования
-    croppedAreaPixels: Area | null // Область кадрирования в пикселях
-    croppedBlob: Blob | null // Кадрированное изображение как Blob
-    originalFile: File | null // Оригинальный файл до кадрирования
+    crop: { x: number; y: number }
+    zoom: number
+    croppedAreaPixels: Area | null
+    croppedBlob: Blob | null
+    originalFile: File | null
 }
 
 interface CreateGroupFormProps {
-    onBack: () => void // Колбэк для навигации назад
-    onNext: (data: onNextProps) => void // Колбэк для перехода к следующему шагу
-    initialData: onNextProps | null // Начальные данные для восстановления формы
+    onBack: () => void
+    onNext: (data: onNextProps) => void
+    initialData: onNextProps | null
 }
 
-// Опции для выбора типа группы - статические данные
 const groupOptions = [
     {
         value: 'open',
@@ -54,16 +52,14 @@ export default function CreateGroupForm({
     onNext,
     initialData,
 }: CreateGroupFormProps) {
-    const isFirstRender = useRef(true) // Флаг первого рендера для контроля восстановления состояния
-    const previousPreviewRef = useRef<string | null>(null) // Хранит предыдущий Blob URL для очистки памяти
+    const isFirstRender = useRef(true)
+    const previousPreviewRef = useRef<string | null>(null)
 
-    // Состояния для кадрирования
     const [isCropperOpen, setIsCropperOpen] =
-        useState(false) // Открыто ли окно кадрирования
+        useState(false)
     const [selectedFile, setSelectedFile] =
-        useState<File | null>(null) // Файл выбранный для кадрирования
+        useState<File | null>(null)
 
-    // Полное состояние кадрирования для сохранения - инициализируем дефолтными значениями
     const [cropState, setCropState] = useState<CropState>({
         crop: { x: 0, y: 0 },
         zoom: 1.2,
@@ -72,29 +68,26 @@ export default function CreateGroupForm({
         originalFile: null,
     })
 
-    // Остальные состояния формы с восстановлением из initialData
     const [photoFile, setPhotoFile] = useState<File | null>(
-        initialData?.photo || null, // Файл фото (кадрированный или оригинальный)
+        initialData?.photo || null,
     )
     const [name, setName] = useState(
-        initialData?.name || '', // Название группы
+        initialData?.name || '',
     )
     const [description, setDescription] = useState(
-        initialData?.description || '', // Описание группы
+        initialData?.description || '',
     )
     const [choosenOption, setChoosenOption] =
         useState<GroupTypeOptionProps>(() => {
-            // Функция инициализации выбранной опции
             const getInitialOption = () => {
                 if (initialData?.type) {
                     const foundOption = groupOptions.find(
                         (option) =>
                             option.value ===
-                            initialData.type, // Ищем опцию по значению
+                            initialData.type,
                     )
                     return (
                         foundOption || {
-                            // Если не нашли - возвращаем пустую
                             value: '',
                             optionName: '',
                             optionDescription: '',
@@ -102,7 +95,6 @@ export default function CreateGroupForm({
                     )
                 }
                 return {
-                    // Если нет initialData.type - пустая опция
                     value: '',
                     optionName: '',
                     optionDescription: '',
@@ -111,64 +103,52 @@ export default function CreateGroupForm({
             return getInitialOption()
         })
 
-    // Состояние для preview URL - будет обновляться через useEffect
     const [photoPreview, setPhotoPreview] = useState<
         string | null
     >(null)
-
-    // Определяем, есть ли изображение (не дефолтное) - проверяем что preview не содержит путь к дефолтной иконке
     const hasImage = Boolean(
         photoPreview &&
         !photoPreview.includes('userAvatar.svg'),
     )
 
-    // Создание preview URL с использованием useEffect - управляет Object URL для preview
+    // Создание preview URL
     useEffect(() => {
-        let isMounted = true // Флаг монтирования для предотвращения утечек памяти
-        let animationFrameId: number | null = null // ID для отмены requestAnimationFrame
+        let isMounted = true
+        let animationFrameId: number | null = null
 
-        // Очищаем предыдущий preview URL чтобы избежать утечек памяти
         if (previousPreviewRef.current) {
             URL.revokeObjectURL(previousPreviewRef.current)
         }
 
         let newPreview: string | null = null
 
-        // Приоритет отображения: кадрированный Blob → оригинальный файл → photoFile → дефолтное изображение
         if (cropState.croppedBlob) {
             newPreview = URL.createObjectURL(
-                cropState.croppedBlob, // Создаем URL для кадрированного изображения
+                cropState.croppedBlob,
             )
         } else if (cropState.originalFile) {
             newPreview = URL.createObjectURL(
-                cropState.originalFile, // Создаем URL для оригинального файла
+                cropState.originalFile,
             )
         } else if (photoFile) {
-            newPreview = URL.createObjectURL(photoFile) // Создаем URL для photoFile
+            newPreview = URL.createObjectURL(photoFile)
         } else {
-            // Используем дефолтное изображение
             newPreview = '/images/chatHeader/userAvatar.svg'
         }
 
-        // Сохраняем новый preview в ref для будущей очистки
         previousPreviewRef.current = newPreview
 
-        // Откладываем обновление состояния до следующего кадра анимации для оптимизации
         animationFrameId = requestAnimationFrame(() => {
             if (isMounted) {
                 setPhotoPreview(newPreview)
             }
         })
 
-        // Очистка при размонтировании
         return () => {
-            isMounted = false // Помечаем что компонент размонтирован
-
+            isMounted = false
             if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId) // Отменяем отложенное обновление
+                cancelAnimationFrame(animationFrameId)
             }
-
-            // Очищаем Object URL если он был создан (начинается с 'blob:')
             if (
                 previousPreviewRef.current &&
                 previousPreviewRef.current.startsWith(
@@ -182,17 +162,15 @@ export default function CreateGroupForm({
             }
         }
     }, [
-        cropState.croppedBlob, // Зависимость от кадрированного Blob
-        cropState.originalFile, // Зависимость от оригинального файла
-        photoFile, // Зависимость от photoFile
+        cropState.croppedBlob,
+        cropState.originalFile,
+        photoFile,
     ])
 
-    // Восстановление состояния из initialData при первом рендере
+    // Восстановление из initialData при первом рендере
     useEffect(() => {
         if (isFirstRender.current) {
-            isFirstRender.current = false // Снимаем флаг первого рендера
-
-            // Используем setTimeout для асинхронного восстановления состояния (после монтирования)
+            isFirstRender.current = false
             setTimeout(() => {
                 if (initialData) {
                     setName(initialData.name || '')
@@ -200,11 +178,8 @@ export default function CreateGroupForm({
                         initialData.description || '',
                     )
 
-                    // Восстанавливаем состояние кадрирования если есть параметры
                     if (initialData.photo) {
                         setPhotoFile(initialData.photo)
-
-                        // Восстанавливаем cropState если есть параметры кадрирования
                         if (initialData.cropParams) {
                             setCropState({
                                 crop: initialData.cropParams
@@ -216,12 +191,11 @@ export default function CreateGroupForm({
                                     initialData.cropParams
                                         .croppedAreaPixels ||
                                     null,
-                                croppedBlob: null, // Не храним Blob между сессиями
+                                croppedBlob: null,
                                 originalFile:
-                                    initialData.photo, // Сохраняем оригинальный файл
+                                    initialData.photo,
                             })
                         } else {
-                            // Если нет параметров кадрирования - сохраняем только файл
                             setCropState((prev) => ({
                                 ...prev,
                                 originalFile:
@@ -230,7 +204,6 @@ export default function CreateGroupForm({
                         }
                     }
 
-                    // Восстанавливаем выбранную опцию
                     if (initialData.type) {
                         const foundOption =
                             groupOptions.find(
@@ -245,24 +218,20 @@ export default function CreateGroupForm({
                 }
             }, 0)
         }
-    }, [initialData]) // Только при изменении initialData
+    }, [initialData])
 
-    // Обработчик выбора файла из AvatarPicker (по кнопке)
     const handleFileSelect = useCallback(
         (file: File | null) => {
             if (file) {
-                // Сохраняем файл как originalFile в cropState и сбрасываем предыдущее кадрирование
                 setCropState((prev) => ({
                     ...prev,
                     originalFile: file,
-                    croppedBlob: null, // Сбрасываем кадрированный Blob
-                    croppedAreaPixels: null, // Сбрасываем область кадрирования
+                    croppedBlob: null,
+                    croppedAreaPixels: null,
                 }))
                 setSelectedFile(file)
                 setPhotoFile(file)
-                // НЕ открываем кадрирование! Только сохраняем файл
             } else {
-                // Сброс аватарки - очищаем все состояния
                 setPhotoFile(null)
                 setSelectedFile(null)
                 setCropState({
@@ -274,14 +243,11 @@ export default function CreateGroupForm({
                 })
             }
         },
-        [], // Без зависимостей - стабильная функция
+        [],
     )
 
-    // Обработчик клика по изображению в AvatarPicker
     const handleImageClick = useCallback(() => {
-        // Открываем кадрирование только если есть изображение
         if (hasImage) {
-            // Используем originalFile для кадрирования (приоритет), иначе photoFile
             if (cropState.originalFile) {
                 setSelectedFile(cropState.originalFile)
             } else if (photoFile) {
@@ -291,23 +257,19 @@ export default function CreateGroupForm({
         }
     }, [hasImage, cropState.originalFile, photoFile])
 
-    // Обработчик закрытия кадрирования
     const handleCropperClose = useCallback(() => {
         setIsCropperOpen(false)
     }, [])
 
-    // Обработчик подтверждения кадрирования
     const handleCropperConfirm = useCallback(
         (
-            blob: Blob, // Кадрированное изображение как Blob
+            blob: Blob,
             cropParams?: {
-                // Параметры кадрирования для сохранения
                 crop: { x: number; y: number }
                 zoom: number
                 croppedAreaPixels: Area | null
             },
         ) => {
-            // Конвертируем Blob в File для сохранения - сохраняем оригинальное имя или дефолтное
             const fileName =
                 selectedFile?.name || 'group-avatar.png'
             const fileType =
@@ -318,12 +280,10 @@ export default function CreateGroupForm({
                 type: fileType,
             })
 
-            // Сохраняем полное состояние кадрирования
             setCropState((prev) => ({
                 ...prev,
-                croppedBlob: blob, // Сохраняем кадрированный Blob
+                croppedBlob: blob,
                 ...(cropParams || {
-                    // Если переданы параметры - используем их, иначе текущие
                     crop: prev.crop,
                     zoom: prev.zoom,
                     croppedAreaPixels:
@@ -331,17 +291,15 @@ export default function CreateGroupForm({
                 }),
             }))
 
-            setPhotoFile(file) // Сохраняем кадрированный файл
-            setIsCropperOpen(false) // Закрываем окно кадрирования
+            setPhotoFile(file)
+            setIsCropperOpen(false)
         },
-        [selectedFile], // Зависимость от выбранного файла
+        [selectedFile],
     )
 
-    // Обработчик изменения файла в кадрировании (загрузка нового)
     const handleCropperFileChange = useCallback(
         (file: File) => {
             setSelectedFile(file)
-            // Сохраняем как originalFile и сбрасываем предыдущее кадрирование
             setCropState((prev) => ({
                 ...prev,
                 originalFile: file,
@@ -352,11 +310,9 @@ export default function CreateGroupForm({
         [],
     )
 
-    // Обновленная функция отправки формы
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
 
-        // Валидация обязательных полей
         if (
             !name.trim() ||
             !description.trim() ||
@@ -365,34 +321,29 @@ export default function CreateGroupForm({
             return
         }
 
-        // Создаем объект CropParams для передачи в onNext
         const cropParams: CropParams = {
             crop: cropState.crop,
             zoom: cropState.zoom,
             croppedAreaPixels: cropState.croppedAreaPixels,
         }
 
-        // При отправке формы передаем текущий photoFile (кадрированный) и параметры кадрирования
         const dataToSend: onNextProps = {
-            name: name.trim(), // Очищаем от лишних пробелов
+            name: name.trim(),
             description: description.trim(),
             type: choosenOption.value,
-            photo: photoFile, // Текущий файл (кадрированный или оригинальный)
+            photo: photoFile,
             cropParams:
-                cropState.croppedBlob || // Если есть кадрированный Blob
-                cropState.originalFile // Или оригинальный файл
-                    ? cropParams // Тогда передаем параметры кадрирования
-                    : undefined, // Иначе не передаем
+                cropState.croppedBlob ||
+                cropState.originalFile
+                    ? cropParams
+                    : undefined,
         }
 
         onNext(dataToSend)
     }
 
-    // Обновление состояния формы при изменении initialData (после первого рендера)
     useEffect(() => {
-        if (isFirstRender.current) {
-            return // Пропускаем первый рендер
-        }
+        if (isFirstRender.current) return
 
         if (initialData) {
             const updateTimer = setTimeout(() => {
@@ -402,16 +353,15 @@ export default function CreateGroupForm({
                 )
 
                 if (
-                    initialData.photo !== undefined && // Проверяем что photo явно передано
-                    initialData.photo // И не null
+                    initialData.photo !== undefined &&
+                    initialData.photo
                 ) {
                     setPhotoFile(initialData.photo)
-                    // Если есть photo, устанавливаем его как originalFile
                     setCropState((prev) => ({
                         ...prev,
                         originalFile:
                             initialData.photo as File,
-                        ...(initialData.cropParams // Если есть параметры кадрирования
+                        ...(initialData.cropParams
                             ? {
                                   crop: initialData
                                       .cropParams.crop,
@@ -424,7 +374,6 @@ export default function CreateGroupForm({
                             : {}),
                     }))
                 } else if (initialData.photo === null) {
-                    // Если photo явно null, сбрасываем все
                     setPhotoFile(null)
                     setCropState({
                         crop: { x: 0, y: 0 },
@@ -435,7 +384,6 @@ export default function CreateGroupForm({
                     })
                 }
 
-                // Восстанавливаем выбранную опцию типа группы
                 if (initialData.type) {
                     const foundOption = groupOptions.find(
                         (option) =>
@@ -446,11 +394,9 @@ export default function CreateGroupForm({
                         setChoosenOption(foundOption)
                     }
                 }
-            }, 0) // setTimeout с 0 для отложенного выполнения
-
-            return () => clearTimeout(updateTimer) // Очистка таймера при размонтировании
+            }, 0)
+            return () => clearTimeout(updateTimer)
         } else {
-            // Если initialData нет или null - сбрасываем форму к начальному состоянию
             const resetTimer = setTimeout(() => {
                 setName('')
                 setDescription('')
@@ -469,16 +415,14 @@ export default function CreateGroupForm({
                     optionDescription: '',
                 })
             }, 0)
-
             return () => clearTimeout(resetTimer)
         }
-    }, [initialData]) // Запускается при каждом изменении initialData
+    }, [initialData])
 
-    // Обработчик изменения типа группы
     const handleChangeOption = (
         option: GroupTypeOptionProps,
     ) => {
-        setChoosenOption((prev) => ({ ...prev, ...option })) // Объединяем с предыдущим состоянием
+        setChoosenOption((prev) => ({ ...prev, ...option }))
     }
 
     return (
@@ -512,102 +456,116 @@ export default function CreateGroupForm({
                 </h2>
             </div>
 
-            {/* Основное содержимое формы */}
-            <div className="flex flex-1 justify-center p-4">
-                <form
-                    onSubmit={onSubmit}
-                    className="w-full max-w-82 space-y-4"
-                >
-                    {/* Блок с выбором аватарки */}
-                    <div className="flex flex-col items-center">
-                        <AvatarPicker
-                            src={photoPreview} // URL для preview
-                            name={name || 'Группа'}
-                            onFile={handleFileSelect} // Обработчик выбора файла
-                            onImageClick={handleImageClick} // Обработчик клика по изображению
-                        />
-                    </div>
-
-                    {/* Поля ввода названия и описания */}
-                    <div className="w-full">
-                        <div className="flex w-full flex-col">
-                            <FloatingTextarea
-                                position="top" // Позиция плавающего лейбла
-                                label="Название*" // Обязательное поле
-                                maxLength={100}
-                                value={name}
-                                onChange={(e) =>
-                                    setName(
-                                        (
-                                            e.target as HTMLTextAreaElement
-                                        ).value,
-                                    )
-                                }
-                            />
-                            <FloatingTextarea
-                                position="bottom"
-                                label="Описание"
-                                maxLength={250}
-                                value={description}
-                                onChange={(e) =>
-                                    setDescription(
-                                        (
-                                            e.target as HTMLTextAreaElement
-                                        ).value,
-                                    )
+            {/* Основное содержимое формы с кастомным скроллом */}
+            <CustomScrollbar className="flex-1">
+                <div className="flex justify-center p-4">
+                    <form
+                        onSubmit={onSubmit}
+                        className="w-full max-w-82 space-y-4"
+                    >
+                        {/* Блок с выбором аватарки */}
+                        <div className="flex flex-col items-center">
+                            <AvatarPicker
+                                src={photoPreview}
+                                name={name || 'Группа'}
+                                onFile={handleFileSelect}
+                                onImageClick={
+                                    handleImageClick
                                 }
                             />
                         </div>
-                    </div>
 
-                    {/* Выбор типа группы */}
-                    <div>
-                        <GroupTypeSelect
-                            selectLabel="Тип группы"
-                            value={choosenOption.value} // Текущее значение
-                            options={groupOptions} // Массив опций
-                            onChange={(option) =>
-                                handleChangeOption(option)
-                            }
-                        />
-                    </div>
-
-                    {/* Кнопка отправки формы */}
-                    <div className="flex justify-center">
-                        <Button
-                            type="submit"
-                            disabled={
-                                // Отключаем если не все обязательные поля заполнены
-                                !name.trim() ||
-                                !description.trim() ||
-                                !choosenOption.value
-                            }
-                            variant="solid"
-                            size="md"
-                            className={`
-                              h-14 w-full max-w-82 rounded-md
-                              disabled:cursor-not-allowed disabled:opacity-50
+                        {/* Поля ввода названия и описания */}
+                        <div className="w-full">
+                            <div
+                                className={`
+                              overflow-hidden rounded-md border
+                              border-app-divider
                             `}
-                        >
-                            <span className="text-base font-medium">
-                                Далее
-                            </span>
-                        </Button>
-                    </div>
-                </form>
-            </div>
+                            >
+                                <FloatingTextarea
+                                    position="top"
+                                    label="Название*"
+                                    maxLength={100}
+                                    value={name}
+                                    onChange={(e) =>
+                                        setName(
+                                            (
+                                                e.target as HTMLTextAreaElement
+                                            ).value,
+                                        )
+                                    }
+                                    className="rounded-none border-0"
+                                />
+                                <FloatingTextarea
+                                    position="bottom"
+                                    label="Описание"
+                                    maxLength={250}
+                                    value={description}
+                                    onChange={(e) =>
+                                        setDescription(
+                                            (
+                                                e.target as HTMLTextAreaElement
+                                            ).value,
+                                        )
+                                    }
+                                    className={`
+                                  rounded-none border-0 border-t
+                                  border-app-divider
+                                `}
+                                />
+                            </div>
+                        </div>
 
-            {/* Модальное окно кадрирования с передачей сохраненных параметров */}
+                        {/* Выбор типа группы */}
+                        <div>
+                            <GroupTypeSelect
+                                selectLabel="Тип группы"
+                                value={choosenOption.value}
+                                options={groupOptions}
+                                onChange={
+                                    handleChangeOption
+                                }
+                            />
+                        </div>
+
+                        {/* Кнопка отправки формы */}
+                        <div className="flex justify-center">
+                            <Button
+                                type="submit"
+                                disabled={
+                                    !name.trim() ||
+                                    !description.trim() ||
+                                    !choosenOption.value
+                                }
+                                variant="solid"
+                                size="md"
+                                className={`
+                                  h-14 w-full max-w-82 rounded-md
+                                  disabled:cursor-not-allowed
+                                  disabled:opacity-50
+                                `}
+                            >
+                                <span className="text-base font-medium">
+                                    Далее
+                                </span>
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </CustomScrollbar>
+
+            {/* Модальное окно кадрирования */}
             <AvatarCropper
-                isOpen={isCropperOpen} // Управление видимостью
-                imageFile={selectedFile ?? undefined} // Файл для кадрирования
+                isOpen={isCropperOpen}
+                imageFile={selectedFile ?? undefined}
                 onClose={handleCropperClose}
-                onFileChange={handleCropperFileChange} // Загрузка нового файла в кадрировании
+                onFileChange={handleCropperFileChange}
                 onConfirm={handleCropperConfirm}
-                initialCrop={cropState.crop} // Передаем сохраненную позицию
-                initialZoom={cropState.zoom} // Передаем сохраненный зум
+                initialCrop={cropState.crop}
+                initialZoom={cropState.zoom}
                 initialCroppedAreaPixels={
-                    cropState.croppedAreaPixels || undefined // Передаем сохраненную область
+                    cropState.croppedAreaPixels || undefined
                 }
                 minZoom={1}
                 maxZoom={3}
