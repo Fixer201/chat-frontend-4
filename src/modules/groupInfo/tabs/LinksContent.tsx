@@ -1,13 +1,15 @@
+// LinksContent.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
-import { transformLinks } from '@shared/lib/linkUtils'
-import type { BaseLink, MockLink } from '@shared/types/link'
+import { transformLinks } from '@shared/lib/linkUtils' // Трансформация ссылок в BaseLink
+import type { BaseLink, MockLink } from '@shared/types/link' // Типы ссылок
 import {
-    loadGroupLinks,
-    initGroupLinks,
+    loadGroupLinks, // Загрузка ссылок группы из localStorage
+    initGroupLinks, // Инициализация ссылок группы
 } from '@shared/lib/localStorageGroupLinks'
 
+// Дефолтные моковые ссылки
 const DEFAULT_MOCK_LINKS: MockLink[] = [
     { url: 'https://figma.com/file/project-design' },
     { url: 'https://docs.api.example.com' },
@@ -21,35 +23,43 @@ const DEFAULT_MOCK_LINKS: MockLink[] = [
     { url: 'https://trello.com/b/project-checklist' },
 ]
 
+// Интерфейс пропсов
 interface LinksContentProps {
-    chatUid: string
+    chatUid: string // ID чата/группы
 }
 
 export default function LinksContent({
     chatUid,
 }: LinksContentProps) {
+    // Состояние для плавного появления
     const [visible, setVisible] = useState(false)
+    // Состояние со списком ссылок
     const [linksState, setLinksState] = useState<
         BaseLink[]
     >([])
+    // Состояние загрузки
     const [loading, setLoading] = useState(true)
 
+    // Эффект при монтировании или смене чата
     useEffect(() => {
-        const t = setTimeout(() => setVisible(true), 10)
+        const t = setTimeout(() => setVisible(true), 10) // Плавное появление
         loadLinks()
-        return () => clearTimeout(t)
+        return () => clearTimeout(t) // Очистка таймера
     }, [chatUid])
 
+    // Загрузка ссылок из localStorage
     const loadLinks = async () => {
         setLoading(true)
         try {
             let linksData = loadGroupLinks(chatUid)
             if (!linksData) {
+                // Если нет данных - инициализируем моковыми
                 linksData = initGroupLinks(
                     chatUid,
                     DEFAULT_MOCK_LINKS,
                 )
             }
+            // Трансформируем в формат для отображения
             const transformedLinks = transformLinks(
                 linksData.results,
                 'mock',
@@ -57,6 +67,7 @@ export default function LinksContent({
             setLinksState(transformedLinks)
         } catch (error) {
             console.error('Ошибка загрузки ссылок:', error)
+            // При ошибке используем моковые данные
             const transformedLinks = transformLinks(
                 DEFAULT_MOCK_LINKS,
                 'mock',
@@ -67,14 +78,17 @@ export default function LinksContent({
         }
     }
 
+    // Открытие ссылки в новой вкладке
     const handleOpenLink = (url: string) => {
         window.open(url, '_blank')
     }
 
+    // Копирование ссылки в буфер обмена
     const handleCopyLink = (url: string) => {
         navigator.clipboard.writeText(url)
     }
 
+    // Состояние загрузки
     if (loading) {
         return (
             <div className="flex h-64 items-center justify-center">
@@ -102,6 +116,7 @@ export default function LinksContent({
                         `}
                     >
                         <div className="flex items-center gap-3">
+                            {/* Аватар отправителя с инициалами */}
                             <div
                                 className={`
                                   flex h-12 w-12 items-center justify-center
@@ -112,13 +127,17 @@ export default function LinksContent({
                                 {link.senderInitials ||
                                     link.sender
                                         .charAt(0)
-                                        .toUpperCase()}
+                                        .toUpperCase()}{' '}
+                                {/* Инициалы или первая буква имени */}
                             </div>
+
+                            {/* Информация о ссылке */}
                             <div
                                 className={`
                                   min-w-0 flex-1 flex-col justify-between
                                 `}
                             >
+                                {/* Заголовок ссылки */}
                                 <h4
                                     className={`
                                       mb-0.5 font-medium text-text-black
@@ -126,6 +145,7 @@ export default function LinksContent({
                                 >
                                     {link.title}
                                 </h4>
+                                {/* URL ссылки (синий цвет) */}
                                 <p
                                     className={`
                                       mb-0.5 truncate text-sm text-system-blue
@@ -133,6 +153,7 @@ export default function LinksContent({
                                 >
                                     {link.url}
                                 </p>
+                                {/* Метаданные: отправитель и дата */}
                                 <div
                                     className={`
                                       flex items-center text-sm text-text-gray

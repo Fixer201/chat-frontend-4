@@ -1,16 +1,17 @@
-// components/group/LeaveGroupModal.tsx (путь может отличаться в зависимости от структуры проекта)
-'use client'
+// components/group/LeaveGroupModal.tsx
+'use client' // Клиентский компонент Next.js
 
 import { useState } from 'react'
 import Modal from '@shared/ui/modal/Modal'
 import type { ModalButtonConfig } from '@shared/ui/modal/Modal'
 
+// Интерфейс пропсов для модального окна выхода из группы
 interface LeaveGroupModalProps {
     open: boolean
     onClose: () => void
     onConfirm: () => void | Promise<void>
-    groupName?: string // название группы для персонализации сообщения
-    loading?: boolean // внешнее состояние загрузки (опционально)
+    groupName?: string // Название группы для персонализации заголовка
+    loading?: boolean // Внешний флаг загрузки
 }
 
 export default function LeaveGroupModal({
@@ -20,38 +21,43 @@ export default function LeaveGroupModal({
     groupName = '',
     loading = false,
 }: LeaveGroupModalProps) {
+    // Внутреннее состояние процесса выхода
     const [isLeaving, setIsLeaving] = useState(false)
 
+    // Обработчик подтверждения выхода
     const handleConfirm = async () => {
-        setIsLeaving(true)
+        setIsLeaving(true) // Блокируем UI
         try {
-            await onConfirm()
+            await onConfirm() // Выполняем внешнюю функцию выхода
         } finally {
-            setIsLeaving(false)
+            setIsLeaving(false) // Разблокируем UI
         }
     }
 
+    // Конфигурация кнопок
     const buttons: ModalButtonConfig[] = [
         {
-            label: 'Покинуть',
+            label: 'Покинуть', // Кнопка действия
             variant: 'ghost',
-            color: 'danger', // соответствует исходной стилистике
+            color: 'danger', // Красный цвет, так как действие может быть опасным (выход из группы)
             onClick: handleConfirm,
             loading: isLeaving || loading,
             disabled: isLeaving || loading,
         },
         {
-            label: 'Отменить',
-            variant: 'solid', // первичная кнопка отмены (можно 'secondary' по дизайну)
+            label: 'Отменить', // Кнопка отмены
+            variant: 'solid', // Сплошная кнопка (вероятно, основная)
             onClick: onClose,
             disabled: isLeaving || loading,
         },
     ]
 
+    // Динамический заголовок с именем группы или общий
     const title = groupName
         ? `Покинуть группу «${groupName}»?`
         : 'Покинуть группу?'
 
+    // Описание с объяснением последствий (можно вернуться)
     const description =
         'Это открытая группа — вы сможете вернуться в любой момент'
 
@@ -65,7 +71,8 @@ export default function LeaveGroupModal({
             titleAlign="left"
             iconAlt="Покинуть группу"
             buttons={buttons}
-            closeOnOverlayClick={!isLeaving && !loading}
+            closeOnOverlayClick={!isLeaving && !loading} // Закрытие по фону разрешено, только если не в процессе загрузки
         />
+        // Компонент не имеет дочерних элементов, использует только встроенное содержимое Modal
     )
 }

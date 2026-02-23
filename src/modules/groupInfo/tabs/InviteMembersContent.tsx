@@ -1,23 +1,25 @@
+// InviteMembersContent.tsx
 'use client'
 
 import { Button } from '@shared/ui/button/Button'
-import ContactsListInvitation from '@modules/contacts/components/ContactsListInvitation'
+import ContactsListInvitation from '@modules/contacts/components/ContactsListInvitation' // Список контактов для приглашения
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@redux/store'
 import { setContacts } from '@redux/slices/contactsSlice'
 import {
-    Contact,
-    GroupParticipant,
+    Contact, // Тип контакта
+    GroupParticipant, // Тип участника группы
 } from '@shared/types/contact'
 
+// Интерфейс пропсов
 interface InviteMembersContentProps {
-    groupId?: string
-    currentParticipants: GroupParticipant[]
-    onInvite?: (selectedContacts: Contact[]) => void
-    onCancel?: () => void
-    isInviting?: boolean
-    error?: string | null
+    groupId?: string // ID группы (опционально)
+    currentParticipants: GroupParticipant[] // Текущие участники группы
+    onInvite?: (selectedContacts: Contact[]) => void // Функция приглашения
+    onCancel?: () => void // Функция отмены
+    isInviting?: boolean // Флаг процесса приглашения
+    error?: string | null // Текст ошибки
 }
 
 export default function InviteMembersContent({
@@ -28,16 +30,18 @@ export default function InviteMembersContent({
     isInviting = false,
     error = null,
 }: InviteMembersContentProps) {
+    // Состояние: ID выбранных контактов
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
 
     const dispatch = useDispatch()
 
+    // Получаем данные из Redux
     const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContactTemp.uid,
+        (state: RootState) => state.SelectedContactTemp.uid, // Выбранный контакт
     )
     const allContactsList = useSelector(
-        (state: RootState) => state.contactsTemp.list,
+        (state: RootState) => state.contactsTemp.list, // Все контакты пользователя
     )
 
     // Фильтруем контакты - убираем тех, кто уже в группе
@@ -46,35 +50,40 @@ export default function InviteMembersContent({
     )
     const availableContacts = allContactsList.filter(
         (contact) =>
-            !currentParticipantIds.includes(contact.uid),
+            !currentParticipantIds.includes(contact.uid), // Оставляем только не в группе
     )
 
+    // Обработчик выбора/снятия контакта
     const handleSelectContact = (uid: string) => {
-        setSelectedContactIds((prev) =>
-            prev.includes(uid)
-                ? prev.filter((id) => id !== uid)
-                : [...prev, uid],
+        setSelectedContactIds(
+            (prev) =>
+                prev.includes(uid)
+                    ? prev.filter((id) => id !== uid) // Убираем, если уже выбран
+                    : [...prev, uid], // Добавляем, если не выбран
         )
     }
 
+    // Получаем полные объекты выбранных контактов
     const selectedContacts = availableContacts.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
     )
 
+    // Обработчик установки выбранного контакта (для Redux)
     const handleSetSelectedContact = (uid: string) => {
         dispatch(setContacts(uid))
     }
 
+    // Обработчик клика по кнопке приглашения
     const handleInviteClick = () => {
         if (onInvite && selectedContacts.length > 0) {
-            onInvite(selectedContacts)
+            onInvite(selectedContacts) // Вызываем внешний обработчик с выбранными контактами
         }
     }
 
     return (
         <>
-            {/* Отображение ошибки */}
+            {/* Отображение ошибки (если есть) */}
             {error && (
                 <div
                     className={`
@@ -87,17 +96,17 @@ export default function InviteMembersContent({
                 </div>
             )}
 
-            {/* Список контактов */}
+            {/* Список контактов для приглашения */}
             <div className="flex-1 overflow-hidden">
                 <ContactsListInvitation
-                    selectedContacts={selectedContactIds}
+                    selectedContacts={selectedContactIds} // Выбранные контакты
                     handleSelectContact={
-                        handleSelectContact
+                        handleSelectContact // Обработчик выбора
                     }
-                    selectedUid={selectedUid}
-                    contactsList={availableContacts}
+                    selectedUid={selectedUid} // Выбранный в Redux контакт
+                    contactsList={availableContacts} // Доступные контакты
                     handleSetSelectedContact={
-                        handleSetSelectedContact
+                        handleSetSelectedContact // Установка выбранного в Redux
                     }
                 />
             </div>
@@ -112,8 +121,8 @@ export default function InviteMembersContent({
                 <Button
                     onClick={handleInviteClick}
                     disabled={
-                        selectedContacts.length === 0 ||
-                        isInviting
+                        selectedContacts.length === 0 || // Нет выбранных контактов
+                        isInviting // Или уже идет приглашение
                     }
                     variant="solid"
                     size="md"
@@ -123,6 +132,7 @@ export default function InviteMembersContent({
                     `}
                 >
                     {isInviting ? (
+                        // Состояние загрузки со спиннером
                         <span className="flex items-center gap-2">
                             <svg
                                 className="h-5 w-5 animate-spin"
@@ -146,6 +156,7 @@ export default function InviteMembersContent({
                             Приглашение...
                         </span>
                     ) : (
+                        // Обычное состояние
                         <span className="text-base font-medium">
                             Пригласить в группу
                         </span>

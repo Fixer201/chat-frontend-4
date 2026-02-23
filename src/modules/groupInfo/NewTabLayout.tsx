@@ -1,3 +1,4 @@
+// NewTabLayout.tsx
 'use client'
 
 import { cn } from '@shared/lib/utils'
@@ -6,6 +7,7 @@ import { useRef, useEffect, useMemo } from 'react'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
+// Типы для вкладок
 type TabId =
     | 'participants'
     | 'media'
@@ -13,16 +15,17 @@ type TabId =
     | 'voice'
     | 'links'
 
+// Интерфейс пропсов компонента
 interface NewTabLayoutProps {
-    activeTab: TabId
-    onBack: () => void
-    onTabClick: (tabId: TabId, index: number) => void
-    children: React.ReactNode
-    tabTitle: string
-    onScroll?: (scrollY: number) => void
-    onAttemptReturn?: (deltaY?: number) => void
-    hideScrollbar?: boolean
-    initialScrollTop?: number
+    activeTab: TabId // Активная вкладка
+    onBack: () => void // Функция возврата в основной режим
+    onTabClick: (tabId: TabId, index: number) => void // Обработчик клика по табу
+    children: React.ReactNode // Контент вкладки
+    tabTitle: string // Заголовок вкладки по умолчанию
+    onScroll?: (scrollY: number) => void // Обработчик скролла
+    onAttemptReturn?: (deltaY?: number) => void // Обработчик попытки возврата (скролл выше контента)
+    hideScrollbar?: boolean // Флаг для скрытия скроллбара (при анимации возврата)
+    initialScrollTop?: number // Начальная позиция скролла для восстановления
 }
 
 export default function NewTabLayout({
@@ -36,10 +39,12 @@ export default function NewTabLayout({
     hideScrollbar,
     initialScrollTop,
 }: NewTabLayoutProps) {
-    const tabsRef = useRef<(HTMLButtonElement | null)[]>([])
-    const containerRef = useRef<HTMLDivElement>(null)
-    const scrollbarRef = useRef<unknown>(null)
+    // Refs для DOM-элементов
+    const tabsRef = useRef<(HTMLButtonElement | null)[]>([]) // Массив ref-ов кнопок табов
+    const containerRef = useRef<HTMLDivElement>(null) // Контейнер для горизонтального скролла табов
+    const scrollbarRef = useRef<unknown>(null) // Ref для кастомного скроллбара
 
+    // Список доступных вкладок (мемоизирован)
     const tabs = useMemo<
         Array<{ id: TabId; label: string }>
     >(
@@ -53,7 +58,7 @@ export default function NewTabLayout({
         [],
     )
 
-    // Восстанавливаем позицию скролла
+    // Восстанавливаем позицию скролла при монтировании или изменении initialScrollTop
     useEffect(() => {
         if (
             typeof initialScrollTop === 'number' &&
@@ -66,13 +71,13 @@ export default function NewTabLayout({
                             position: number,
                         ) => void
                     }
-                )?.scrollTo?.(initialScrollTop)
-            }, 40)
+                )?.scrollTo?.(initialScrollTop) // Прокручиваем к сохранённой позиции
+            }, 40) // Небольшая задержка для корректного рендера
             return () => clearTimeout(t)
         }
     }, [initialScrollTop])
 
-    // Скроллим к активному табу
+    // Автоскролл к активному табу при его изменении
     useEffect(() => {
         const activeIndex = tabs.findIndex(
             (tab) => tab.id === activeTab,
@@ -82,21 +87,23 @@ export default function NewTabLayout({
             if (tabElement) {
                 setTimeout(() => {
                     tabElement.scrollIntoView({
-                        behavior: 'smooth',
+                        behavior: 'smooth', // Плавная анимация
                         block: 'nearest',
-                        inline: 'center',
+                        inline: 'center', // Центрируем таб по горизонтали
                     })
-                }, 100)
+                }, 100) // Небольшая задержка для завершения анимации переключения
             }
         }
     }, [activeTab, tabs])
 
+    // Обработчик клика по табу
     const handleTabClick = (
         tabId: TabId,
         index: number,
     ) => {
-        onTabClick(tabId, index)
+        onTabClick(tabId, index) // Вызываем внешний обработчик
 
+        // Прокручиваем к выбранному табу
         const tabElement = tabsRef.current[index]
         if (tabElement) {
             tabElement.scrollIntoView({
@@ -107,6 +114,7 @@ export default function NewTabLayout({
         }
     }
 
+    // Предотвращаем всплытие событий колесика (чтобы не конфликтовало с родительским скроллом)
     const handleWheel = (e: React.WheelEvent) => {
         e.stopPropagation()
     }
@@ -117,7 +125,7 @@ export default function NewTabLayout({
               flex max-h-[calc(100vh-112px)] min-h-0 flex-col overflow-hidden
               rounded-md bg-gray-main
             `}
-            onWheel={handleWheel}
+            onWheel={handleWheel} // Блокируем всплытие колесика
         >
             {/* Header с кнопкой назад и заголовком */}
             <div
@@ -145,15 +153,17 @@ export default function NewTabLayout({
                       text-lg font-medium tracking-extra-tight text-text-black
                     `}
                 >
-                    {tabTitle}
+                    {tabTitle} {/* Заголовок вкладки */}
                 </h2>
             </div>
 
-            {/* Блок с кнопками-табами */}
+            {/* Блок с кнопками-табами (горизонтальный скролл) */}
             <div className="shrink-0">
+                {' '}
+                {/* Не сжимается при скролле */}
                 <div
                     ref={containerRef}
-                    className="scrollbar-hide flex overflow-x-auto"
+                    className="scrollbar-hide flex overflow-x-auto" // Скрываем стандартный скроллбар
                 >
                     <div
                         className={`
@@ -188,13 +198,14 @@ export default function NewTabLayout({
                                       hover:cursor-pointer
                                       hover:text-accent-violet-primary
                                     `,
-                                    'min-w-25 px-2',
+                                    'min-w-25 px-2', // Минимальная ширина 100px (min-w-25 в Tailwind)
                                     activeTab === tab.id
-                                        ? 'text-accent-violet-primary'
-                                        : 'text-text-black',
+                                        ? 'text-accent-violet-primary' // Активный таб - фиолетовый
+                                        : 'text-text-black', // Неактивный - чёрный
                                 )}
                             >
                                 {tab.label}
+                                {/* Индикатор активного таба (полоска снизу) */}
                                 {activeTab === tab.id && (
                                     <div
                                         className={`
@@ -209,15 +220,15 @@ export default function NewTabLayout({
                 </div>
             </div>
 
-            {/* Контент таба с CustomScrollbar */}
+            {/* Контент таба с кастомным скроллбаром */}
             <CustomScrollbar
                 ref={scrollbarRef}
-                className="h-full flex-1"
-                contentClassName="p-4"
-                onScroll={onScroll}
-                onAttemptScrollBeyondTop={onAttemptReturn}
-                hideScrollbar={hideScrollbar}
-                autoHeight={false}
+                className="h-full flex-1" // Занимает оставшееся пространство
+                contentClassName="p-4" // Отступы для контента
+                onScroll={onScroll} // Прокидываем обработчик скролла
+                onAttemptScrollBeyondTop={onAttemptReturn} // Обработчик попытки скролла выше контента (для возврата)
+                hideScrollbar={hideScrollbar} // Скрыть скроллбар (при анимации возврата)
+                autoHeight={false} // Отключаем автоматическую высоту
             >
                 {children}
             </CustomScrollbar>

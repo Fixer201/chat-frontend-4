@@ -1,12 +1,14 @@
+// TabContentPreview.tsx
 'use client'
 
 import React from 'react'
-import ParticipantsContent from './tabs/ParticipantsContent'
-import MediaContent from './tabs/MediaContent'
-import FilesContent from './tabs/FilesContent'
-import VoiceContent from './tabs/VoiceContent'
-import LinksContent from './tabs/LinksContent'
+import ParticipantsContent from './tabs/ParticipantsContent' // Контент вкладки "Участники"
+import MediaContent from './tabs/MediaContent' // Контент вкладки "Медиа"
+import FilesContent from './tabs/FilesContent' // Контент вкладки "Файлы"
+import VoiceContent from './tabs/VoiceContent' // Контент вкладки "Голосовые"
+import LinksContent from './tabs/LinksContent' // Контент вкладки "Ссылки"
 
+// Типы для вкладок (аналогично основным компонентам)
 type TabId =
     | 'participants'
     | 'media'
@@ -14,11 +16,12 @@ type TabId =
     | 'voice'
     | 'links'
 
+// Интерфейс пропсов компонента предпросмотра
 interface TabContentPreviewProps {
-    activeTab: TabId
-    chatKey: string
-    chatUid: string
-    onParticipantsChange?: (count: number) => void
+    activeTab: TabId // Активная вкладка
+    chatKey: string // Ключ чата (для участников)
+    chatUid: string // UID чата (для медиа, файлов и т.д.)
+    onParticipantsChange?: (count: number) => void // Колбэк при изменении количества участников
 }
 
 export default function TabContentPreview({
@@ -27,6 +30,7 @@ export default function TabContentPreview({
     chatUid,
     onParticipantsChange,
 }: TabContentPreviewProps) {
+    // Функция, возвращающая соответствующий компонент в зависимости от activeTab
     const getPreviewComponent = () => {
         switch (activeTab) {
             case 'participants':
@@ -34,8 +38,9 @@ export default function TabContentPreview({
                     <ParticipantsContent
                         chatKey={chatKey}
                         onParticipantsChange={
-                            onParticipantsChange
+                            onParticipantsChange // Пробрасываем колбэк для обновления счётчика
                         }
+                        // Не передаём onTitleChange и isCurrentUserOwner, так как это предпросмотр
                     />
                 )
             case 'media':
@@ -52,6 +57,7 @@ export default function TabContentPreview({
     }
 
     return (
+        // Контейнер с ограничением по высоте и скрытием переполнения
         <div className="relative h-full max-h-full overflow-hidden">
             {getPreviewComponent()}
         </div>

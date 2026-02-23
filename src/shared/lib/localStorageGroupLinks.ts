@@ -1,8 +1,9 @@
 // src/shared/lib/localStorageGroupLinks.ts
-import { MockLink } from '@shared/types/link'
+import { MockLink } from '@shared/types/link' // Тип для моковых ссылок (содержит только url)
 
 const STORAGE_KEY = 'groups_links'
 
+// Загружает все ссылки групп из localStorage
 function loadAllGroupLinks(): Record<
     string,
     { count: number; results: MockLink[] }
@@ -27,6 +28,7 @@ function loadAllGroupLinks(): Record<
     return {}
 }
 
+// Сохраняет все ссылки групп в localStorage
 function saveAllGroupLinks(
     data: Record<
         string,
@@ -46,6 +48,7 @@ function saveAllGroupLinks(
     }
 }
 
+// Загружает ссылки для конкретной группы
 export function loadGroupLinks(
     chatUid: string,
 ): { count: number; results: MockLink[] } | null {
@@ -53,6 +56,7 @@ export function loadGroupLinks(
     return all[chatUid] || null
 }
 
+// Сохраняет ссылки для конкретной группы
 export function saveGroupLinks(
     chatUid: string,
     links: { count: number; results: MockLink[] },
@@ -65,6 +69,7 @@ export function saveGroupLinks(
     )
 }
 
+// Инициализирует ссылки для группы (если ещё нет)
 export function initGroupLinks(
     chatUid: string,
     mockLinks: MockLink[],

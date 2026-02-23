@@ -3,6 +3,7 @@ import { MockFile } from '@shared/types/file'
 
 const STORAGE_KEY = 'groups_media'
 
+// Загружает все медиа-файлы групп из localStorage
 function loadAllGroupMedia(): Record<
     string,
     { count: number; results: MockFile[] }
@@ -27,6 +28,7 @@ function loadAllGroupMedia(): Record<
     return {}
 }
 
+// Сохраняет все медиа-файлы групп в localStorage
 function saveAllGroupMedia(
     data: Record<
         string,
@@ -46,6 +48,7 @@ function saveAllGroupMedia(
     }
 }
 
+// Загружает медиа для конкретной группы
 export function loadGroupMedia(
     chatUid: string,
 ): { count: number; results: MockFile[] } | null {
@@ -53,6 +56,7 @@ export function loadGroupMedia(
     return all[chatUid] || null
 }
 
+// Сохраняет медиа для конкретной группы
 export function saveGroupMedia(
     chatUid: string,
     media: { count: number; results: MockFile[] },
@@ -65,6 +69,7 @@ export function saveGroupMedia(
     )
 }
 
+// Инициализирует медиа для группы (если ещё нет)
 export function initGroupMedia(
     chatUid: string,
     mockMedia: MockFile[],

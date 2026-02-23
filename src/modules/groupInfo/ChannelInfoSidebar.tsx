@@ -1,3 +1,4 @@
+// ChannelInfoSidebar.tsx
 'use client'
 
 import { cn } from '@shared/lib/utils'
@@ -10,31 +11,32 @@ import {
     useRef,
 } from 'react'
 
-import TabContentPreview from './TabContentPreview'
-import TabLayout from './TabLayout'
-import ParticipantsContent from './tabs/ParticipantsContent'
-import MediaContent from './tabs/MediaContent'
-import FilesContent from './tabs/FilesContent'
-import VoiceContent from './tabs/VoiceContent'
-import LinksContent from './tabs/LinksContent'
-import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu'
-import ClearChatModal from './modals/ClearChatModal'
-import LeaveGroupModal from './modals/LeaveGroupModal'
-import DeleteGroupModal from './modals/DeleteGroupModal'
-import { useGroupInfoSidebar } from './useGroupInfoSidebar'
-import { getNoun } from '@shared/lib/getNoun'
+import TabContentPreview from './TabContentPreview' // Компонент предпросмотра контента вкладки
+import TabLayout from './TabLayout' // Лейаут для режима полноэкранной вкладки
+import ParticipantsContent from './tabs/ParticipantsContent' // Контент вкладки "Участники"
+import MediaContent from './tabs/MediaContent' // Контент вкладки "Медиа"
+import FilesContent from './tabs/FilesContent' // Контент вкладки "Файлы"
+import VoiceContent from './tabs/VoiceContent' // Контент вкладки "Голосовые"
+import LinksContent from './tabs/LinksContent' // Контент вкладки "Ссылки"
+import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu' // Выпадающее меню с действиями
+import ClearChatModal from './modals/ClearChatModal' // Модалка очистки чата
+import LeaveGroupModal from './modals/LeaveGroupModal' // Модалка выхода (переиспользуется для канала)
+import DeleteGroupModal from './modals/DeleteGroupModal' // Модалка удаления (переиспользуется для канала)
+import { useGroupInfoSidebar } from './useGroupInfoSidebar' // Хук для управления состоянием сайдбара
+import { getNoun } from '@shared/lib/getNoun' // Функция для склонения существительных
 import {
     getChatByIdFromStorage,
     loadChatsFromStorage,
     saveChatsToStorage,
-} from '@shared/lib/localStorageChats'
-import EditChannelView from './EditChannelView'
-import { transformFromApi } from '@shared/lib/transformChatData'
-import { ApiChatItem } from '@shared/types/chat'
-import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
-import { Toast } from '@shared/ui/toast/Toast'
-import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle'
+} from '@shared/lib/localStorageChats' // Работа с localStorage для чатов
+import EditChannelView from './EditChannelView' // Компонент редактирования канала
+import { transformFromApi } from '@shared/lib/transformChatData' // Трансформация данных чата
+import { ApiChatItem } from '@shared/types/chat' // Типы API чатов
+import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard' // Хук для копирования в буфер
+import { Toast } from '@shared/ui/toast/Toast' // Toast-уведомления
+import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle' // Кружок с обратным отсчётом
 
+// Типы для вкладок (аналогично GroupInfoSidebar)
 type TabId =
     | 'participants'
     | 'media'
@@ -42,6 +44,7 @@ type TabId =
     | 'voice'
     | 'links'
 
+// Функция для получения контента вкладки по ID (аналогично GroupInfoSidebar)
 function getTabContent(
     tabId: TabId,
     chatKey: string,
@@ -55,11 +58,11 @@ function getTabContent(
             return (
                 <ParticipantsContent
                     chatKey={chatKey}
-                    onTitleChange={setDynamicTabTitle}
+                    onTitleChange={setDynamicTabTitle} // Может менять заголовок (например, "Подписчики (5)")
                     onParticipantsChange={
                         onParticipantsChange
                     }
-                    isCurrentUserOwner={isCurrentUserOwner}
+                    isCurrentUserOwner={isCurrentUserOwner} // Передаём флаг владельца
                 />
             )
         case 'media':
@@ -75,24 +78,25 @@ function getTabContent(
     }
 }
 
+// Интерфейс пропсов компонента канала
 interface ChannelInfoSidebarProps {
-    chatId: number
-    chatType: string
-    chatKey: string
-    chatUid: string
-    name: string
-    participantsCount: number
-    description?: string
-    inviteLink?: string
-    notificationsEnabled: boolean
-    onNotificationsChange?: (enabled: boolean) => void
-    onClose?: () => void
-    onClearChat?: (deleteForEveryone: boolean) => void
-    onLeaveChannel?: () => void
-    onDeleteChannel?: () => void
-    avatarUrl?: string | null
-    onChannelUpdated?: () => void
-    isCurrentUserOwner?: boolean
+    chatId: number // ID чата
+    chatType: string // Тип чата (public-channel, private-channel)
+    chatKey: string // Уникальный ключ чата
+    chatUid: string // UID чата
+    name: string // Название канала
+    participantsCount: number // Количество подписчиков
+    description?: string // Описание канала
+    inviteLink?: string // Ссылка-приглашение
+    notificationsEnabled: boolean // Статус уведомлений
+    onNotificationsChange?: (enabled: boolean) => void // Колбэк изменения уведомлений
+    onClose?: () => void // Колбэк закрытия сайдбара
+    onClearChat?: (deleteForEveryone: boolean) => void // Колбэк очистки чата
+    onLeaveChannel?: () => void // Колбэк выхода из канала
+    onDeleteChannel?: () => void // Колбэк удаления канала
+    avatarUrl?: string | null // URL аватара
+    onChannelUpdated?: () => void // Колбэк обновления канала
+    isCurrentUserOwner?: boolean // Является ли текущий пользователь владельцем
 }
 
 export default function ChannelInfoSidebar({
@@ -112,55 +116,63 @@ export default function ChannelInfoSidebar({
     onDeleteChannel,
     avatarUrl,
     onChannelUpdated,
-    isCurrentUserOwner = false,
+    isCurrentUserOwner = false, // По умолчанию не владелец
 }: ChannelInfoSidebarProps) {
-    const [isCopied, setIsCopied] = useState(false)
+    // Состояния для модальных окон
+    const [isCopied, setIsCopied] = useState(false) // Устаревшее, используется useCopyToClipboard
     const [clearChatModalOpen, setClearChatModalOpen] =
-        useState(false)
+        useState(false) // Модалка очистки чата
     const [
         leaveChannelModalOpen,
         setLeaveChannelModalOpen,
-    ] = useState(false)
+    ] = useState(false) // Модалка выхода из канала
     const [
         deleteChannelModalOpen,
         setDeleteChannelModalOpen,
-    ] = useState(false)
+    ] = useState(false) // Модалка удаления канала
     const [
         participantsCountState,
         setParticipantsCountState,
-    ] = useState(participantsCount)
-    const [isEditing, setIsEditing] = useState(false)
+    ] = useState(participantsCount) // Локальное состояние количества подписчиков
+    const [isEditing, setIsEditing] = useState(false) // Режим редактирования канала
     const [copied, copyToClipboard] =
-        useCopyToClipboard(700)
-    const [toastOpen, setToastOpen] = useState(false)
+        useCopyToClipboard(700) // Хук для копирования
+    const [toastOpen, setToastOpen] = useState(false) // Toast "Ссылка скопирована"
+
+    // Состояния для toast-ов с отменой действий
     const [deletionToastOpen, setDeletionToastOpen] =
-        useState(false)
-    const [countdown, setCountdown] = useState(4)
+        useState(false) // Toast удаления канала
+    const [countdown, setCountdown] = useState(4) // Обратный отсчёт для удаления
     const countdownTimerRef = useRef<NodeJS.Timeout | null>(
         null,
-    )
+    ) // Таймер для удаления
+
     const [leaveToastOpen, setLeaveToastOpen] =
-        useState(false)
-    const [leaveCountdown, setLeaveCountdown] = useState(4)
+        useState(false) // Toast выхода из канала
+    const [leaveCountdown, setLeaveCountdown] = useState(4) // Обратный отсчёт для выхода
     const leaveTimerRef = useRef<NodeJS.Timeout | null>(
         null,
-    )
+    ) // Таймер для выхода
+
     const [clearToastOpen, setClearToastOpen] =
-        useState(false)
-    const [clearCountdown, setClearCountdown] = useState(4)
+        useState(false) // Toast очистки чата
+    const [clearCountdown, setClearCountdown] = useState(4) // Обратный отсчёт для очистки
     const clearTimerRef = useRef<NodeJS.Timeout | null>(
         null,
-    )
-    const [avatarError, setAvatarError] = useState(false)
+    ) // Таймер для очистки
 
+    // Обработка ошибки загрузки аватара
+    const [avatarError, setAvatarError] = useState(false)
     const handleAvatarError = useCallback(() => {
         setAvatarError(true)
     }, [setAvatarError])
 
+    // Вычисляем src для отображения (при ошибке показываем заглушку)
     const avatarSrc = avatarError
         ? '/images/altImage.png'
         : avatarUrl || '/images/altImage.png'
 
+    // Получаем все состояния и функции из кастомного хука (тот же, что и для группы)
     const {
         activeTab,
         viewMode,
@@ -187,10 +199,12 @@ export default function ChannelInfoSidebar({
         getTabTitle,
     } = useGroupInfoSidebar()
 
+    // Переключение в режим редактирования
     const handleEditChannel = useCallback(() => {
         setIsEditing(true)
     }, [])
 
+    // Функция сжатия изображения для аватара (аналогично группе)
     const compressImage = useCallback(
         (
             file: File,
@@ -206,6 +220,7 @@ export default function ChannelInfoSidebar({
                     let width = img.width
                     let height = img.height
 
+                    // Пропорциональное уменьшение до maxWidth/maxHeight
                     if (width > height) {
                         if (width > maxWidth) {
                             height = Math.round(
@@ -241,6 +256,7 @@ export default function ChannelInfoSidebar({
         [],
     )
 
+    // Сохранение отредактированных данных канала
     const handleSaveEdit = useCallback(
         async (updatedData: {
             name: string
@@ -249,15 +265,18 @@ export default function ChannelInfoSidebar({
             notificationsEnabled: boolean
             avatarFile?: File | null
         }) => {
+            // Получаем текущие данные чата из localStorage
             const currentChat =
                 getChatByIdFromStorage(chatId)
             if (!currentChat) return
 
+            // Определяем новый тип чата (public-channel или private-channel)
             const newChatType =
                 updatedData.type === 'public'
                     ? 'public-channel'
                     : 'private-channel'
 
+            // Создаём обновлённый объект чата
             const updatedChat: ApiChatItem = {
                 ...currentChat,
             }
@@ -266,6 +285,7 @@ export default function ChannelInfoSidebar({
                 updatedData.description
             updatedChat.chat_type = newChatType
 
+            // Если выбран новый аватар - сжимаем и добавляем
             if (updatedData.avatarFile) {
                 try {
                     const compressedBase64 =
@@ -284,6 +304,7 @@ export default function ChannelInfoSidebar({
                 }
             }
 
+            // Сохраняем в localStorage
             const allChats = loadChatsFromStorage() || []
             const index = allChats.findIndex(
                 (c) => c.id === chatId,
@@ -293,6 +314,7 @@ export default function ChannelInfoSidebar({
                 saveChatsToStorage(allChats)
             }
 
+            // Если изменился статус уведомлений - вызываем колбэк
             if (
                 updatedData.notificationsEnabled !==
                 notificationsEnabled
@@ -302,8 +324,8 @@ export default function ChannelInfoSidebar({
                 )
             }
 
-            setIsEditing(false)
-            onChannelUpdated?.()
+            setIsEditing(false) // Выходим из режима редактирования
+            onChannelUpdated?.() // Уведомляем родителя об обновлении
         },
         [
             chatId,
@@ -314,6 +336,7 @@ export default function ChannelInfoSidebar({
         ],
     )
 
+    // Обработчик изменения количества подписчиков
     const handleParticipantsChange = useCallback(
         (newCount: number) => {
             setParticipantsCountState(newCount)
@@ -321,6 +344,7 @@ export default function ChannelInfoSidebar({
         [],
     )
 
+    // Копирование ссылки-приглашения
     const handleCopyLink = useCallback(() => {
         if (inviteLink) {
             copyToClipboard(inviteLink)
@@ -328,10 +352,14 @@ export default function ChannelInfoSidebar({
         }
     }, [inviteLink, copyToClipboard])
 
+    // Переключение уведомлений
     const handleToggleNotifications = useCallback(() => {
         onNotificationsChange?.(!notificationsEnabled)
     }, [notificationsEnabled, onNotificationsChange])
 
+    // --- Обработчики для действий с отложенным выполнением и возможностью отмены ---
+
+    // Очистка чата
     const handleClearChatConfirm = useCallback(
         async (deleteForEveryone: boolean) => {
             setClearChatModalOpen(false)
@@ -360,6 +388,7 @@ export default function ChannelInfoSidebar({
         [onClearChat],
     )
 
+    // Отмена очистки
     const handleCancelClear = useCallback(() => {
         if (clearTimerRef.current) {
             clearInterval(clearTimerRef.current)
@@ -369,6 +398,7 @@ export default function ChannelInfoSidebar({
         setClearCountdown(4)
     }, [])
 
+    // Очистка таймера при размонтировании
     useEffect(() => {
         return () => {
             if (clearTimerRef.current) {
@@ -377,6 +407,7 @@ export default function ChannelInfoSidebar({
         }
     }, [])
 
+    // Выход из канала
     const handleLeaveChannelConfirm =
         useCallback(async () => {
             setLeaveChannelModalOpen(false)
@@ -403,6 +434,7 @@ export default function ChannelInfoSidebar({
             }, 1000)
         }, [onLeaveChannel])
 
+    // Отмена выхода
     const handleCancelLeave = useCallback(() => {
         if (leaveTimerRef.current) {
             clearInterval(leaveTimerRef.current)
@@ -412,6 +444,7 @@ export default function ChannelInfoSidebar({
         setLeaveCountdown(4)
     }, [])
 
+    // Очистка таймера при размонтировании
     useEffect(() => {
         return () => {
             if (leaveTimerRef.current) {
@@ -420,6 +453,7 @@ export default function ChannelInfoSidebar({
         }
     }, [])
 
+    // Удаление канала (только для владельца)
     const handleDeleteChannelConfirm =
         useCallback(async () => {
             setDeleteChannelModalOpen(false)
@@ -446,6 +480,7 @@ export default function ChannelInfoSidebar({
             }, 1000)
         }, [onDeleteChannel])
 
+    // Отмена удаления
     const handleCancelDeletion = useCallback(() => {
         if (countdownTimerRef.current) {
             clearInterval(countdownTimerRef.current)
@@ -455,6 +490,7 @@ export default function ChannelInfoSidebar({
         setCountdown(4)
     }, [])
 
+    // Очистка таймера при размонтировании
     useEffect(() => {
         return () => {
             if (countdownTimerRef.current) {
@@ -463,19 +499,22 @@ export default function ChannelInfoSidebar({
         }
     }, [])
 
+    // --- Рендер в зависимости от режима ---
+
+    // Режим вкладки (полноэкранный контент)
     if (viewMode === 'tab') {
         return (
             <TabLayout
                 activeTab={activeTab}
-                onBack={handleBackFromTab}
-                onTabClick={handleTabContentTabClick}
-                tabTitle={getTabTitle(activeTab)}
-                dynamicTitle={dynamicTabTitle || undefined}
-                onScroll={handleTabScrollEvent}
-                onAttemptReturn={handleAttemptReturn}
-                hideScrollbar={hideTabScrollbarDuringReturn}
+                onBack={handleBackFromTab} // Кнопка "Назад"
+                onTabClick={handleTabContentTabClick} // Переключение вкладок внутри режима
+                tabTitle={getTabTitle(activeTab)} // Заголовок по умолчанию
+                dynamicTitle={dynamicTabTitle || undefined} // Динамический заголовок
+                onScroll={handleTabScrollEvent} // Обработчик скролла для возврата
+                onAttemptReturn={handleAttemptReturn} // Попытка возврата
+                hideScrollbar={hideTabScrollbarDuringReturn} // Скрыть скроллбар при возврате
                 initialScrollTop={
-                    tabScrollPositions[activeTab]
+                    tabScrollPositions[activeTab] // Восстановление позиции скролла
                 }
             >
                 {getTabContent(
@@ -490,6 +529,7 @@ export default function ChannelInfoSidebar({
         )
     }
 
+    // Режим редактирования канала
     if (isEditing) {
         return (
             <EditChannelView
@@ -505,12 +545,13 @@ export default function ChannelInfoSidebar({
                     notificationsEnabled
                 }
                 inviteLink={inviteLink}
-                onSave={handleSaveEdit}
-                onCancel={() => setIsEditing(false)}
+                onSave={handleSaveEdit} // Сохранение изменений
+                onCancel={() => setIsEditing(false)} // Отмена редактирования
             />
         )
     }
 
+    // Основной режим (информация о канале)
     return (
         <div
             className={`
@@ -520,7 +561,7 @@ export default function ChannelInfoSidebar({
             onMouseEnter={() => setIsMouseOver(true)}
             onMouseLeave={() => setIsMouseOver(false)}
         >
-            {/* Header */}
+            {/* Header с кнопкой закрытия и выпадающим меню */}
             <div
                 className={`
                   flex items-center justify-between gap-3 rounded-t-md border-b
@@ -543,7 +584,7 @@ export default function ChannelInfoSidebar({
                         alt="Закрыть"
                         width={24}
                         height={24}
-                        className="h-6 w-6" // исправлено: w-6 h-6 = 24px
+                        className="h-6 w-6"
                     />
                 </Button>
 
@@ -557,6 +598,7 @@ export default function ChannelInfoSidebar({
                 </h2>
 
                 <div className="flex items-center gap-3">
+                    {/* Кнопка редактирования доступна только владельцу */}
                     {isCurrentUserOwner && (
                         <Button
                             onClick={handleEditChannel}
@@ -574,11 +616,12 @@ export default function ChannelInfoSidebar({
                                 alt="Редактировать"
                                 width={24}
                                 height={24}
-                                className="h-6 w-6" // исправлено
+                                className="h-6 w-6"
                             />
                         </Button>
                     )}
 
+                    {/* Выпадающее меню с действиями */}
                     <DropdownMenuButton
                         triggerIcon={
                             <Image
@@ -589,7 +632,7 @@ export default function ChannelInfoSidebar({
                                 className={`
                                   h-6 w-6
                                   hover:cursor-pointer
-                                `} // исправлено
+                                `}
                             />
                         }
                         triggerClassName="flex items-center justify-center rounded-full p-0 text-text-black hover:bg-accent-violet-ultra-light"
@@ -613,6 +656,7 @@ export default function ChannelInfoSidebar({
                                         true,
                                     ),
                             },
+                            // Пункт "Покинуть канал" для всех, кроме владельца
                             !isCurrentUserOwner && {
                                 label: 'Покинуть канал',
                                 icon: (
@@ -630,6 +674,7 @@ export default function ChannelInfoSidebar({
                                     ),
                                 hasDivider: true,
                             },
+                            // Пункт "Удалить канал" только для владельца
                             isCurrentUserOwner && {
                                 label: 'Удалить канал',
                                 icon: (
@@ -646,19 +691,19 @@ export default function ChannelInfoSidebar({
                                         true,
                                     ),
                                 hasDivider: true,
-                                isDanger: true,
+                                isDanger: true, // Красный цвет
                             },
-                        ].filter(Boolean)}
+                        ].filter(Boolean)} // Убираем false
                     />
                 </div>
             </div>
 
-            {/* Основной контент */}
+            {/* Основной контент (скроллируемый) */}
             <div
                 ref={mainContentRef}
                 className={cn(
                     'scrollbar-hide flex-1 overflow-auto',
-                    'h-[calc(100%-64px)] touch-none overscroll-none',
+                    'h-[calc(100%-64px)] touch-none overscroll-none', // Отключаем стандартные жесты
                 )}
                 onWheel={handleMainWheel}
                 onTouchStart={handleMainTouchStart}
@@ -666,6 +711,7 @@ export default function ChannelInfoSidebar({
                 onScroll={handleMainScroll}
             >
                 <div className="relative">
+                    {/* Аватар канала на весь экран */}
                     <div className="relative h-60 w-full overflow-hidden">
                         <Image
                             key={avatarUrl}
@@ -673,10 +719,11 @@ export default function ChannelInfoSidebar({
                             alt={name}
                             fill
                             className="object-cover"
-                            onError={handleAvatarError}
+                            onError={handleAvatarError} // При ошибке - заглушка
                             priority
                         />
                     </div>
+                    {/* Градиент с названием и количеством подписчиков */}
                     <div
                         className={`
                           absolute right-0 bottom-0 left-0 rounded-b-md
@@ -699,7 +746,7 @@ export default function ChannelInfoSidebar({
                 </div>
 
                 <div className="bg-gray-50 px-4 py-3">
-                    {/* Уведомления */}
+                    {/* Переключатель уведомлений */}
                     <div className="flex items-center justify-between">
                         <span className="text-base font-medium text-text-black">
                             Уведомление
@@ -739,7 +786,7 @@ export default function ChannelInfoSidebar({
                         </button>
                     </div>
 
-                    {/* Описание */}
+                    {/* Описание канала */}
                     <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
                         <div
                             className={`
@@ -765,7 +812,7 @@ export default function ChannelInfoSidebar({
                         </div>
                     </div>
 
-                    {/* Ссылка-приглашение */}
+                    {/* Ссылка-приглашение (только для публичных каналов) */}
                     {chatType === 'public-channel' &&
                         inviteLink && (
                             <div
@@ -820,7 +867,7 @@ export default function ChannelInfoSidebar({
                                                 width={24}
                                                 height={24}
                                                 className={cn(
-                                                    'h-6 w-6', // исправлено
+                                                    'h-6 w-6',
                                                     copied
                                                         ? 'opacity-50'
                                                         : `opacity-100`,
@@ -832,7 +879,7 @@ export default function ChannelInfoSidebar({
                             </div>
                         )}
 
-                    {/* Табы */}
+                    {/* Горизонтальные табы (аналогично группе) */}
                     <div
                         ref={tabsContainerRef}
                         className="mt-1"
@@ -873,7 +920,7 @@ export default function ChannelInfoSidebar({
                                               hover:text-accent-violet-primary
                                               focus:outline-none
                                             `,
-                                            'min-w-25 px-2', // заменено min-w-[100px] → min-w-25
+                                            'min-w-25 px-2',
                                             activeTab ===
                                                 tab.id
                                                 ? 'text-accent-violet-primary'
@@ -884,6 +931,7 @@ export default function ChannelInfoSidebar({
                                         )}
                                     >
                                         {tab.label}
+                                        {/* Индикатор активного таба */}
                                         {activeTab ===
                                             tab.id && (
                                             <div
@@ -926,6 +974,7 @@ export default function ChannelInfoSidebar({
                 onConfirm={handleClearChatConfirm}
                 groupName={name}
             />
+            {/* Показываем LeaveGroupModal если пользователь НЕ владелец (переиспользуем для канала) */}
             {!isCurrentUserOwner && (
                 <LeaveGroupModal
                     open={leaveChannelModalOpen}
@@ -936,6 +985,7 @@ export default function ChannelInfoSidebar({
                     groupName={name}
                 />
             )}
+            {/* Показываем DeleteGroupModal если пользователь владелец (переиспользуем для канала) */}
             {isCurrentUserOwner && (
                 <DeleteGroupModal
                     open={deleteChannelModalOpen}
@@ -947,7 +997,8 @@ export default function ChannelInfoSidebar({
                 />
             )}
 
-            {/* Toast-уведомление */}
+            {/* Toast-уведомления */}
+            {/* Простой toast для скопированной ссылки */}
             <Toast
                 open={toastOpen}
                 onClose={() => setToastOpen(false)}
@@ -958,12 +1009,12 @@ export default function ChannelInfoSidebar({
                         alt=""
                         width={20}
                         height={20}
-                        className="h-5 w-5 text-white" // исправлено: w-5 h-5 = 20px
+                        className="h-5 w-5 text-white"
                     />
                 }
             />
 
-            {/* Toast для удаления канала */}
+            {/* Toast для удаления канала с отменой */}
             <Toast
                 open={deletionToastOpen}
                 onClose={handleCancelDeletion}
@@ -989,7 +1040,7 @@ export default function ChannelInfoSidebar({
                 </div>
             </Toast>
 
-            {/* Toast для выхода из канала */}
+            {/* Toast для выхода из канала с отменой */}
             <Toast
                 open={leaveToastOpen}
                 onClose={handleCancelLeave}
@@ -1015,7 +1066,7 @@ export default function ChannelInfoSidebar({
                 </div>
             </Toast>
 
-            {/* Toast для очистки чата */}
+            {/* Toast для очистки чата с отменой */}
             <Toast
                 open={clearToastOpen}
                 onClose={handleCancelClear}

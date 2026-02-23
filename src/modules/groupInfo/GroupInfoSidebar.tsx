@@ -1,3 +1,4 @@
+// GroupInfoSidebar.tsx
 'use client'
 
 import { cn } from '@shared/lib/utils'
@@ -10,32 +11,33 @@ import {
     useRef,
 } from 'react'
 
-import TabContentPreview from './TabContentPreview'
-import TabLayout from './TabLayout'
-import ParticipantsContent from './tabs/ParticipantsContent'
-import MediaContent from './tabs/MediaContent'
-import FilesContent from './tabs/FilesContent'
-import VoiceContent from './tabs/VoiceContent'
-import LinksContent from './tabs/LinksContent'
-import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu'
-import ClearChatModal from './modals/ClearChatModal'
-import LeaveGroupModal from './modals/LeaveGroupModal'
-import DeleteGroupModal from './modals/DeleteGroupModal'
-import { useGroupInfoSidebar } from './useGroupInfoSidebar'
-import { getNoun } from '@shared/lib/getNoun'
+import TabContentPreview from './TabContentPreview' // Компонент предпросмотра контента вкладки (в основном режиме)
+import TabLayout from './TabLayout' // Компонент лейаута для режима вкладки
+import ParticipantsContent from './tabs/ParticipantsContent' // Контент вкладки "Участники"
+import MediaContent from './tabs/MediaContent' // Контент вкладки "Медиа"
+import FilesContent from './tabs/FilesContent' // Контент вкладки "Файлы"
+import VoiceContent from './tabs/VoiceContent' // Контент вкладки "Голосовые"
+import LinksContent from './tabs/LinksContent' // Контент вкладки "Ссылки"
+import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu' // Выпадающее меню с действиями
+import ClearChatModal from './modals/ClearChatModal' // Модалка очистки чата
+import LeaveGroupModal from './modals/LeaveGroupModal' // Модалка выхода из группы
+import DeleteGroupModal from './modals/DeleteGroupModal' // Модалка удаления группы
+import { useGroupInfoSidebar } from './useGroupInfoSidebar' // Хук для управления состоянием сайдбара
+import { getNoun } from '@shared/lib/getNoun' // Функция для склонения существительных
 import {
     getChatByIdFromStorage,
     loadChatsFromStorage,
     saveChatsToStorage,
     updateChatInStorage,
-} from '@shared/lib/localStorageChats'
-import EditGroupView from './EditGroupView'
-import { transformFromApi } from '@shared/lib/transformChatData'
-import { ApiChatItem } from '@shared/types/chat'
-import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
-import { Toast } from '@shared/ui/toast/Toast'
-import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle'
+} from '@shared/lib/localStorageChats' // Работа с localStorage для чатов
+import EditGroupView from './EditGroupView' // Компонент редактирования группы
+import { transformFromApi } from '@shared/lib/transformChatData' // Трансформация данных чата
+import { ApiChatItem } from '@shared/types/chat' // Типы API чатов
+import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard' // Хук для копирования в буфер
+import { Toast } from '@shared/ui/toast/Toast' // Toast-уведомления
+import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle' // Кружок с обратным отсчётом для отмены действий
 
+// Типы для вкладок
 type TabId =
     | 'participants'
     | 'media'
@@ -43,24 +45,25 @@ type TabId =
     | 'voice'
     | 'links'
 
+// Функция для получения контента вкладки по её ID
 function getTabContent(
     tabId: TabId,
     chatKey: string,
     chatUid: string,
-    setDynamicTabTitle: (t: string | null) => void,
-    onParticipantsChange?: (count: number) => void,
-    isCurrentUserOwner?: boolean, // добавлен пропс для передачи в ParticipantsContent
+    setDynamicTabTitle: (t: string | null) => void, // Колбэк для установки динамического заголовка
+    onParticipantsChange?: (count: number) => void, // Колбэк при изменении количества участников
+    isCurrentUserOwner?: boolean, // Флаг, является ли текущий пользователь владельцем
 ) {
     switch (tabId) {
         case 'participants':
             return (
                 <ParticipantsContent
                     chatKey={chatKey}
-                    onTitleChange={setDynamicTabTitle}
+                    onTitleChange={setDynamicTabTitle} // Может менять заголовок (например, "Участники (5)")
                     onParticipantsChange={
                         onParticipantsChange
                     }
-                    isCurrentUserOwner={isCurrentUserOwner} // передаём дальше
+                    isCurrentUserOwner={isCurrentUserOwner} // Передаём право на удаление участников
                 />
             )
         case 'media':
@@ -76,24 +79,25 @@ function getTabContent(
     }
 }
 
+// Интерфейс пропсов компонента
 interface GroupInfoSidebarProps {
-    chatId: number
-    chatType: string
-    chatKey: string
-    chatUid: string
-    name: string
-    participantsCount: number
-    description?: string
-    inviteLink?: string
-    notificationsEnabled: boolean
-    onNotificationsChange?: (enabled: boolean) => void
-    onClose?: () => void
-    onClearChat?: (deleteForEveryone: boolean) => void
-    onLeaveGroup?: () => void
-    onDeleteGroup?: () => void
-    avatarUrl?: string | null
-    onGroupUpdated?: () => void
-    isCurrentUserOwner?: boolean // новый пропс
+    chatId: number // ID чата
+    chatType: string // Тип чата (public-group, private-group и т.д.)
+    chatKey: string // Уникальный ключ чата
+    chatUid: string // UID чата
+    name: string // Название группы
+    participantsCount: number // Количество участников
+    description?: string // Описание группы
+    inviteLink?: string // Ссылка-приглашение
+    notificationsEnabled: boolean // Статус уведомлений
+    onNotificationsChange?: (enabled: boolean) => void // Колбэк изменения уведомлений
+    onClose?: () => void // Колбэк закрытия сайдбара
+    onClearChat?: (deleteForEveryone: boolean) => void // Колбэк очистки чата
+    onLeaveGroup?: () => void // Колбэк выхода из группы
+    onDeleteGroup?: () => void // Колбэк удаления группы
+    avatarUrl?: string | null // URL аватара
+    onGroupUpdated?: () => void // Колбэк обновления группы
+    isCurrentUserOwner?: boolean // Является ли текущий пользователь владельцем
 }
 
 export default function GroupInfoSidebar({
@@ -113,51 +117,59 @@ export default function GroupInfoSidebar({
     onDeleteGroup,
     avatarUrl,
     onGroupUpdated,
-    isCurrentUserOwner = false, // по умолчанию false
+    isCurrentUserOwner = false, // По умолчанию не владелец
 }: GroupInfoSidebarProps) {
-    const [isCopied, setIsCopied] = useState(false)
+    // Состояния для модальных окон
+    const [isCopied, setIsCopied] = useState(false) // Устаревшее, используется useCopyToClipboard
     const [clearChatModalOpen, setClearChatModalOpen] =
-        useState(false)
+        useState(false) // Модалка очистки чата
     const [leaveGroupModalOpen, setLeaveGroupModalOpen] =
-        useState(false)
+        useState(false) // Модалка выхода из группы
     const [deleteGroupModalOpen, setDeleteGroupModalOpen] =
-        useState(false)
+        useState(false) // Модалка удаления группы
     const [
         participantsCountState,
         setParticipantsCountState,
-    ] = useState(participantsCount)
-    const [isEditing, setIsEditing] = useState(false)
-    // const [avatarError, setAvatarError] = useState(false)
+    ] = useState(participantsCount) // Локальное состояние количества участников (обновляется динамически)
+    const [isEditing, setIsEditing] = useState(false) // Режим редактирования группы
     const [copied, copyToClipboard] =
-        useCopyToClipboard(700)
-    const [toastOpen, setToastOpen] = useState(false)
+        useCopyToClipboard(700) // Хук для копирования (copied сбрасывается через 700мс)
+    const [toastOpen, setToastOpen] = useState(false) // Toast "Ссылка скопирована"
+
+    // Состояния для toast-ов с отменой действий
     const [deletionToastOpen, setDeletionToastOpen] =
-        useState(false)
-    const [countdown, setCountdown] = useState(4)
+        useState(false) // Toast удаления группы
+    const [countdown, setCountdown] = useState(4) // Обратный отсчёт для удаления
     const countdownTimerRef = useRef<NodeJS.Timeout | null>(
         null,
-    )
+    ) // Таймер для удаления
+
     const [leaveToastOpen, setLeaveToastOpen] =
-        useState(false)
-    const [leaveCountdown, setLeaveCountdown] = useState(4)
+        useState(false) // Toast выхода из группы
+    const [leaveCountdown, setLeaveCountdown] = useState(4) // Обратный отсчёт для выхода
     const leaveTimerRef = useRef<NodeJS.Timeout | null>(
         null,
-    )
+    ) // Таймер для выхода
+
     const [clearToastOpen, setClearToastOpen] =
-        useState(false)
-    const [clearCountdown, setClearCountdown] = useState(4)
+        useState(false) // Toast очистки чата
+    const [clearCountdown, setClearCountdown] = useState(4) // Обратный отсчёт для очистки
     const clearTimerRef = useRef<NodeJS.Timeout | null>(
         null,
-    )
+    ) // Таймер для очистки
+
+    // Обработка ошибки загрузки аватара
     const [avatarError, setAvatarError] = useState(false)
     const handleAvatarError = useCallback(() => {
         setAvatarError(true)
     }, [setAvatarError])
-    // Вычисляем src для отображения
+
+    // Вычисляем src для отображения (при ошибке показываем заглушку)
     const avatarSrc = avatarError
         ? '/images/altImage.png'
         : avatarUrl || '/images/altImage.png'
 
+    // Получаем все состояния и функции из кастомного хука
     const {
         activeTab,
         viewMode,
@@ -185,10 +197,12 @@ export default function GroupInfoSidebar({
         getTabTitle,
     } = useGroupInfoSidebar()
 
+    // Переключение в режим редактирования
     const handleEditGroup = useCallback(() => {
         setIsEditing(true)
     }, [])
 
+    // Функция сжатия изображения для аватара
     const compressImage = useCallback(
         (
             file: File,
@@ -204,6 +218,7 @@ export default function GroupInfoSidebar({
                     let width = img.width
                     let height = img.height
 
+                    // Пропорциональное уменьшение до maxWidth/maxHeight
                     if (width > height) {
                         if (width > maxWidth) {
                             height = Math.round(
@@ -225,6 +240,7 @@ export default function GroupInfoSidebar({
                     canvas.height = height
                     const ctx = canvas.getContext('2d')
                     ctx?.drawImage(img, 0, 0, width, height)
+                    // Преобразуем в base64 JPEG с заданным качеством
                     resolve(
                         canvas.toDataURL(
                             'image/jpeg',
@@ -233,12 +249,13 @@ export default function GroupInfoSidebar({
                     )
                 }
                 img.onerror = reject
-                img.src = URL.createObjectURL(file)
+                img.src = URL.createObjectURL(file) // Создаём временный URL
             })
         },
         [],
     )
 
+    // Сохранение отредактированных данных группы
     const handleSaveEdit = useCallback(
         async (updatedData: {
             name: string
@@ -247,15 +264,18 @@ export default function GroupInfoSidebar({
             notificationsEnabled: boolean
             avatarFile?: File | null
         }) => {
+            // Получаем текущие данные чата из localStorage
             const currentChat =
                 getChatByIdFromStorage(chatId)
             if (!currentChat) return
 
+            // Определяем новый тип чата (public-group или private-group)
             const newChatType =
                 updatedData.type === 'open'
                     ? 'public-group'
                     : 'private-group'
 
+            // Создаём обновлённый объект чата
             const updatedChat: ApiChatItem = {
                 ...currentChat,
             }
@@ -265,6 +285,7 @@ export default function GroupInfoSidebar({
                 updatedData.description
             updatedChat.chat_type = newChatType
 
+            // Если выбран новый аватар - сжимаем и добавляем
             if (updatedData.avatarFile) {
                 try {
                     const compressedBase64 =
@@ -283,6 +304,7 @@ export default function GroupInfoSidebar({
                 }
             }
 
+            // Сохраняем в localStorage
             const allChats = loadChatsFromStorage() || []
             const index = allChats.findIndex(
                 (c) => c.id === chatId,
@@ -292,6 +314,7 @@ export default function GroupInfoSidebar({
                 saveChatsToStorage(allChats)
             }
 
+            // Если изменился статус уведомлений - вызываем колбэк
             if (
                 updatedData.notificationsEnabled !==
                 notificationsEnabled
@@ -301,8 +324,8 @@ export default function GroupInfoSidebar({
                 )
             }
 
-            setIsEditing(false)
-            onGroupUpdated?.()
+            setIsEditing(false) // Выходим из режима редактирования
+            onGroupUpdated?.() // Уведомляем родителя об обновлении
         },
         [
             chatId,
@@ -313,6 +336,7 @@ export default function GroupInfoSidebar({
         ],
     )
 
+    // Обработчик изменения количества участников
     const handleParticipantsChange = useCallback(
         (newCount: number) => {
             setParticipantsCountState(newCount)
@@ -320,24 +344,29 @@ export default function GroupInfoSidebar({
         [],
     )
 
+    // Копирование ссылки-приглашения
     const handleCopyLink = useCallback(() => {
         if (inviteLink) {
-            copyToClipboard(inviteLink)
-            setToastOpen(true)
+            copyToClipboard(inviteLink) // Копируем в буфер
+            setToastOpen(true) // Показываем toast
         }
     }, [inviteLink, copyToClipboard])
 
+    // Переключение уведомлений
     const handleToggleNotifications = useCallback(() => {
         onNotificationsChange?.(!notificationsEnabled)
     }, [notificationsEnabled, onNotificationsChange])
 
-    // Обработчик подтверждения очистки из модалки
+    // --- Обработчики для действий с отложенным выполнением и возможностью отмены ---
+
+    // Очистка чата
     const handleClearChatConfirm = useCallback(
         async (deleteForEveryone: boolean) => {
-            setClearChatModalOpen(false)
-            setClearToastOpen(true)
+            setClearChatModalOpen(false) // Закрываем модалку
+            setClearToastOpen(true) // Показываем toast с обратным отсчётом
             setClearCountdown(4)
 
+            // Запускаем таймер обратного отсчёта
             clearTimerRef.current = setInterval(() => {
                 setClearCountdown((prev) => {
                     if (prev <= 1) {
@@ -362,6 +391,7 @@ export default function GroupInfoSidebar({
         },
         [onClearChat],
     )
+
     // Отмена очистки
     const handleCancelClear = useCallback(() => {
         if (clearTimerRef.current) {
@@ -371,15 +401,8 @@ export default function GroupInfoSidebar({
         setClearToastOpen(false)
         setClearCountdown(4)
     }, [])
-    // Очистка таймера при размонтировании
-    useEffect(() => {
-        return () => {
-            if (clearTimerRef.current) {
-                clearInterval(clearTimerRef.current)
-            }
-        }
-    }, [])
-    // Обработчик подтверждения выхода из модалки
+
+    // Выход из группы
     const handleLeaveGroupConfirm =
         useCallback(async () => {
             setLeaveGroupModalOpen(false)
@@ -397,7 +420,6 @@ export default function GroupInfoSidebar({
                         }
                         setLeaveToastOpen(false)
 
-                        // Вызов реального выхода в следующем цикле событий
                         setTimeout(() => {
                             onLeaveGroup?.()
                         }, 0)
@@ -408,6 +430,7 @@ export default function GroupInfoSidebar({
                 })
             }, 1000)
         }, [onLeaveGroup])
+
     // Отмена выхода
     const handleCancelLeave = useCallback(() => {
         if (leaveTimerRef.current) {
@@ -417,15 +440,8 @@ export default function GroupInfoSidebar({
         setLeaveToastOpen(false)
         setLeaveCountdown(4)
     }, [])
-    // Очистка таймеров при размонтировании
-    useEffect(() => {
-        return () => {
-            if (leaveTimerRef.current) {
-                clearInterval(leaveTimerRef.current)
-            }
-        }
-    }, [])
-    // Обработчик подтверждения удаления из модалки
+
+    // Удаление группы (только для владельца)
     const handleDeleteGroupConfirm =
         useCallback(async () => {
             setDeleteGroupModalOpen(false)
@@ -443,8 +459,6 @@ export default function GroupInfoSidebar({
                         }
                         setDeletionToastOpen(false)
 
-                        // ✅ Важно: выносим вызов удаления в следующий цикл событий
-                        // чтобы дать React завершить текущий рендер
                         setTimeout(() => {
                             onDeleteGroup?.()
                         }, 0)
@@ -465,27 +479,38 @@ export default function GroupInfoSidebar({
         setDeletionToastOpen(false)
         setCountdown(4)
     }, [])
-    // Очистка таймера при размонтировании
+
+    // Очистка таймеров при размонтировании
     useEffect(() => {
         return () => {
             if (countdownTimerRef.current) {
                 clearInterval(countdownTimerRef.current)
             }
+            if (leaveTimerRef.current) {
+                clearInterval(leaveTimerRef.current)
+            }
+            if (clearTimerRef.current) {
+                clearInterval(clearTimerRef.current)
+            }
         }
     }, [])
+
+    // --- Рендер в зависимости от режима ---
+
+    // Режим вкладки (полноэкранный контент)
     if (viewMode === 'tab') {
         return (
             <TabLayout
                 activeTab={activeTab}
-                onBack={handleBackFromTab}
-                onTabClick={handleTabContentTabClick}
-                tabTitle={getTabTitle(activeTab)}
-                dynamicTitle={dynamicTabTitle || undefined}
-                onScroll={handleTabScrollEvent}
-                onAttemptReturn={handleAttemptReturn}
-                hideScrollbar={hideTabScrollbarDuringReturn}
+                onBack={handleBackFromTab} // Кнопка "Назад"
+                onTabClick={handleTabContentTabClick} // Переключение вкладок внутри режима
+                tabTitle={getTabTitle(activeTab)} // Заголовок по умолчанию
+                dynamicTitle={dynamicTabTitle || undefined} // Динамический заголовок (например, "Участники (5)")
+                onScroll={handleTabScrollEvent} // Обработчик скролла для возврата
+                onAttemptReturn={handleAttemptReturn} // Попытка возврата свайпом
+                hideScrollbar={hideTabScrollbarDuringReturn} // Скрыть скроллбар при возврате
                 initialScrollTop={
-                    tabScrollPositions[activeTab]
+                    tabScrollPositions[activeTab] // Восстановление позиции скролла
                 }
             >
                 {getTabContent(
@@ -494,12 +519,13 @@ export default function GroupInfoSidebar({
                     chatUid,
                     setDynamicTabTitle,
                     handleParticipantsChange,
-                    isCurrentUserOwner, // передаём в таб участников
+                    isCurrentUserOwner, // Передаём флаг владельца для вкладки участников
                 )}
             </TabLayout>
         )
     }
 
+    // Режим редактирования группы
     if (isEditing) {
         return (
             <EditGroupView
@@ -515,12 +541,13 @@ export default function GroupInfoSidebar({
                     notificationsEnabled
                 }
                 inviteLink={inviteLink}
-                onSave={handleSaveEdit}
-                onCancel={() => setIsEditing(false)}
+                onSave={handleSaveEdit} // Сохранение изменений
+                onCancel={() => setIsEditing(false)} // Отмена редактирования
             />
         )
     }
 
+    // Основной режим (информация о группе)
     return (
         <div
             className={`
@@ -530,7 +557,7 @@ export default function GroupInfoSidebar({
             onMouseEnter={() => setIsMouseOver(true)}
             onMouseLeave={() => setIsMouseOver(false)}
         >
-            {/* Header */}
+            {/* Header с кнопкой закрытия и выпадающим меню */}
             <div
                 className={`
                   flex items-center justify-between gap-3 rounded-t-md border-b
@@ -588,6 +615,7 @@ export default function GroupInfoSidebar({
                         </Button>
                     )}
 
+                    {/* Выпадающее меню с действиями */}
                     <DropdownMenuButton
                         triggerIcon={
                             <Image
@@ -633,7 +661,7 @@ export default function GroupInfoSidebar({
                                     setLeaveGroupModalOpen(
                                         true,
                                     ),
-                                hasDivider: true,
+                                hasDivider: true, // Разделитель перед пунктом
                             },
                             // Пункт "Удалить группу" только для владельца
                             isCurrentUserOwner && {
@@ -651,26 +679,27 @@ export default function GroupInfoSidebar({
                                         true,
                                     ),
                                 hasDivider: true,
-                                isDanger: true,
+                                isDanger: true, // Красный цвет для опасного действия
                             },
-                        ].filter(Boolean)} // отфильтровываем false
+                        ].filter(Boolean)} // Отфильтровываем false (убираем неактуальные пункты)
                     />
                 </div>
             </div>
 
-            {/* Основной контент (без изменений) */}
+            {/* Основной контент (скроллируемый) */}
             <div
                 ref={mainContentRef}
                 className={cn(
                     'scrollbar-hide flex-1 overflow-auto',
-                    'h-[calc(100%-64px)] touch-none overscroll-none',
+                    'h-[calc(100%-64px)] touch-none overscroll-none', // Отключаем стандартные жесты браузера
                 )}
-                onWheel={handleMainWheel}
-                onTouchStart={handleMainTouchStart}
+                onWheel={handleMainWheel} // Обработчик колесика
+                onTouchStart={handleMainTouchStart} // Обработчик touch-событий
                 onTouchMove={handleMainTouchMove}
-                onScroll={handleMainScroll}
+                onScroll={handleMainScroll} // Обработчик скролла
             >
                 <div className="relative">
+                    {/* Аватар группы на весь экран */}
                     <div className="relative h-60 w-full overflow-hidden">
                         <Image
                             key={avatarUrl}
@@ -678,10 +707,11 @@ export default function GroupInfoSidebar({
                             alt={name}
                             fill
                             className="object-cover"
-                            onError={handleAvatarError}
-                            priority
+                            onError={handleAvatarError} // При ошибке загрузки - заглушка
+                            priority // Приоритетная загрузка (LCP)
                         />
                     </div>
+                    {/* Градиент с названием и количеством участников */}
                     <div
                         className={`
                           absolute right-0 bottom-0 left-0 rounded-b-md
@@ -704,7 +734,7 @@ export default function GroupInfoSidebar({
                 </div>
 
                 <div className="bg-gray-50 px-4 py-3">
-                    {/* Уведомления */}
+                    {/* Переключатель уведомлений */}
                     <div className="flex items-center justify-between">
                         <span className="text-base font-medium text-text-black">
                             Уведомление
@@ -744,8 +774,7 @@ export default function GroupInfoSidebar({
                         </button>
                     </div>
 
-                    {/* Описание */}
-
+                    {/* Описание группы */}
                     <div className="mx-0 my-2 rounded-md bg-white-bg p-1">
                         <div
                             className={`
@@ -771,7 +800,7 @@ export default function GroupInfoSidebar({
                         </div>
                     </div>
 
-                    {/* Ссылка-приглашение */}
+                    {/* Ссылка-приглашение (только для публичных групп) */}
                     {chatType === 'public-group' &&
                         inviteLink && (
                             <div
@@ -837,22 +866,20 @@ export default function GroupInfoSidebar({
                             </div>
                         )}
 
-                    {/* Табы */}
+                    {/* Горизонтальные табы */}
                     <div
                         ref={tabsContainerRef}
                         className="mt-1"
                     >
                         <div
                             ref={containerRef}
-                            className={`
-                          scrollbar-hide flex overflow-x-auto
-                        `}
+                            className={`scrollbar-hide flex overflow-x-auto`}
                         >
                             <div
                                 className={`
-                              flex space-x-4 border-b-2 border-b-gray-border
-                              px-4 pb-0
-                            `}
+                                  flex space-x-4 border-b-2 border-b-gray-border
+                                  px-4 pb-0
+                                `}
                             >
                                 {tabs.map((tab, index) => (
                                     <button
@@ -891,6 +918,7 @@ export default function GroupInfoSidebar({
                                         )}
                                     >
                                         {tab.label}
+                                        {/* Индикатор активного таба (полоска снизу) */}
                                         {activeTab ===
                                             tab.id && (
                                             <div
@@ -907,7 +935,7 @@ export default function GroupInfoSidebar({
                         </div>
                     </div>
 
-                    {/* Preview контента активного таба */}
+                    {/* Preview контента активного таба (в основном режиме) */}
                     <div
                         className={`
                           relative mt-2 h-50 max-h-full overflow-hidden
@@ -933,6 +961,7 @@ export default function GroupInfoSidebar({
                 onConfirm={handleClearChatConfirm}
                 groupName={name}
             />
+            {/* Показываем LeaveGroupModal только если пользователь НЕ владелец */}
             {!isCurrentUserOwner && (
                 <LeaveGroupModal
                     open={leaveGroupModalOpen}
@@ -943,6 +972,7 @@ export default function GroupInfoSidebar({
                     groupName={name}
                 />
             )}
+            {/* Показываем DeleteGroupModal только если пользователь владелец */}
             {isCurrentUserOwner && (
                 <DeleteGroupModal
                     open={deleteGroupModalOpen}
@@ -953,7 +983,9 @@ export default function GroupInfoSidebar({
                     groupName={name}
                 />
             )}
-            {/* Toast-уведомление */}
+
+            {/* Toast-уведомления */}
+            {/* Простой toast для скопированной ссылки */}
             <Toast
                 open={toastOpen}
                 onClose={() => setToastOpen(false)}
@@ -968,7 +1000,8 @@ export default function GroupInfoSidebar({
                     />
                 }
             />
-            {/* Toast для удаления группы */}
+
+            {/* Toast для удаления группы с отменой */}
             <Toast
                 open={deletionToastOpen}
                 onClose={handleCancelDeletion}
@@ -993,7 +1026,8 @@ export default function GroupInfoSidebar({
                     </button>
                 </div>
             </Toast>
-            {/* Toast для выхода из группы */}
+
+            {/* Toast для выхода из группы с отменой */}
             <Toast
                 open={leaveToastOpen}
                 onClose={handleCancelLeave}
@@ -1018,7 +1052,8 @@ export default function GroupInfoSidebar({
                     </button>
                 </div>
             </Toast>
-            {/* Toast для очистки чата */}
+
+            {/* Toast для очистки чата с отменой */}
             <Toast
                 open={clearToastOpen}
                 onClose={handleCancelClear}

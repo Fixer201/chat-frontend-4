@@ -1,3 +1,4 @@
+// EditChannelView.tsx
 'use client'
 
 import {
@@ -9,42 +10,46 @@ import {
 } from 'react'
 import { Button } from '@shared/ui/button/Button'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
-import AvatarPicker from '@shared/ui/avatar/AvatarPicker'
-import { AvatarCropper } from '@shared/ui/avatarCropper/AvatarCropper'
-import FloatingTextarea from '@shared/ui/floating/FloatingTextarea'
-import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect'
-import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
+import AvatarPicker from '@shared/ui/avatar/AvatarPicker' // Компонент выбора аватара
+import { AvatarCropper } from '@shared/ui/avatarCropper/AvatarCropper' // Компонент кадрирования аватара
+import FloatingTextarea from '@shared/ui/floating/FloatingTextarea' // Текстовое поле с плавающей меткой
+import GroupTypeSelect from '@shared/ui/select/GroupTypeSelect' // Выпадающий список для выбора типа группы/канала
+import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar' // Кастомный скроллбар
 import { cn } from '@shared/lib/utils'
 import Image from 'next/image'
-import { Area } from 'react-easy-crop'
-import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
+import { Area } from 'react-easy-crop' // Тип для области кадрирования
+import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard' // Хук для копирования в буфер обмена
 import Modal from '@shared/ui/modal/Modal'
 
+// Интерфейс опции типа канала
 interface ChannelTypeOptionProps {
     value: string // 'public' | 'private'
-    optionName: string
-    optionDescription: string
+    optionName: string // Название опции
+    optionDescription: string // Описание опции
 }
 
+// Интерфейс состояния кадрирования
 interface CropState {
-    crop: { x: number; y: number }
-    zoom: number
-    croppedAreaPixels: Area | null
-    croppedBlob: Blob | null
-    originalFile: File | null
+    crop: { x: number; y: number } // Позиция кадрирования
+    zoom: number // Масштаб
+    croppedAreaPixels: Area | null // Область кадрирования в пикселях
+    croppedBlob: Blob | null // Обрезанное изображение в виде Blob
+    originalFile: File | null // Исходный файл
 }
 
+// Интерфейс состояния формы
 interface FormState {
-    name: string
-    description: string
-    selectedOption: ChannelTypeOptionProps
-    notificationsEnabled: boolean
-    photoFile: File | null
-    photoPreview: string | null
-    selectedFile: File | null
-    cropState: CropState
+    name: string // Название канала
+    description: string // Описание
+    selectedOption: ChannelTypeOptionProps // Выбранный тип канала
+    notificationsEnabled: boolean // Уведомления включены/выключены
+    photoFile: File | null // Файл фото (после обработки)
+    photoPreview: string | null // URL для предпросмотра
+    selectedFile: File | null // Выбранный файл (до обработки)
+    cropState: CropState // Состояние кадрирования
 }
 
+// Экшены для редьюсера
 type FormAction =
     | { type: 'SET_NAME'; payload: string }
     | { type: 'SET_DESCRIPTION'; payload: string }
@@ -67,6 +72,7 @@ type FormAction =
       }
     | { type: 'RESET_FROM_PROPS'; payload: FormState }
 
+// Доступные опции для канала
 const channelOptions: ChannelTypeOptionProps[] = [
     {
         value: 'public',
@@ -82,6 +88,7 @@ const channelOptions: ChannelTypeOptionProps[] = [
     },
 ]
 
+// Редьюсер для управления состоянием формы
 function formReducer(
     state: FormState,
     action: FormAction,
@@ -136,21 +143,22 @@ function formReducer(
     }
 }
 
+// Интерфейс пропсов компонента
 interface EditChannelViewProps {
-    initialName: string
-    initialDescription: string
-    initialType: 'public' | 'private' // ожидаем 'public' или 'private'
-    initialAvatarUrl?: string | null
-    initialNotificationsEnabled: boolean
-    inviteLink?: string
+    initialName: string // Исходное название
+    initialDescription: string // Исходное описание
+    initialType: 'public' | 'private' // Исходный тип
+    initialAvatarUrl?: string | null // Исходный URL аватара
+    initialNotificationsEnabled: boolean // Исходный статус уведомлений
+    inviteLink?: string // Ссылка-приглашение
     onSave: (data: {
         name: string
         description: string
         type: 'public' | 'private'
         notificationsEnabled: boolean
         avatarFile?: File | null
-    }) => void
-    onCancel: () => void
+    }) => void // Колбэк сохранения
+    onCancel: () => void // Колбэк отмены
 }
 
 export default function EditChannelView({
@@ -163,21 +171,22 @@ export default function EditChannelView({
     onSave,
     onCancel,
 }: EditChannelViewProps) {
-    const previousPreviewRef = useRef<string | null>(null)
+    const previousPreviewRef = useRef<string | null>(null) // Предыдущий preview URL для очистки
     const prevInitialRef = useRef({
         name: initialName,
         description: initialDescription,
         type: initialType,
         notifications: initialNotificationsEnabled,
         avatar: initialAvatarUrl,
-    })
+    }) // Предыдущие исходные данные для сравнения
 
-    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isModalOpen, setIsModalOpen] = useState(false) // Модалка подтверждения выхода
     const [isCropperOpen, setIsCropperOpen] =
-        useState(false)
+        useState(false) // Модалка кадрирования
     const [copied, copyToClipboard] =
-        useCopyToClipboard(700)
+        useCopyToClipboard(700) // Хук для копирования ссылки
 
+    // Начальное состояние формы
     const initialFormState = (): FormState => ({
         name: initialName,
         description: initialDescription,
@@ -206,6 +215,7 @@ export default function EditChannelView({
         initialFormState,
     )
 
+    // Проверка наличия изменений в форме
     const hasChanges = useCallback(() => {
         if (formState.name !== initialName) return true
         if (formState.description !== initialDescription)
@@ -236,6 +246,7 @@ export default function EditChannelView({
         initialAvatarUrl,
     ])
 
+    // Сброс к исходным данным
     const resetToInitial = useCallback(() => {
         dispatch({
             type: 'RESET_FROM_PROPS',
@@ -270,6 +281,7 @@ export default function EditChannelView({
         initialAvatarUrl,
     ])
 
+    // Обработчик попытки отмены (если есть изменения - показываем модалку)
     const handleCancelAttempt = useCallback(() => {
         if (hasChanges()) {
             setIsModalOpen(true)
@@ -278,12 +290,14 @@ export default function EditChannelView({
         }
     }, [hasChanges, onCancel])
 
+    // Обработчик сброса изменений
     const handleDiscard = useCallback(() => {
         resetToInitial()
         setIsModalOpen(false)
         onCancel()
     }, [resetToInitial, onCancel])
 
+    // Обработчик применения изменений
     const handleApply = useCallback(() => {
         onSave({
             name: formState.name.trim(),
@@ -299,37 +313,40 @@ export default function EditChannelView({
         onCancel()
     }, [formState, onSave, onCancel])
 
-    // Создание preview URL
+    // Создание preview URL при изменении blob или файла
     useEffect(() => {
         let isMounted = true
         let animationFrameId: number | null = null
 
+        // Очищаем предыдущий preview URL
         if (previousPreviewRef.current) {
             URL.revokeObjectURL(previousPreviewRef.current)
         }
 
         let newPreview: string | null = null
 
+        // Определяем новый preview в порядке приоритета
         if (formState.cropState.croppedBlob) {
             newPreview = URL.createObjectURL(
                 formState.cropState.croppedBlob,
-            )
+            ) // Обрезанное изображение
         } else if (formState.cropState.originalFile) {
             newPreview = URL.createObjectURL(
                 formState.cropState.originalFile,
-            )
+            ) // Исходный файл
         } else if (formState.photoFile) {
             newPreview = URL.createObjectURL(
                 formState.photoFile,
-            )
+            ) // Файл фото
         } else {
             newPreview =
                 initialAvatarUrl ||
-                '/images/chatHeader/userAvatar.svg'
+                '/images/chatHeader/userAvatar.svg' // Дефолтная заглушка
         }
 
         previousPreviewRef.current = newPreview
 
+        // Обновляем preview в следующем кадре анимации для оптимизации
         animationFrameId = requestAnimationFrame(() => {
             if (isMounted) {
                 dispatch({
@@ -361,7 +378,7 @@ export default function EditChannelView({
         initialAvatarUrl,
     ])
 
-    // Синхронизация с пропсами
+    // Синхронизация с пропсами при их изменении
     useEffect(() => {
         const prev = prevInitialRef.current
         const newState: Partial<FormState> = {}
@@ -405,6 +422,7 @@ export default function EditChannelView({
             })
         }
 
+        // Обновляем ref с текущими исходными данными
         prevInitialRef.current = {
             name: initialName,
             description: initialDescription,
@@ -421,9 +439,11 @@ export default function EditChannelView({
         formState,
     ])
 
+    // Обработчик выбора файла
     const handleFileSelect = useCallback(
         (file: File | null) => {
             if (file) {
+                // Если файл выбран - устанавливаем его в cropState и selectedFile
                 dispatch({
                     type: 'SET_CROP_STATE',
                     payload: {
@@ -441,6 +461,7 @@ export default function EditChannelView({
                     payload: file,
                 })
             } else {
+                // Если файл сброшен - очищаем всё
                 dispatch({
                     type: 'SET_PHOTO_FILE',
                     payload: null,
@@ -464,14 +485,17 @@ export default function EditChannelView({
         [],
     )
 
+    // Обработчик клика по изображению (открывает кадрирование)
     const handleImageClick = useCallback(() => {
         setIsCropperOpen(true)
     }, [])
 
+    // Закрытие кадрирования
     const handleCropperClose = useCallback(() => {
         setIsCropperOpen(false)
     }, [])
 
+    // Подтверждение кадрирования
     const handleCropperConfirm = useCallback(
         (
             blob: Blob,
@@ -490,7 +514,7 @@ export default function EditChannelView({
                 'image/png'
             const file = new File([blob], fileName, {
                 type: fileType,
-            })
+            }) // Создаём файл из Blob
 
             dispatch({
                 type: 'SET_CROP_STATE',
@@ -499,16 +523,16 @@ export default function EditChannelView({
                     ...(cropParams || {}),
                 },
             })
-
             dispatch({
                 type: 'SET_PHOTO_FILE',
                 payload: file,
-            })
+            }) // Устанавливаем новый файл
             setIsCropperOpen(false)
         },
         [formState.selectedFile],
     )
 
+    // Обработчик изменения файла в кадрировании
     const handleCropperFileChange = useCallback(
         (file: File) => {
             dispatch({
@@ -527,8 +551,10 @@ export default function EditChannelView({
         [],
     )
 
+    // Обработчик отправки формы
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        // Валидация обязательных полей
         if (
             !formState.name.trim() ||
             !formState.description.trim() ||
@@ -548,6 +574,7 @@ export default function EditChannelView({
         })
     }
 
+    // Копирование ссылки в буфер обмена
     const handleCopyLink = useCallback(() => {
         if (inviteLink) {
             copyToClipboard(inviteLink)
@@ -556,11 +583,12 @@ export default function EditChannelView({
 
     return (
         <div className="flex h-full flex-col rounded-md bg-gray-main">
+            {/* Заголовок с кнопкой назад */}
             <div
                 className={`
-                  flex items-center justify-start gap-3 rounded-t-md border-b
-                  border-app-divider bg-gray-main px-6 py-4
-                `}
+              flex items-center justify-start gap-3 rounded-t-md border-b
+              border-app-divider bg-gray-main px-6 py-4
+            `}
             >
                 <Button
                     onClick={handleCancelAttempt}
@@ -577,33 +605,92 @@ export default function EditChannelView({
                 </Button>
                 <h2
                     className={`
-                      text-lg font-medium tracking-extra-tight text-text-black
-                    `}
+                  text-lg font-medium tracking-extra-tight text-text-black
+                `}
                 >
                     Редактировать канал
                 </h2>
             </div>
 
+            {/* Скроллируемая форма */}
             <CustomScrollbar className="flex-1">
                 <div className="flex justify-center p-4">
                     <form
                         onSubmit={handleSubmit}
-                        className={`w-full max-w-82 space-y-4`}
+                        className={`
+                      w-full max-w-82 space-y-4
+                    `}
                     >
+                        {/* Выбор аватара */}
                         <div className="flex flex-col items-center">
                             <AvatarPicker
-                                src={formState.photoPreview}
+                                src={formState.photoPreview} // URL для предпросмотра
                                 name={
                                     formState.name ||
                                     'Канал'
                                 }
-                                onFile={handleFileSelect}
+                                onFile={handleFileSelect} // Обработчик выбора файла
                                 onImageClick={
                                     handleImageClick
-                                }
+                                } // Обработчик клика по изображению
                             />
                         </div>
 
+                        {/* Переключатель уведомлений */}
+                        <div className="flex items-center justify-between">
+                            <span
+                                className={`
+                              text-base font-medium text-text-black
+                            `}
+                            >
+                                Уведомления
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    dispatch({
+                                        type: 'SET_NOTIFICATIONS_ENABLED',
+                                        payload:
+                                            !formState.notificationsEnabled,
+                                    })
+                                }
+                                aria-label={
+                                    formState.notificationsEnabled
+                                        ? 'Отключить уведомления'
+                                        : 'Включить уведомления'
+                                }
+                                className={cn(
+                                    `
+                                      relative inline-flex h-8 w-14 items-center
+                                      rounded-full transition-colors
+                                      hover:cursor-pointer
+                                      focus:outline-none
+                                    `,
+                                    formState.notificationsEnabled
+                                        ? `
+                                      bg-blue-500
+                                    `
+                                        : `bg-gray-300`,
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        `
+                                          inline-block h-6 w-6 transform
+                                          rounded-full bg-white
+                                          transition-transform
+                                        `,
+                                        formState.notificationsEnabled
+                                            ? `
+                                          translate-x-6
+                                        `
+                                            : `translate-x-1`,
+                                    )}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Поля ввода */}
                         <div className="w-full">
                             <div
                                 className={`
@@ -648,6 +735,8 @@ export default function EditChannelView({
                                 />
                             </div>
                         </div>
+
+                        {/* Выбор типа канала */}
                         <div>
                             <GroupTypeSelect
                                 selectLabel="Тип канала"
@@ -665,81 +754,33 @@ export default function EditChannelView({
                             />
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <span
-                                className={`
-                                  text-base font-medium text-text-black
-                                `}
-                            >
-                                Уведомления
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    dispatch({
-                                        type: 'SET_NOTIFICATIONS_ENABLED',
-                                        payload:
-                                            !formState.notificationsEnabled,
-                                    })
-                                }
-                                aria-label={
-                                    formState.notificationsEnabled
-                                        ? 'Отключить уведомления'
-                                        : 'Включить уведомления'
-                                }
-                                className={cn(
-                                    `
-                                      relative inline-flex h-8 w-14 items-center
-                                      rounded-full transition-colors
-                                      hover:cursor-pointer
-                                      focus:outline-none
-                                    `,
-                                    formState.notificationsEnabled
-                                        ? `bg-blue-500`
-                                        : `bg-gray-300`,
-                                )}
-                            >
-                                <span
-                                    className={cn(
-                                        `
-                                          inline-block h-6 w-6 transform
-                                          rounded-full bg-white
-                                          transition-transform
-                                        `,
-                                        formState.notificationsEnabled
-                                            ? `translate-x-6`
-                                            : `translate-x-1`,
-                                    )}
-                                />
-                            </button>
-                        </div>
-
+                        {/* Пригласительная ссылка (если есть) */}
                         {inviteLink && (
                             <div className="rounded-md bg-white-bg p-1">
                                 <div
                                     className={`
-                                      flex flex-col justify-between p-0.5
-                                    `}
+                                  flex flex-col justify-between p-0.5
+                                `}
                                 >
                                     <span
                                         className={`
-                                          mb-1 p-0 text-xs font-medium
-                                          tracking-extra-tight text-text-gray
-                                        `}
+                                      mb-1 p-0 text-xs font-medium
+                                      tracking-extra-tight text-text-gray
+                                    `}
                                     >
                                         Ссылка на
                                         приглашение в канал
                                     </span>
                                     <div
                                         className={`
-                                          flex items-center justify-between
-                                        `}
+                                      flex items-center justify-between
+                                    `}
                                     >
                                         <span
                                             className={`
-                                              pr-2 text-base break-all
-                                              text-accent-violet-primary
-                                            `}
+                                          pr-2 text-base break-all
+                                          text-accent-violet-primary
+                                        `}
                                         >
                                             {inviteLink}
                                         </span>
@@ -765,7 +806,9 @@ export default function EditChannelView({
                                                 height={24}
                                                 className={cn(
                                                     copied
-                                                        ? `opacity-50`
+                                                        ? `
+                                                  opacity-50
+                                                `
                                                         : `opacity-100`,
                                                 )}
                                             />
@@ -775,6 +818,7 @@ export default function EditChannelView({
                             </div>
                         )}
 
+                        {/* Кнопки действий */}
                         <div className="flex justify-center gap-2 pt-4">
                             <Button
                                 type="button"
@@ -811,6 +855,7 @@ export default function EditChannelView({
                 </div>
             </CustomScrollbar>
 
+            {/* Модалка подтверждения выхода без сохранения */}
             <Modal
                 open={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -833,6 +878,7 @@ export default function EditChannelView({
                 ]}
             />
 
+            {/* Модалка кадрирования аватара */}
             <AvatarCropper
                 isOpen={isCropperOpen}
                 imageFile={

@@ -1,15 +1,16 @@
+// MediaContent.tsx
 'use client'
 
-import Image from 'next/image'
+import Image from 'next/image' // Компонент Next.js для оптимизированных изображений
 import { useState, useEffect } from 'react'
-import { transformFiles } from '@shared/lib/fileUtils'
-import type { BaseFile, MockFile } from '@shared/types/file'
+import { transformFiles } from '@shared/lib/fileUtils' // Трансформация файлов
+import type { BaseFile, MockFile } from '@shared/types/file' // Типы файлов
 import {
-    loadGroupMedia,
-    initGroupMedia,
+    loadGroupMedia, // Загрузка медиа группы из localStorage
+    initGroupMedia, // Инициализация медиа группы
 } from '@shared/lib/localStorageGroupMedia'
 
-// Моковые данные для инициализации
+// Моковые данные для инициализации (изображения)
 const DEFAULT_MOCK_MEDIA: MockFile[] = [
     { url: '/images/infoMediaImages/infoMediaImage1.png' },
     { url: '/images/infoMediaImages/infoMediaImage2.png' },
@@ -21,45 +22,55 @@ const DEFAULT_MOCK_MEDIA: MockFile[] = [
     { url: '/images/infoMediaImages/infoMediaImage8.png' },
 ]
 
+// Интерфейс пропсов
 interface MediaContentProps {
-    chatUid: string
+    chatUid: string // ID чата/группы
 }
 
 export default function MediaContent({
     chatUid,
 }: MediaContentProps) {
+    // Состояние для плавного появления
     const [visible, setVisible] = useState(false)
+    // Состояние с медиа-файлами
     const [mediaItems, setMediaItems] = useState<
         BaseFile[]
     >([])
+    // Состояние загрузки
     const [loading, setLoading] = useState(true)
 
+    // Эффект при монтировании или смене чата
     useEffect(() => {
-        const t = setTimeout(() => setVisible(true), 10)
+        const t = setTimeout(() => setVisible(true), 10) // Плавное появление
         loadMedia()
-        return () => clearTimeout(t)
+        return () => clearTimeout(t) // Очистка таймера
     }, [chatUid])
 
+    // Загрузка медиа из localStorage
     const loadMedia = async () => {
         setLoading(true)
         try {
             let mediaData = loadGroupMedia(chatUid)
             if (!mediaData) {
+                // Если нет данных - инициализируем моковыми
                 mediaData = initGroupMedia(
                     chatUid,
                     DEFAULT_MOCK_MEDIA,
                 )
             }
+            // Трансформируем все файлы
             const transformedFiles = transformFiles(
                 mediaData.results,
                 'mock',
             )
+            // Фильтруем только изображения
             const imageFiles = transformedFiles.filter(
                 (file) => file.type === 'image',
             )
             setMediaItems(imageFiles)
         } catch (error) {
             console.error('Ошибка загрузки медиа:', error)
+            // При ошибке используем моковые данные
             const transformedFiles = transformFiles(
                 DEFAULT_MOCK_MEDIA,
                 'mock',
@@ -73,6 +84,7 @@ export default function MediaContent({
         }
     }
 
+    // Состояние загрузки
     if (loading) {
         return (
             <div className="flex h-64 items-center justify-center">
@@ -90,6 +102,7 @@ export default function MediaContent({
               ${visible ? 'opacity-100' : 'opacity-0'}
             `}
         >
+            {/* Сетка изображений 3 колонки */}
             <div className="grid grid-cols-3 gap-0.5 px-1 py-2">
                 {mediaItems.map((item) => (
                     <div
@@ -100,6 +113,7 @@ export default function MediaContent({
                     >
                         {item.type === 'image' &&
                             item.url && (
+                                // Оптимизированное изображение через Next/Image
                                 <Image
                                     src={item.url}
                                     alt={`Media item ${item.id}`}
@@ -107,6 +121,7 @@ export default function MediaContent({
                                     height={120}
                                 />
                             )}
+                        {/* Заглушка, если нет URL */}
                         {(!item.url || item.url === '') && (
                             <div
                                 className={`
@@ -121,6 +136,7 @@ export default function MediaContent({
                 ))}
             </div>
 
+            {/* Сообщение, если нет изображений */}
             {mediaItems.length === 0 && (
                 <div className="p-8 text-center text-text-gray">
                     Изображения не найдены

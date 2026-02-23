@@ -3,14 +3,15 @@ import { useState } from 'react'
 import Modal from '@shared/ui/modal/Modal'
 import type { ModalButtonConfig } from '@shared/ui/modal/Modal'
 
+// Интерфейс пропсов для модального окна очистки чата
 interface ClearChatModalProps {
-    open: boolean
-    onClose: () => void
+    open: boolean // Флаг, открыто ли модальное окно
+    onClose: () => void // Функция для закрытия модального окна
     onConfirm: (
-        deleteForEveryone: boolean,
-    ) => void | Promise<void>
-    groupName?: string
-    loading?: boolean
+        deleteForEveryone: boolean, // Параметр: удалять для всех или только для себя
+    ) => void | Promise<void> // Функция, вызываемая при подтверждении
+    groupName?: string // Название группы (не используется в этом компоненте, возможно, задел на будущее)
+    loading?: boolean // Внешнее состояние загрузки (например, когда запрос уже идет от родителя)
 }
 
 export default function ClearChatModal({
@@ -20,34 +21,40 @@ export default function ClearChatModal({
     groupName = '',
     loading = false,
 }: ClearChatModalProps) {
+    // Внутреннее состояние для отслеживания процесса очистки, чтобы блокировать двойные нажатия
     const [isClearing, setIsClearing] = useState(false)
+    // Состояние чекбокса "Удалить для всех"
     const [deleteForEveryone, setDeleteForEveryone] =
-        useState(false)
+        useState(false) // По умолчанию false (удаляем только у себя)
 
+    // Асинхронный обработчик подтверждения действия
     const handleConfirm = async () => {
-        setIsClearing(true)
+        setIsClearing(true) // Блокируем кнопки на время выполнения
         try {
+            // Вызываем переданную функцию подтверждения с текущим состоянием чекбокса
             await onConfirm(deleteForEveryone)
         } finally {
+            // В любом случае (даже если была ошибка) снимаем блокировку
             setIsClearing(false)
         }
     }
 
+    // Конфигурация кнопок для модального окна в формате, понятном компоненту Modal
     const buttons: ModalButtonConfig[] = [
         {
-            label: 'Очистить',
-            variant: 'ghost',
-            color: 'light-gray',
-            onClick: handleConfirm,
-            loading: isClearing || loading,
-            disabled: isClearing || loading,
+            label: 'Очистить', // Кнопка действия
+            variant: 'ghost', // Стиль кнопки (возможно, прозрачная/контурная)
+            color: 'light-gray', // Цвет кнопки (вероятно, серый для второстепенных действий)
+            onClick: handleConfirm, // Обработчик клика
+            loading: isClearing || loading, // Показывать лоадер, если идет внутренняя или внешняя загрузка
+            disabled: isClearing || loading, // Блокировать в том же состоянии
         },
         {
-            label: 'Отменить',
-            variant: 'solid',
-            color: 'primary',
-            onClick: onClose,
-            disabled: isClearing || loading,
+            label: 'Отменить', // Кнопка отмены
+            variant: 'solid', // Сплошная заливка (главная кнопка для отмены здесь)
+            color: 'primary', // Основной цвет бренда
+            onClick: onClose, // Просто закрываем окно
+            disabled: isClearing || loading, // Блокируется, если идет процесс очистки
         },
     ]
 
@@ -55,14 +62,15 @@ export default function ClearChatModal({
         <Modal
             open={open}
             onClose={onClose}
-            title="Очистить чат?"
-            description="Все сообщения в этой группе будут удалены только для вас. Участники по-прежнему смогут их видеть"
-            descriptionColor="muted"
-            titleAlign="left"
-            iconAlt="Очистить чат"
-            buttons={buttons}
-            closeOnOverlayClick={!isClearing && !loading}
+            title="Очистить чат?" // Заголовок модального окна
+            description="Все сообщения в этой группе будут удалены только для вас. Участники по-прежнему смогут их видеть" // Основной текст (дефолтный, для удаления только у себя)
+            descriptionColor="muted" // Цвет описания (приглушенный)
+            titleAlign="left" // Выравнивание заголовка
+            iconAlt="Очистить чат" // Альтернативный текст для иконки (если есть)
+            buttons={buttons} // Массив кнопок
+            closeOnOverlayClick={!isClearing && !loading} // Можно ли закрыть кликом по фону (нельзя во время загрузки)
         >
+            {/* Дочерние элементы Modal. Здесь размещается дополнительный UI */}
             {/* Кастомный чекбокс с галочкой */}
             <div className="mt-2 flex items-center gap-2">
                 <input
@@ -71,9 +79,10 @@ export default function ClearChatModal({
                     checked={deleteForEveryone}
                     onChange={(e) =>
                         setDeleteForEveryone(
-                            e.target.checked,
+                            e.target.checked, // Обновляем состояние при изменении
                         )
                     }
+                    // Кастомные стили для чекбокса в виде круглого переключателя с галочкой
                     className={`
                       relative h-6 w-6 cursor-pointer appearance-none
                       rounded-full border-2 border-accent-violet-primary

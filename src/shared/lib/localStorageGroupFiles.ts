@@ -11,7 +11,7 @@ export interface GroupFilesEntry {
     }
 }
 
-// Получить весь объект
+// Загружает все файлы групп из localStorage
 function loadAllGroupFiles(): Record<
     string,
     GroupFilesEntry['files']
@@ -36,7 +36,7 @@ function loadAllGroupFiles(): Record<
     return {}
 }
 
-// Сохранить весь объект
+// Сохраняет все файлы групп в localStorage
 function saveAllGroupFiles(
     data: Record<string, GroupFilesEntry['files']>,
 ): void {
@@ -53,7 +53,7 @@ function saveAllGroupFiles(
     }
 }
 
-// Загрузить файлы для конкретной группы (по chatUid)
+// Загружает файлы для конкретной группы
 export function loadGroupFiles(
     chatUid: string,
 ): GroupFilesEntry['files'] | null {
@@ -61,7 +61,7 @@ export function loadGroupFiles(
     return all[chatUid] || null
 }
 
-// Сохранить файлы для конкретной группы (по chatUid)
+// Сохраняет файлы для конкретной группы
 export function saveGroupFiles(
     chatUid: string,
     files: GroupFilesEntry['files'],
@@ -74,7 +74,7 @@ export function saveGroupFiles(
     )
 }
 
-// Инициализация файлов для группы (если нет)
+// Инициализирует файлы для группы (если ещё нет)
 export function initGroupFiles(
     chatUid: string,
     mockFiles: MockFile[],
