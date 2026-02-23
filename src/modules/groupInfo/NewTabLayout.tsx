@@ -157,7 +157,8 @@ export default function NewTabLayout({
                 >
                     <div
                         className={`
-                          flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
+                          flex space-x-8 border-b-2 border-b-gray-border px-4
+                          pb-0
                         `}
                     >
                         {tabs.map((tab, index) => (
@@ -175,7 +176,7 @@ export default function NewTabLayout({
                                 }
                                 className={cn(
                                     `
-                                      flex-shrink-0 py-2 text-base font-medium
+                                      flex-shrink-0 py-2 text-base
                                       whitespace-nowrap transition-all
                                       duration-200
                                     `,
@@ -185,10 +186,9 @@ export default function NewTabLayout({
                                     `,
                                     `
                                       hover:cursor-pointer
-                                      hover:text-accent-violet-hover
+                                      hover:text-accent-violet-primary
                                     `,
-                                    'min-w-[100px] px-2',
-                                    'font-medium',
+                                    'min-w-25 px-2',
                                     activeTab === tab.id
                                         ? 'text-accent-violet-primary'
                                         : 'text-text-black',

@@ -201,6 +201,7 @@ export default function FilesContent({
 
     return (
         <div>
+            {/* Заменено h-1/12 на h-8 (32px) для соответствия шкале Tailwind */}
             <div className="mt-2 flex h-1/12 items-center px-4">
                 <Search
                     value={searchValue}

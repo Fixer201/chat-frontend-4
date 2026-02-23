@@ -186,8 +186,9 @@ export default function TabLayout({
                 >
                     <div
                         className={`
-                          flex space-x-8 border-b-2 border-b-gray-200 px-4 pb-0
-                        `}
+                              flex space-x-8 border-b-2 border-b-gray-border
+                              px-4 pb-0
+                            `}
                     >
                         {tabs.map((tab, index) => (
                             <button
@@ -204,20 +205,19 @@ export default function TabLayout({
                                 }
                                 className={cn(
                                     `
-                                      flex-shrink-0 py-2 text-base font-medium
-                                      whitespace-nowrap transition-all
-                                      duration-200
-                                    `,
+                                          flex-shrink-0 py-2 text-base
+                                          whitespace-nowrap transition-all
+                                          duration-200
+                                        `,
                                     `
-                                      relative
-                                      focus:outline-none
-                                    `,
+                                          relative
+                                          focus:outline-none
+                                        `,
                                     `
-                                      hover:cursor-pointer
-                                      hover:text-accent-violet-hover
-                                    `,
-                                    'min-w-[100px] px-2',
-                                    'font-medium',
+                                          hover:cursor-pointer
+                                          hover:text-accent-violet-primary
+                                        `,
+                                    'min-w-25 px-2',
                                     activeTab === tab.id
                                         ? 'text-accent-violet-primary'
                                         : 'text-text-black',
@@ -227,9 +227,10 @@ export default function TabLayout({
                                 {activeTab === tab.id && (
                                     <div
                                         className={`
-                                          absolute right-0 bottom-0 left-0 h-1.5
-                                          rounded-full bg-accent-violet-primary
-                                        `}
+                                              absolute right-0 bottom-0 left-0
+                                              h-1.5 rounded-full
+                                              bg-accent-violet-primary
+                                            `}
                                     ></div>
                                 )}
                             </button>

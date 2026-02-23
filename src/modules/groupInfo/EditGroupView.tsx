@@ -628,9 +628,9 @@ export default function EditGroupView({
                         <div className="w-full">
                             <div
                                 className={`
-                                  overflow-hidden rounded-md border
-                                  border-app-divider
-                                `}
+                              overflow-hidden rounded-md border
+                              border-app-divider
+                            `}
                             >
                                 <FloatingTextarea
                                     position="top"

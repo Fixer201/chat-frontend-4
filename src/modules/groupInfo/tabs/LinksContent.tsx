@@ -128,7 +128,7 @@ export default function LinksContent({
                                 </h4>
                                 <p
                                     className={`
-                                      mb-0.5 truncate text-sm text-blue-500
+                                      mb-0.5 truncate text-sm text-system-blue
                                     `}
                                 >
                                     {link.url}

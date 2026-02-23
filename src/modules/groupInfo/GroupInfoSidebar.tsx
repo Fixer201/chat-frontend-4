@@ -844,13 +844,15 @@ export default function GroupInfoSidebar({
                     >
                         <div
                             ref={containerRef}
-                            className={`scrollbar-hide flex overflow-x-auto`}
+                            className={`
+                          scrollbar-hide flex overflow-x-auto
+                        `}
                         >
                             <div
                                 className={`
-                                  flex space-x-4 border-b-2 border-b-gray-200
-                                  px-4 pb-0
-                                `}
+                              flex space-x-4 border-b-2 border-b-gray-border
+                              px-4 pb-0
+                            `}
                             >
                                 {tabs.map((tab, index) => (
                                     <button
@@ -875,10 +877,10 @@ export default function GroupInfoSidebar({
                                             `
                                               relative
                                               hover:cursor-pointer
-                                              hover:text-accent-violet-hover
+                                              hover:text-accent-violet-primary
                                               focus:outline-none
                                             `,
-                                            'min-w-[100px] px-2',
+                                            'min-w-25 px-2',
                                             activeTab ===
                                                 tab.id
                                                 ? 'text-accent-violet-primary'

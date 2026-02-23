@@ -328,9 +328,9 @@ export default function EditProfileForm() {
         <div className="flex h-full flex-col rounded-md bg-gray-main">
             <header
                 className={`
-              flex items-center justify-start gap-3 rounded-t-md border-b
-              border-app-divider bg-gray-main px-6 py-4
-            `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <button
                     type="button"
@@ -346,8 +346,8 @@ export default function EditProfileForm() {
                 </button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-extra-tight text-text-black
-                `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     Редактирование профиля
                 </h2>
@@ -358,10 +358,10 @@ export default function EditProfileForm() {
                     <div className="flex flex-col items-center gap-2">
                         <div
                             className={`
-                          flex h-50 w-50 items-center justify-center
-                          overflow-hidden rounded-full bg-accent-violet-light
-                          text-accent-violet-primary
-                        `}
+                              flex h-50 w-50 items-center justify-center
+                              overflow-hidden rounded-full
+                              bg-accent-violet-light text-accent-violet-primary
+                            `}
                         >
                             <Image
                                 src={avatarPreview}
@@ -401,8 +401,8 @@ export default function EditProfileForm() {
                         <label
                             htmlFor="edit-profile-first-name"
                             className={`
-                          flex flex-col gap-1 text-sm text-text-gray
-                        `}
+                              flex flex-col gap-1 text-sm text-text-gray
+                            `}
                         >
                             <span>Изменить имя</span>
                             <Input
@@ -429,8 +429,8 @@ export default function EditProfileForm() {
                         <label
                             htmlFor="edit-profile-last-name"
                             className={`
-                          flex flex-col gap-1 text-sm text-text-gray
-                        `}
+                              flex flex-col gap-1 text-sm text-text-gray
+                            `}
                         >
                             <span>Изменить фамилию</span>
                             <Input
@@ -457,8 +457,8 @@ export default function EditProfileForm() {
                         <label
                             htmlFor="edit-profile-username"
                             className={`
-                          flex flex-col gap-1 text-sm text-text-gray
-                        `}
+                              flex flex-col gap-1 text-sm text-text-gray
+                            `}
                         >
                             <span>Изменить никнейм</span>
                             <Input
@@ -498,8 +498,8 @@ export default function EditProfileForm() {
                         <label
                             htmlFor="edit-profile-about"
                             className={`
-                          flex flex-col gap-1 text-sm text-text-gray
-                        `}
+                              flex flex-col gap-1 text-sm text-text-gray
+                            `}
                         >
                             <span>
                                 Напишите пару слов о себе
@@ -544,8 +544,8 @@ export default function EditProfileForm() {
                             {error && (
                                 <p
                                     className={`
-                              mt-2 text-center text-sm text-system-red
-                            `}
+                                      mt-2 text-center text-sm text-system-red
+                                    `}
                                 >
                                     {error}
                                 </p>
@@ -553,8 +553,8 @@ export default function EditProfileForm() {
                             {submitError && (
                                 <p
                                     className={`
-                              mt-2 text-center text-sm text-system-red
-                            `}
+                                      mt-2 text-center text-sm text-system-red
+                                    `}
                                 >
                                     {submitError}
                                 </p>

@@ -1,4 +1,3 @@
-// src/modules/groupInfo/tabs/VoiceContent.tsx
 'use client'
 
 import { cn } from '@shared/lib/utils'
@@ -246,7 +245,7 @@ export default function VoiceContent({
                     return (
                         <div
                             key={message.id}
-                            className="border-b border-gray-200 p-3"
+                            className="border-b border-app-divider p-3" // заменено border-gray-200
                         >
                             <div className="flex items-center gap-3">
                                 <button

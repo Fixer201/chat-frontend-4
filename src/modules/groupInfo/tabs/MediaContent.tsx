@@ -1,4 +1,3 @@
-// src/modules/groupInfo/tabs/MediaContent.tsx
 'use client'
 
 import Image from 'next/image'
@@ -10,7 +9,7 @@ import {
     initGroupMedia,
 } from '@shared/lib/localStorageGroupMedia'
 
-// Моковые данные для инициализации (те же, что были)
+// Моковые данные для инициализации
 const DEFAULT_MOCK_MEDIA: MockFile[] = [
     { url: '/images/infoMediaImages/infoMediaImage1.png' },
     { url: '/images/infoMediaImages/infoMediaImage2.png' },
@@ -23,7 +22,7 @@ const DEFAULT_MOCK_MEDIA: MockFile[] = [
 ]
 
 interface MediaContentProps {
-    chatUid: string // добавляем пропс
+    chatUid: string
 }
 
 export default function MediaContent({
@@ -39,36 +38,28 @@ export default function MediaContent({
         const t = setTimeout(() => setVisible(true), 10)
         loadMedia()
         return () => clearTimeout(t)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chatUid]) // перезагружаем при смене чата
+    }, [chatUid])
 
-    // Функция загрузки медиа из localStorage
     const loadMedia = async () => {
         setLoading(true)
         try {
-            // Пытаемся загрузить из localStorage
             let mediaData = loadGroupMedia(chatUid)
             if (!mediaData) {
-                // Если нет, инициализируем моковыми данными
                 mediaData = initGroupMedia(
                     chatUid,
                     DEFAULT_MOCK_MEDIA,
                 )
             }
-
-            // Преобразуем MockFile в BaseFile через transformFiles
             const transformedFiles = transformFiles(
                 mediaData.results,
                 'mock',
             )
-            // Фильтруем только изображения (хотя в моках все изображения)
             const imageFiles = transformedFiles.filter(
                 (file) => file.type === 'image',
             )
             setMediaItems(imageFiles)
         } catch (error) {
             console.error('Ошибка загрузки медиа:', error)
-            // В случае ошибки используем моковые данные напрямую
             const transformedFiles = transformFiles(
                 DEFAULT_MOCK_MEDIA,
                 'mock',
@@ -99,7 +90,7 @@ export default function MediaContent({
               ${visible ? 'opacity-100' : 'opacity-0'}
             `}
         >
-            <div className="grid grid-cols-3 gap-0.5 px-[4px] py-[8px]">
+            <div className="grid grid-cols-3 gap-0.5 px-1 py-2">
                 {mediaItems.map((item) => (
                     <div
                         key={item.id}
@@ -119,9 +110,8 @@ export default function MediaContent({
                         {(!item.url || item.url === '') && (
                             <div
                                 className={`
-                                  flex h-[120px] w-[120px] items-center
-                                  justify-center bg-gray-200 text-xs
-                                  text-gray-500
+                                  flex h-30 w-30 items-center justify-center
+                                  bg-gray-main text-xs text-text-gray
                                 `}
                             >
                                 No URL

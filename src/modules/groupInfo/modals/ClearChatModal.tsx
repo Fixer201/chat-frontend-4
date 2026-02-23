@@ -79,10 +79,10 @@ export default function ClearChatModal({
                       rounded-full border-2 border-accent-violet-primary
                       transition-colors
                       before:hidden
-                      after:absolute after:top-[3px] after:left-[7px]
-                      after:hidden after:h-[12px] after:w-[6px] after:rotate-45
-                      after:border-t-0 after:border-r-2 after:border-b-2
-                      after:border-l-0 after:border-white after:content-['']
+                      after:absolute after:top-0.75 after:left-1.75 after:hidden
+                      after:h-3 after:w-1.5 after:rotate-45 after:border-t-0
+                      after:border-r-2 after:border-b-2 after:border-l-0
+                      after:border-white after:content-['']
                       checked:border-accent-violet-primary
                       checked:bg-accent-violet-primary checked:after:block
                       focus:ring-2 focus:ring-accent-violet-light

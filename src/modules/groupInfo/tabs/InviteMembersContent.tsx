@@ -103,7 +103,6 @@ export default function InviteMembersContent({
             </div>
 
             {/* Кнопка приглашения - фиксированная внизу */}
-
             <div
                 className={`
                   sticky bottom-0 flex shrink-0 items-center justify-center

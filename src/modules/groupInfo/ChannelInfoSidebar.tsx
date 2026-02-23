@@ -28,7 +28,7 @@ import {
     loadChatsFromStorage,
     saveChatsToStorage,
 } from '@shared/lib/localStorageChats'
-import EditChannelView from './EditChannelView' // предполагается, что создадите аналогичный компонент
+import EditChannelView from './EditChannelView'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import { ApiChatItem } from '@shared/types/chat'
 import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard'
@@ -88,10 +88,10 @@ interface ChannelInfoSidebarProps {
     onNotificationsChange?: (enabled: boolean) => void
     onClose?: () => void
     onClearChat?: (deleteForEveryone: boolean) => void
-    onLeaveChannel?: () => void // переименовано для ясности
-    onDeleteChannel?: () => void // переименовано для ясности
+    onLeaveChannel?: () => void
+    onDeleteChannel?: () => void
     avatarUrl?: string | null
-    onChannelUpdated?: () => void // переименовано для ясности
+    onChannelUpdated?: () => void
     isCurrentUserOwner?: boolean
 }
 
@@ -245,7 +245,7 @@ export default function ChannelInfoSidebar({
         async (updatedData: {
             name: string
             description: string
-            type: 'public' | 'private' // ожидаем 'public'/'private'
+            type: 'public' | 'private'
             notificationsEnabled: boolean
             avatarFile?: File | null
         }) => {
@@ -253,7 +253,6 @@ export default function ChannelInfoSidebar({
                 getChatByIdFromStorage(chatId)
             if (!currentChat) return
 
-            // преобразуем 'public'/'private' в финальный тип канала
             const newChatType =
                 updatedData.type === 'public'
                     ? 'public-channel'
@@ -500,13 +499,13 @@ export default function ChannelInfoSidebar({
                     chatType === 'public-channel'
                         ? 'public'
                         : 'private'
-                } // ← исправлено
+                }
                 initialAvatarUrl={avatarUrl}
                 initialNotificationsEnabled={
                     notificationsEnabled
                 }
                 inviteLink={inviteLink}
-                onSave={handleSaveEdit} // см. пункт 2
+                onSave={handleSaveEdit}
                 onCancel={() => setIsEditing(false)}
             />
         )
@@ -544,6 +543,7 @@ export default function ChannelInfoSidebar({
                         alt="Закрыть"
                         width={24}
                         height={24}
+                        className="h-6 w-6" // исправлено: w-6 h-6 = 24px
                     />
                 </Button>
 
@@ -574,6 +574,7 @@ export default function ChannelInfoSidebar({
                                 alt="Редактировать"
                                 width={24}
                                 height={24}
+                                className="h-6 w-6" // исправлено
                             />
                         </Button>
                     )}
@@ -585,7 +586,10 @@ export default function ChannelInfoSidebar({
                                 alt="Настройки"
                                 width={24}
                                 height={24}
-                                className="hover:cursor-pointer"
+                                className={`
+                                  h-6 w-6
+                                  hover:cursor-pointer
+                                `} // исправлено
                             />
                         }
                         triggerClassName="flex items-center justify-center rounded-full p-0 text-text-black hover:bg-accent-violet-ultra-light"
@@ -601,6 +605,7 @@ export default function ChannelInfoSidebar({
                                         alt=""
                                         width={24}
                                         height={24}
+                                        className="h-6 w-6"
                                     />
                                 ),
                                 onClick: () =>
@@ -616,6 +621,7 @@ export default function ChannelInfoSidebar({
                                         alt=""
                                         width={24}
                                         height={24}
+                                        className="h-6 w-6"
                                     />
                                 ),
                                 onClick: () =>
@@ -632,6 +638,7 @@ export default function ChannelInfoSidebar({
                                         alt=""
                                         width={24}
                                         height={24}
+                                        className="h-6 w-6"
                                     />
                                 ),
                                 onClick: () =>
@@ -749,7 +756,7 @@ export default function ChannelInfoSidebar({
                             </span>
                             <span
                                 className={`
-                                  p-0 text-base break-words text-black
+                                  p-0 text-base break-words text-text-black
                                 `}
                             >
                                 {description ||
@@ -813,6 +820,7 @@ export default function ChannelInfoSidebar({
                                                 width={24}
                                                 height={24}
                                                 className={cn(
+                                                    'h-6 w-6', // исправлено
                                                     copied
                                                         ? 'opacity-50'
                                                         : `opacity-100`,
@@ -835,7 +843,7 @@ export default function ChannelInfoSidebar({
                         >
                             <div
                                 className={`
-                                  flex space-x-4 border-b-2 border-b-gray-200
+                                  flex space-x-4 border-b-2 border-b-gray-border
                                   px-4 pb-0
                                 `}
                             >
@@ -862,10 +870,10 @@ export default function ChannelInfoSidebar({
                                             `
                                               relative
                                               hover:cursor-pointer
-                                              hover:text-accent-violet-hover
+                                              hover:text-accent-violet-primary
                                               focus:outline-none
                                             `,
-                                            'min-w-[100px] px-2',
+                                            'min-w-25 px-2', // заменено min-w-[100px] → min-w-25
                                             activeTab ===
                                                 tab.id
                                                 ? 'text-accent-violet-primary'
@@ -950,7 +958,7 @@ export default function ChannelInfoSidebar({
                         alt=""
                         width={20}
                         height={20}
-                        className="text-white"
+                        className="h-5 w-5 text-white" // исправлено: w-5 h-5 = 20px
                     />
                 }
             />
