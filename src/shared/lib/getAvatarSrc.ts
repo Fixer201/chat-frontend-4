@@ -10,26 +10,18 @@ import { ChatAvatar } from '@shared/types/chat'
  * 5. Placeholder
  */
 function getAvatarSrc(chat: ChatAvatar): string {
-    const isValidUrl = (url: unknown): url is string =>
-        typeof url === 'string' && url.length > 0
-
-    const isRemoteUrl = (url: string) =>
-        url.startsWith('http://') ||
-        url.startsWith('https://')
+    const isValidString = (s: unknown): s is string =>
+        typeof s === 'string' && s.length > 0
 
     const isLocalPath = (path: unknown): path is string =>
         typeof path === 'string' && path.startsWith('/')
 
-    if (
-        isValidUrl(chat.avatarWebpUrl) &&
-        isRemoteUrl(chat.avatarWebpUrl)
-    )
+    // Принимаем любые непустые строки для CDN/Blob ссылок
+    if (isValidString(chat.avatarWebpUrl))
         return chat.avatarWebpUrl
-    if (
-        isValidUrl(chat.avatarUrl) &&
-        isRemoteUrl(chat.avatarUrl)
-    )
-        return chat.avatarUrl
+    if (isValidString(chat.avatarUrl)) return chat.avatarUrl
+
+    // Для локальных путей проверяем, что они начинаются с '/'
     if (isLocalPath(chat.avatarWebp)) return chat.avatarWebp
     if (isLocalPath(chat.avatar)) return chat.avatar
 

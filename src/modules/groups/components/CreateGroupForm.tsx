@@ -479,9 +479,9 @@ export default function CreateGroupForm({
                         <div className="w-full">
                             <div
                                 className={`
-                              overflow-hidden rounded-md border
-                              border-app-divider
-                            `}
+                                  overflow-hidden rounded-md border
+                                  border-app-divider
+                                `}
                             >
                                 <FloatingTextarea
                                     position="top"
@@ -510,9 +510,9 @@ export default function CreateGroupForm({
                                         )
                                     }
                                     className={`
-                                  rounded-none border-0 border-t
-                                  border-app-divider
-                                `}
+                                      rounded-none border-0 border-t
+                                      border-app-divider
+                                    `}
                                 />
                             </div>
                         </div>

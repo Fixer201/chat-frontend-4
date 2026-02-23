@@ -173,15 +173,15 @@ export default function ChatsPage() {
                 className={cn(
                     panelStyles,
                     `
-            w-full
-            md:w-80
-            lg:w-96
-          `,
+                      w-full
+                      md:w-80
+                      lg:w-96
+                    `,
                     isChatSelected
                         ? `
-            hidden
-            md:block
-          `
+                          hidden
+                          md:block
+                        `
                         : 'block',
                 )}
             >
@@ -198,9 +198,9 @@ export default function ChatsPage() {
                     isChatSelected
                         ? 'block'
                         : `
-            hidden
-            md:block
-          `,
+                          hidden
+                          md:block
+                        `,
                 )}
             >
                 {chatContent}
@@ -212,10 +212,10 @@ export default function ChatsPage() {
                     className={cn(
                         panelStyles,
                         `
-              hidden flex-shrink-0
-              md:block md:w-80
-              lg:w-96
-            `,
+                          hidden flex-shrink-0
+                          md:block md:w-80
+                          lg:w-96
+                        `,
                     )}
                 >
                     <ChatInfoSidebar

@@ -245,9 +245,7 @@ export default React.memo(function ChatsList({
                 <div
                     className={cn(
                         'min-h-0 flex-1 overflow-auto',
-                        `
-          max-h-(--screen-112)
-        `,
+                        `max-h-(--screen-112)`,
                     )}
                 >
                     {loading ? (
@@ -277,17 +275,29 @@ export default React.memo(function ChatsList({
                                 toast.error(error)
                             }
                             return (
-                                <div className="flex h-full items-center justify-center">
+                                <div
+                                    className={`
+                                  flex h-full items-center justify-center
+                                `}
+                                >
                                     Ошибка загрузки чатов
                                 </div>
                             )
                         })()
                     ) : showEmptySearchState ? (
-                        <div className="flex flex-1 items-center justify-center p-4">
+                        <div
+                            className={`
+                          flex flex-1 items-center justify-center p-4
+                        `}
+                        >
                             <EmptySearchState />
                         </div>
                     ) : showEmptyChatsState ? (
-                        <div className="flex flex-1 items-center justify-center p-4">
+                        <div
+                            className={`
+                          flex flex-1 items-center justify-center p-4
+                        `}
+                        >
                             <EmptyChatsState
                                 onStartChat={
                                     handleStartChat

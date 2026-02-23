@@ -124,7 +124,14 @@ const createMockChatFromResponse = (
 
     let avatarUrl = photoUrl
     if (!avatarUrl) {
-        avatarUrl = '/images/chatHeader/userAvatar.svg'
+        if (chatType.includes('group')) {
+            avatarUrl = '/images/chatHeader/groupAvatar.svg' // убедитесь, что файл существует
+        } else if (chatType.includes('channel')) {
+            avatarUrl =
+                '/images/chatHeader/channelAvatar.svg'
+        } else {
+            avatarUrl = '/images/chatHeader/userAvatar.svg'
+        }
     }
     const avatarWebpUrl = avatarUrl
 
