@@ -491,22 +491,151 @@ export default function MessageItem({
                             </>
                         ) : null}
 
-                        <div className="flex items-end justify-between gap-2">
-                            {/*
-                                Текст сообщения пользователя.
-                                Рендерится только если есть content (не пустая строка).
-                                Для пересылок content всегда пустой — div не создаётся.
-                            */}
-                            {message.content ? (
-                                <div
-                                    className={`
-                                      cursor-text text-base font-normal
-                                      wrap-break-word whitespace-pre-wrap
-                                    `}
-                                >
-                                    {searchQuery ? (
-                                        <>
-                                            {/*
+                        {/*
+                            Файловые вложения.
+
+                            Рендерятся перед текстом (как в Telegram), потому что
+                            файл — основной контент сообщения, а текст — подпись (caption).
+
+                            MessageComposer отправляет каждый файл отдельным сообщением,
+                            поэтому на практике files.length обычно = 1, но массив
+                            поддерживает и множественные вложения (на случай изменения
+                            логики отправки или если бэкенд вернёт несколько файлов).
+
+                            isSending определяется по message.status === 'sending' —
+                            это optimistic-сообщение, файл ещё загружается на сервер.
+                            В этом случае вместо миниатюры показывается спиннер.
+                        */}
+                        {/*
+                            Файловые вложения.
+
+                            Дизайн-референс: public/images_chat_block.jpg, public/files_sendigg.jpg
+
+                            Когда сообщение содержит только файл (без текстовой подписи),
+                            время и статус прочтения интегрируются прямо в строку файла:
+                              [icon] [filename.............]
+                                     [size       21:49  ✓✓]
+
+                            Если есть и файл, и текст — время остаётся в текстовой области
+                            ниже (как обычно), чтобы не дублировать.
+
+                            hasTextContent проверяет trim(), потому что сервер ставит
+                            content = " " (пробел) для файловых сообщений без подписи.
+                        */}
+                        {(() => {
+                            const hasFiles =
+                                message.files &&
+                                message.files.length > 0
+                            const hasTextContent =
+                                !!message.content?.trim()
+
+                            // Элемент «время + статус» — переиспользуется в файле или ниже
+                            const timeElement =
+                                message.created_at ? (
+                                    <div
+                                        className={`
+                                          flex shrink-0 items-center gap-1
+                                          text-sm whitespace-nowrap
+                                          text-text-gray
+                                        `}
+                                    >
+                                        <time
+                                            dateTime={getISOTime(
+                                                message.created_at,
+                                            )}
+                                        >
+                                            {formatTime(
+                                                message.created_at,
+                                            )}
+                                        </time>
+                                        <ReadCheckmark
+                                            status={
+                                                readStatus
+                                            }
+                                        />
+                                    </div>
+                                ) : null
+
+                            return (
+                                <>
+                                    {hasFiles ? (
+                                        <div className="flex flex-col">
+                                            {message.files!.map(
+                                                (
+                                                    file,
+                                                    idx,
+                                                ) => {
+                                                    // request_uid закодирован в uid optimistic-сообщения:
+                                                    // uid = `_sending_${requestUid}` (см. useWebSocketChat.sendMessage).
+                                                    // Извлекаем его для передачи в cancelSending.
+                                                    const requestUid =
+                                                        message.uid?.startsWith(
+                                                            '_sending_',
+                                                        )
+                                                            ? message.uid.replace(
+                                                                  '_sending_',
+                                                                  '',
+                                                              )
+                                                            : undefined
+                                                    return (
+                                                        <MessageFileAttachment
+                                                            key={`file-${idx}`}
+                                                            file={
+                                                                file
+                                                            }
+                                                            isSending={
+                                                                message.status ===
+                                                                'sending'
+                                                            }
+                                                            onCancel={
+                                                                requestUid
+                                                                    ? () =>
+                                                                          cancelSending(
+                                                                              requestUid,
+                                                                          )
+                                                                    : undefined
+                                                            }
+                                                            timeSlot={
+                                                                // Время встраивается в ПОСЛЕДНИЙ файл,
+                                                                // только если нет текстовой подписи
+                                                                !hasTextContent &&
+                                                                idx ===
+                                                                    message
+                                                                        .files!
+                                                                        .length -
+                                                                        1
+                                                                    ? timeElement
+                                                                    : undefined
+                                                            }
+                                                        />
+                                                    )
+                                                },
+                                            )}
+                                        </div>
+                                    ) : null}
+
+                                    {/* Текст + время: показываем только если есть текст,
+                                        или если нет файлов (обычное текстовое сообщение) */}
+                                    {(hasTextContent ||
+                                        !hasFiles) && (
+                                        <div
+                                            className={`
+                                              flex items-end justify-between
+                                              gap-2
+                                            `}
+                                        >
+                                            {message.content?.trim() ? (
+                                                <div
+                                                    className={`
+                                                      cursor-text text-base
+                                                      font-normal
+                                                      wrap-break-word
+                                                      whitespace-pre-wrap
+                                                    `}
+                                                >
+                                                    {searchQuery ? (
+                                                        <>
+                                                            {/*
                                                 Подсветка совпадений поиска.
 
                                                 highlightText() разбивает текст на сегменты:
@@ -585,6 +714,7 @@ export default function MessageItem({
                                 </div>
                             )}
                         </div>
+
                     </div>
                 </div>
             </div>

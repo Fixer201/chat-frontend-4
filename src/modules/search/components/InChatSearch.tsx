@@ -1,4 +1,3 @@
-
 'use client'
 
 import Image from 'next/image'
@@ -194,5 +193,4 @@ export default function InChatSearch({
             </button>
         </div>
     )
-
 }

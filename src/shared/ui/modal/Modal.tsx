@@ -196,8 +196,8 @@ export default function Modal({
                         {hasActions && (
                             <div
                                 className={`
-                                  flex flex-col-reverse gap-3
-                                  sm:flex-row sm:justify-end sm:gap-3
+                                  flex flex-row justify-center gap-3
+                                  md:justify-end md:gap-3
                                 `}
                             >
                                 {buttons.map(
@@ -248,8 +248,8 @@ export default function Modal({
                                                 }
                                                 className={cn(
                                                     `
-                                                      w-full min-w-22
-                                                      sm:w-auto
+                                                      h-11 w-35
+                                                      sm:h-auto sm:w-auto
                                                     `,
                                                     buttonClass,
                                                 )}

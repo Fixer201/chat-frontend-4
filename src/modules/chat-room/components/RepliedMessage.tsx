@@ -85,18 +85,18 @@ const RepliedMessage = memo(function RepliedMessage({
                       }
                     : undefined
             }
-            className={cn(
-                'mb-1',
-                'rounded',
-                'border-l-2',
-                'border-l-accent-violet-primary',
-                'bg-accent-violet-primary/10',
-                'p-2',
-                'transition-colors',
-                isClickable
-                    ? ['cursor-pointer', hoverClass]
-                    : 'cursor-default',
-            )}
+            className={`
+              mb-1 rounded border-l-2 border-l-accent-violet-primary
+              bg-accent-violet-primary/10 p-2 transition-colors
+              ${
+                  isClickable
+                      ? `
+                        cursor-pointer
+                        hover:bg-accent-violet-primary/20
+                      `
+                      : `cursor-default`
+              }
+            `}
             aria-label={`Ответ на сообщение от ${authorName}`}
         >
             {/* Имя автора: не обрезается (по требованию дизайна), акцентный фиолетовый цвет */}

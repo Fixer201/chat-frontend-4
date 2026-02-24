@@ -144,14 +144,16 @@ export const ChatListItem = React.memo(
                             notificationsEnabled
                         }
                         className={cn(
-                            'bg-transparent',
-                            'hover:bg-transparent',
-                            selected &&
-                                'bg-accent-violet-primary',
-                            selected &&
-                                'hover:bg-accent-violet-primary',
-                            !selected &&
-                                'hover:bg-accent-violet-light',
+                            `
+                              bg-transparent
+                              hover:bg-transparent
+                            `, // Базовые стили
+                            selected
+                                ? `
+                                  bg-accent-violet-primary
+                                  hover:bg-accent-violet-primary
+                                `
+                                : 'hover:bg-accent-violet-light',
                             'hover:rounded-lg',
                             selected && 'rounded-lg',
                         )}

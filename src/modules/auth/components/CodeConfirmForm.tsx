@@ -1,22 +1,30 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-'use client'
-import { useState, useEffect, useRef } from 'react'
+﻿'use client'
+
+import {
+    useState,
+    useEffect,
+    useRef,
+    useLayoutEffect,
+    useReducer,
+} from 'react'
 import { Input } from '@shared/ui/Input'
 import Image from 'next/image'
 import Modal from '@shared/ui/modal/Modal'
 import { Button } from '@shared/ui/button/Button'
 import SupportRequestForm from './SupportRequestForm'
+import { useCountdown } from '@shared/hooks/useCountdown'
+import { useCodeInput } from '@shared/hooks/useCodeInput'
 
 interface CodeConfirmFormProps {
-    phoneNumber: string
-    onVerify: (code: string) => void
-    onBack: () => void
-    onResendCode: () => void
-    loading: boolean
-    error: string
-    attempts: number
-    isBlocked: boolean
-    blockTime: number
+    phoneNumber: string // Номер, на который отправлен код
+    onVerify: (code: string) => void // Колбэк при успешном вводе всех 5 цифр
+    onBack: () => void // Возврат на предыдущий шаг
+    onResendCode: () => void // Запрос нового кода
+    loading: boolean // Флаг загрузки (передан, но не используется в компоненте)
+    error: string // Текст ошибки (например, "Неверный код")
+    attempts: number // Количество попыток (не используется)
+    isBlocked: boolean // Заблокирован ли номер (после 10 попыток)
+    blockTime: number // Время блокировки (не используется)
 }
 
 export default function CodeConfirmForm({
@@ -28,142 +36,127 @@ export default function CodeConfirmForm({
     isBlocked,
     blockTime,
 }: CodeConfirmFormProps) {
-    const [code, setCode] = useState<string[]>([
-        '',
-        '',
-        '',
-        '',
-        '',
-    ])
-    const inputRefs = useRef<(HTMLInputElement | null)[]>([
-        null,
-        null,
-        null,
-        null,
-        null,
-    ])
-    const [timeLeft, setTimeLeft] = useState(60) // Таймер 60 сек
+    // Хук для обратного отсчёта (начальное значение 60 секунд)
+    // Возвращает текущее оставшееся время, функцию сброса и флаг активности
+    const { timeLeft, reset: resetTimer } = useCountdown(60)
+
+    // Хук для управления 5-значным кодом подтверждения
+    // Возвращает массив кода, refs для инпутов, обработчики и функцию очистки
+    const {
+        code,
+        inputRefs,
+        handleChange: handleCodeChange,
+        handleKeyDown: handleCodeKeyDown,
+        clear: clearCode,
+        isComplete,
+    } = useCodeInput(5)
+
     const [showTooltip, setShowTooltip] = useState(false)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [modalMessage, setModalMessage] = useState(
-        'Не приходит код?',
+
+    const [modalState, dispatchModal] = useReducer(
+        (state, action) => {
+            switch (action.type) {
+                case 'OPEN':
+                    return {
+                        open: true,
+                        message: action.message,
+                    }
+                case 'CLOSE':
+                    return { open: false, message: '' }
+                default:
+                    return state
+            }
+        },
+        { open: false, message: '' },
     )
+
     const [
         showSupportRequestForm,
         setShowSupportRequestForm,
     ] = useState(false)
 
+    // Флаг для предотвращения повторного открытия модального окна (например, при блокировке)
+    const modalOpenedRef = useRef(false)
+
     const canResend = timeLeft === 0
-    const modalOpenedRef = useRef(false) // Флаг для предотвращения повторного открытия модального окна
 
-    // Таймер для ввода кода
     useEffect(() => {
-        if (timeLeft > 0) {
-            const timer = setInterval(() => {
-                setTimeLeft((prev) => prev - 1)
-            }, 1000)
-            return () => clearInterval(timer)
-        }
-    }, [timeLeft])
+        if (modalOpenedRef.current) return
 
-    // Открываем модальное окно при isBlocked (только один раз)
-    useEffect(() => {
-        console.log(
-            'useEffect isBlocked triggered, isBlocked:',
-            isBlocked,
-        )
-        if (isBlocked && !modalOpenedRef.current) {
+        if (isBlocked) {
             modalOpenedRef.current = true
-            setModalMessage('Лимит исчерпан')
-            setIsModalOpen(true)
-        }
-    }, [isBlocked])
-
-    // Эффект для автоматического открытия модального окна при истечении срока (только один раз)
-    useEffect(() => {
-        if (
-            timeLeft === 0 &&
-            code.some((digit) => digit === '') &&
-            !canResend &&
-            !modalOpenedRef.current
-        ) {
-            console.log('useEffect expired triggered')
+            dispatchModal({
+                type: 'OPEN',
+                message: 'Лимит исчерпан',
+            })
+        } else if (timeLeft === 0 && !isComplete) {
             modalOpenedRef.current = true
-            setModalMessage('Срок действия кода истек')
-            setIsModalOpen(true)
+            dispatchModal({
+                type: 'OPEN',
+                message: 'Срок действия кода истек',
+            })
         }
-    }, [timeLeft, code, canResend])
+    }, [isBlocked, timeLeft, isComplete])
 
-    // Таймер блокировки
-    useEffect(() => {
-        if (blockTime > 0) {
-            const timer = setInterval(() => {}, 1000)
-            return () => clearInterval(timer)
-        }
-    }, [blockTime])
-    //эффект для возврата фокуса после неудачной попытки
-    useEffect(() => {
+    /**
+     * useLayoutEffect для обработки ошибки (неверный код).
+     * При получении ошибки от родителя очищаем поля и ставим фокус на первый инпут.
+     */
+    useLayoutEffect(() => {
         if (error) {
-            setCode(['', '', '', '', '']) // Очистка кода после неудачи
-            inputRefs.current[0]?.focus() // Фокус на первое окошко
+            clearCode()
+            inputRefs.current[0]?.focus()
         }
-    }, [error])
+    }, [error, clearCode, inputRefs])
 
+    /**
+     * Обработчик изменения полей ввода кода.
+     * Использует метод из хука useCodeInput, а после проверяет, не заполнен ли код полностью.
+     * Если все цифры введены, вызывает onVerify.
+     */
     const handleInputChange = (
         index: number,
         value: string,
     ) => {
-        // Санитизация: берём только цифры, ограничиваем до 1 символа
-        const sanitizedValue = value
-            .replace(/\D/g, '')
-            .slice(0, 1)
-
-        const newCode = [...code]
-        newCode[index] = sanitizedValue // Всегда заменяем цифру в текущем окошке
-        setCode(newCode)
-
-        // Автоматический переход к следующему окошку, если ввели цифру
-        if (sanitizedValue && index < 4) {
-            inputRefs.current[index + 1]?.focus()
-        }
-
-        // Верификация только если все 5 цифр введены
-        if (newCode.every((digit) => digit !== '')) {
-            onVerify(newCode.join(''))
-        }
+        console.log(
+            `[CodeConfirmForm] handleInputChange: index=${index}, value='${value}'`,
+        )
+        handleCodeChange(index, value, (fullCode) => {
+            console.log(
+                `[CodeConfirmForm] Code completed! Full code: "${fullCode}"`,
+            )
+            onVerify(fullCode)
+        })
     }
 
-    const handleKeyDown = (
-        index: number,
-        e: React.KeyboardEvent<HTMLInputElement>,
-    ) => {
-        if (
-            e.key === 'Backspace' &&
-            !code[index] &&
-            index > 0
-        ) {
-            inputRefs.current[index - 1]?.focus()
-        }
-    }
-
+    /**
+     * Повторная отправка кода.
+     * Сбрасывает таймер, очищает поля и вызывает колбэк onResendCode.
+     */
     const handleResendCode = () => {
-        setTimeLeft(60) // Сброс таймера
-        setCode(['', '', '', '', '']) // Очистка кода
+        resetTimer()
+        clearCode()
         onResendCode()
     }
 
-    // Открытие модального окна (для "Не приходит код?")
+    /**
+     * Открытие модального окна "Не приходит код?".
+     */
     const handleOpenModal = () => {
-        setModalMessage('Не приходит код?')
-        setIsModalOpen(true)
+        dispatchModal({
+            type: 'OPEN',
+            message: 'Не приходит код?',
+        })
     }
-
-    // Закрытие модального окна
+    /**
+     * Закрытие модального окна и сброс флага открытия.
+     */
     const handleCloseModal = () => {
-        setIsModalOpen(false)
-        modalOpenedRef.current = false // Сбрасываем флаг при закрытии
+        dispatchModal({ type: 'CLOSE' })
+        modalOpenedRef.current = false
     }
 
+    // Если пользователь перешёл в форму поддержки, рендерим её
     if (showSupportRequestForm) {
         return (
             <SupportRequestForm
@@ -175,38 +168,35 @@ export default function CodeConfirmForm({
 
     return (
         <div className="flex min-h-screen items-center justify-center">
+            {/* Внешний контейнер с фоновым изображением */}
             <div
                 className={`
-                  relative hidden h-screen w-(--app-login-width) flex-col
-                  items-center justify-center
-                  md:flex
+                  relative flex h-screen w-(--app-login-width) flex-col
+                  items-center justify-center bg-none
+                  md:bg-app-login-background
                 `}
-                style={{
-                    backgroundImage:
-                        'var(--app-login-background)',
-                }}
             >
+                {/* Карточка формы */}
                 <div
                     className={`
-                      absolute flex h-190 w-122 flex-col items-center
-                      justify-center rounded-2xl
+                      flex flex-col items-center justify-center gap-4 bg-white
+                      md:absolute md:h-190 md:w-122 md:flex-col md:items-center
+                      md:justify-center md:rounded-2xl md:bg-app-login-start
+                      md:filter-app-start-screen-shadow
                     `}
-                    style={{
-                        filter: 'var(--app-start-screen-shadow)',
-                        backgroundImage:
-                            'var(--app-login-start)',
-                    }}
                 >
                     <div
                         className={`
                           absolute flex flex-col items-center justify-between
                           gap-6
+                          md:justify-between
                         `}
                     >
+                        {/* Шапка: кнопка назад и логотип */}
                         <div className="relative flex h-17 w-90 items-center">
                             <Image
                                 src="/images/login/back.svg"
-                                alt="Back"
+                                alt="Назад"
                                 width={32}
                                 height={32}
                                 className="absolute top-0 left-0 cursor-pointer"
@@ -215,33 +205,57 @@ export default function CodeConfirmForm({
                             />
                             <Image
                                 src="/images/login/Logo.svg"
-                                alt="Logo"
+                                alt="Логотип"
                                 width={78}
                                 height={70}
-                                className="mx-auto"
+                                className={`
+                                  mx-auto h-14 w-14
+                                  md:h-18 md:w-20
+                                `}
                                 loading="eager"
                             />
                         </div>
 
+                        {/* Блок с "А-чат" только на мобильных */}
+                        <div
+                            className={`
+                              block text-center text-[32px] font-bold
+                              md:hidden
+                            `}
+                        >
+                            А-чат
+                        </div>
+
+                        {/* Основной контент */}
                         <div
                             className={`
                               flex h-126 w-90 flex-col items-center
                               justify-between gap-6
+                              md:justify-between
                             `}
                         >
+                            {/* Заголовок */}
                             <div
                                 className={`
                                   flex w-90 items-center justify-center
                                 `}
                             >
-                                <p className="text-center text-[32px] font-bold">
+                                <p
+                                    className={`
+                                      text-center text-[25px] font-bold
+                                      md:text-[32px]
+                                    `}
+                                >
                                     Подтвердите вход
                                 </p>
                             </div>
+
+                            {/* Блок с номером телефона и полями ввода */}
                             <div
                                 className={`
                                   flex h-112 w-90 flex-col items-center
-                                  justify-between gap-6
+                                  justify-between gap-2
+                                  md:gap-4
                                 `}
                             >
                                 <span className="text-center text-lg">
@@ -252,6 +266,8 @@ export default function CodeConfirmForm({
                                 <span className="text-center text-lg font-bold">
                                     {phoneNumber}
                                 </span>
+
+                                {/* Подпись "Введите код" с иконкой подсказки */}
                                 <div
                                     className={`
                                       flex flex-row items-center gap-1
@@ -266,7 +282,7 @@ export default function CodeConfirmForm({
                                     </span>
                                     <Image
                                         src="/images/login/information.svg"
-                                        alt="information"
+                                        alt="Информация"
                                         width={24}
                                         height={24}
                                         className="mx-auto cursor-pointer"
@@ -282,6 +298,7 @@ export default function CodeConfirmForm({
                                         }
                                     />
 
+                                    {/* Тултип с пояснениями */}
                                     {showTooltip && (
                                         <>
                                             <div
@@ -317,6 +334,7 @@ export default function CodeConfirmForm({
                                                     минут.
                                                 </p>
                                             </div>
+                                            {/* Треугольник-хвостик тултипа */}
                                             <div
                                                 className="absolute z-10"
                                                 style={{
@@ -335,6 +353,8 @@ export default function CodeConfirmForm({
                                         </>
                                     )}
                                 </div>
+
+                                {/* Отображение ошибки (например, неверный код) */}
                                 {error && (
                                     <span
                                         className={`
@@ -345,6 +365,7 @@ export default function CodeConfirmForm({
                                     </span>
                                 )}
 
+                                {/* Пять полей для ввода цифр */}
                                 <div className="flex justify-center gap-2">
                                     {code.map(
                                         (digit, index) => (
@@ -374,7 +395,7 @@ export default function CodeConfirmForm({
                                                 onKeyDown={(
                                                     e,
                                                 ) =>
-                                                    handleKeyDown(
+                                                    handleCodeKeyDown(
                                                         index,
                                                         e,
                                                     )
@@ -399,6 +420,7 @@ export default function CodeConfirmForm({
                                     )}
                                 </div>
 
+                                {/* Отображение таймера до повторной отправки */}
                                 {!canResend && (
                                     <span className="text-center text-lg">
                                         Отправить новый код
@@ -416,6 +438,7 @@ export default function CodeConfirmForm({
                                     </span>
                                 )}
 
+                                {/* Кнопка повторной отправки (активна, когда canResend = true) */}
                                 {canResend && (
                                     <div
                                         className={`
@@ -452,6 +475,8 @@ export default function CodeConfirmForm({
                                         </span>
                                     </div>
                                 )}
+
+                                {/* Ссылка "Не приходит код?" - открывает модальное окно */}
                                 <span
                                     className={`
                                       cursor-pointer text-center text-lg
@@ -468,7 +493,7 @@ export default function CodeConfirmForm({
                                             e.key === ' '
                                         ) {
                                             e.preventDefault()
-                                            handleResendCode()
+                                            handleOpenModal()
                                         }
                                     }}
                                     tabIndex={0}
@@ -481,15 +506,17 @@ export default function CodeConfirmForm({
                     </div>
                 </div>
             </div>
+
+            {/* Модальное окно (для сообщений "Не приходит код?", "Лимит исчерпан", "Срок истек") */}
             <Modal
-                open={isModalOpen}
+                open={modalState.open}
                 onClose={handleCloseModal}
                 title=""
                 descriptionColor="muted"
                 titleAlign="center"
             >
                 <div className="text-center text-lg text-[24px] font-bold">
-                    {modalMessage}
+                    {modalState.message}
                 </div>
 
                 <Button
@@ -497,9 +524,9 @@ export default function CodeConfirmForm({
                     size="lg"
                     color="primary"
                     className="w-full"
-                    onClick={() => {
+                    onClick={() =>
                         setShowSupportRequestForm(true)
-                    }}
+                    }
                 >
                     Обратиться в поддержку
                 </Button>
