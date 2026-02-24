@@ -5,7 +5,6 @@ import { useState } from 'react'
 import ChatRoom from '@modules/chat-room/components/ChatRoom'
 import { useChats } from '@shared/hooks/useChats'
 import toast from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
 
 export default function ContactsPage() {
     const [selectedChatId, setSelectedChatId] = useState<

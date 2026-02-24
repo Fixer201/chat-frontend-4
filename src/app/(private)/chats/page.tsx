@@ -9,7 +9,7 @@ import { useChats } from '@shared/hooks/useChats'
 import { cn } from '@shared/lib/utils'
 
 /** Количество чатов, загружаемых при первом рендере страницы */
-const INITIAL_CHATS_COUNT = '15'
+const INITIAL_CHATS_COUNT = 15
 
 /**
  * Главная страница чатов.
@@ -33,11 +33,19 @@ export default function ChatsPage() {
         null,
     )
     const chatsRef = useRef(chats)
+    const hasLoadedChatsRef = useRef(false)
+    const hasRequestedChatsRef = useRef(false)
 
     // Обновлять ref при изменении chats
     useEffect(() => {
         chatsRef.current = chats
     }, [chats])
+
+    useEffect(() => {
+        if (!loading && hasRequestedChatsRef.current) {
+            hasLoadedChatsRef.current = true
+        }
+    }, [loading])
 
     /** Загрузка начального списка чатов при монтировании компонента */
     useEffect(() => {
@@ -59,13 +67,15 @@ export default function ChatsPage() {
                 }
             }
         }
-        loadChats(INITIAL_CHATS_COUNT)
+        loadChats('', INITIAL_CHATS_COUNT)
+        hasRequestedChatsRef.current = true
     }, [loadChats, hydrateChats])
 
     /** Обработка query-параметра contactId для создания/выбора чата */
     useEffect(() => {
         const contactId = searchParams.get('contactId')
         if (!contactId || loading) return
+        if (!hasLoadedChatsRef.current) return
 
         if (contactId === processedContactIdRef.current)
             return

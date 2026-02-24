@@ -21,9 +21,9 @@ import { RootState } from '@redux/store'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
+import { Spinner } from '@shared/ui/Spinner'
 // import { Contact } from '@shared/types/contact'
 import { toast } from 'react-hot-toast'
-import { useDebounce } from '@shared/hooks/useDebounce'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 
 interface ChatsListProps {
@@ -59,7 +59,6 @@ export default React.memo(function ChatsList({
         chats,
         loading,
         error,
-        loadChats,
         chatSettings,
         toggleFavorite: handleFavoriteChat,
         toggleNotifications: handleMuteChat,
@@ -69,8 +68,6 @@ export default React.memo(function ChatsList({
         addToContacts,
         selectedChatId,
         selectChat,
-        createGroup,
-        createChannel,
     } = useChats()
 
     // Навигация к странице контактов
@@ -106,13 +103,9 @@ export default React.memo(function ChatsList({
         ],
     )
 
-    // Сортировка чатов: избранные в начале списка
+    // Сортировка чатов: избранные в начале списка (без закрепления выбранного чата)
     const sortedChats = [...(filteredValue || [])].sort(
         (a, b) => {
-            // Выбранный чат всегда первый
-            if (a.id === selectedChatId) return -1
-            if (b.id === selectedChatId) return 1
-            // Затем избранные
             const aIsFavorite =
                 chatSettings[a.id]?.isFavorite || false
             const bIsFavorite =
@@ -146,16 +139,11 @@ export default React.memo(function ChatsList({
         if (!chatToDelete || isDeleting) return
         setIsDeleting(true)
         try {
-            // Имитация задержки для UX
-            await new Promise<void>((resolve) =>
-                setTimeout(resolve, 1000),
-            )
-
             console.info('[Chats][Delete] confirm', {
                 chatId: chatToDelete.id,
                 chatName: chatToDelete.name,
             })
-            deleteChat(chatToDelete.id)
+            await deleteChat(chatToDelete.id)
             console.info('[Chats][Delete] dispatched', {
                 chatId: chatToDelete.id,
             })
@@ -166,6 +154,7 @@ export default React.memo(function ChatsList({
                 error instanceof Error
                     ? error.message
                     : 'Неизвестная ошибка при удалении чата'
+            toast.error(errorMessage)
         } finally {
             setIsDeleting(false)
         }
@@ -210,17 +199,10 @@ export default React.memo(function ChatsList({
     const showEmptyChatsState = useMemo(() => {
         return (
             !loading &&
-            chats &&
-            chats.length === 0 &&
+            filteredChats.length === 0 &&
             searchValue.trim() === ''
         )
-    }, [loading, chats, searchValue])
-
-    // Дебаунс для поиска (если хук useDebounce доступен)
-    const debouncedSearchValue = useDebounce(
-        searchValue,
-        300,
-    ) // Задержка 300ms;
+    }, [loading, filteredChats.length, searchValue])
 
     // Загрузка чатов при монтировании и изменении поиска (только если поиск не пустой)
     // useEffect(() => {
@@ -266,9 +248,7 @@ export default React.memo(function ChatsList({
                 >
                     {loading ? (
                         <div className="flex h-full items-center justify-center">
-                            <div className="text-text-gray">
-                                Загрузка...
-                            </div>
+                            <Spinner />
                         </div>
                     ) : error ? ( // Обработка ошибки в render
                         (() => {
@@ -415,6 +395,11 @@ export default React.memo(function ChatsList({
                                                 .nickname ||
                                             chat.chat
                                                 .username
+                                        // Отображаемое имя: предпочитаем chat.name, затем контакт/профиль
+                                        const displayName =
+                                            chat.name ||
+                                            contactName ||
+                                            fallbackChatName
 
                                         const contactLastSeenMs =
                                             contactMatch?.wasOnlineAt
@@ -467,11 +452,19 @@ export default React.memo(function ChatsList({
                                                 'Нет описания'
                                         } else {
                                             // Для личных чатов: отображаем текст последнего сообщения
-                                            messagePreview =
+                                            // Убираем мок "Создана ..." для личных чатов, если он остался в данных
+                                            const lastContent =
                                                 chat
                                                     .lastMessage
                                                     ?.content ||
-                                                'Нет сообщений' // Добавлена проверка
+                                                ''
+                                            messagePreview =
+                                                lastContent.startsWith(
+                                                    'Создана',
+                                                )
+                                                    ? 'Нет сообщений'
+                                                    : lastContent ||
+                                                      'Нет сообщений' // Добавлена проверка
                                         }
                                         return (
                                             <ChatListItem
@@ -479,9 +472,7 @@ export default React.memo(function ChatsList({
                                                     avatarSrc
                                                 }
                                                 name={
-                                                    contactName ||
-                                                    fallbackChatName ||
-                                                    chat.name ||
+                                                    displayName ||
                                                     'Неизвестный чат'
                                                 }
                                                 messagePreview={

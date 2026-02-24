@@ -29,10 +29,6 @@ import { Message } from '@shared/types/message'
  * обновляющий контент без прерывания текущей озвучки.
  */
 
-// Временный флаг: показывать все сообщения без фильтрации по chatKey.
-// Используется на этапе разработки, пока не реализована полноценная логика контактов.
-const USE_MOCK = false // TODO: удалить после реализации контактов
-
 /**
  * Проверяет, принадлежат ли два Unix-timestamp (в секундах) одному
  * календарному дню в локальном часовом поясе пользователя.
@@ -68,6 +64,8 @@ export default function MessagesList({
     apiMessages = [],
     contactUid,
     isTemporary = false,
+    currentUserId,
+    peerUid,
     onEditMessage,
     onReplyMessage,
     onSelectMessage,
@@ -84,6 +82,8 @@ export default function MessagesList({
     apiMessages?: Message[]
     contactUid?: string
     isTemporary?: boolean
+    currentUserId?: string
+    peerUid?: string
     onEditMessage?: (message: Message) => void
     onReplyMessage?: (message: Message) => void
     onSelectMessage?: (message: Message) => void
@@ -176,14 +176,6 @@ export default function MessagesList({
                 msg.toUserId === contactUid ||
                 msg.from_user === contactUid
             )
-        })
-
-        console.debug('[MessagesList] filter', {
-            chatKey,
-            isTemporary,
-            contactUid,
-            total: allMessages.length,
-            filtered: filtered.length,
         })
 
         return filtered
@@ -331,6 +323,10 @@ export default function MessagesList({
                                 >
                                     <MessageItem
                                         message={message}
+                                        currentUserId={
+                                            currentUserId
+                                        }
+                                        peerUid={peerUid}
                                         onEdit={
                                             onEditMessage
                                         }

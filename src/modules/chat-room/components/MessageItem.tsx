@@ -1,7 +1,10 @@
 'use client'
 
 import { Message } from '@shared/types/message'
-import { useCurrentUserId } from '@shared/hooks/useCurrentUserId'
+import { useAppSelector } from '@redux/store'
+import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import Cookies from 'js-cookie'
+import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 import SentIcon from '@public/images/messageStatus/sent.svg'
 import DeliveredIcon from '@public/images/messageStatus/delivered.svg'
 import ReadIcon from '@public/images/messageStatus/read.svg'
@@ -10,7 +13,6 @@ import DeleteMessageModal from './DeleteMessageModal'
 import CopyToast from './CopyToast'
 import ForwardedMessage from './ForwardedMessage'
 import RepliedMessage from './RepliedMessage'
-import MessageFileAttachment from './MessageFileAttachment'
 import Image from 'next/image'
 import {
     useCallback,
@@ -41,6 +43,8 @@ import { highlightText } from '@shared/lib/highlightText'
  */
 interface MessageItemProps {
     readonly message: Message
+    readonly currentUserId?: string
+    readonly peerUid?: string
     readonly onEdit?: (message: Message) => void
     readonly onReply?: (message: Message) => void
     readonly onSelect?: (message: Message) => void
@@ -57,28 +61,13 @@ interface MessageItemProps {
     readonly isCurrentMatch?: boolean
 }
 
-/**
- * Жизненный цикл статуса прочтения исходящего сообщения:
- *
- *   sending → sent → delivered → read
- *   (часы)   (✓)    (✓✓ серые)  (✓✓ фиолет)
- *
- * - **sending** — optimistic-сообщение ещё не подтверждено сервером
- *   (файл загружается, WebSocket echo не пришёл).
- * - **sent** — сервер принял сообщение (есть uid), но адресат ещё не получил.
- * - **delivered** — клиент адресата подтвердил получение (delivered_at != null).
- * - **read** — адресат открыл чат и прочитал сообщение (read_at != null).
- */
-type ReadStatus = 'sending' | 'sent' | 'delivered' | 'read'
+/** Статус прочтения исходящего сообщения */
+type ReadStatus = 'sent' | 'delivered' | 'read'
 
 /**
  * Определяет статус прочтения сообщения по временным меткам.
  * Возвращает null для входящих сообщений — статус прочтения
  * отображается только для собственных (исходящих) сообщений.
- *
- * Порядок проверок важен: от наиболее «завершённого» к начальному,
- * чтобы message.status === 'sending' перехватывал optimistic-заглушки
- * до проверки timestamp-ов.
  */
 function getReadStatus(
     message: Message,
@@ -86,7 +75,6 @@ function getReadStatus(
 ): ReadStatus | null {
     if (!isOwn) return null
 
-    if (message.status === 'sending') return 'sending'
     if (message.read_at) return 'read'
     if (message.delivered_at) return 'delivered'
 
@@ -94,16 +82,8 @@ function getReadStatus(
 }
 
 /**
- * Иконка статуса прочтения рядом с временем отправки.
- *
- * Визуальное соответствие:
- * - sending   → 🕐 иконка часов (SVG, серая) — файл загружается на сервер
- * - sent      → ✓  одна галочка (SentIcon, серая) — сервер принял
- * - delivered → ✓✓ двойная галочка (DeliveredIcon, серая) — доставлено
- * - read      → ✓✓ двойная галочка (ReadIcon, фиолетовая) — прочитано
- *
- * Для входящих сообщений (status === null) не рендерится —
- * статус прочтения показывается только отправителю.
+ * Иконка статуса прочтения: одна галочка (sent), двойная серая (delivered),
+ * двойная фиолетовая (read). Для входящих сообщений не рендерится.
  */
 function ReadCheckmark({
     status,
@@ -111,35 +91,6 @@ function ReadCheckmark({
     status: ReadStatus | null
 }>) {
     if (!status) return null
-
-    // Иконка часов: циферблат с стрелками на 12:10.
-    // Дизайн-референс: public/send_files.jpg — правый нижний угол сообщения.
-    // Размер 14×14 совпадает с высотой текста времени (text-sm = 14px line-height).
-    if (status === 'sending') {
-        return (
-            <svg
-                width={14}
-                height={14}
-                viewBox="0 0 24 24"
-                fill="none"
-                className="text-text-gray"
-            >
-                <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                />
-                <path
-                    d="M12 6v6l4 2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                />
-            </svg>
-        )
-    }
 
     if (status === 'sent') {
         return (
@@ -172,6 +123,8 @@ function ReadCheckmark({
 
 export default function MessageItem({
     message,
+    currentUserId: currentUserIdOverride,
+    peerUid,
     onEdit,
     onReply,
     onSelect,
@@ -183,12 +136,31 @@ export default function MessageItem({
     searchQuery = '',
     isCurrentMatch = false,
 }: MessageItemProps) {
-    const currentUserId = useCurrentUserId()
+    const currentUser = useAppSelector(
+        (state) => state.user.currentUser,
+    ) as { id?: string } | null
 
-    const isOwn = message.from_user === currentUserId
+    const derivedUserId =
+        currentUser?.id ||
+        getUserIdFromToken(
+            localStorage.getItem('access_token') ||
+                Cookies.get('access_token'),
+        ) ||
+        MOCK_CURRENT_USER_ID
+
+    const currentUserId =
+        currentUserIdOverride || derivedUserId
+
+    // Нестрогое сравнение (==) — from_user может быть числом, currentUserId — строкой
+    // Если не удалось определить currentUserId, в личном чате считаем все сообщения
+    // НЕ от peerUid своими (fallback для корректного выравнивания)
+    const isOwn =
+        currentUserId === MOCK_CURRENT_USER_ID && peerUid
+            ? message.from_user != peerUid
+            : message.from_user == currentUserId
     const readStatus = getReadStatus(message, isOwn)
 
-    const { deleteMessage, cancelSending } = useWebSocket()
+    const { deleteMessage } = useWebSocket()
 
     // useTransition — Vercel best practice: встроенный isPending вместо ручного isLoading,
     // автоматический сброс при ошибке, UI остаётся отзывчивым во время удаления
@@ -673,59 +645,76 @@ export default function MessageItem({
                                                 Vercel pattern: highlightText использует module-level cache,
                                                 поэтому useMemo здесь не нужен (избегаем двойной мемоизации).
                                             */}
-                                                            {highlightText(
-                                                                message.content,
-                                                                searchQuery,
-                                                            ).map(
-                                                                (
-                                                                    segment,
-                                                                    i,
-                                                                ) => (
-                                                                    <span
-                                                                        key={
-                                                                            i
-                                                                        }
-                                                                        className={
-                                                                            segment.isMatch
-                                                                                ? `
-                                                                                  rounded-sm
-                                                                                  bg-system-blue/20
-                                                                                  font-semibold
-                                                                                  text-system-blue
-                                                                                `
-                                                                                : ''
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            segment.text
-                                                                        }
-                                                                    </span>
-                                                                ),
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        message.content
-                                                    )}
-                                                    {message.updated_at &&
-                                                        message.updated_at !==
-                                                            message.created_at && (
-                                                            <span
-                                                                className={`
-                                                                  ml-1 text-xs
-                                                                  text-text-gray
-                                                                `}
-                                                            >
-                                                                (изменено)
-                                                            </span>
-                                                        )}
-                                                </div>
-                                            ) : null}
-                                            {timeElement}
-                                        </div>
+                                            {highlightText(
+                                                message.content,
+                                                searchQuery,
+                                            ).map(
+                                                (
+                                                    segment,
+                                                    i,
+                                                ) => (
+                                                    <span
+                                                        key={
+                                                            i
+                                                        }
+                                                        className={
+                                                            segment.isMatch
+                                                                ? `
+                                                                  rounded-sm
+                                                                  bg-system-blue/20
+                                                                  font-semibold
+                                                                  text-system-blue
+                                                                `
+                                                                : ''
+                                                        }
+                                                    >
+                                                        {
+                                                            segment.text
+                                                        }
+                                                    </span>
+                                                ),
+                                            )}
+                                        </>
+                                    ) : (
+                                        message.content
                                     )}
-                                </>
-                            )
-                        })()}
+                                    {message.updated_at &&
+                                        message.updated_at !==
+                                            message.created_at && (
+                                            <span
+                                                className={`
+                                                  ml-1 text-xs text-text-gray
+                                                `}
+                                            >
+                                                (изменено)
+                                            </span>
+                                        )}
+                                </div>
+                            ) : null}
+                            {message.created_at && (
+                                <div
+                                    className={`
+                                      flex shrink-0 items-center gap-1 text-sm
+                                      whitespace-nowrap text-text-gray
+                                    `}
+                                >
+                                    {/* a11y: <time> с dateTime — скринридер озвучит полную дату */}
+                                    <time
+                                        dateTime={getISOTime(
+                                            message.created_at,
+                                        )}
+                                    >
+                                        {formatTime(
+                                            message.created_at,
+                                        )}
+                                    </time>
+                                    <ReadCheckmark
+                                        status={readStatus}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
                     </div>
                 </div>
             </div>

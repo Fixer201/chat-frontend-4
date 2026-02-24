@@ -58,6 +58,7 @@ import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 export const useMessages = (
     userUid: string,
     isLocalChat: boolean = false,
+    pageSize: number = 50,
 ) => {
     // Добавьте isLocalChat
     const [messages, setMessages] = useState<Message[]>([])
@@ -76,10 +77,17 @@ export const useMessages = (
         setLoading(true)
         setError(null)
         try {
-            const data = await fetchData(
+            // Используем page_size, чтобы не получать только 5 сообщений по умолчанию
+            const url = new URL(
                 `https://api.test.chat.ktsf.ru/api/v1/chat/message/text/${userUid}/`,
-                { method: 'GET' },
             )
+            url.searchParams.set(
+                'page_size',
+                pageSize.toString(),
+            )
+            const data = await fetchData(url.toString(), {
+                method: 'GET',
+            })
             // Маппинг API-ответа в Message[] с использованием ApiMessage и ваших типов
             const mappedMessages: Message[] =
                 data.results.map(
@@ -151,7 +159,7 @@ export const useMessages = (
         } finally {
             setLoading(false)
         }
-    }, [userUid, isLocalChat, fetchData]) // Добавьте isLocalChat в зависимости
+    }, [userUid, isLocalChat, pageSize, fetchData]) // Добавьте isLocalChat в зависимости
 
     useEffect(() => {
         loadMessages()

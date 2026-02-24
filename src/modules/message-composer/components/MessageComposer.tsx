@@ -186,6 +186,7 @@ export default function MessageComposer({
                 content: inputValue,
                 toUserId: toUserId,
                 status: 'publish',
+                // chatType удалён, так как не входит в тип Message
                 repliedMessages,
             })
 

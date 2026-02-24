@@ -156,6 +156,10 @@ export default memo(function ContactsList() {
                                 null,
                         }
                     })
+                console.log(
+                    '[ContactsList] loaded contacts:',
+                    mappedContacts,
+                )
                 dispatch(setContacts(mappedContacts))
             } catch (error: unknown) {
                 console.error(
