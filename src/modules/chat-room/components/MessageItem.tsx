@@ -655,9 +655,11 @@ export default function MessageItem({
                                             {message.content?.trim() ? (
                                                 <div
                                                     className={`
-                                      cursor-text text-base font-normal
-                                      wrap-break-word whitespace-pre-wrap
-                                    `}
+                                                      cursor-text text-base
+                                                      font-normal
+                                                      wrap-break-word
+                                                      whitespace-pre-wrap
+                                                    `}
                                                 >
                                                     {searchQuery ? (
                                                         <>
@@ -686,11 +688,11 @@ export default function MessageItem({
                                                                         className={
                                                                             segment.isMatch
                                                                                 ? `
-                                                                  rounded-sm
-                                                                  bg-system-blue/20
-                                                                  font-semibold
-                                                                  text-system-blue
-                                                                `
+                                                                                  rounded-sm
+                                                                                  bg-system-blue/20
+                                                                                  font-semibold
+                                                                                  text-system-blue
+                                                                                `
                                                                                 : ''
                                                                         }
                                                                     >
@@ -709,8 +711,9 @@ export default function MessageItem({
                                                             message.created_at && (
                                                             <span
                                                                 className={`
-                                                  ml-1 text-xs text-text-gray
-                                                `}
+                                                                  ml-1 text-xs
+                                                                  text-text-gray
+                                                                `}
                                                             >
                                                                 (изменено)
                                                             </span>

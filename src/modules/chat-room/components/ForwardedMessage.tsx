@@ -80,15 +80,10 @@ const ForwardedMessage = memo(function ForwardedMessage({
             <div className="flex items-center gap-1.5">
                 {/* Аватар 20×20px — компактный, но различимый размер внутри пузыря */}
                 <div
-                    className={cn(
-                        'relative',
-                        'h-5',
-                        'w-5',
-                        'shrink-0',
-                        'overflow-hidden',
-                        'rounded-full',
-                        'bg-gray-main',
-                    )}
+                    className={`
+                      relative h-5 w-5 shrink-0 overflow-hidden rounded-full
+                      bg-gray-main
+                    `}
                 >
                     <Image
                         src={avatarUrl}
@@ -100,12 +95,9 @@ const ForwardedMessage = memo(function ForwardedMessage({
                 </div>
                 {/* Имя автора в фиолетовом полужирном — акцент на источнике пересылки */}
                 <span
-                    className={cn(
-                        'truncate',
-                        'text-sm',
-                        'font-semibold',
-                        'text-accent-violet-primary',
-                    )}
+                    className={`
+                      truncate text-sm font-semibold text-accent-violet-primary
+                    `}
                 >
                     {authorName}
                 </span>
