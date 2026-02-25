@@ -1,3 +1,4 @@
+'use client'
 import { memo } from 'react'
 
 /**
@@ -128,6 +129,7 @@ function DateDivider({
                         .toISOString()
                         .split('T')[0]
                 }
+                // eslint-disable-next-line better-tailwindcss/enforce-consistent-line-wrapping
                 className={`
                   rounded-lg bg-accent-violet-dark/60 px-2 py-0.5 text-sm
                   leading-[120%] font-medium text-white backdrop-blur-[4px]

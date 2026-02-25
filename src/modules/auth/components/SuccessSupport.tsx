@@ -1,10 +1,9 @@
-/* eslint-disable better-tailwindcss/enforce-consistent-line-wrapping */
-
 'use client'
-import { Button } from '@shared/ui/button/Button'
 
+import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import useIsMobile from '@shared/hooks/useIsMobile'
 
 interface SuccessSupportProps {
     onBack: () => void
@@ -13,36 +12,43 @@ interface SuccessSupportProps {
 export default function SuccessSupport({
     onBack,
 }: SuccessSupportProps) {
+    // Используется для перехода на '/auth/login'.
+
     const router = useRouter()
 
+    // Обработчик клика по "На главную": Переходит на '/auth/login'.
+    // Используется для кнопки возврата.
     const handleStartClick = () => {
         router.push('/auth/login')
     }
 
+    // Хук useIsMobile: Определяет мобильный режим (ширина <= 768px).
+    // Используется для условного рендера (логотип и кнопка назад только на десктопе).
+    const isMobile = useIsMobile()
+
     return (
         <>
+            {/* Внешний контейнер: Центрирует контент по экрану.
+            min-h-screen: Минимальная высота экрана для центрирования. */}
             <div className="flex min-h-screen items-center justify-center">
+                {/* Внутренний контейнер: Полноэкранный на мобильке, с фоном на десктопе.
+                w-(--app-login-width): Кастомная ширина из CSS-переменных. */}
                 <div
                     className={`
-                      relative hidden h-screen
-                      w-(--app-login-width) flex-col items-center justify-center
-                      md:flex
+                      relative flex h-screen w-(--app-login-width) flex-col
+                      items-center justify-center bg-white
+                      md:bg-app-login-background
                     `}
-                    style={{
-                        backgroundImage:
-                            'var(--app-login-background)',
-                    }}
                 >
+                    {/* Контейнер модального окна: Абсолютное позиционирование на десктопе для центрирования.
+                    h-190 w-122: Фиксированные размеры для модального окна. */}
                     <div
                         className={`
                           absolute flex h-190 w-122 flex-col items-center
-                          justify-center rounded-2xl
+                          justify-center rounded-2xl bg-white
+                          md:bg-app-login-start
+                          md:filter-app-start-screen-shadow
                         `}
-                        style={{
-                            filter: 'var(--app-start-screen-shadow)',
-                            backgroundImage:
-                                'var(--app-login-start)',
-                        }}
                     >
                         <div
                             className={`
@@ -50,49 +56,77 @@ export default function SuccessSupport({
                               justify-between gap-6
                             `}
                         >
-                            <div
-                                className={`
-                              relative flex h-17 w-90 items-center
-                            `}
-                            >
-                                <Image
-                                    src="/images/login/back.svg"
-                                    alt="Back"
-                                    width={32}
-                                    height={32}
+                            {/* Условный рендер заголовка: Только на десктопе (логотип и кнопка назад).
+                            На мобильке скрыт для экономии пространства. */}
+                            {!isMobile && (
+                                <div
                                     className={`
-                                      absolute top-0 left-0 cursor-pointer
+                                      relative flex h-17 w-90 items-center
                                     `}
-                                    loading="eager"
-                                    onClick={onBack}
-                                />
-                                <Image
-                                    src="/images/login/Logo.svg"
-                                    alt="Logo"
-                                    width={78}
-                                    height={70}
-                                    className="mx-auto"
-                                    loading="eager"
-                                />
-                            </div>
+                                >
+                                    {/* Кнопка назад: Изображение с onClick для возврата. */}
+                                    <Image
+                                        src="/images/login/back.svg"
+                                        alt="Back"
+                                        width={32}
+                                        height={32}
+                                        className={`
+                                          absolute top-0 left-0 cursor-pointer
+                                        `}
+                                        loading="eager"
+                                        onClick={onBack}
+                                    />
+                                    {/* Логотип: Центрирован в заголовке. */}
+                                    <Image
+                                        src="/images/login/Logo.svg"
+                                        alt="Logo"
+                                        width={78}
+                                        height={70}
+                                        className="mx-auto"
+                                        loading="eager"
+                                    />
+                                </div>
+                            )}
 
+                            {/* Основной контент: Заголовок, иконка, текст и кнопка. */}
                             <div
                                 className={`
-                                  flex h-126 w-90 flex-col items-center justify-between gap-6
+                                  flex h-126 w-90 flex-col items-center
+                                  justify-start gap-4
+                                  md:justify-between md:gap-6
                                 `}
                             >
-                                <div className="flex w-90 items-center justify-center">
-                                    <p className="text-center text-[32px] font-bold">
+                                {/* Заголовок формы. */}
+                                <div
+                                    className={`
+                                      flex w-90 items-center justify-center
+                                    `}
+                                >
+                                    <p
+                                        className={`
+                                          text-center text-[32px] font-bold
+                                        `}
+                                    >
                                         Служба поддержки
                                     </p>
                                 </div>
 
+                                {/* Контент с иконкой и текстом. */}
                                 <div
                                     className={`
-                                      flex h-112 w-90 flex-col items-center justify-between
+                                      flex h-112 w-90 flex-col items-center
+                                      justify-start
+                                      md:justify-between
                                     `}
                                 >
-                                    <div className="flex flex-col items-center gap-6">
+                                    <div
+                                        className={`
+                                          flex h-112 w-90 flex-col items-center
+                                          justify-start gap-4
+                                          md:justify-start
+                                        `}
+                                    >
+                                        {/* Иконка успеха: Центрирована. */}
                                         <Image
                                             src="/images/Check.svg"
                                             alt="Check"
@@ -102,13 +136,25 @@ export default function SuccessSupport({
                                             loading="eager"
                                         />
 
-                                        <div className="flex flex-col gap-2 text-center">
-                                            <span className="text-center text-[24px] font-bold">
+                                        {/* Текст успеха: Центрирован, с переносами строк. */}
+                                        <div
+                                            className={`
+                                              flex flex-col gap-2 text-center
+                                            `}
+                                        >
+                                            <span
+                                                className={`
+                                                  text-center text-[24px]
+                                                  font-bold
+                                                `}
+                                            >
                                                 {' '}
                                                 Обращение
                                                 отправлено!
                                             </span>
-                                            <span className="text-center text-lg">
+                                            <span
+                                                className={`text-center text-lg`}
+                                            >
                                                 <p className="text-center">
                                                     В
                                                     ближайшее
@@ -126,14 +172,17 @@ export default function SuccessSupport({
                                             </span>
                                         </div>
                                     </div>
+
                                     <Button
                                         variant="primary"
                                         size="md"
-                                        className="w-full"
+                                        className={`
+                                          mt-4 w-full
+                                          md:mt-0
+                                        `}
                                         onClick={
                                             handleStartClick
                                         }
-                                        // disabled={loading}
                                     >
                                         На главную
                                     </Button>
