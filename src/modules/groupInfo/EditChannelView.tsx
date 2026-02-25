@@ -586,9 +586,9 @@ export default function EditChannelView({
             {/* Заголовок с кнопкой назад */}
             <div
                 className={`
-              flex items-center justify-start gap-3 rounded-t-md border-b
-              border-app-divider bg-gray-main px-6 py-4
-            `}
+                  flex items-center justify-start gap-3 rounded-t-md border-b
+                  border-app-divider bg-gray-main px-6 py-4
+                `}
             >
                 <Button
                     onClick={handleCancelAttempt}
@@ -605,8 +605,8 @@ export default function EditChannelView({
                 </Button>
                 <h2
                     className={`
-                  text-lg font-medium tracking-extra-tight text-text-black
-                `}
+                      text-lg font-medium tracking-extra-tight text-text-black
+                    `}
                 >
                     Редактировать канал
                 </h2>
@@ -617,9 +617,7 @@ export default function EditChannelView({
                 <div className="flex justify-center p-4">
                     <form
                         onSubmit={handleSubmit}
-                        className={`
-                      w-full max-w-82 space-y-4
-                    `}
+                        className={`w-full max-w-82 space-y-4`}
                     >
                         {/* Выбор аватара */}
                         <div className="flex flex-col items-center">
@@ -640,8 +638,8 @@ export default function EditChannelView({
                         <div className="flex items-center justify-between">
                             <span
                                 className={`
-                              text-base font-medium text-text-black
-                            `}
+                                  text-base font-medium text-text-black
+                                `}
                             >
                                 Уведомления
                             </span>
@@ -667,9 +665,7 @@ export default function EditChannelView({
                                       focus:outline-none
                                     `,
                                     formState.notificationsEnabled
-                                        ? `
-                                      bg-blue-500
-                                    `
+                                        ? `bg-blue-500`
                                         : `bg-gray-300`,
                                 )}
                             >
@@ -681,9 +677,7 @@ export default function EditChannelView({
                                           transition-transform
                                         `,
                                         formState.notificationsEnabled
-                                            ? `
-                                          translate-x-6
-                                        `
+                                            ? `translate-x-6`
                                             : `translate-x-1`,
                                     )}
                                 />
@@ -694,9 +688,9 @@ export default function EditChannelView({
                         <div className="w-full">
                             <div
                                 className={`
-                              overflow-hidden rounded-md border
-                              border-app-divider
-                            `}
+                                  overflow-hidden rounded-md border
+                                  border-app-divider
+                                `}
                             >
                                 <FloatingTextarea
                                     position="top"
@@ -759,28 +753,28 @@ export default function EditChannelView({
                             <div className="rounded-md bg-white-bg p-1">
                                 <div
                                     className={`
-                                  flex flex-col justify-between p-0.5
-                                `}
+                                      flex flex-col justify-between p-0.5
+                                    `}
                                 >
                                     <span
                                         className={`
-                                      mb-1 p-0 text-xs font-medium
-                                      tracking-extra-tight text-text-gray
-                                    `}
+                                          mb-1 p-0 text-xs font-medium
+                                          tracking-extra-tight text-text-gray
+                                        `}
                                     >
                                         Ссылка на
                                         приглашение в канал
                                     </span>
                                     <div
                                         className={`
-                                      flex items-center justify-between
-                                    `}
+                                          flex items-center justify-between
+                                        `}
                                     >
                                         <span
                                             className={`
-                                          pr-2 text-base break-all
-                                          text-accent-violet-primary
-                                        `}
+                                              pr-2 text-base break-all
+                                              text-accent-violet-primary
+                                            `}
                                         >
                                             {inviteLink}
                                         </span>
@@ -806,9 +800,7 @@ export default function EditChannelView({
                                                 height={24}
                                                 className={cn(
                                                     copied
-                                                        ? `
-                                                  opacity-50
-                                                `
+                                                        ? `opacity-50`
                                                         : `opacity-100`,
                                                 )}
                                             />
