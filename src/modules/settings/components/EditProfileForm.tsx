@@ -11,6 +11,7 @@ import {
 } from 'react'
 import Cookies from 'js-cookie'
 import { useProfile } from '@shared/hooks/useProfile'
+import type { Area } from 'react-easy-crop' // импортируем тип
 
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import Input from '@shared/ui/input/Input'
@@ -39,6 +40,12 @@ export default function EditProfileForm() {
         useState<File | null>(null)
     const [croppedBlob, setCroppedBlob] =
         useState<Blob | null>(null)
+    const [cropParams, setCropParams] = useState<{
+        crop: { x: number; y: number }
+        zoom: number
+        croppedAreaPixels: Area | null
+    } | null>(null)
+
     const [isSaving, setIsSaving] = useState(false)
     const [submitError, setSubmitError] = useState<
         string | null
@@ -60,24 +67,21 @@ export default function EditProfileForm() {
 
     const profileAvatarSrc = useMemo(() => {
         if (!profile) return null
-
         const directUrl =
             profile.avatar_url || profile.avatar_webp_url
         if (directUrl) return directUrl as string
-
         const rawAvatar = profile.avatar as
             | string
             | undefined
         if (rawAvatar) {
-            if (rawAvatar.startsWith('http')) {
-                return rawAvatar
-            }
-            if (rawAvatar.startsWith('/')) {
+            if (
+                rawAvatar.startsWith('http') ||
+                rawAvatar.startsWith('/')
+            ) {
                 return rawAvatar
             }
             return `/${rawAvatar}`
         }
-
         return null
     }, [profile])
 
@@ -85,17 +89,12 @@ export default function EditProfileForm() {
         if (croppedBlob) {
             return URL.createObjectURL(croppedBlob)
         }
-
         return profileAvatarSrc || DEFAULT_AVATAR_SRC
     }, [croppedBlob, profileAvatarSrc])
 
     useEffect(() => {
-        if (!croppedBlob) {
-            return undefined
-        }
-
+        if (!croppedBlob) return undefined
         const url = avatarPreview
-
         return () => {
             if (url.startsWith('blob:')) {
                 URL.revokeObjectURL(url)
@@ -105,7 +104,6 @@ export default function EditProfileForm() {
 
     const profileBirthdayValue = useMemo(() => {
         if (!profile?.birthday) return null
-
         const incoming = profile.birthday as unknown
         const asNumber = Number(incoming)
         const date =
@@ -116,9 +114,7 @@ export default function EditProfileForm() {
                           : asNumber * 1000,
                   )
                 : new Date(String(incoming))
-
         if (Number.isNaN(date.getTime())) return null
-
         return {
             day: date.getDate(),
             month: date.getMonth() + 1,
@@ -130,7 +126,6 @@ export default function EditProfileForm() {
         formDraft.birthday ??
         profileBirthdayValue ??
         DEFAULT_BIRTHDAY
-
     const firstNameValue =
         formDraft.first_name ?? profile?.first_name ?? ''
     const lastNameValue =
@@ -149,12 +144,6 @@ export default function EditProfileForm() {
     useEffect(() => {
         if (profile) {
             console.log('Edit profile data:', profile)
-            console.log('Avatar fields:', {
-                avatar: profile.avatar,
-                avatar_url: profile.avatar_url,
-                avatar_webp: profile.avatar_webp,
-                avatar_webp_url: profile.avatar_webp_url,
-            })
         }
     }, [profile])
 
@@ -162,25 +151,36 @@ export default function EditProfileForm() {
         event: ChangeEvent<HTMLInputElement>,
     ) => {
         const file = event.target.files?.[0]
-
         if (!file) return
-
         setSelectedFile(file)
         setIsCropperOpen(true)
-
-        // allow re-selecting the same file later
         event.target.value = ''
     }
 
     const handleCropperClose = () => {
         setIsCropperOpen(false)
         setSelectedFile(null)
+        // Не сбрасываем cropParams, чтобы при повторном открытии того же файла параметры сохранились
+    }
+
+    const handleCropperConfirm = (
+        blob: Blob,
+        params?: {
+            crop: { x: number; y: number }
+            zoom: number
+            croppedAreaPixels: Area | null
+        },
+    ) => {
+        setCroppedBlob(blob)
+        if (params) {
+            setCropParams(params)
+        }
+        setIsCropperOpen(false)
     }
 
     const formatBirthday = () => {
         const source =
             formDraft.birthday ?? profileBirthdayValue
-
         if (source?.year && source?.month && source?.day) {
             const date = new Date(
                 source.year,
@@ -194,7 +194,6 @@ export default function EditProfileForm() {
                 ? tsSeconds
                 : undefined
         }
-
         return undefined
     }
 
@@ -227,11 +226,6 @@ export default function EditProfileForm() {
             }
 
             if (croppedBlob) {
-                console.log('Avatar blob before encode:', {
-                    size: croppedBlob.size,
-                    type: croppedBlob.type,
-                })
-
                 const formData = new FormData()
                 const file = new File(
                     [croppedBlob],
@@ -244,15 +238,6 @@ export default function EditProfileForm() {
                     },
                 )
                 formData.append('file', file)
-
-                console.log(
-                    'Uploading avatar via /api/auth/profile/avatar',
-                    {
-                        size: file.size,
-                        type: file.type,
-                        name: file.name,
-                    },
-                )
 
                 const avatarResponse = await fetch(
                     '/api/auth/profile/avatar',
@@ -285,29 +270,15 @@ export default function EditProfileForm() {
                         (avatarData?.detail as string) ||
                         (avatarData?.error as string) ||
                         `Ошибка загрузки аватара ${avatarResponse.status}`
-                    console.error('Avatar upload failed', {
-                        status: avatarResponse.status,
-                        avatarData,
-                    })
                     setSubmitError(message)
                     setIsSaving(false)
                     return
                 }
-
-                console.log(
-                    'Avatar upload response:',
-                    avatarData,
-                )
             }
 
             const payload: Record<string, unknown> = {
                 ...commonFields,
             }
-
-            console.log(
-                'Profile save payload (json):',
-                payload,
-            )
 
             const response = await fetch(
                 '/api/auth/profile',
@@ -338,20 +309,13 @@ export default function EditProfileForm() {
                     (data?.detail as string) ||
                     (data?.error as string) ||
                     `Ошибка ${response.status}`
-                const debug = {
-                    status: response.status,
-                    data,
-                }
-                console.error('Profile save failed', debug)
                 setSubmitError(message)
                 return
             }
 
-            console.log('Profile save response:', data)
             setSavedRecently(true)
             setTimeout(() => setSavedRecently(false), 2000)
             await refetch()
-            console.log('Profile refetched after save')
         } catch (err) {
             console.error('Save profile error:', err)
             setSubmitError('Ошибка сети при сохранении')
@@ -361,9 +325,7 @@ export default function EditProfileForm() {
     }
 
     return (
-        <div
-            className={`flex h-full flex-col rounded-md bg-gray-main`}
-        >
+        <div className="flex h-full flex-col rounded-md bg-gray-main">
             <header
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -422,7 +384,6 @@ export default function EditProfileForm() {
                         >
                             Выбрать фотографию
                         </button>
-
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -436,6 +397,7 @@ export default function EditProfileForm() {
                         className="flex flex-1 flex-col gap-3"
                         onSubmit={handleSubmit}
                     >
+                        {/* поля формы (без изменений) */}
                         <label
                             htmlFor="edit-profile-first-name"
                             className={`
@@ -566,7 +528,7 @@ export default function EditProfileForm() {
                             <Button
                                 type="submit"
                                 size="lg"
-                                className={`w-full text-base font-semibold`}
+                                className="w-full text-base font-semibold"
                                 disabled={
                                     loading || isSaving
                                 }
@@ -609,9 +571,12 @@ export default function EditProfileForm() {
                 onFileChange={(file) =>
                     setSelectedFile(file)
                 }
-                onConfirm={(blob) => {
-                    setCroppedBlob(blob)
-                }}
+                onConfirm={handleCropperConfirm}
+                initialCrop={cropParams?.crop}
+                initialZoom={cropParams?.zoom}
+                initialCroppedAreaPixels={
+                    cropParams?.croppedAreaPixels
+                }
             />
         </div>
     )

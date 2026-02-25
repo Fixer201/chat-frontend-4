@@ -2,8 +2,11 @@ import { configureStore } from '@reduxjs/toolkit'
 import userReducer from './slices/userSlice'
 import chatsReducer from './slices/chatsSlice'
 import contactsReducer from './slices/contactsSlice'
+import contactsTempReducer from './slices/contactsSliceTemp'
 import uiReducer from './slices/uiSlice'
 import selectedContactReducer from './slices/selectedContactSlice'
+import selectedContactTempReducer from './slices/selectedContactTempSlice'
+import groupParticipantsReducer from './slices/groupParticipantsSlice'
 import {
     TypedUseSelectorHook,
     useDispatch,
@@ -15,8 +18,11 @@ export const store = configureStore({
         user: userReducer,
         chats: chatsReducer,
         contacts: contactsReducer,
+        contactsTemp: contactsTempReducer,
         ui: uiReducer,
         SelectedContact: selectedContactReducer,
+        SelectedContactTemp: selectedContactTempReducer,
+        groupParticipants: groupParticipantsReducer,
     },
 })
 export type RootState = ReturnType<typeof store.getState>

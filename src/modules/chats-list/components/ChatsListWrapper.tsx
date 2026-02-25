@@ -19,7 +19,13 @@ type View =
     | 'create-channel'
     | 'channel-members'
 
-export default function ChatsListWrapper() {
+interface ChatsListWrapperProps {
+    onOpenInfoPanel?: (chatId: number) => void
+}
+
+export default function ChatsListWrapper({
+    onOpenInfoPanel,
+}: ChatsListWrapperProps) {
     // Хуки для работы с чатами
     const { createGroup, createChannel, loadChats } =
         useChats()
@@ -31,13 +37,13 @@ export default function ChatsListWrapper() {
         useState<onNextProps | null>(null)
     const [channelData, setChannelData] =
         useState<onNextProps | null>(null)
-    // Состояние для хранения выбранных контактов (участников группы/канала)
-    // Используем массив объектов Contact для хранения полной информации о контактах
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedContacts, setSelectedContacts] =
         useState<Contact[]>([])
     const [isCreating, setIsCreating] = useState(false)
     const [createError, setCreateError] = useState<
+        string | null
+    >(null)
+    const [successMessage, setSuccessMessage] = useState<
         string | null
     >(null)
 
@@ -60,7 +66,7 @@ export default function ChatsListWrapper() {
         setCurrentView('chats')
         setGroupData(null)
         setCreateError(null)
-        setChatsListKey((prev) => prev + 1) // Принудительное обновление списка чатов
+        setChatsListKey((prev) => prev + 1)
     }
 
     // Обработчик возврата из списка участников группы
@@ -80,7 +86,7 @@ export default function ChatsListWrapper() {
         setCurrentView('chats')
         setChannelData(null)
         setCreateError(null)
-        setChatsListKey((prev) => prev + 1) // Принудительное обновление списка чатов
+        setChatsListKey((prev) => prev + 1)
     }
 
     // Обработчик перехода от создания группы к выбору участников
@@ -135,26 +141,9 @@ export default function ChatsListWrapper() {
 
         try {
             await createGroup(groupData, contacts).unwrap()
-
-            // Формирование строки с именами участников для отображения
-            const memberNames = contacts
-                .map(
-                    (contact) =>
-                        `${contact.firstName} ${contact.lastName}`,
-                )
-                .join(', ')
-
-            alert(
-                `Создана группа:\n\n` +
-                    `Название: ${groupData.name}\n` +
-                    `Описание: ${groupData.description}\n` +
-                    `Тип: ${groupData.type}\n` +
-                    `Фото: ${groupData.photo ? 'Есть' : 'Нет'}\n` +
-                    `Участники (${contacts.length}): ${memberNames}\n\n` +
-                    `Группа успешно создана и добавлена в список чатов!`,
+            setSuccessMessage(
+                `Группа "${groupData.name}" успешно создана!`,
             )
-
-            // Сброс состояний и возврат к списку чатов
             setCurrentView('chats')
             setGroupData(null)
             setSelectedContacts([])
@@ -165,9 +154,6 @@ export default function ChatsListWrapper() {
                     ? error.message
                     : 'Неизвестная ошибка при создании группы'
             setCreateError(errorMessage)
-            alert(
-                `Ошибка при создании группы: ${errorMessage}`,
-            )
         } finally {
             setIsCreating(false)
         }
@@ -188,24 +174,9 @@ export default function ChatsListWrapper() {
                 channelData,
                 contacts,
             ).unwrap()
-
-            const memberNames = contacts
-                .map(
-                    (contact) =>
-                        `${contact.firstName} ${contact.lastName}`,
-                )
-                .join(', ')
-
-            alert(
-                `Создан канал:\n\n` +
-                    `Название: ${channelData.name}\n` +
-                    `Описание: ${channelData.description}\n` +
-                    `Тип: ${channelData.type}\n` +
-                    `Фото: ${channelData.photo ? 'Есть' : 'Нет'}\n` +
-                    `Участники (${contacts.length}): ${memberNames}\n\n` +
-                    `Канал успешно создан и добавлен в список чатов!`,
+            setSuccessMessage(
+                `Канал "${channelData.name}" успешно создан!`,
             )
-
             setCurrentView('chats')
             setChannelData(null)
             setSelectedContacts([])
@@ -216,98 +187,141 @@ export default function ChatsListWrapper() {
                     ? error.message
                     : 'Неизвестная ошибка при создании канала'
             setCreateError(errorMessage)
-            alert(
-                `Ошибка при создании канала: ${errorMessage}`,
-            )
         } finally {
             setIsCreating(false)
         }
     }
 
+    const handleCloseToast = () => setSuccessMessage(null)
+
     // Рендеринг соответствующего компонента в зависимости от текущего представления
-    switch (currentView) {
-        case 'chats':
-            return (
-                <ChatsList
-                    key={`chats-list-${chatsListKey}`}
-                    onCreateGroup={handleCreateGroup}
-                    onCreateChannel={handleCreateChannel}
-                />
-            )
-
-        case 'create-group':
-            return (
-                <CreateGroupForm
-                    onBack={handleBackFromCreateGroup}
-                    onNext={handleNextFromCreateGroup}
-                    initialData={groupData}
-                />
-            )
-
-        case 'group-members':
-            return groupData ? (
-                <GroupMembersList
-                    groupData={groupData}
-                    onBack={handleBackFromGroupMembers}
-                    onFinish={handleFinishGroupCreation}
-                    isCreating={isCreating}
-                    error={createError}
-                />
-            ) : (
-                <div className="p-4">
-                    <p>Ошибка: данные группы не найдены</p>
-                    <button
-                        onClick={() =>
-                            setCurrentView('chats')
+    const renderView = () => {
+        switch (currentView) {
+            case 'chats':
+                return (
+                    <ChatsList
+                        key={`chats-list-${chatsListKey}`}
+                        onCreateGroup={handleCreateGroup}
+                        onCreateChannel={
+                            handleCreateChannel
                         }
-                        className="mt-4 rounded bg-gray-main px-4 py-2"
-                    >
-                        Вернуться к чатам
-                    </button>
-                </div>
-            )
+                        onOpenInfoPanel={onOpenInfoPanel}
+                    />
+                )
 
-        case 'create-channel':
-            return (
-                <CreateChannelForm
-                    onBack={handleBackFromCreateChannel}
-                    onNext={handleNextFromCreateChannel}
-                    initialData={channelData}
-                />
-            )
+            case 'create-group':
+                return (
+                    <CreateGroupForm
+                        onBack={handleBackFromCreateGroup}
+                        onNext={handleNextFromCreateGroup}
+                        initialData={groupData}
+                    />
+                )
 
-        case 'channel-members':
-            return channelData ? (
-                <ChannelMembersList
-                    channelData={channelData}
-                    onBack={handleBackFromChannelMembers}
-                    onFinish={handleFinishChannelCreation}
-                    isCreating={isCreating}
-                    error={createError}
-                />
-            ) : (
-                <div className="p-4">
-                    <p>
-                        Ошибка: название канала не найдено
-                    </p>
-                    <button
-                        onClick={() =>
-                            setCurrentView('chats')
+            case 'group-members':
+                return groupData ? (
+                    <GroupMembersList
+                        groupData={groupData}
+                        onBack={handleBackFromGroupMembers}
+                        onFinish={handleFinishGroupCreation}
+                        isCreating={isCreating}
+                        error={createError}
+                    />
+                ) : (
+                    <div className="p-4">
+                        <p>
+                            Ошибка: данные группы не найдены
+                        </p>
+                        <button
+                            onClick={() =>
+                                setCurrentView('chats')
+                            }
+                            className={`mt-4 rounded bg-gray-main px-4 py-2`}
+                        >
+                            Вернуться к чатам
+                        </button>
+                    </div>
+                )
+
+            case 'create-channel':
+                return (
+                    <CreateChannelForm
+                        onBack={handleBackFromCreateChannel}
+                        onNext={handleNextFromCreateChannel}
+                        initialData={channelData}
+                    />
+                )
+
+            case 'channel-members':
+                return channelData ? (
+                    <ChannelMembersList
+                        channelData={channelData}
+                        onBack={
+                            handleBackFromChannelMembers
                         }
-                        className="mt-4 rounded bg-gray-main px-4 py-2"
-                    >
-                        Вернуться к чатам
-                    </button>
-                </div>
-            )
+                        onFinish={
+                            handleFinishChannelCreation
+                        }
+                        isCreating={isCreating}
+                        error={createError}
+                    />
+                ) : (
+                    <div className="p-4">
+                        <p>
+                            Ошибка: название канала не
+                            найдено
+                        </p>
+                        <button
+                            onClick={() =>
+                                setCurrentView('chats')
+                            }
+                            className={`mt-4 rounded bg-gray-main px-4 py-2`}
+                        >
+                            Вернуться к чатам
+                        </button>
+                    </div>
+                )
 
-        default:
-            return (
-                <ChatsList
-                    key={`chats-list-default-${chatsListKey}`}
-                    onCreateGroup={handleCreateGroup}
-                    onCreateChannel={handleCreateChannel}
-                />
-            )
+            default:
+                return (
+                    <ChatsList
+                        key={`chats-list-default-${chatsListKey}`}
+                        onCreateGroup={handleCreateGroup}
+                        onCreateChannel={
+                            handleCreateChannel
+                        }
+                        onOpenInfoPanel={onOpenInfoPanel}
+                    />
+                )
+        }
     }
+
+    return (
+        <>
+            {renderView()}
+
+            {/* Уведомление об успешном создании */}
+            {successMessage && (
+                <div
+                    className={`
+                      fixed right-4 bottom-4 z-50 rounded-lg bg-green-500 p-4
+                      text-white shadow-lg
+                    `}
+                >
+                    <div className="flex items-center gap-2">
+                        <span>{successMessage}</span>
+                        <button
+                            onClick={handleCloseToast}
+                            className={`
+                              ml-2 text-white
+                              hover:text-gray-200
+                            `}
+                        >
+                            ×
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
+    )
 }
