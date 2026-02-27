@@ -77,7 +77,7 @@ export default function TestComponentsPage() {
                         name="Влад Ляшев"
                         mode="contact"
                         statusText="в сети"
-                        isOnline
+                        isOnline={true}
                     />
                 </div>
 
