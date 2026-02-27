@@ -317,7 +317,7 @@ export default function PersonalChatSidebar({
                     <div
                         className={`
                           absolute right-0 bottom-0 left-0 rounded-b-md
-                          bg-gradient-to-t from-black/70 to-transparent p-4
+                          bg-linear-to-t from-black/70 to-transparent p-4
                         `}
                     >
                         <h3 className="text-2xl font-semibold text-white">
@@ -376,7 +376,7 @@ export default function PersonalChatSidebar({
                     </div>
 
                     {/* Блок информации о контакте */}
-                    <div className="bg-white py-4">
+                    <div className="rounded-md bg-white py-4">
                         <div className="space-y-4">
                             {/* Никнейм (обязательный) - всегда показываем */}
                             <div
@@ -535,7 +535,7 @@ export default function PersonalChatSidebar({
                             )}
 
                             {/* О себе (если есть) */}
-                            {contact.patronymic && (
+                            {contact.additionalInformation && (
                                 <>
                                     <div className="flex min-h-14 flex-col">
                                         <span className="text-xs text-text-gray">
@@ -548,7 +548,7 @@ export default function PersonalChatSidebar({
                                             `}
                                         >
                                             {
-                                                contact.patronymic
+                                                contact.additionalInformation
                                             }
                                         </span>
                                     </div>
