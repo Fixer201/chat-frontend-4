@@ -57,9 +57,7 @@ export default function ContactsPage() {
                   lg:w-96
                 `}
             >
-                <ContactsList
-                    onContactSelect={handleContactSelect}
-                />
+                <ContactsList />
             </div>
 
             {/* Правая колонка - пустой state (скрыт на mobile) */}

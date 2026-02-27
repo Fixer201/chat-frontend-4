@@ -25,6 +25,8 @@ import Cookies from 'js-cookie'
 import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 import { Spinner } from '@shared/ui/Spinner'
 import { useChats } from '@shared/hooks/useChats'
+import { useAppSelector } from '@redux/store'
+import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -242,7 +244,6 @@ export default function ChatRoom({
     const handleCancelReply = () => {
         setReplyingMessage(null)
     }
-
 
     const isLocalChat = chat.isTemporary === true
     /**
@@ -674,7 +675,6 @@ export default function ChatRoom({
                     }`}
                     toUserId={chat.chat.uid}
                     chatKey={chat.chatKey}
-                    chatType={chat.chatType}
                     editingMessage={editingMessage}
                     replyingMessage={replyingMessage}
                     onCancelEdit={handleCancelEdit}

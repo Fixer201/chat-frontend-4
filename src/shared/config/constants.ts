@@ -24,6 +24,7 @@ export const DEFAULT_AVATAR =
 export const ContactsListDB: Contact[] = [
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         username: 'string',
         nickname: '@vlad',
         phone: '987654321',
@@ -42,6 +43,7 @@ export const ContactsListDB: Contact[] = [
     },
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa9',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa9',
         username: 'string',
         nickname: 'string',
         phone: '9132363070',
@@ -60,6 +62,7 @@ export const ContactsListDB: Contact[] = [
     },
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa8',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa8',
         username: 'string',
         nickname: 'string',
         phone: '777777777',
@@ -79,6 +82,7 @@ export const ContactsListDB: Contact[] = [
 
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa7',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa7',
         username: 'string',
         nickname: '@egor',
         phone: 'string',
@@ -98,6 +102,7 @@ export const ContactsListDB: Contact[] = [
 
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb1',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb1',
         username: 'string',
         nickname: 'string',
         phone: 'string',
@@ -117,6 +122,7 @@ export const ContactsListDB: Contact[] = [
 
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb2',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb2',
         username: 'string',
         nickname: 'string',
         phone: '91323655489',
@@ -136,6 +142,7 @@ export const ContactsListDB: Contact[] = [
 
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb3',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb3',
         username: 'string',
         nickname: 'string',
         phone: '986525887',
@@ -155,6 +162,7 @@ export const ContactsListDB: Contact[] = [
 
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb9',
+        userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb9',
         username: 'string',
         nickname: 'string',
         phone: 'string',
@@ -173,6 +181,7 @@ export const ContactsListDB: Contact[] = [
     },
     {
         uid: '3fa85f64-5717-4562-b3fc-bfsgnshgfn5165',
+        userUid: '3fa85f64-5717-4562-b3fc-bfsgnshgfn5165',
         username: 'string',
         nickname: 'string',
         phone: 'string',
@@ -191,6 +200,8 @@ export const ContactsListDB: Contact[] = [
     },
     {
         uid: '3fa85f64-5717-4562-b3fc-fhsdgnhs453543fdh',
+        userUid:
+            '3fa85f64-5717-4562-b3fc-fhsdgnhs453543fdh',
         username: 'string',
         nickname: 'string',
         phone: 'string',
