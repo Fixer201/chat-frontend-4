@@ -36,6 +36,7 @@ export default function ChatHeader({
     onSearchClose,
     currentMatchIndex,
     totalSearchResults = 0,
+    onSidebarOpen,
 }: Readonly<{
     chat: ChatItem
     onBack?: () => void
@@ -48,6 +49,7 @@ export default function ChatHeader({
     onSearchClose?: () => void
     currentMatchIndex?: number | null
     totalSearchResults?: number
+    onSidebarOpen?: (contact: Contact) => void
 }>) {
     // Получаем свежие данные контакта по UID (теперь типа Contact)
     const shouldLoadData =
@@ -124,7 +126,21 @@ export default function ChatHeader({
             `}
         >
             <div className="flex items-center justify-between gap-2">
-                <div className="flex flex-row items-center gap-4">
+                <div
+                    className="flex flex-row items-center gap-4"
+                    onKeyDown={(e) => {
+                        if (
+                            e.key === 'Enter' ||
+                            e.key === ' '
+                        ) {
+                            onSidebarOpen?.(currentContact)
+                        }
+                    }}
+                    onClick={() =>
+                        onSidebarOpen?.(currentContact)
+                    }
+                    role="button"
+                >
                     {onBack && (
                         <button
                             onClick={onBack}
