@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext } from 'react'
-import { useWebSocketChat } from '@shared/hooks/useWebSocketChat'
+import { useWebSocketChat } from '@shared/hooks/websocket'
 import {
     WebSocketContextType,
     WebSocketProviderProps,
