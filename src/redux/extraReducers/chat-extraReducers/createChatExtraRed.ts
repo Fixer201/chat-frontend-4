@@ -2,16 +2,22 @@ import {
     createAsyncThunk,
     ActionReducerMapBuilder,
 } from '@reduxjs/toolkit'
-import Cookies from 'js-cookie' // импорт для токенов
+import Cookies from 'js-cookie'
 import { transformFromApi } from '@shared/lib/transformChatData'
 import {
     ApiChatItem,
     ChatItem,
     ChatsState,
 } from '@shared/types/chat'
-import { Contact } from '@shared/types/contact'
+import {
+    Contact,
+    GroupParticipant,
+} from '@shared/types/contact'
 import { onNextProps } from '@shared/types/createGroup'
 import { generateLocalMockChatItems } from '@shared/lib/test-mock-data/chat-mock-data'
+import { addChatToStorage } from '@shared/lib/localStorageChats'
+import { saveGroupParticipants } from '@shared/lib/localStorageGroupParticipants'
+import { contactToGroupParticipant } from '@shared/lib/participantUtils'
 import { RootState } from '@redux/store'
 
 // Типы для payload при создании группы и канала
@@ -43,7 +49,6 @@ interface Participant {
     full_name: string
 }
 
-const LOCAL_CHATS_STORAGE_KEY = 'localChats'
 const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 
 const persistLocalChats = (state: ChatsState) => {
@@ -58,7 +63,7 @@ const persistLocalChats = (state: ChatsState) => {
                 settings: state.chatSettings[chat.id],
             }))
         window.localStorage.setItem(
-            LOCAL_CHATS_STORAGE_KEY,
+            'localChats',
             JSON.stringify(localChats),
         )
     } catch (error) {
@@ -81,6 +86,18 @@ const contactToParticipant = (
         'Участник',
 })
 
+// Создание временного URL для файла с изображением
+const createPhotoUrl = (
+    photo: File | null,
+): string | null => {
+    if (!photo) return null
+    try {
+        return URL.createObjectURL(photo)
+    } catch {
+        return null
+    }
+}
+
 // Создание моковых данных чата на основе переданных параметров
 const createMockChatFromResponse = (
     name: string,
@@ -97,33 +114,29 @@ const createMockChatFromResponse = (
     const mockChats = generateLocalMockChatItems(1)
     const baseMockChat = mockChats[0]
 
-    // Генерация уникального ID для нового чата
     const uniqueId =
         Math.floor(Date.now() / 1000) * 1000 +
         Math.floor(Math.random() * 1000)
 
-    // Преобразование контактов в участников чата
     const participants: Participant[] = members.map(
         contactToParticipant,
     )
 
-    // Определение URL аватарки с fallback на стандартные иконки
     let avatarUrl = photoUrl
     if (!avatarUrl) {
         if (chatType.includes('group')) {
-            avatarUrl = '/images/chatHeader/userAvatar.svg'
+            avatarUrl = '/images/chatHeader/groupAvatar.svg'
         } else if (chatType.includes('channel')) {
-            avatarUrl = '/images/chatHeader/userAvatar.svg'
+            avatarUrl =
+                '/images/chatHeader/channelAvatar.svg'
         } else {
             avatarUrl = '/images/chatHeader/userAvatar.svg'
         }
     }
     const avatarWebpUrl = avatarUrl
 
-    // Создание базового объекта чата, если нет моковых данных
     if (!baseMockChat) {
         const now = Math.floor(Date.now() / 1000)
-
         return {
             id: uniqueId,
             chat: {
@@ -159,14 +172,8 @@ const createMockChatFromResponse = (
             created_at: Date.now().toString(),
             updated_at: Date.now().toString(),
             last_activity_at: now,
-            last_seen_message: {
-                id: 0,
-                uid: '',
-            },
-            first_new_message: {
-                id: 0,
-                uid: '',
-            },
+            last_seen_message: { id: 0, uid: '' },
+            first_new_message: { id: 0, uid: '' },
             last_message: {
                 id: 0,
                 uid: '',
@@ -190,7 +197,6 @@ const createMockChatFromResponse = (
         }
     }
 
-    // Модификация существующих моковых данных
     const modifiedMockChat: ApiChatItem = {
         ...baseMockChat,
         id: uniqueId,
@@ -216,54 +222,122 @@ const createMockChatFromResponse = (
                       : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
         },
     }
-
     return modifiedMockChat
 }
 
-// Thunk для создания группы с обработкой ошибок через rejectWithValue
+// Thunk для создания группы (API + fallback на моки)
 export const createGroup = createAsyncThunk<
     ChatWithSettings,
     CreateGroupPayload,
-    { rejectValue: string }
+    { rejectValue: string; state: RootState }
 >(
     'chats/createGroup',
-    async ({ groupData, members }, { rejectWithValue }) => {
+    async (
+        { groupData, members },
+        { rejectWithValue, getState },
+    ) => {
         try {
             const accessToken = Cookies.get('access_token')
-            if (!accessToken)
-                throw new Error('AccessTokenNotFound')
+            let apiChat: ApiChatItem | null = null
+            let apiError = false
 
-            const chatType =
-                groupData.type === 'open'
-                    ? 'public-group'
-                    : 'private-group'
-            const body = {
-                name: groupData.name,
-                description: groupData.description,
-                type: chatType,
-                members: members.map((m) => ({
-                    uid: m.uid,
-                })),
-                // photo: groupData.photo (если API поддерживает файл, добавьте FormData)
+            if (accessToken) {
+                try {
+                    const chatType =
+                        groupData.type === 'open'
+                            ? 'public-group'
+                            : 'private-group'
+                    const body = {
+                        name: groupData.name,
+                        description: groupData.description,
+                        type: chatType,
+                        members: members.map((m) => ({
+                            uid: m.uid,
+                        })),
+                    }
+
+                    const response = await fetch(
+                        '/api/v1/chat/create-group',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                                Authorization: `Bearer ${accessToken}`,
+                            },
+                            body: JSON.stringify(body),
+                        },
+                    )
+                    if (response.ok) {
+                        apiChat = await response.json()
+                    } else {
+                        apiError = true
+                    }
+                } catch {
+                    apiError = true
+                }
             }
 
-            const response = await fetch(
-                '/api/v1/chat/create-group',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: JSON.stringify(body),
-                },
-            )
-            if (!response.ok)
-                throw new Error('Failed to create group')
+            let finalApiChat: ApiChatItem
+            if (!apiError && apiChat) {
+                finalApiChat = apiChat
+            } else {
+                // Fallback на мок
+                const photoUrl = createPhotoUrl(
+                    groupData.photo,
+                )
+                const chatType =
+                    groupData.type === 'open'
+                        ? 'public-group'
+                        : 'private-group'
+                finalApiChat = createMockChatFromResponse(
+                    groupData.name,
+                    groupData.description,
+                    chatType,
+                    photoUrl,
+                    members,
+                )
+            }
 
-            const data: ApiChatItem = await response.json()
+            // Сохраняем в localStorage
+            addChatToStorage(finalApiChat)
+
+            // Сохраняем детальных участников (для групп/каналов)
+            const detailedParticipants: GroupParticipant[] =
+                members.map((contact, index) =>
+                    contactToGroupParticipant(
+                        contact,
+                        index === 0,
+                    ),
+                )
+            const currentUser: GroupParticipant = {
+                uid: 'current-user-uid', // TODO: заменить на реальный uid
+                firstName: 'Я',
+                lastName: '',
+                avatarUrl:
+                    '/images/chatHeader/userAvatar.svg',
+                avatarWebpUrl:
+                    '/images/chatHeader/userAvatar.svg',
+                isOwner: true,
+                isBlocked: false,
+                isOnline: true,
+                wasOnlineAt: Date.now(),
+                isInContacts: true,
+            }
+            if (
+                !detailedParticipants.some(
+                    (p) => p.uid === currentUser.uid,
+                )
+            ) {
+                detailedParticipants.unshift(currentUser)
+            }
+            saveGroupParticipants(
+                finalApiChat.chat_key,
+                detailedParticipants,
+            )
+
             const transformedData =
-                transformFromApi<ApiChatItem>(data)
+                transformFromApi<ApiChatItem>(finalApiChat)
             const enhancedChat: ChatItem = {
                 ...transformedData,
                 chat: {
@@ -282,7 +356,7 @@ export const createGroup = createAsyncThunk<
                     originalUnreadCount: 0,
                 },
             }
-        } catch (error: unknown) {
+        } catch (error) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
@@ -292,55 +366,147 @@ export const createGroup = createAsyncThunk<
     },
 )
 
-// Thunk для создания чата
-// export const createChat = createAsyncThunk<
-//     ChatWithSettings,
-//     string,
-//     { rejectValue: string }
-// >(
-//     'chats/createChat',
-//     async (toUserId, { rejectWithValue }) => {
-//         try {
-//             const accessToken = Cookies.get('access_token')
-//             if (!accessToken)
-//                 throw new Error('AccessTokenNotFound')
-//             const response = await fetch(
-//                 '/api/v1/chat/create-chat/',
-//                 {
-//                     method: 'POST',
-//                     headers: {
-//                         'Content-Type': 'application/json',
-//                         Authorization: `Bearer ${accessToken}`,
-//                     },
-//                     body: JSON.stringify({
-//                         to_user_id: toUserId,
-//                     }),
-//                 },
-//             )
-//             if (!response.ok)
-//                 throw new Error('Failed to create chat')
-//             const data: ApiChatItem = await response.json()
-//             const transformedData = transformFromApi(data)
-//             return {
-//                 chat: transformedData,
-//                 settings: {
-//                     isFavorite: false,
-//                     isChatRead: true,
-//                     notificationsEnabled: true,
-//                     isDeleted: false,
-//                     originalUnreadCount: 0,
-//                 },
-//             }
-//         } catch (error) {
-//             return rejectWithValue(
-//                 error instanceof Error
-//                     ? error.message
-//                     : 'Ошибка создания чата',
-//             )
-//         }
-//     },
-// )
+// Thunk для создания канала (API + fallback на моки)
+export const createChannel = createAsyncThunk<
+    ChatWithSettings,
+    CreateChannelPayload,
+    { rejectValue: string; state: RootState }
+>(
+    'chats/createChannel',
+    async (
+        { channelData, members },
+        { rejectWithValue, getState },
+    ) => {
+        try {
+            const accessToken = Cookies.get('access_token')
+            let apiChat: ApiChatItem | null = null
+            let apiError = false
 
+            if (accessToken) {
+                try {
+                    const chatType =
+                        channelData.type === 'public'
+                            ? 'public-channel'
+                            : 'private-channel'
+                    const body = {
+                        name: channelData.name,
+                        description:
+                            channelData.description,
+                        type: chatType,
+                        members: members.map((m) => ({
+                            uid: m.uid,
+                        })),
+                    }
+
+                    const response = await fetch(
+                        '/api/v1/chat/create-channel',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                                Authorization: `Bearer ${accessToken}`,
+                            },
+                            body: JSON.stringify(body),
+                        },
+                    )
+                    if (response.ok) {
+                        apiChat = await response.json()
+                    } else {
+                        apiError = true
+                    }
+                } catch {
+                    apiError = true
+                }
+            }
+
+            let finalApiChat: ApiChatItem
+            if (!apiError && apiChat) {
+                finalApiChat = apiChat
+            } else {
+                const photoUrl = createPhotoUrl(
+                    channelData.photo,
+                )
+                const chatType =
+                    channelData.type === 'public'
+                        ? 'public-channel'
+                        : 'private-channel'
+                finalApiChat = createMockChatFromResponse(
+                    channelData.name,
+                    channelData.description,
+                    chatType,
+                    photoUrl,
+                    members,
+                )
+            }
+
+            addChatToStorage(finalApiChat)
+
+            // Сохраняем участников для канала (как GroupParticipant)
+            const detailedParticipants: GroupParticipant[] =
+                members.map((contact, index) =>
+                    contactToGroupParticipant(
+                        contact,
+                        index === 0,
+                    ),
+                )
+            const currentUser: GroupParticipant = {
+                uid: 'current-user-uid',
+                firstName: 'Я',
+                lastName: '',
+                avatarUrl:
+                    '/images/chatHeader/userAvatar.svg',
+                avatarWebpUrl:
+                    '/images/chatHeader/userAvatar.svg',
+                isOwner: true,
+                isBlocked: false,
+                isOnline: true,
+                wasOnlineAt: Date.now(),
+                isInContacts: true,
+            }
+            if (
+                !detailedParticipants.some(
+                    (p) => p.uid === currentUser.uid,
+                )
+            ) {
+                detailedParticipants.unshift(currentUser)
+            }
+            saveGroupParticipants(
+                finalApiChat.chat_key,
+                detailedParticipants,
+            )
+
+            const transformedData =
+                transformFromApi<ApiChatItem>(finalApiChat)
+            const enhancedChat: ChatItem = {
+                ...transformedData,
+                chat: {
+                    ...transformedData.chat,
+                    isInContacts: true,
+                },
+            }
+
+            return {
+                chat: enhancedChat,
+                settings: {
+                    isFavorite: false,
+                    isChatRead: true,
+                    notificationsEnabled: true,
+                    isDeleted: false,
+                    originalUnreadCount: 0,
+                },
+            }
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Ошибка при создании канала'
+            return rejectWithValue(errorMessage)
+        }
+    },
+)
+
+// Thunk для создания личного чата
 export const createChat = createAsyncThunk<
     ChatWithSettings,
     string,
@@ -389,24 +555,22 @@ export const createChat = createAsyncThunk<
                     },
                 }
             }
-            // Создаем локальный моковый чат для личного общения
+
             // Локальный мок для личного чата (используется до появления реального чата с сервера)
             const mockChatData = createMockChatFromResponse(
-                contactDisplayName, // Имя чата
-                '', // Описание (пустое)
-                'chat', // Тип для личного чата
+                contactDisplayName,
+                '',
+                'chat',
                 contact?.avatarUrl ||
                     contact?.avatarWebpUrl ||
                     contact?.avatar ||
-                    null, // Фото (нет)
-                [], // Участники (пусто для личного)
+                    null,
+                [],
             )
 
-            // Трансформация в ChatItem
             const transformedData =
                 transformFromApi(mockChatData)
 
-            // Адаптация для личного чата: установите chat.chat.uid = toUserId (UID собеседника)
             // Прокидываем данные контакта, чтобы в списке чатов сразу было имя и аватар
             const enhancedChat: ChatItem = {
                 ...transformedData,
@@ -415,7 +579,7 @@ export const createChat = createAsyncThunk<
                 name: contactDisplayName,
                 chat: {
                     ...transformedData.chat,
-                    uid: toUserId, // UID пользователя
+                    uid: toUserId,
                     username:
                         contact?.username ||
                         transformedData.chat.username,
@@ -440,7 +604,7 @@ export const createChat = createAsyncThunk<
                     avatarWebpUrl:
                         contact?.avatarWebpUrl ||
                         transformedData.chat.avatarWebpUrl,
-                    isInContacts: true, // Предполагаем, что контакт добавлен
+                    isInContacts: true,
                 },
             }
 
@@ -464,82 +628,7 @@ export const createChat = createAsyncThunk<
     },
 )
 
-// Thunk для создания канала с реальным API
-export const createChannel = createAsyncThunk<
-    ChatWithSettings,
-    CreateChannelPayload,
-    { rejectValue: string }
->(
-    'chats/createChannel',
-    async (
-        { channelData, members },
-        { rejectWithValue },
-    ) => {
-        try {
-            const accessToken = Cookies.get('access_token')
-            if (!accessToken)
-                throw new Error('AccessTokenNotFound')
-
-            const chatType =
-                channelData.type === 'public'
-                    ? 'public-channel'
-                    : 'private-channel'
-            const body = {
-                name: channelData.name,
-                description: channelData.description,
-                type: chatType,
-                members: members.map((m) => ({
-                    uid: m.uid,
-                })),
-                // photo: channelData.photo
-            }
-
-            const response = await fetch(
-                '/api/v1/chat/create-channel',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: JSON.stringify(body),
-                },
-            )
-            if (!response.ok)
-                throw new Error('Failed to create channel')
-
-            const data: ApiChatItem = await response.json()
-            const transformedData =
-                transformFromApi<ApiChatItem>(data)
-            const enhancedChat: ChatItem = {
-                ...transformedData,
-                chat: {
-                    ...transformedData.chat,
-                    isInContacts: true,
-                },
-            }
-
-            return {
-                chat: enhancedChat,
-                settings: {
-                    isFavorite: false,
-                    isChatRead: true,
-                    notificationsEnabled: true,
-                    isDeleted: false,
-                    originalUnreadCount: 0,
-                },
-            }
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'Ошибка при создании канала'
-            return rejectWithValue(errorMessage)
-        }
-    },
-)
-
-// Обработчики состояний для thunk'ов создания чатов (без изменений)
+// Обработчики состояний для thunk'ов создания чатов
 export const handleCreateChat = (
     builder: ActionReducerMapBuilder<ChatsState>,
 ) => {
@@ -556,7 +645,6 @@ export const handleCreateChat = (
                 (chat) =>
                     chat.id === action.payload.chat.id,
             )
-
             if (existingIndex === -1) {
                 state.items.unshift(action.payload.chat)
             } else {
@@ -581,6 +669,7 @@ export const handleCreateChat = (
             }
 
             state.selectedChatId = action.payload.chat.id
+            persistLocalChats(state)
         })
         .addCase(createGroup.rejected, (state, action) => {
             state.loading = false
@@ -600,7 +689,6 @@ export const handleCreateChat = (
                     (chat) =>
                         chat.id === action.payload.chat.id,
                 )
-
                 if (existingIndex === -1) {
                     state.items.unshift(action.payload.chat)
                 } else {
@@ -629,6 +717,7 @@ export const handleCreateChat = (
 
                 state.selectedChatId =
                     action.payload.chat.id
+                persistLocalChats(state)
             },
         )
         .addCase(
@@ -638,13 +727,11 @@ export const handleCreateChat = (
                 state.error = action.payload as string
             },
         )
-
         .addCase(createChat.pending, (state) => {
             state.loading = true
             state.error = null
         })
         .addCase(createChat.fulfilled, (state, action) => {
-            // чат добавляется в начало списка для немедленного отображения
             state.loading = false
             state.error = null
             const existingIndex = state.items.findIndex(
@@ -675,7 +762,6 @@ export const handleCreateChat = (
             }
 
             state.selectedChatId = action.payload.chat.id
-
             persistLocalChats(state)
         })
         .addCase(createChat.rejected, (state, action) => {

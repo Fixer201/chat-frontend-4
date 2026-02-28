@@ -3,26 +3,22 @@ import {
     useEffect,
     useMemo,
     useState,
+    useRef,
 } from 'react'
 import type { Area } from 'react-easy-crop'
 
 interface UseAvatarCropperParams {
     imageFile?: File | null
     initialZoom?: number
-    initialCrop?: { x: number; y: number } // Добавляем начальный crop
-    initialCroppedAreaPixels?: Area | null // Добавляем начальную область кадрировани
-}
-
-interface CropState {
-    x: number
-    y: number
+    initialCrop?: { x: number; y: number }
+    initialCroppedAreaPixels?: Area | null
 }
 
 export function useAvatarCropper({
     imageFile,
     initialZoom = 1.2,
-    initialCrop = { x: 0, y: 0 }, // Добавляем дефолтное значение
-    initialCroppedAreaPixels = null, // Добавляем дефолтное значение
+    initialCrop = { x: 0, y: 0 },
+    initialCroppedAreaPixels = null,
 }: UseAvatarCropperParams) {
     const [localFile, setLocalFile] = useState<File | null>(
         null,
@@ -30,10 +26,15 @@ export function useAvatarCropper({
     const [imageSrc, setImageSrc] = useState<string | null>(
         null,
     )
-    const [crop, setCrop] = useState<CropState>(initialCrop)
+    const [crop, setCrop] = useState<{
+        x: number
+        y: number
+    }>(initialCrop)
     const [zoom, setZoom] = useState<number>(initialZoom)
     const [croppedAreaPixels, setCroppedAreaPixels] =
         useState<Area | null>(initialCroppedAreaPixels)
+
+    const prevFileRef = useRef<File | null>(null)
 
     const reset = useCallback(() => {
         setLocalFile(null)
@@ -61,14 +62,28 @@ export function useAvatarCropper({
 
             if (!cancelled) {
                 setImageSrc(dataUrl)
-                // Если это новый файл (не тот же самый), сбрасываем параметры к дефолтным
-                // Можно добавить проверку, если нужно сохранять параметры для того же файла
-                // const isSameFile = imageFile && localFile && imageFile.name === localFile.name
-                setZoom(initialZoom)
-                setCrop(initialCrop)
-                setCroppedAreaPixels(
-                    initialCroppedAreaPixels,
-                )
+
+                // Проверяем, изменился ли файл
+                const isNewFile =
+                    !prevFileRef.current ||
+                    prevFileRef.current.name !==
+                        activeFile.name ||
+                    prevFileRef.current.size !==
+                        activeFile.size ||
+                    prevFileRef.current.lastModified !==
+                        activeFile.lastModified
+
+                if (isNewFile) {
+                    // Для нового файла сбрасываем параметры
+                    setZoom(initialZoom)
+                    setCrop(initialCrop)
+                    setCroppedAreaPixels(
+                        initialCroppedAreaPixels,
+                    )
+                }
+                // Для того же файла оставляем текущие параметры (они могли быть изменены ранее)
+
+                prevFileRef.current = activeFile
             }
         }
 
@@ -93,14 +108,13 @@ export function useAvatarCropper({
 
     const handleFileChange = useCallback(
         (file: File) => {
-            if (!file.type.startsWith('image/')) {
-                return
-            }
+            if (!file.type.startsWith('image/')) return
             setLocalFile(file)
-            // При изменении файла сбрасываем параметры к начальным
+            // При явной загрузке нового файла сбрасываем параметры
             setZoom(initialZoom)
             setCrop(initialCrop)
             setCroppedAreaPixels(initialCroppedAreaPixels)
+            prevFileRef.current = file
         },
         [
             initialZoom,
@@ -140,7 +154,6 @@ export async function getCroppedImage(
     canvas.width = pixelCrop.width
     canvas.height = pixelCrop.height
 
-    // Область обрезки — круг, поэтому обрезаем по радиусу
     ctx.beginPath()
     ctx.arc(
         pixelCrop.width / 2,

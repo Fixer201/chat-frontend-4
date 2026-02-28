@@ -8,7 +8,7 @@
  *   - Ранее: "ДД.ММ.ГГГГ" (например: "15.10.2023")
  */
 export const formatLastSeen = (
-    lastSeenMs: number,
+    lastSeenMs: number | string | Date,
 ): string => {
     const lastSeen = new Date(lastSeenMs)
     const now = new Date()

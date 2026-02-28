@@ -33,7 +33,7 @@ export interface AvatarCropperProps {
     initialZoom?: number // Начальный зум
     // Добавляем новые пропсы для сохраненного состояния
     initialCrop?: { x: number; y: number } // Сохраненное положение кадрирования
-    initialCroppedAreaPixels?: Area // Сохраненная область кадрирования
+    initialCroppedAreaPixels?: Area | null | undefined // Сохраненная область кадрирования
 }
 
 // Предопределенные стили для кнопки подтверждения

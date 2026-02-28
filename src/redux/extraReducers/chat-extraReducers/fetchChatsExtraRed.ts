@@ -11,6 +11,7 @@ import {
     ChatsState,
     ApiChatItem,
 } from '@shared/types/chat'
+import { loadChatsFromStorage } from '@shared/lib/localStorageChats'
 
 // Расширенный тип чата с настройками
 interface ChatItemWithSettings extends Omit<
@@ -35,7 +36,7 @@ const createChatSettings = (apiChatItem: ApiChatItem) => ({
     originalUnreadCount: apiChatItem.new_message_count || 0,
 })
 
-// Асинхронный thunk для загрузки чатов с сервера (обновлён для поиска и ошибок)
+// Асинхронный thunk для загрузки чатов с сервера (с fallback на localStorage)
 export const fetchChats = createAsyncThunk(
     'chats/fetchChats',
     async (
@@ -47,104 +48,156 @@ export const fetchChats = createAsyncThunk(
     ) => {
         try {
             const accessToken = Cookies.get('access_token')
-            if (!accessToken) {
-                throw new Error('AccessTokenNotFound')
-            }
+            let apiData: ApiChatItem[] | null = null
+            let apiError: string | null = null
 
-            // Относительный URL — запрос проксируется через catch-all route handler
-            // (src/app/api/v1/[...path]/route.ts), который пробрасывает его на Django-бэкенд.
-            // page_size вместо limit — так требует Django REST Framework pagination.
-            let url = `/api/v1/chat/list/?page_size=${count}`
-            if (search)
-                url += `&search=${encodeURIComponent(search)}`
+            if (accessToken) {
+                try {
+                    // Относительный URL — запрос проксируется через catch-all route handler
+                    // (src/app/api/v1/[...path]/route.ts), который пробрасывает его на Django-бэкенд.
+                    // page_size вместо limit — так требует Django REST Framework pagination.
+                    let url = `/api/v1/chat/list/?page_size=${count}`
+                    if (search)
+                        url += `&search=${encodeURIComponent(search)}`
 
-            let response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            })
-
-            if (response.status === 401) {
-                // Попытка refresh token
-                const refreshToken =
-                    Cookies.get('refresh_token')
-                if (refreshToken) {
-                    const refreshResponse = await fetch(
-                        '/api/auth/refresh',
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type':
-                                    'application/json',
-                            },
-                            body: JSON.stringify({
-                                refresh: refreshToken,
-                            }),
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+                            Authorization: `Bearer ${accessToken}`,
                         },
-                    )
-                    if (refreshResponse.ok) {
-                        const data =
-                            await refreshResponse.json()
-                        Cookies.set(
-                            'access_token',
-                            data.access,
-                            { expires: 7 },
-                        )
-                        // Повторный запрос с новым токеном
-                        response = await fetch(url, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type':
-                                    'application/json',
-                                Authorization: `Bearer ${data.access}`,
-                            },
-                        })
+                    })
+
+                    if (response.status === 401) {
+                        // Попытка refresh token
+                        const refreshToken =
+                            Cookies.get('refresh_token')
+                        if (refreshToken) {
+                            const refreshResponse =
+                                await fetch(
+                                    '/api/auth/refresh',
+                                    {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type':
+                                                'application/json',
+                                        },
+                                        body: JSON.stringify(
+                                            {
+                                                refresh:
+                                                    refreshToken,
+                                            },
+                                        ),
+                                    },
+                                )
+                            if (refreshResponse.ok) {
+                                const data =
+                                    await refreshResponse.json()
+                                Cookies.set(
+                                    'access_token',
+                                    data.access,
+                                    {
+                                        expires: 7,
+                                    },
+                                )
+                                // Повторный запрос с новым токеном
+                                const retryResponse =
+                                    await fetch(url, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-Type':
+                                                'application/json',
+                                            Authorization: `Bearer ${data.access}`,
+                                        },
+                                    })
+                                if (retryResponse.ok) {
+                                    const retryData: {
+                                        results: ApiChatItem[]
+                                    } =
+                                        await retryResponse.json()
+                                    apiData =
+                                        retryData.results
+                                } else {
+                                    apiError = `Ошибка API после рефреша: ${retryResponse.status}`
+                                }
+                            } else {
+                                apiError =
+                                    'RefreshTokenExpired'
+                            }
+                        } else {
+                            apiError =
+                                'RefreshTokenNotFound'
+                        }
+                    } else if (response.ok) {
+                        const data: {
+                            results: ApiChatItem[]
+                        } = await response.json()
+                        apiData = data.results
                     } else {
-                        throw new Error(
-                            'RefreshTokenExpired',
-                        )
+                        if (response.status === 414) {
+                            apiError =
+                                'Размер query-параметра превышает лимит.'
+                        } else {
+                            apiError = `Ошибка API: ${response.status} ${response.statusText}`
+                        }
                     }
-                } else {
-                    throw new Error('RefreshTokenNotFound')
+                } catch (err) {
+                    apiError =
+                        err instanceof Error
+                            ? err.message
+                            : 'Сетевая ошибка'
                 }
             }
 
-            if (!response.ok) {
-                if (response.status === 414) {
-                    throw new Error(
-                        'Размер query-параметра превышает установленный лимит.',
-                    )
-                }
-                throw new Error(
-                    `Ошибка API: ${response.status} ${response.statusText}`,
+            // Если API успешно вернул данные, используем их
+            if (apiData && apiData.length > 0) {
+                const validData = apiData.filter(
+                    (item): item is ApiChatItem =>
+                        item !== null &&
+                        item !== undefined &&
+                        item.id !== undefined &&
+                        item.chat !== undefined,
                 )
+
+                const transformedChats = validData.map(
+                    (item) => {
+                        const transformedItem =
+                            transformFromApi<ApiChatItem>(
+                                item,
+                            )
+                        return {
+                            ...transformedItem,
+                            settings:
+                                createChatSettings(item),
+                        } as ChatItemWithSettings
+                    },
+                )
+
+                return transformedChats
             }
 
-            const data: { results: ApiChatItem[] } =
-                await response.json()
-            const validData = data.results.filter(
-                (item): item is ApiChatItem =>
-                    item !== null &&
-                    item !== undefined &&
-                    item.id !== undefined &&
-                    item.chat !== undefined,
-            )
+            // Если API не сработал (нет токена или ошибка), загружаем из localStorage
+            const storedChats = loadChatsFromStorage()
+            if (storedChats && storedChats.length > 0) {
+                const transformedStored = storedChats.map(
+                    (item) => {
+                        const transformedItem =
+                            transformFromApi<ApiChatItem>(
+                                item,
+                            )
+                        return {
+                            ...transformedItem,
+                            settings:
+                                createChatSettings(item),
+                        } as ChatItemWithSettings
+                    },
+                )
+                return transformedStored
+            }
 
-            // Трансформация API данных в формат приложения с добавлением настроек
-            const transformedChats = validData.map(
-                (item) => {
-                    const transformedItem =
-                        transformFromApi<ApiChatItem>(item)
-                    return {
-                        ...transformedItem,
-                        settings: createChatSettings(item),
-                    } as ChatItemWithSettings
-                },
-            )
-
-            return transformedChats
+            // Если ничего нет, возвращаем пустой массив
+            return []
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -155,18 +208,16 @@ export const fetchChats = createAsyncThunk(
     },
 )
 
-// Обработчики состояний для thunk'а загрузки чатов (без изменений)
+// Обработчики состояний для thunk'а загрузки чатов
 export const handleFetchChats = (
     builder: ActionReducerMapBuilder<ChatsState>,
     initialState: ChatsState,
 ) => {
     builder
-        // Обработка состояния загрузки
         .addCase(fetchChats.pending, (state) => {
             state.loading = true
             state.error = null
         })
-        // Обработка успешной загрузки чатов
         .addCase(
             fetchChats.fulfilled,
             (
@@ -190,14 +241,12 @@ export const handleFetchChats = (
                         ? selectedChat.tempContactUid
                         : undefined
 
-                // Разделение данных чата и настроек для хранения в разных структурах
                 const fetchedItems = action.payload.map(
-                    // Деструктуризация для исключения settings из данных чата
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     ({ settings, ...chatData }) => chatData,
                 )
 
-                // Сохраняем локально созданные чаты, которых нет в ответе API
+                // Сохраняем локально созданные чаты, которых нет в ответе
                 const fetchedIds = new Set(
                     fetchedItems.map((chat) => chat.id),
                 )
@@ -261,7 +310,6 @@ export const handleFetchChats = (
                 })
             },
         )
-        // Обработка ошибки загрузки
         .addCase(fetchChats.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload as string

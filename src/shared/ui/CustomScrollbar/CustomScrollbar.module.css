@@ -1,4 +1,5 @@
-/* В CSS добавь: */
+/* @shared/ui/CustomScrollbar/CustomScrollbar.module.css */
+
 .custom-scroll-container {
     position: relative;
     height: 100%;
@@ -21,6 +22,10 @@
     padding-right: 17px;
     margin-right: -17px;
     box-sizing: content-box;
+    /* Предотвращаем браузерный скролл */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
 }
 
 .custom-scroll-container-auto .custom-scroll-content {
@@ -51,6 +56,7 @@
     opacity: 0;
     transition: opacity 0.3s;
     pointer-events: none;
+    background: transparent;
 }
 
 .custom-scroll-container:hover .custom-scrollbar-track {
@@ -72,6 +78,8 @@
         background 0.2s;
     user-select: none;
     touch-action: none;
+    /* Гарантируем что ползунок всегда виден при взаимодействии */
+    will-change: transform, opacity;
 }
 
 .custom-scroll-container:hover .custom-scrollbar-thumb {
@@ -86,6 +94,13 @@
     background: #858585;
 }
 
+/* Для активного состояния перетаскивания */
+.custom-scrollbar-thumb.active {
+    opacity: 1 !important;
+    background: #858585 !important;
+    cursor: grabbing !important;
+}
+
 /* Стили для состояния drag */
 body.scrollbar-dragging {
     user-select: none;
@@ -94,4 +109,53 @@ body.scrollbar-dragging {
 
 body.scrollbar-dragging * {
     cursor: grabbing !important;
+}
+
+/* Для тач-устройств */
+@media (hover: none) {
+    .custom-scrollbar-thumb {
+        opacity: 0.5;
+    }
+
+    .custom-scrollbar-track {
+        opacity: 0.1;
+    }
+
+    .custom-scroll-container:hover .custom-scrollbar-thumb {
+        opacity: 0.5;
+    }
+
+    .custom-scroll-container:hover .custom-scrollbar-track {
+        opacity: 0.1;
+    }
+}
+
+/* Анимация для плавного появления */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Классы для програмного управления видимостью */
+.custom-scrollbar-visible .custom-scrollbar-thumb,
+.custom-scrollbar-visible .custom-scrollbar-track {
+    opacity: 1;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.custom-scrollbar-visible .custom-scrollbar-track {
+    background: #c5c5c5;
+    opacity: 0.3;
+}
+
+/* Скрытие полосы прокрутки (используется при неявных переходах)
+   чтобы во время действия ползунок не был виден */
+.custom-scrollbar-hidden .custom-scrollbar-thumb,
+.custom-scrollbar-hidden .custom-scrollbar-track {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }

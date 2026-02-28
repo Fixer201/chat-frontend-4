@@ -27,11 +27,13 @@ import getAvatarSrc from '@shared/lib/getAvatarSrc'
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
+    onOpenInfoPanel?: (chatId: number) => void
 }
 
 export default React.memo(function ChatsList({
     onCreateGroup,
     onCreateChannel,
+    onOpenInfoPanel,
 }: ChatsListProps) {
     const router = useRouter()
     const contactsMap = useContactsMap()
@@ -195,16 +197,6 @@ export default React.memo(function ChatsList({
         )
     }, [loading, filteredChats.length, searchValue])
 
-    // Загрузка чатов при монтировании и изменении поиска (только если поиск не пустой)
-    // useEffect(() => {
-    //     if (
-    //         debouncedSearchValue.trim() ||
-    //         debouncedSearchValue === ''
-    //     ) {
-    //         loadChats(debouncedSearchValue, 20)
-    //     }
-    // }, [loadChats, debouncedSearchValue])
-
     return (
         <>
             <div className="flex h-(--screen-height-list) min-h-0 flex-col">
@@ -241,7 +233,7 @@ export default React.memo(function ChatsList({
                         <div className="flex h-full items-center justify-center">
                             <Spinner />
                         </div>
-                    ) : error ? ( // Обработка ошибки в render
+                    ) : error ? (
                         (() => {
                             if (
                                 error.includes(
@@ -251,7 +243,7 @@ export default React.memo(function ChatsList({
                                     'AccessTokenNotFound',
                                 )
                             ) {
-                                router.push('/auth/login') // Редирект на логин
+                                router.push('/auth/login')
                             } else if (
                                 error.includes('414')
                             ) {
@@ -332,9 +324,8 @@ export default React.memo(function ChatsList({
                                         // Пропускаем удаленные чаты
                                         if (
                                             settings.isDeleted
-                                        ) {
+                                        )
                                             return null
-                                        }
 
                                         // Расчет количества непрочитанных сообщений
                                         let badgeCount:
@@ -362,27 +353,44 @@ export default React.memo(function ChatsList({
                                                       chat.chat,
                                                   )
 
-                                        const contactName =
-                                            contactMatch
-                                                ? `${contactMatch.firstName || ''} ${contactMatch.lastName || ''}`.trim() ||
-                                                  contactMatch.nickname ||
-                                                  contactMatch.phone ||
-                                                  chat.chat
-                                                      .nickname ||
-                                                  chat.chat
-                                                      .username
-                                                : ''
-                                        const fallbackChatName =
-                                            `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
-                                            chat.chat
-                                                .nickname ||
-                                            chat.chat
-                                                .username
-                                        // Отображаемое имя: предпочитаем chat.name, затем контакт/профиль
-                                        const displayName =
-                                            chat.name ||
-                                            contactName ||
-                                            fallbackChatName
+                                        let displayName =
+                                            'Неизвестный чат'
+                                        if (
+                                            chat.chatType.includes(
+                                                'group',
+                                            ) ||
+                                            chat.chatType.includes(
+                                                'channel',
+                                            )
+                                        ) {
+                                            displayName =
+                                                chat.name ||
+                                                'Без названия'
+                                        } else {
+                                            const contactName =
+                                                contactMatch
+                                                    ? `${contactMatch.firstName || ''} ${contactMatch.lastName || ''}`.trim() ||
+                                                      contactMatch.nickname ||
+                                                      contactMatch.phone ||
+                                                      chat
+                                                          .chat
+                                                          .nickname ||
+                                                      chat
+                                                          .chat
+                                                          .username
+                                                    : ''
+                                            const fallbackChatName =
+                                                `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
+                                                chat.chat
+                                                    .nickname ||
+                                                chat.chat
+                                                    .username
+                                            displayName =
+                                                contactName ||
+                                                fallbackChatName ||
+                                                chat.name ||
+                                                'Неизвестный чат'
+                                        }
 
                                         const contactLastSeenMs =
                                             contactMatch?.wasOnlineAt
@@ -414,22 +422,20 @@ export default React.memo(function ChatsList({
                                                 'group',
                                             )
                                         ) {
-                                            // Для групп: отображаем отправителя и сообщение
                                             const senderName =
                                                 chat
                                                     .lastMessage
                                                     ?.fromUser ||
-                                                'Пользователь' // Добавлена проверка на null
+                                                'Пользователь'
                                             messagePreview =
                                                 chat.lastMessage
                                                     ? `${senderName}: ${chat.lastMessage.content}`
-                                                    : 'Нет сообщений' // Добавлена проверка
+                                                    : 'Нет сообщений'
                                         } else if (
                                             chat.chatType.includes(
                                                 'channel',
                                             )
                                         ) {
-                                            // Для каналов: последнее сообщение → описание → fallback
                                             const lastContent =
                                                 chat
                                                     .lastMessage
@@ -449,8 +455,6 @@ export default React.memo(function ChatsList({
                                                     'Нет сообщений'
                                             }
                                         } else {
-                                            // Для личных чатов: отображаем текст последнего сообщения
-                                            // Убираем мок "Создана ..." для личных чатов, если он остался в данных
                                             const lastContent =
                                                 chat
                                                     .lastMessage
@@ -462,16 +466,19 @@ export default React.memo(function ChatsList({
                                                 )
                                                     ? 'Нет сообщений'
                                                     : lastContent ||
-                                                      'Нет сообщений' // Добавлена проверка
+                                                      'Нет сообщений'
                                         }
+
                                         return (
                                             <ChatListItem
+                                                key={
+                                                    chat.id
+                                                }
                                                 src={
                                                     avatarSrc
                                                 }
                                                 name={
-                                                    displayName ||
-                                                    'Неизвестный чат'
+                                                    displayName
                                                 }
                                                 messagePreview={
                                                     messagePreview
@@ -494,9 +501,6 @@ export default React.memo(function ChatsList({
                                                 }
                                                 unreadCount={
                                                     badgeCount
-                                                }
-                                                key={
-                                                    chat.id
                                                 }
                                                 selected={
                                                     chat.id ===
@@ -548,6 +552,11 @@ export default React.memo(function ChatsList({
                                                         chat
                                                             .chat
                                                             .lastName,
+                                                    )
+                                                }
+                                                onOpenInfoPanel={() =>
+                                                    onOpenInfoPanel?.(
+                                                        chat.id,
                                                     )
                                                 }
                                                 isFavorite={

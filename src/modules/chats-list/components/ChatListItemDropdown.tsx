@@ -21,6 +21,7 @@ interface ChatListItemDropdownProps {
     onMarkAsUnread?: () => void // Обработчик пометки как непрочитанного
     onDeleteChat?: () => void // Обработчик удаления чата
     onAddToContacts?: () => void // Обработчик добавления в контакты
+    onOpenInfoPanel?: () => void
     notificationsEnabled: boolean // Флаг состояния уведомлений
     isFavorite: boolean // Флаг избранного чата
     isChatRead: boolean // Флаг прочитанности чата
@@ -41,6 +42,7 @@ export const ChatListItemDropdown = ({
     onMarkAsUnread,
     onDeleteChat,
     onAddToContacts,
+    onOpenInfoPanel,
     notificationsEnabled,
     isFavorite,
     isChatRead,
@@ -60,6 +62,32 @@ export const ChatListItemDropdown = ({
                 minWidth={200} // Минимальная ширина меню
                 maxWidth={350} // Максимальная ширина меню
             >
+                {/* Пункт "Подробная информация" */}
+                {onOpenInfoPanel && (
+                    <Dropdown.Item
+                        onSelect={() =>
+                            onMenuItemClick(onOpenInfoPanel)
+                        }
+                        rightIcon={
+                            <Image
+                                src="/icons/info.svg"
+                                alt="Подробная информация"
+                                width={16}
+                                height={16}
+                                className="opacity-80"
+                            />
+                        }
+                        onMouseEnter={() =>
+                            setHoveredItem?.('info')
+                        }
+                        onMouseLeave={() =>
+                            setHoveredItem?.(null)
+                        }
+                    >
+                        Подробная информация
+                    </Dropdown.Item>
+                )}
+
                 {/* Пункт "Добавить в контакты" - показывается только если контакт еще не в списке контактов */}
                 {/* Используем условный рендеринг && для предотвращения рендера при отсутствии обработчика */}
                 {!isInContacts && onAddToContacts && (
