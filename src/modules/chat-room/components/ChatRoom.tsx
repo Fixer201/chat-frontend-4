@@ -13,7 +13,6 @@ import { Message } from '@shared/types/message'
 import {
     useCallback,
     useEffect,
-    useMemo,
     useRef,
     useState,
 } from 'react'
@@ -435,32 +434,9 @@ export default function ChatRoom({
         }
     }, [chat.chatKey, isLocalChat, reloadMessages])
 
-    // Оптимистично считаем свои сообщения прочитанными, чтобы галочки не сбрасывались после перезагрузки
-    const optimisticApiMessages = useMemo(() => {
-        return apiMessages.map((message) => {
-            if (
-                message.from_user == currentUserId &&
-                !message.read_at
-            ) {
-                const readAt =
-                    message.created_at ||
-                    message.delivered_at
-
-                if (!readAt) {
-                    return message
-                }
-
-                return {
-                    ...message,
-                    delivered_at:
-                        message.delivered_at || readAt,
-                    read_at: readAt,
-                }
-            }
-
-            return message
-        })
-    }, [apiMessages, currentUserId])
+    // read_at приходит только от сервера через change_status_read_message —
+    // не подставляем его оптимистично, чтобы галочки отражали реальный статус
+    const optimisticApiMessages = apiMessages
 
     useEffect(() => {
         if (!chat?.id) return

@@ -74,12 +74,7 @@ export function normalizeIncomingMessage(
         delivered_at: messageData.created_at as
             | number
             | undefined,
-        read_at:
-            messageData.new === true
-                ? undefined
-                : (messageData.created_at as
-                      | number
-                      | undefined),
+        read_at: undefined,
         files: (() => {
             const rawFiles = messageData.files_list as
                 | Record<string, unknown>[]
