@@ -446,10 +446,25 @@ export default React.memo(function ChatsList({
                                                 'channel',
                                             )
                                         ) {
-                                            // Для каналов: отображаем описание канала
-                                            messagePreview =
-                                                chat.description ||
-                                                'Нет описания'
+                                            // Для каналов: последнее сообщение → описание → fallback
+                                            const lastContent =
+                                                chat
+                                                    .lastMessage
+                                                    ?.content ||
+                                                ''
+                                            if (
+                                                lastContent &&
+                                                !lastContent.startsWith(
+                                                    'Создана',
+                                                )
+                                            ) {
+                                                messagePreview =
+                                                    lastContent
+                                            } else {
+                                                messagePreview =
+                                                    chat.description ||
+                                                    'Нет сообщений'
+                                            }
                                         } else {
                                             // Для личных чатов: отображаем текст последнего сообщения
                                             // Убираем мок "Создана ..." для личных чатов, если он остался в данных

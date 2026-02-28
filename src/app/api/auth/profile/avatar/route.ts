@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const UPSTREAM_URL =
-    'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/avatar/download/'
+// URL бэкенда из env (см. комментарий в send-code/route.ts)
+const BACKEND_URL =
+    process.env.BACKEND_URL ||
+    'https://api.test.chat.ktsf.ru'
+
+const UPSTREAM_URL = `${BACKEND_URL}/api/v1/auth/messenger/profile/avatar/download/`
 
 export async function POST(request: NextRequest) {
     try {

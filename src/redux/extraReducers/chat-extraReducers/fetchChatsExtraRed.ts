@@ -51,17 +51,14 @@ export const fetchChats = createAsyncThunk(
                 throw new Error('AccessTokenNotFound')
             }
 
-            const url = new URL(
-                'https://api.test.chat.ktsf.ru/api/v1/chat/list/',
-            )
+            // Относительный URL — запрос проксируется через catch-all route handler
+            // (src/app/api/v1/[...path]/route.ts), который пробрасывает его на Django-бэкенд.
+            // page_size вместо limit — так требует Django REST Framework pagination.
+            let url = `/api/v1/chat/list/?page_size=${count}`
             if (search)
-                url.searchParams.append('search', search)
-            url.searchParams.append(
-                'limit',
-                count.toString(),
-            ) // Используем limit вместо page_size
+                url += `&search=${encodeURIComponent(search)}`
 
-            let response = await fetch(url.toString(), {
+            let response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,17 +93,14 @@ export const fetchChats = createAsyncThunk(
                             { expires: 7 },
                         )
                         // Повторный запрос с новым токеном
-                        response = await fetch(
-                            url.toString(),
-                            {
-                                method: 'GET',
-                                headers: {
-                                    'Content-Type':
-                                        'application/json',
-                                    Authorization: `Bearer ${data.access}`,
-                                },
+                        response = await fetch(url, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+                                Authorization: `Bearer ${data.access}`,
                             },
-                        )
+                        })
                     } else {
                         throw new Error(
                             'RefreshTokenExpired',

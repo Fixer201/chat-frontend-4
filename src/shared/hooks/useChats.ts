@@ -125,7 +125,7 @@ export const useChats = () => {
 
             try {
                 await fetchData(
-                    `https://api.test.chat.ktsf.ru/api/v1/chat/list/${chatId}/`,
+                    `/api/v1/chat/list/${chatId}/`,
                     {
                         method: 'POST',
                         body: JSON.stringify({
@@ -198,7 +198,7 @@ export const useChats = () => {
             }
 
             await fetchData(
-                `https://api.test.chat.ktsf.ru/api/v1/chat/list/${chatId}/`,
+                `/api/v1/chat/list/${chatId}/`,
                 { method: 'DELETE' },
             )
             dispatch(markAsDeleted(chatId))

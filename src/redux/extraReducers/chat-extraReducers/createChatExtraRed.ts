@@ -248,7 +248,7 @@ export const createGroup = createAsyncThunk<
             }
 
             const response = await fetch(
-                'https://api.test.chat.ktsf.ru/api/v1/chat/create-group', // Предполагаемый endpoint — замените на реальный, если отличается
+                '/api/v1/chat/create-group',
                 {
                     method: 'POST',
                     headers: {
@@ -305,7 +305,7 @@ export const createGroup = createAsyncThunk<
 //             if (!accessToken)
 //                 throw new Error('AccessTokenNotFound')
 //             const response = await fetch(
-//                 'https://api.test.chat.ktsf.ru/api/v1/chat/create-chat/',
+//                 '/api/v1/chat/create-chat/',
 //                 {
 //                     method: 'POST',
 //                     headers: {
@@ -495,7 +495,7 @@ export const createChannel = createAsyncThunk<
             }
 
             const response = await fetch(
-                'https://api.test.chat.ktsf.ru/api/v1/chat/create-channel', // Предполагаемый endpoint — замените на реальный, если отличается
+                '/api/v1/chat/create-channel',
                 {
                     method: 'POST',
                     headers: {

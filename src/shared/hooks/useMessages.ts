@@ -77,15 +77,10 @@ export const useMessages = (
         setLoading(true)
         setError(null)
         try {
-            // Используем page_size, чтобы не получать только 5 сообщений по умолчанию
-            const url = new URL(
-                `https://api.test.chat.ktsf.ru/api/v1/chat/message/text/${userUid}/`,
-            )
-            url.searchParams.set(
-                'page_size',
-                pageSize.toString(),
-            )
-            const data = await fetchData(url.toString(), {
+            // Относительный URL — проксируется на бэкенд через catch-all route handler.
+            // page_size увеличен, чтобы не получать только 5 сообщений по умолчанию (лимит Django).
+            const url = `/api/v1/chat/message/text/${userUid}/?page_size=${pageSize}`
+            const data = await fetchData(url, {
                 method: 'GET',
             })
             // Маппинг API-ответа в Message[] с использованием ApiMessage и ваших типов

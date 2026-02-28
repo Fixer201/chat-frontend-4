@@ -100,7 +100,7 @@ export default memo(function ContactsList() {
         const loadContacts = async () => {
             try {
                 const data = await fetchData(
-                    'https://api.test.chat.ktsf.ru/api/v1/contact/messenger-list/',
+                    '/api/v1/contact/messenger-list/',
                     {
                         method: 'GET',
                     },
@@ -192,7 +192,7 @@ export default memo(function ContactsList() {
             }
             try {
                 const data = await fetchData(
-                    'https://api.test.chat.ktsf.ru/api/v1/contact/check/full-list/',
+                    '/api/v1/contact/check/full-list/',
                     {
                         method: 'POST',
                         body: JSON.stringify([
@@ -264,7 +264,7 @@ export default memo(function ContactsList() {
         const loadBlacklist = async () => {
             try {
                 const data = await fetchData(
-                    'https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/',
+                    '/api/v1/contact/blacklist/',
                     {
                         method: 'GET',
                     },
@@ -398,7 +398,7 @@ export default memo(function ContactsList() {
             ) {
                 try {
                     const lookupData = await fetchData(
-                        'https://api.test.chat.ktsf.ru/api/v1/contact/check/full-list/',
+                        '/api/v1/contact/check/full-list/',
                         {
                             method: 'POST',
                             body: JSON.stringify([
@@ -429,7 +429,7 @@ export default memo(function ContactsList() {
 
             // Блокировка выполняется по user_uid (path param), как требует API.
             await fetchData(
-                `https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/add/${encodeURIComponent(userUid)}/`,
+                `/api/v1/contact/blacklist/add/${encodeURIComponent(userUid)}/`,
                 {
                     method: 'POST',
                 },

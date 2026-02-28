@@ -24,6 +24,7 @@ import {
 import { updateChat } from '@redux/slices/chatsSlice'
 import { fetchChats } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
 import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
+import { WS_URL } from '@shared/config/env'
 
 const MAX_RECONNECT_ATTEMPTS = 3
 const LOCAL_CHATS_STORAGE_KEY = 'localChats'
@@ -302,10 +303,23 @@ export function useWebSocketChat() {
                 data.action === 'update_message' &&
                 data.status === 'OK'
             ) {
+                // Сервер возвращает сырой объект сообщения — сохраняем существующие
+                // клиентские поля (chatKey, from_user) и ставим isEdited,
+                // чтобы UI показал «(изменено)» только для реально отредактированных.
                 setMessages((prev) =>
                     prev.map((msg) =>
                         msg.uid === data.object.uid
-                            ? data.object
+                            ? {
+                                  ...msg,
+                                  content:
+                                      data.object.content ??
+                                      msg.content,
+                                  updated_at:
+                                      data.object
+                                          .updated_at ??
+                                      msg.updated_at,
+                                  isEdited: true,
+                              }
                             : msg,
                     ),
                 )
@@ -575,13 +589,9 @@ export function useWebSocketChat() {
         ],
     )
 
-    // Вспомогательная функция для получения токена из LocalStorage
+    // Вспомогательная функция для получения токена из cookies
     const getAccessToken = useCallback(() => {
-        return (
-            localStorage.getItem('access_token') ||
-            Cookies.get('access_token') ||
-            null
-        )
+        return Cookies.get('access_token') || null
     }, [])
 
     // Функция подключения
@@ -603,7 +613,7 @@ export function useWebSocketChat() {
         }
 
         // Построить URL:
-        const url = `wss://api.test.chat.ktsf.ru/ws/chat?authorization=${encodeURIComponent(token)}`
+        const url = `${WS_URL}/ws/chat?authorization=${encodeURIComponent(token)}`
 
         // Создать новое webSocket подключение с этим url
         const socket = new WebSocket(url)

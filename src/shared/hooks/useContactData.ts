@@ -50,7 +50,13 @@ export function useContactData(userUid: string) {
     const fetchData = useApiFetcher()
 
     useEffect(() => {
-        if (!userUid) return
+        // Сброс состояния при пустом UID (переход в группу/канал)
+        if (!userUid) {
+            setData(null)
+            setError(null)
+            setLoading(false)
+            return
+        }
 
         const loadContactData = async () => {
             setLoading(true)
@@ -58,7 +64,7 @@ export function useContactData(userUid: string) {
             try {
                 const response: ContactData =
                     await fetchData(
-                        `https://api.test.chat.ktsf.ru/api/v1/contact/${userUid}/`,
+                        `/api/v1/contact/${userUid}/`,
                         { method: 'GET' },
                     )
                 // Маппинг из ContactData в Contact (camelCase)

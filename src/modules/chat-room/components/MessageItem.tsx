@@ -399,8 +399,9 @@ export default function MessageItem({
                         }}
                         className={cn(
                             `
-                              cursor-context-menu rounded-lg px-4 py-2
-                              text-text-black transition-all duration-300
+                              cursor-context-menu overflow-hidden rounded-lg
+                              px-4 py-2 text-text-black transition-all
+                              duration-300
                               hover:shadow-md
                             `,
                             isOwn
@@ -479,7 +480,7 @@ export default function MessageItem({
                                                 key={`fwd-text-${forwarded.uid ?? idx}`}
                                                 className={`
                                                   cursor-text text-base
-                                                  font-normal wrap-break-word
+                                                  font-normal break-all
                                                   whitespace-pre-wrap
                                                 `}
                                             >
@@ -612,8 +613,7 @@ export default function MessageItem({
                                                 <div
                                                     className={`
                                                       cursor-text text-base
-                                                      font-normal
-                                                      wrap-break-word
+                                                      font-normal break-all
                                                       whitespace-pre-wrap
                                                     `}
                                                 >
@@ -644,11 +644,11 @@ export default function MessageItem({
                                                                         className={
                                                                             segment.isMatch
                                                                                 ? `
-                                                                  rounded-sm
-                                                                  bg-system-blue/20
-                                                                  font-semibold
-                                                                  text-system-blue
-                                                                `
+                                                                                  rounded-sm
+                                                                                  bg-system-blue/20
+                                                                                  font-semibold
+                                                                                  text-system-blue
+                                                                                `
                                                                                 : ''
                                                                         }
                                                                     >
@@ -662,25 +662,32 @@ export default function MessageItem({
                                                     ) : (
                                                         message.content
                                                     )}
-                                                    {message.updated_at &&
-                                                        message.updated_at !==
-                                                            message.created_at && (
-                                                            <span
-                                                                className={`
-                                                  ml-1 text-xs text-text-gray
-                                                `}
-                                                            >
-                                                                (изменено)
-                                                            </span>
-                                                        )}
+                                                    {/* Показываем «(изменено)» только для реально отредактированных сообщений.
+                                                        Поле isEdited устанавливается клиентом при получении
+                                                        action: update_message по WebSocket. Нельзя полагаться
+                                                        на сравнение updated_at !== created_at — бэкенд обновляет
+                                                        updated_at при любом изменении (прочтение, статус),
+                                                        а не только при редактировании текста. */}
+                                                    {message.isEdited && (
+                                                        <span
+                                                            className={`
+                                                              ml-1 text-xs
+                                                              text-text-gray
+                                                            `}
+                                                        >
+                                                            (изменено)
+                                                        </span>
+                                                    )}
                                                 </div>
                                             ) : null}
                                             {message.created_at && (
                                                 <div
                                                     className={`
-                                      flex shrink-0 items-center gap-1 text-sm
-                                      whitespace-nowrap text-text-gray
-                                    `}
+                                                      flex shrink-0 items-center
+                                                      gap-1 text-sm
+                                                      whitespace-nowrap
+                                                      text-text-gray
+                                                    `}
                                                 >
                                                     {/* a11y: <time> с dateTime — скринридер озвучит полную дату */}
                                                     <time
