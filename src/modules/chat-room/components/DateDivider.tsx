@@ -55,7 +55,9 @@ const MONTHS_GENITIVE = [
  * @param timestampSec — Unix-время создания сообщения (в секундах, не мс)
  * @returns Локализованная строка даты на русском языке
  */
-function formatDividerDate(timestampSec: number): string {
+export function formatDividerDate(
+    timestampSec: number,
+): string {
     const date = new Date(timestampSec * 1000)
     const now = new Date()
 
@@ -116,7 +118,8 @@ function DateDivider({
         <li
             role="separator"
             aria-label={label}
-            className="sticky top-0 z-10 flex justify-center py-2 select-none"
+            data-date-divider={timestampSec}
+            className="flex justify-center py-2 select-none"
         >
             {/*
              * <time> с атрибутом dateTime в ISO-формате (YYYY-MM-DD)

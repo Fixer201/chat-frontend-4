@@ -21,6 +21,8 @@ import { useWebSocket } from '@shared/context/websocketContext'
 import { useCurrentUserId } from '@shared/hooks/useCurrentUserId'
 import { useMessages } from '@shared/hooks/useMessages'
 import { cn } from '@shared/lib/utils'
+import { useFloatingDate } from './useFloatingDate'
+import { formatDividerDate } from './DateDivider'
 import Cookies from 'js-cookie'
 import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 import { Spinner } from '@shared/ui/Spinner'
@@ -113,7 +115,8 @@ export default function ChatRoom({
 
     const { sendMessage, deleteMessage, markMessagesRead } =
         useWebSocket()
-    const { markAsRead, markAsReadOnServer } = useChats()
+    const { chats, markAsRead, markAsReadOnServer } =
+        useChats()
 
     /** Флаг режима выбора: активируется при первом выбранном сообщении */
     const isSelectionMode = selectedMessages.length > 0
@@ -173,12 +176,22 @@ export default function ChatRoom({
     ) => {
         messagesToForward.forEach((msg) => {
             selectedChatKeys.forEach((chatKey) => {
+                // WS API: для личных чатов — to_user_uid,
+                // для групп/каналов — chat_key.
+                // Ищем целевой чат, чтобы определить тип и получить uid собеседника.
+                const targetChat = chats.find(
+                    (c) => c.chatKey === chatKey,
+                )
+                const toUserId =
+                    targetChat?.chatType === 'chat'
+                        ? targetChat.chat.uid
+                        : undefined
+
                 sendMessage({
                     chatKey,
                     content: '',
                     status: 'publish',
-                    // uid оригинального сообщения — бэкенд сам
-                    // подтянет контент и метаданные по UID
+                    toUserId,
                     forwardedMessages: [
                         {
                             uid: msg.uid,
@@ -408,6 +421,11 @@ export default function ChatRoom({
         reloadMessages,
     } = useMessages(chat.chat.uid, isLocalChat)
 
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const activeTimestamp = useFloatingDate(
+        scrollContainerRef,
+    )
+
     const readMessageUidsRef = useRef(new Set<string>())
     const lastSeenRef = useRef<string | null>(null)
 
@@ -451,7 +469,11 @@ export default function ChatRoom({
         // Обновляем локальный state чатов, чтобы в списке не было непрочитанных
         markAsRead(chat.id)
 
-        if (chat.lastMessage?.id) {
+        // Для локальных/временных чатов (id > 10^12) серверного чата ещё нет —
+        // пропускаем API-вызов, иначе получим 404
+        const isLocalChat =
+            chat.isTemporary || chat.id > 1000000000000
+        if (chat.lastMessage?.id && !isLocalChat) {
             const lastSeenKey = `${chat.id}:${chat.lastMessage.id}`
             if (lastSeenRef.current !== lastSeenKey) {
                 lastSeenRef.current = lastSeenKey
@@ -601,6 +623,7 @@ export default function ChatRoom({
             )}
 
             <div
+                ref={scrollContainerRef}
                 role="presentation"
                 className="flex-1 overflow-y-auto"
                 onClick={() => {
@@ -609,6 +632,43 @@ export default function ChatRoom({
                     }
                 }}
             >
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none sticky top-0 z-20 h-0"
+                >
+                    <div
+                        className={cn(
+                            `
+                              flex justify-center pt-2 transition-opacity
+                              duration-200
+                            `,
+                            activeTimestamp
+                                ? 'opacity-100'
+                                : 'opacity-0',
+                        )}
+                    >
+                        <time
+                            className={cn(
+                                'rounded-lg',
+                                'bg-accent-violet-dark/60',
+                                'px-2',
+                                'py-0.5',
+                                'text-sm',
+                                'leading-[120%]',
+                                'font-medium',
+                                'text-white',
+                                'backdrop-blur-[4px]',
+                            )}
+                        >
+                            {activeTimestamp
+                                ? formatDividerDate(
+                                      activeTimestamp,
+                                  )
+                                : ''}
+                        </time>
+                    </div>
+                </div>
+
                 {messagesLoading &&
                 apiMessages.length === 0 ? (
                     <div className="flex h-full items-center justify-center">

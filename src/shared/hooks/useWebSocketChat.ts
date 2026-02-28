@@ -35,6 +35,13 @@ import { fetchChats } from '@redux/extraReducers/chat-extraReducers/fetchChatsEx
 import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 import { WS_URL } from '@shared/config/env'
 
+// Константы пустых массивов на уровне модуля — переиспользуются
+// между вызовами normalizeIncomingMessage, избегая аллокации
+// нового пустого массива на каждое входящее WS-сообщение
+const EMPTY_REPLIED: RepliedMessage[] = []
+const EMPTY_FORWARDED: ForwardedMessage[] = []
+const EMPTY_FILES: MessageFile[] = []
+
 const MAX_RECONNECT_ATTEMPTS = 3
 const LOCAL_CHATS_STORAGE_KEY = 'localChats'
 const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
@@ -317,107 +324,118 @@ export function useWebSocketChat() {
                         : (messageData.created_at as
                               | number
                               | undefined),
-                files:
-                    (
+                files: (() => {
+                    const rawFiles =
                         messageData.files_list as
                             | Record<string, unknown>[]
                             | undefined
-                    )?.map((f) =>
-                        normalizeFileItem(
-                            f as Parameters<
-                                typeof normalizeFileItem
-                            >[0],
-                        ),
-                    ) ??
-                    (messageData.files as
-                        | MessageFile[]
-                        | undefined) ??
-                    [],
-                repliedMessages: (
-                    (messageData.replied_messages as Record<
-                        string,
-                        unknown
-                    >[]) ??
-                    (messageData.repliedMessages as Record<
-                        string,
-                        unknown
-                    >[]) ??
-                    []
-                ).map(
-                    (
-                        r: Record<string, unknown>,
-                    ): RepliedMessage => ({
-                        uid: r.uid as string | undefined,
-                        content:
-                            (r.content as string) || '',
-                        from_user: r.from_user as
-                            | string
-                            | undefined,
-                        first_name: r.first_name as
-                            | string
-                            | undefined,
-                        last_name: r.last_name as
-                            | string
-                            | undefined,
-                        files_list: (
-                            r.files_list as
-                                | Record<string, unknown>[]
-                                | undefined
-                        )?.map((f) =>
+                    if (rawFiles?.length)
+                        return rawFiles.map((f) =>
                             normalizeFileItem(
                                 f as Parameters<
                                     typeof normalizeFileItem
                                 >[0],
                             ),
-                        ),
-                    }),
-                ),
-                forwardedMessages: (
-                    (messageData.forwarded_messages as Record<
-                        string,
-                        unknown
-                    >[]) ??
-                    (messageData.forwardedMessages as Record<
-                        string,
-                        unknown
-                    >[]) ??
-                    []
-                ).map(
-                    (
-                        f: Record<string, unknown>,
-                    ): ForwardedMessage => ({
-                        uid: f.uid as string | undefined,
-                        content:
-                            (f.content as string) || '',
-                        from_user: f.from_user as
-                            | string
-                            | undefined,
-                        first_name: f.first_name as
-                            | string
-                            | undefined,
-                        last_name: f.last_name as
-                            | string
-                            | undefined,
-                        avatar_url: f.avatar_url as
-                            | string
-                            | undefined,
-                        avatar_webp_url:
-                            f.avatar_webp_url as
+                        )
+                    return (
+                        (messageData.files as
+                            | MessageFile[]
+                            | undefined) ?? EMPTY_FILES
+                    )
+                })(),
+                repliedMessages: (() => {
+                    const rawReplied =
+                        (messageData.replied_messages ??
+                            messageData.repliedMessages) as
+                            | Record<string, unknown>[]
+                            | undefined
+                    if (!rawReplied?.length)
+                        return EMPTY_REPLIED
+                    return rawReplied.map(
+                        (
+                            r: Record<string, unknown>,
+                        ): RepliedMessage => ({
+                            uid: r.uid as
                                 | string
                                 | undefined,
-                        files_list: (
-                            f.files_list as
-                                | Record<string, unknown>[]
-                                | undefined
-                        )?.map((fi) =>
-                            normalizeFileItem(
-                                fi as Parameters<
-                                    typeof normalizeFileItem
-                                >[0],
+                            content:
+                                (r.content as string) || '',
+                            from_user: r.from_user as
+                                | string
+                                | undefined,
+                            first_name: r.first_name as
+                                | string
+                                | undefined,
+                            last_name: r.last_name as
+                                | string
+                                | undefined,
+                            files_list: (
+                                r.files_list as
+                                    | Record<
+                                          string,
+                                          unknown
+                                      >[]
+                                    | undefined
+                            )?.map((f) =>
+                                normalizeFileItem(
+                                    f as Parameters<
+                                        typeof normalizeFileItem
+                                    >[0],
+                                ),
                             ),
-                        ),
-                    }),
-                ),
+                        }),
+                    )
+                })(),
+                forwardedMessages: (() => {
+                    const rawForwarded =
+                        (messageData.forwarded_messages ??
+                            messageData.forwardedMessages) as
+                            | Record<string, unknown>[]
+                            | undefined
+                    if (!rawForwarded?.length)
+                        return EMPTY_FORWARDED
+                    return rawForwarded.map(
+                        (
+                            f: Record<string, unknown>,
+                        ): ForwardedMessage => ({
+                            uid: f.uid as
+                                | string
+                                | undefined,
+                            content:
+                                (f.content as string) || '',
+                            from_user: f.from_user as
+                                | string
+                                | undefined,
+                            first_name: f.first_name as
+                                | string
+                                | undefined,
+                            last_name: f.last_name as
+                                | string
+                                | undefined,
+                            avatar_url: f.avatar_url as
+                                | string
+                                | undefined,
+                            avatar_webp_url:
+                                f.avatar_webp_url as
+                                    | string
+                                    | undefined,
+                            files_list: (
+                                f.files_list as
+                                    | Record<
+                                          string,
+                                          unknown
+                                      >[]
+                                    | undefined
+                            )?.map((fi) =>
+                                normalizeFileItem(
+                                    fi as Parameters<
+                                        typeof normalizeFileItem
+                                    >[0],
+                                ),
+                            ),
+                        }),
+                    )
+                })(),
             }
 
             return normalized
@@ -913,7 +931,13 @@ export function useWebSocketChat() {
                 forwarded_messages: cleanForwarded,
             }
 
-            if (isTemporaryChatKey || isDirectChat) {
+            // to_user_uid используется только для создания нового личного чата —
+            // когда chatKey временный/прямой И известен получатель.
+            // Если toUserId не задан (пересылка в существующий чат) — всегда chat_key.
+            if (
+                (isTemporaryChatKey || isDirectChat) &&
+                toUserId
+            ) {
                 messageObject.to_user_uid = toUserId
             } else {
                 messageObject.chat_key = chatKey

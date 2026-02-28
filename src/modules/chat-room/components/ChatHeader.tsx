@@ -10,8 +10,7 @@ import {
     useContactData,
     Contact,
 } from '@shared/hooks/useContactData'
-import { useSelector } from 'react-redux'
-import { RootState } from '@redux/store'
+import { useContactsMap } from '@shared/hooks/useContactsMap'
 
 /**
  * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
@@ -62,15 +61,9 @@ export default function ChatHeader({
             ? chat.chat.uid
             : '',
     )
-    const contactsList = useSelector(
-        (state: RootState) => state.contacts.list,
-    )
+    const contactsMap = useContactsMap()
     const contactMatch = !isGroupOrChannel
-        ? contactsList.find(
-              (contact) =>
-                  contact.userUid === chat.chat.uid ||
-                  contact.uid === chat.chat.uid,
-          )
+        ? contactsMap.get(chat.chat.uid)
         : undefined
 
     // Контакт для личного чата: список контактов → API → fallback на chat.chat

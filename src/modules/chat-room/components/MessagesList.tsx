@@ -181,6 +181,19 @@ export default function MessagesList({
         return filtered
     }, [allMessages, chatKey, isTemporary, contactUid])
 
+    const messagesMap = useMemo(() => {
+        const map = new Map<string, Message>()
+        for (const msg of chatMessages) {
+            if (msg.uid) map.set(msg.uid, msg)
+        }
+        return map
+    }, [chatMessages])
+
+    const selectedUids = useMemo(
+        () => new Set(selectedMessages?.map((m) => m.uid)),
+        [selectedMessages],
+    )
+
     // --- Логика поиска по сообщениям ---
 
     /**
@@ -345,10 +358,8 @@ export default function MessagesList({
                                         isSelectionMode={
                                             isSelectionMode
                                         }
-                                        isSelected={selectedMessages?.some(
-                                            (m) =>
-                                                m.uid ===
-                                                message.uid,
+                                        isSelected={selectedUids.has(
+                                            message.uid,
                                         )}
                                         chatName={chatName}
                                         searchQuery={
@@ -359,8 +370,8 @@ export default function MessagesList({
                                         isCurrentMatch={
                                             isCurrentMatch
                                         }
-                                        allMessages={
-                                            chatMessages
+                                        messagesMap={
+                                            messagesMap
                                         }
                                     />
                                 </li>

@@ -6,8 +6,7 @@ import Search from '@shared/ui/Search'
 import { useChats } from '@shared/hooks/useChats'
 import { createEscapeKeyHandler } from '@shared/lib/keyboard-handlers'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
-import { useSelector } from 'react-redux'
-import { RootState } from '@redux/store'
+import { useContactsMap } from '@shared/hooks/useContactsMap'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 import type { ChatItem } from '@shared/types/chat'
 
@@ -38,9 +37,7 @@ export default function ForwardMessageModal({
 }: Readonly<ForwardMessageModalProps>) {
     const [searchValue, setSearchValue] = useState('')
     const { chats } = useChats()
-    const contactsList = useSelector(
-        (state: RootState) => state.contacts.list,
-    )
+    const contactsMap = useContactsMap()
 
     // Вычисляет отображаемое имя чата с fallback-логикой,
     // аналогичной ChatsList: chat.name → контакт → профиль чата
@@ -49,10 +46,8 @@ export default function ForwardMessageModal({
             if (chat.name) return chat.name
 
             if (chat.chatType === 'chat') {
-                const contactMatch = contactsList.find(
-                    (contact) =>
-                        contact.userUid === chat.chat.uid ||
-                        contact.uid === chat.chat.uid,
+                const contactMatch = contactsMap.get(
+                    chat.chat.uid,
                 )
                 if (contactMatch) {
                     const contactName =
@@ -72,24 +67,22 @@ export default function ForwardMessageModal({
                 'Неизвестный чат'
             )
         },
-        [contactsList],
+        [contactsMap],
     )
 
     // Возвращает URL аватара с учётом данных контакта
     const getItemAvatarSrc = useCallback(
         (chat: ChatItem): string => {
             if (chat.chatType === 'chat') {
-                const contactMatch = contactsList.find(
-                    (contact) =>
-                        contact.userUid === chat.chat.uid ||
-                        contact.uid === chat.chat.uid,
+                const contactMatch = contactsMap.get(
+                    chat.chat.uid,
                 )
                 if (contactMatch)
                     return getAvatarSrc(contactMatch)
             }
             return getAvatarSrc(chat.chat)
         },
-        [contactsList],
+        [contactsMap],
     )
 
     // Фильтрация чатов по имени — регистронезависимый поиск по подстроке.

@@ -1,33 +1,27 @@
 'use client'
 
-import {
-    Message,
-    RepliedMessage as RepliedMessageType,
-} from '@shared/types/message'
+import { Message } from '@shared/types/message'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
 import Cookies from 'js-cookie'
 import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
-import SentIcon from '@public/images/messageStatus/sent.svg'
-import DeliveredIcon from '@public/images/messageStatus/delivered.svg'
-import ReadIcon from '@public/images/messageStatus/read.svg'
 import { MessageContextMenu } from './MessageContextMenu'
 import DeleteMessageModal from './DeleteMessageModal'
 import CopyToast from './CopyToast'
-import ForwardedMessage from './ForwardedMessage'
-import MessageFileAttachment from './MessageFileAttachment'
-import RepliedMessage from './RepliedMessage'
+import MessageBubbleContent from './MessageBubbleContent'
 import Image from 'next/image'
 import {
+    memo,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
     useTransition,
 } from 'react'
 import { cn } from '@shared/lib/utils'
 import { useWebSocket } from '@shared/context/websocketContext'
-import { highlightText } from '@shared/lib/highlightText'
+import { getReadStatus } from './messageUtils'
 
 /**
  * Элемент списка сообщений — отображение одного сообщения с действиями.
@@ -63,71 +57,11 @@ interface MessageItemProps {
     readonly searchQuery?: string
     /** Флаг: данное сообщение является текущим результатом поиска */
     readonly isCurrentMatch?: boolean
-    /** Все сообщения чата — для обогащения replied-сообщений данными о файлах */
-    readonly allMessages?: Message[]
+    /** Map сообщений чата по uid — для O(1) обогащения replied-сообщений */
+    readonly messagesMap?: Map<string, Message>
 }
 
-/** Статус прочтения исходящего сообщения */
-type ReadStatus = 'sent' | 'delivered' | 'read'
-
-/**
- * Определяет статус прочтения сообщения по временным меткам.
- * Возвращает null для входящих сообщений — статус прочтения
- * отображается только для собственных (исходящих) сообщений.
- */
-function getReadStatus(
-    message: Message,
-    isOwn: boolean,
-): ReadStatus | null {
-    if (!isOwn) return null
-
-    if (message.read_at) return 'read'
-    if (message.delivered_at) return 'delivered'
-
-    return 'sent'
-}
-
-/**
- * Иконка статуса прочтения: одна галочка (sent), двойная серая (delivered),
- * двойная фиолетовая (read). Для входящих сообщений не рендерится.
- */
-function ReadCheckmark({
-    status,
-}: Readonly<{
-    status: ReadStatus | null
-}>) {
-    if (!status) return null
-
-    if (status === 'sent') {
-        return (
-            <SentIcon
-                width={18}
-                height={16}
-                className="fill-text-gray"
-            />
-        )
-    }
-
-    if (status === 'delivered') {
-        return (
-            <DeliveredIcon
-                width={18}
-                height={12}
-                className="fill-text-gray"
-            />
-        )
-    }
-
-    return (
-        <ReadIcon
-            width={18}
-            height={11}
-            className="fill-accent-violet-primary"
-        />
-    )
-}
-
-export default function MessageItem({
+const MessageItem = memo(function MessageItem({
     message,
     currentUserId: currentUserIdOverride,
     peerUid,
@@ -141,19 +75,24 @@ export default function MessageItem({
     chatName,
     searchQuery = '',
     isCurrentMatch = false,
-    allMessages,
+    messagesMap,
 }: MessageItemProps) {
     const currentUser = useAppSelector(
         (state) => state.user.currentUser,
     ) as { id?: string } | null
 
-    const derivedUserId =
-        currentUser?.id ||
-        getUserIdFromToken(
-            localStorage.getItem('access_token') ||
-                Cookies.get('access_token'),
-        ) ||
-        MOCK_CURRENT_USER_ID
+    // Мемоизация userId — getUserIdFromToken парсит JWT на каждый вызов,
+    // пересчитываем только при смене currentUser
+    const derivedUserId = useMemo(
+        () =>
+            currentUser?.id ||
+            getUserIdFromToken(
+                localStorage.getItem('access_token') ||
+                    Cookies.get('access_token'),
+            ) ||
+            MOCK_CURRENT_USER_ID,
+        [currentUser?.id],
+    )
 
     const currentUserId =
         currentUserIdOverride || derivedUserId
@@ -217,24 +156,6 @@ export default function MessageItem({
             })
         }
     }, [isCurrentMatch])
-
-    // Форматирование Unix-timestamp в строку времени (ЧЧ:ММ) по русской локали.
-    // Умножение на 1000 — бэкенд отдаёт timestamp в секундах, Date ожидает миллисекунды.
-    const formatTime = (timestamp?: number) => {
-        if (!timestamp) return ''
-        return new Date(
-            timestamp * 1000,
-        ).toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit',
-        })
-    }
-
-    // ISO-строка для атрибута dateTime в <time> — a11y: скринридер озвучит полную дату
-    const getISOTime = (timestamp?: number) => {
-        if (!timestamp) return ''
-        return new Date(timestamp * 1000).toISOString()
-    }
 
     // Правый клик по сообщению: в режиме выбора — переключает чекбокс,
     // в обычном режиме — открывает контекстное меню в позиции курсора
@@ -421,333 +342,15 @@ export default function MessageItem({
                                 `,
                         )}
                     >
-                        {/*
-                            Контент пузыря сообщения.
-
-                            Пересылка и текст пользователя — взаимоисключающие:
-                            - forwardedMessages → заголовок «Переслано от» + текст пересылки
-                            - repliedMessages → карточка-цитата + текст ответа
-                            - Обычное сообщение → только message.content
-
-                            Ответ (reply) может сосуществовать с текстом пользователя:
-                            карточка-цитата сверху + текст ответа снизу.
-                        */}
-
-                        {/* Цитаты: ответы на другие сообщения.
-                            Карточка с фиолетовой полоской слева, имя автора + текст оригинала. */}
-                        {message.repliedMessages &&
-                        message.repliedMessages.length > 0
-                            ? message.repliedMessages.map(
-                                  (replied, idx) => {
-                                      // Обогащаем replied-сообщение данными из оригинала,
-                                      // если files_list/content пустые (сервер может не присылать)
-                                      let enriched: RepliedMessageType =
-                                          replied
-                                      if (
-                                          allMessages &&
-                                          replied.uid
-                                      ) {
-                                          const original =
-                                              allMessages.find(
-                                                  (m) =>
-                                                      m.uid ===
-                                                      replied.uid,
-                                              )
-                                          if (original) {
-                                              enriched = {
-                                                  ...replied,
-                                                  content:
-                                                      replied.content ||
-                                                      original.content,
-                                                  files_list:
-                                                      replied
-                                                          .files_list
-                                                          ?.length
-                                                          ? replied.files_list
-                                                          : original.files,
-                                              }
-                                          }
-                                      }
-                                      return (
-                                          <RepliedMessage
-                                              key={
-                                                  replied.uid ??
-                                                  `reply-${idx}`
-                                              }
-                                              repliedMessage={
-                                                  enriched
-                                              }
-                                              onNavigateToOriginal={
-                                                  onNavigateToMessage
-                                              }
-                                          />
-                                      )
-                                  },
-                              )
-                            : null}
-
-                        {message.forwardedMessages &&
-                        message.forwardedMessages.length >
-                            0 ? (
-                            <>
-                                {/*
-                                    Пересланное сообщение: заголовок + текст.
-                                    Заголовок: «Переслано от» + аватар + имя автора (фиолетовый).
-                                    Текст: полный контент пересланного сообщения (без обрезки).
-                                    message.content всегда пустой при наличии forwardedMessages.
-                                */}
-                                {message.forwardedMessages.map(
-                                    (forwarded, idx) => (
-                                        <ForwardedMessage
-                                            key={
-                                                forwarded.uid ??
-                                                `fwd-${idx}`
-                                            }
-                                            forwardedMessage={
-                                                forwarded
-                                            }
-                                        />
-                                    ),
-                                )}
-                                {/* Текст пересланного сообщения — основной контент пузыря */}
-                                {message.forwardedMessages.map(
-                                    (forwarded, idx) =>
-                                        forwarded.content ? (
-                                            <div
-                                                key={`fwd-text-${forwarded.uid ?? idx}`}
-                                                className={`
-                                                  cursor-text text-base
-                                                  font-normal break-all
-                                                  whitespace-pre-wrap
-                                                `}
-                                            >
-                                                {
-                                                    forwarded.content
-                                                }
-                                            </div>
-                                        ) : null,
-                                )}
-                            </>
-                        ) : null}
-
-                        {/*
-                            Файловые вложения.
-
-                            Рендерятся перед текстом (как в Telegram), потому что
-                            файл — основной контент сообщения, а текст — подпись (caption).
-
-                            MessageComposer отправляет каждый файл отдельным сообщением,
-                            поэтому на практике files.length обычно = 1, но массив
-                            поддерживает и множественные вложения (на случай изменения
-                            логики отправки или если бэкенд вернёт несколько файлов).
-
-                            isSending определяется по message.status === 'sending' —
-                            это optimistic-сообщение, файл ещё загружается на сервер.
-                            В этом случае вместо миниатюры показывается спиннер.
-                        */}
-                        {/*
-                            Файловые вложения.
-
-                            Дизайн-референс: public/images_chat_block.jpg, public/files_sendigg.jpg
-
-                            Когда сообщение содержит только файл (без текстовой подписи),
-                            время и статус прочтения интегрируются прямо в строку файла:
-                              [icon] [filename.............]
-                                     [size       21:49  ✓✓]
-
-                            Если есть и файл, и текст — время остаётся в текстовой области
-                            ниже (как обычно), чтобы не дублировать.
-
-                            hasTextContent проверяет trim(), потому что сервер ставит
-                            content = " " (пробел) для файловых сообщений без подписи.
-                        */}
-                        {(() => {
-                            const hasFiles =
-                                message.files &&
-                                message.files.length > 0
-                            const hasTextContent =
-                                !!message.content?.trim()
-
-                            // Элемент «время + статус» — переиспользуется в файле или ниже
-                            const timeElement =
-                                message.created_at ? (
-                                    <div
-                                        className={`
-                                          flex shrink-0 items-center gap-1
-                                          text-sm whitespace-nowrap
-                                          text-text-gray
-                                        `}
-                                    >
-                                        <time
-                                            dateTime={getISOTime(
-                                                message.created_at,
-                                            )}
-                                        >
-                                            {formatTime(
-                                                message.created_at,
-                                            )}
-                                        </time>
-                                        <ReadCheckmark
-                                            status={
-                                                readStatus
-                                            }
-                                        />
-                                    </div>
-                                ) : null
-
-                            return (
-                                <>
-                                    {hasFiles ? (
-                                        <div className="flex flex-col">
-                                            {message.files!.map(
-                                                (
-                                                    file,
-                                                    idx,
-                                                ) => {
-                                                    return (
-                                                        <MessageFileAttachment
-                                                            key={`file-${idx}`}
-                                                            file={
-                                                                file
-                                                            }
-                                                            isSending={
-                                                                message.status ===
-                                                                'sending'
-                                                            }
-                                                            onCancel={
-                                                                undefined
-                                                            }
-                                                            timeSlot={
-                                                                // Время встраивается в ПОСЛЕДНИЙ файл,
-                                                                // только если нет текстовой подписи
-                                                                !hasTextContent &&
-                                                                idx ===
-                                                                    message
-                                                                        .files!
-                                                                        .length -
-                                                                        1
-                                                                    ? timeElement
-                                                                    : undefined
-                                                            }
-                                                        />
-                                                    )
-                                                },
-                                            )}
-                                        </div>
-                                    ) : null}
-
-                                    {/* Текст + время: показываем только если есть текст,
-                                        или если нет файлов (обычное текстовое сообщение) */}
-                                    {(hasTextContent ||
-                                        !hasFiles) && (
-                                        <div
-                                            className={`
-                                              flex items-end justify-between
-                                              gap-2
-                                            `}
-                                        >
-                                            {message.content?.trim() ? (
-                                                <div
-                                                    className={`
-                                                      cursor-text text-base
-                                                      font-normal break-all
-                                                      whitespace-pre-wrap
-                                                    `}
-                                                >
-                                                    {searchQuery ? (
-                                                        <>
-                                                            {/*
-                                                Подсветка совпадений поиска.
-
-                                                highlightText() разбивает текст на сегменты:
-                                                - isMatch: true → совпадение с поисковым запросом
-                                                - isMatch: false → обычный текст
-
-                                                Vercel pattern: highlightText использует module-level cache,
-                                                поэтому useMemo здесь не нужен (избегаем двойной мемоизации).
-                                            */}
-                                                            {highlightText(
-                                                                message.content,
-                                                                searchQuery,
-                                                            ).map(
-                                                                (
-                                                                    segment,
-                                                                    i,
-                                                                ) => (
-                                                                    <span
-                                                                        key={
-                                                                            i
-                                                                        }
-                                                                        className={
-                                                                            segment.isMatch
-                                                                                ? `
-                                                                                  rounded-sm
-                                                                                  bg-system-blue/20
-                                                                                  font-semibold
-                                                                                  text-system-blue
-                                                                                `
-                                                                                : ''
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            segment.text
-                                                                        }
-                                                                    </span>
-                                                                ),
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        message.content
-                                                    )}
-                                                    {/* Показываем «(изменено)» только для реально отредактированных сообщений.
-                                                        Поле isEdited устанавливается клиентом при получении
-                                                        action: update_message по WebSocket. Нельзя полагаться
-                                                        на сравнение updated_at !== created_at — бэкенд обновляет
-                                                        updated_at при любом изменении (прочтение, статус),
-                                                        а не только при редактировании текста. */}
-                                                    {message.isEdited && (
-                                                        <span
-                                                            className={`
-                                                              ml-1 text-xs
-                                                              text-text-gray
-                                                            `}
-                                                        >
-                                                            (изменено)
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : null}
-                                            {message.created_at && (
-                                                <div
-                                                    className={`
-                                                      flex shrink-0 items-center
-                                                      gap-1 text-sm
-                                                      whitespace-nowrap
-                                                      text-text-gray
-                                                    `}
-                                                >
-                                                    {/* a11y: <time> с dateTime — скринридер озвучит полную дату */}
-                                                    <time
-                                                        dateTime={getISOTime(
-                                                            message.created_at,
-                                                        )}
-                                                    >
-                                                        {formatTime(
-                                                            message.created_at,
-                                                        )}
-                                                    </time>
-                                                    <ReadCheckmark
-                                                        status={
-                                                            readStatus
-                                                        }
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
-                            )
-                        })()}
+                        <MessageBubbleContent
+                            message={message}
+                            readStatus={readStatus}
+                            searchQuery={searchQuery}
+                            messagesMap={messagesMap}
+                            onNavigateToMessage={
+                                onNavigateToMessage
+                            }
+                        />
                     </div>
                 </div>
             </div>
@@ -792,4 +395,6 @@ export default function MessageItem({
             />
         </>
     )
-}
+})
+
+export default MessageItem

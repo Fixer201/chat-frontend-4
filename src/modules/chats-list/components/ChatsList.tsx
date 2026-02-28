@@ -16,8 +16,7 @@ import EmptySearchState from '../../../shared/ui/emptySearchState/EmptySearchSta
 import EmptyChatsState from './emptyChatsState/EmptyChatsState'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import { useRouter } from 'next/navigation'
-import { useSelector } from 'react-redux'
-import { RootState } from '@redux/store'
+import { useContactsMap } from '@shared/hooks/useContactsMap'
 import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
@@ -35,9 +34,7 @@ export default React.memo(function ChatsList({
     onCreateChannel,
 }: ChatsListProps) {
     const router = useRouter()
-    const contactsList = useSelector(
-        (state: RootState) => state.contacts.list,
-    )
+    const contactsMap = useContactsMap()
 
     // Состояния для управления UI
     const [searchValue, setSearchValue] = useState('')
@@ -302,18 +299,10 @@ export default React.memo(function ChatsList({
                                         const contactMatch =
                                             chat.chatType ===
                                             'chat'
-                                                ? contactsList.find(
-                                                      (
-                                                          contact,
-                                                      ) =>
-                                                          contact.userUid ===
-                                                              chat
-                                                                  .chat
-                                                                  .uid ||
-                                                          contact.uid ===
-                                                              chat
-                                                                  .chat
-                                                                  .uid,
+                                                ? contactsMap.get(
+                                                      chat
+                                                          .chat
+                                                          .uid,
                                                   )
                                                 : undefined
                                         const settings =
