@@ -85,10 +85,13 @@ export default React.memo(function ChatsList({
         | null
     )[] = ['sent', 'delivered', 'read', null]
 
-    // Фильтрация чатов - исключаем удаленные
+    // Фильтрация чатов - исключаем удаленные и чаты с невалидными ID
     const filteredChats =
         chats?.filter(
-            (chat) => !chatSettings[chat.id]?.isDeleted,
+            (chat) =>
+                !chatSettings[chat.id]?.isDeleted &&
+                typeof chat.id === 'number' &&
+                !isNaN(chat.id),
         ) || []
 
     // Поиск по чатам с использованием хука useSearch
