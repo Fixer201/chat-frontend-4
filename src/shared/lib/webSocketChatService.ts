@@ -11,6 +11,19 @@ type CreateChatCallback = (response: {
     error?: string
 }) => void
 
+type AddMembersCallback = (response: {
+    success: boolean
+    result?: {
+        chat_key: string
+        chat_type: string
+        added_users: Array<{
+            uid: string
+            full_name: string
+        }>
+    }
+    error?: string
+}) => void
+
 // WebSocket service class
 class WebSocketChatService {
     private ws: WebSocket | null = null
@@ -19,6 +32,10 @@ class WebSocketChatService {
     private createChatCallbacks = new Map<
         string,
         CreateChatCallback
+    >()
+    private addMembersCallbacks = new Map<
+        string,
+        AddMembersCallback
     >()
 
     // Getters
@@ -268,6 +285,57 @@ class WebSocketChatService {
                     }
                 }
             }
+
+            // Handle add_members_to_chat response
+            if (parsed.action === 'add_members_to_chat') {
+                console.log(
+                    '[WS Service] 👥 add_members_to_chat response received',
+                )
+                const requestUid = parsed.request_uid as
+                    | string
+                    | undefined
+                if (requestUid) {
+                    const callback =
+                        this.addMembersCallbacks.get(
+                            requestUid,
+                        )
+                    console.log(
+                        '[WS Service] 🔑 Request UID:',
+                        requestUid,
+                        'Has callback:',
+                        !!callback,
+                    )
+                    if (callback) {
+                        if (
+                            parsed.status === 'OK' &&
+                            parsed.object
+                        ) {
+                            console.log(
+                                '[WS Service] ✅ Members added successfully:',
+                                parsed.object,
+                            )
+                            callback({
+                                success: true,
+                                result: parsed.object,
+                            })
+                        } else {
+                            console.error(
+                                '[WS Service] ❌ Add members failed:',
+                                parsed.error,
+                            )
+                            callback({
+                                success: false,
+                                error:
+                                    parsed.error ||
+                                    'Failed to add members',
+                            })
+                        }
+                        this.addMembersCallbacks.delete(
+                            requestUid,
+                        )
+                    }
+                }
+            }
         } catch (error) {
             console.error(
                 '[WS Service] ❌ Error parsing message:',
@@ -457,6 +525,132 @@ class WebSocketChatService {
                         requestUid,
                     )
                     this.createChatCallbacks.delete(
+                        requestUid,
+                    )
+                    resolve({
+                        success: false,
+                        error: 'WebSocket timeout',
+                    })
+                }
+            }, 10000)
+        })
+    }
+
+    // Add members to chat via WebSocket
+    addMembersToChat(params: {
+        chat_key: string
+        uid_users_list: string[]
+    }): Promise<{
+        success: boolean
+        result?: {
+            chat_key: string
+            chat_type: string
+            added_users: Array<{
+                uid: string
+                full_name: string
+            }>
+        }
+        error?: string
+    }> {
+        console.log(
+            '[WS Service] 👥 addMembersToChat() called with:',
+            {
+                chat_key: params.chat_key,
+                uid_users_list: params.uid_users_list,
+                userCount: params.uid_users_list.length,
+            },
+        )
+
+        return new Promise((resolve) => {
+            // Ensure connection
+            console.log(
+                '[WS Service] 📊 Connection state before send:',
+                this.connectionState,
+            )
+            if (!this.isConnected) {
+                console.log(
+                    '[WS Service] 🔌 Not connected, calling connect()...',
+                )
+                this.connect()
+            }
+
+            const requestUid = crypto.randomUUID()
+            console.log(
+                '[WS Service] 🔑 Generated request_uid:',
+                requestUid,
+            )
+
+            // Store callback
+            this.addMembersCallbacks.set(
+                requestUid,
+                resolve,
+            )
+
+            // Prepare message
+            const messageObj = {
+                action: 'add_members_to_chat',
+                request_uid: requestUid,
+                object: {
+                    chat_key: params.chat_key,
+                    uid_users_list: params.uid_users_list,
+                },
+            }
+
+            console.log(
+                '[WS Service] 📦 Prepared message object:',
+                messageObj,
+            )
+
+            // Try to send immediately if connected
+            if (this.isConnected) {
+                console.log(
+                    '[WS Service] ✅ Connected, sending immediately',
+                )
+                this.send(messageObj)
+            } else {
+                console.log(
+                    '[WS Service] ⏳ Not connected yet, waiting...',
+                )
+                // Wait for connection then send
+                let attempts = 0
+                const maxAttempts = 50 // 5 seconds max
+                const checkAndSend = () => {
+                    attempts++
+                    if (this.isConnected) {
+                        console.log(
+                            '[WS Service] ✅ Connected after',
+                            attempts * 100,
+                            'ms, sending now',
+                        )
+                        this.send(messageObj)
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(checkAndSend, 100)
+                    } else {
+                        console.error(
+                            '[WS Service] ❌ Timeout waiting for connection',
+                        )
+                        this.addMembersCallbacks.delete(
+                            requestUid,
+                        )
+                        resolve({
+                            success: false,
+                            error: 'Connection timeout',
+                        })
+                    }
+                }
+                checkAndSend()
+            }
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (
+                    this.addMembersCallbacks.has(requestUid)
+                ) {
+                    console.error(
+                        '[WS Service] ⏰ Request timeout after 10 seconds, request_uid:',
+                        requestUid,
+                    )
+                    this.addMembersCallbacks.delete(
                         requestUid,
                     )
                     resolve({

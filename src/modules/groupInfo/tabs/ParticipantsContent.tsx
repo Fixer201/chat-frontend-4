@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
+import Cookies from 'js-cookie'
 import {
     findGroupParticipantsByChatKey, // Поиск участников группы в localStorage по ключу чата
     saveGroupParticipants, // Сохранение участников группы в localStorage
@@ -18,6 +19,7 @@ import {
     setParticipants, // Экшен для установки списка участников в Redux
     removeParticipant, // Экшен для удаления участника из Redux
 } from '@redux/slices/groupParticipantsSlice'
+import { wsChatService } from '@shared/lib/webSocketChatService'
 
 // Тип для отображения: список участников или приглашение
 type View = 'participants' | 'invite'
@@ -102,15 +104,92 @@ export default function ParticipantsContent({
         }
     }, [currentView, onTitleChange])
 
-    // Обработчик приглашения участников
+    // Обработчик приглашения участников (WebSocket -> localStorage fallback)
     const handleInvite = async (
         selectedContacts: Contact[],
     ) => {
+        console.log(
+            '\n=========================================',
+        )
+        console.log(
+            '[ParticipantsContent] 🚀 Starting invite process',
+        )
+        console.log(
+            '[ParticipantsContent] 📝 Chat key:',
+            chatKey,
+        )
+        console.log(
+            '[ParticipantsContent] 👥 Selected contacts:',
+            selectedContacts.map((c) => ({
+                uid: c.uid,
+                name: `${c.firstName} ${c.lastName}`,
+            })),
+        )
+        console.log(
+            '=========================================',
+        )
+
         setIsInviting(true)
         setInviteError(null)
 
+        const accessToken = Cookies.get('access_token')
+        let wsSuccess = false
+
+        // ========== STEP 1: Try WebSocket first ==========
+        if (accessToken) {
+            console.log(
+                '[ParticipantsContent] 📡 STEP 1: Trying WebSocket...',
+            )
+            try {
+                const uids = selectedContacts.map(
+                    (c) => c.uid,
+                )
+                console.log(
+                    '[ParticipantsContent] 🔑 UIDs to invite:',
+                    uids,
+                )
+
+                const result =
+                    await wsChatService.addMembersToChat({
+                        chat_key: chatKey,
+                        uid_users_list: uids,
+                    })
+
+                console.log(
+                    '[ParticipantsContent] 📥 WebSocket result:',
+                    result,
+                )
+
+                if (result.success && result.result) {
+                    console.log(
+                        '[ParticipantsContent] ✅ WebSocket success, members added:',
+                        result.result.added_users,
+                    )
+                    wsSuccess = true
+                } else {
+                    console.warn(
+                        '[ParticipantsContent] ⚠️ WebSocket failed:',
+                        result.error,
+                    )
+                }
+            } catch (error) {
+                console.error(
+                    '[ParticipantsContent] ❌ WebSocket error:',
+                    error,
+                )
+            }
+        } else {
+            console.log(
+                '[ParticipantsContent] ⏳ No access token, skipping WebSocket',
+            )
+        }
+
+        // ========== STEP 2: Fallback to localStorage ==========
+        console.log(
+            '[ParticipantsContent] 💾 STEP 2: Saving to localStorage...',
+        )
         try {
-            // Имитация задержки сети
+            // Имитация задержки сети (только для UX)
             await new Promise((resolve) =>
                 setTimeout(resolve, 500),
             )
@@ -130,6 +209,9 @@ export default function ParticipantsContent({
 
             // Сохраняем в localStorage
             saveGroupParticipants(chatKey, fullList)
+            console.log(
+                '[ParticipantsContent] ✅ Saved to localStorage',
+            )
 
             // Обновляем локальное состояние
             setOwner(
@@ -147,9 +229,17 @@ export default function ParticipantsContent({
                 }),
             )
 
+            console.log(
+                '[ParticipantsContent] ✅ State updated successfully',
+            )
+
             // Возвращаемся к списку участников
             setCurrentView('participants')
         } catch (error) {
+            console.error(
+                '[ParticipantsContent] ❌ Error:',
+                error,
+            )
             setInviteError(
                 error instanceof Error
                     ? error.message
@@ -157,6 +247,12 @@ export default function ParticipantsContent({
             )
         } finally {
             setIsInviting(false)
+            console.log(
+                '[ParticipantsContent] 🔐 Invite process finished',
+            )
+            console.log(
+                '=========================================\n',
+            )
         }
     }
 
