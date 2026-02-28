@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import Cookies from 'js-cookie'
 import {
     useAppDispatch,
     useAppSelector,
@@ -23,6 +24,7 @@ import {
 import { ChatItem, ChatSettings } from '../types/chat'
 import { Contact } from '../types/contact'
 import { onNextProps } from '../types/createGroup'
+import { wsChatService } from '../lib/webSocketChatService'
 
 // Кастомный хук для работы с чатами
 // Абстрагирует взаимодействие с Redux store, предоставляя простой API для компонентов
@@ -120,12 +122,91 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Мягкое удаление чата (помечаем как удаленный)
+    // Мягкое удаление чата (WebSocket -> Redux fallback)
     const deleteChat = useCallback(
-        (chatId: number) => {
+        async (chatId: number) => {
+            console.log(
+                '\n=========================================',
+            )
+            console.log(
+                '[useChats] 🗑️ Starting delete chat process',
+            )
+            console.log('[useChats] 📝 Chat ID:', chatId)
+
+            // Find chat to get chatKey
+            const chat = items.find((c) => c.id === chatId)
+            console.log('[useChats] 📊 Found chat:', chat)
+
+            if (!chat) {
+                console.error(
+                    '[useChats] ❌ Chat not found, using Redux fallback',
+                )
+                dispatch(markAsDeleted(chatId))
+                return
+            }
+
+            const accessToken = Cookies.get('access_token')
+            let wsSuccess = false
+
+            // ========== STEP 1: Try WebSocket first ==========
+            if (accessToken && chat.chatKey) {
+                console.log(
+                    '[useChats] 📡 STEP 1: Trying WebSocket...',
+                )
+                console.log(
+                    '[useChats] 🔑 Chat key:',
+                    chat.chatKey,
+                )
+
+                try {
+                    const result =
+                        await wsChatService.deleteChat({
+                            chat_key: chat.chatKey,
+                        })
+
+                    console.log(
+                        '[useChats] 📥 WebSocket result:',
+                        result,
+                    )
+
+                    if (result.success) {
+                        console.log(
+                            '[useChats] ✅ WebSocket delete success',
+                        )
+                        wsSuccess = true
+                    } else {
+                        console.warn(
+                            '[useChats] ⚠️ WebSocket delete failed:',
+                            result.error,
+                        )
+                    }
+                } catch (error) {
+                    console.error(
+                        '[useChats] ❌ WebSocket error:',
+                        error,
+                    )
+                }
+            } else {
+                console.log(
+                    '[useChats] ⏳ No token or chatKey, skipping WebSocket',
+                )
+            }
+
+            // ========== STEP 2: Always mark as deleted in Redux ==========
+            console.log(
+                '[useChats] 💾 STEP 2: Marking as deleted in Redux...',
+            )
             dispatch(markAsDeleted(chatId))
+            console.log('[useChats] ✅ Redux updated')
+
+            console.log(
+                '[useChats] 🔐 Delete process finished',
+            )
+            console.log(
+                '=========================================\n',
+            )
         },
-        [dispatch],
+        [dispatch, items],
     )
 
     // Добавление чата в список контактов
