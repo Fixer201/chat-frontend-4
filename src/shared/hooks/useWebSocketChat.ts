@@ -11,7 +11,13 @@ import {
 import Cookies from 'js-cookie'
 
 import { ChatItem } from '@shared/types/chat'
-import { Message, MessageFile } from '@shared/types/message'
+import {
+    Message,
+    MessageFile,
+    normalizeFileItem,
+    RepliedMessage,
+    ForwardedMessage,
+} from '@shared/types/message'
 import { ConnectionStatus } from '@shared/types/webSocket'
 import {
     MOCK_MESSAGES,
@@ -21,7 +27,10 @@ import {
     useAppDispatch,
     useAppSelector,
 } from '@redux/store'
-import { updateChat } from '@redux/slices/chatsSlice'
+import {
+    updateChat,
+    updateContactStatus,
+} from '@redux/slices/chatsSlice'
 import { fetchChats } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
 import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
 import { WS_URL } from '@shared/config/env'
@@ -29,6 +38,8 @@ import { WS_URL } from '@shared/config/env'
 const MAX_RECONNECT_ATTEMPTS = 3
 const LOCAL_CHATS_STORAGE_KEY = 'localChats'
 const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
+// Интервал повторного запроса статусов (30 сек)
+const STATUS_POLL_INTERVAL_MS = 30_000
 
 // TODO: Временный флаг для переключения между моковыми и реальными данными
 // Удалить после реализации контактов на бэкенде
@@ -77,6 +88,10 @@ export function useWebSocketChat() {
     const storedSeenRef = useRef(new Set<string>())
 
     const lastChatsRefreshRef = useRef(0)
+    // Реф для периодического опроса статусов
+    const statusIntervalRef = useRef<ReturnType<
+        typeof setInterval
+    > | null>(null)
 
     // Обновляем lastMessage чата при отправке/получении сообщений для корректного превью списка
     const updateChatPreview = useCallback(
@@ -175,16 +190,47 @@ export function useWebSocketChat() {
     // сообщение об ошибке
     const [error, setError] = useState<string | null>(null)
 
+    // Отправка запроса статусов всех собеседников через WebSocket
+    const requestStatusList = useCallback(() => {
+        if (wsRef.current?.readyState !== WebSocket.OPEN)
+            return
+        wsRef.current.send(
+            JSON.stringify({
+                action: 'get_status_list_chat',
+                request_uid: crypto.randomUUID(),
+            }),
+        )
+    }, [])
+
     function onOpen() {
         console.info('[WebSocket] opened')
-        // в случае успешного подключения нужно сбросить счётчик кол-ва реконектов
         reconnectCountRef.current = 0
         setStatus('OPEN')
+
+        // Запрашиваем актуальные статусы сразу после подключения
+        // Используем небольшую задержку, чтобы wsRef.current был гарантированно установлен
+        setTimeout(() => {
+            requestStatusList()
+        }, 100)
+
+        // Периодический опрос статусов
+        if (statusIntervalRef.current) {
+            clearInterval(statusIntervalRef.current)
+        }
+        statusIntervalRef.current = setInterval(
+            requestStatusList,
+            STATUS_POLL_INTERVAL_MS,
+        )
     }
 
     function onClose() {
         console.info('[WebSocket] closed')
         setStatus('CLOSED')
+        // Очищаем интервал опроса при закрытии соединения
+        if (statusIntervalRef.current) {
+            clearInterval(statusIntervalRef.current)
+            statusIntervalRef.current = null
+        }
     }
 
     const onError = useCallback((e: Event) => {
@@ -272,21 +318,106 @@ export function useWebSocketChat() {
                               | number
                               | undefined),
                 files:
-                    (messageData.files_list as
-                        | MessageFile[]
-                        | undefined) ??
+                    (
+                        messageData.files_list as
+                            | Record<string, unknown>[]
+                            | undefined
+                    )?.map((f) =>
+                        normalizeFileItem(
+                            f as Parameters<
+                                typeof normalizeFileItem
+                            >[0],
+                        ),
+                    ) ??
                     (messageData.files as
                         | MessageFile[]
                         | undefined) ??
                     [],
-                repliedMessages:
-                    (messageData.replied_messages as Message['repliedMessages']) ??
-                    (messageData.repliedMessages as Message['repliedMessages']) ??
-                    [],
-                forwardedMessages:
-                    (messageData.forwarded_messages as Message['forwardedMessages']) ??
-                    (messageData.forwardedMessages as Message['forwardedMessages']) ??
-                    [],
+                repliedMessages: (
+                    (messageData.replied_messages as Record<
+                        string,
+                        unknown
+                    >[]) ??
+                    (messageData.repliedMessages as Record<
+                        string,
+                        unknown
+                    >[]) ??
+                    []
+                ).map(
+                    (
+                        r: Record<string, unknown>,
+                    ): RepliedMessage => ({
+                        uid: r.uid as string | undefined,
+                        content:
+                            (r.content as string) || '',
+                        from_user: r.from_user as
+                            | string
+                            | undefined,
+                        first_name: r.first_name as
+                            | string
+                            | undefined,
+                        last_name: r.last_name as
+                            | string
+                            | undefined,
+                        files_list: (
+                            r.files_list as
+                                | Record<string, unknown>[]
+                                | undefined
+                        )?.map((f) =>
+                            normalizeFileItem(
+                                f as Parameters<
+                                    typeof normalizeFileItem
+                                >[0],
+                            ),
+                        ),
+                    }),
+                ),
+                forwardedMessages: (
+                    (messageData.forwarded_messages as Record<
+                        string,
+                        unknown
+                    >[]) ??
+                    (messageData.forwardedMessages as Record<
+                        string,
+                        unknown
+                    >[]) ??
+                    []
+                ).map(
+                    (
+                        f: Record<string, unknown>,
+                    ): ForwardedMessage => ({
+                        uid: f.uid as string | undefined,
+                        content:
+                            (f.content as string) || '',
+                        from_user: f.from_user as
+                            | string
+                            | undefined,
+                        first_name: f.first_name as
+                            | string
+                            | undefined,
+                        last_name: f.last_name as
+                            | string
+                            | undefined,
+                        avatar_url: f.avatar_url as
+                            | string
+                            | undefined,
+                        avatar_webp_url:
+                            f.avatar_webp_url as
+                                | string
+                                | undefined,
+                        files_list: (
+                            f.files_list as
+                                | Record<string, unknown>[]
+                                | undefined
+                        )?.map((fi) =>
+                            normalizeFileItem(
+                                fi as Parameters<
+                                    typeof normalizeFileItem
+                                >[0],
+                            ),
+                        ),
+                    }),
+                ),
             }
 
             return normalized
@@ -298,6 +429,44 @@ export function useWebSocketChat() {
         (event: MessageEvent) => {
             // получаем ответ сервера и парсим его
             const data = JSON.parse(event.data)
+
+            // Обработка ответа со статусами онлайн
+            if (
+                data.action === 'get_status_list_chat' &&
+                data.status === 'OK'
+            ) {
+                const entries = Array.isArray(data.object)
+                    ? data.object
+                    : [data.object]
+
+                entries.forEach(
+                    (entry: {
+                        is_online?: boolean
+                        was_online_at?: number
+                        user?: { uid?: string } | string
+                    }) => {
+                        if (!entry) return
+                        const userUid =
+                            typeof entry.user === 'string'
+                                ? entry.user
+                                : entry.user?.uid
+                        if (!userUid) return
+
+                        dispatch(
+                            updateContactStatus({
+                                userUid,
+                                isOnline:
+                                    entry.is_online ??
+                                    false,
+                                wasOnlineAt:
+                                    entry.was_online_at ??
+                                    0,
+                            }),
+                        )
+                    },
+                )
+                return
+            }
 
             if (
                 data.action === 'update_message' &&
@@ -667,6 +836,10 @@ export function useWebSocketChat() {
         }
 
         return () => {
+            if (statusIntervalRef.current) {
+                clearInterval(statusIntervalRef.current)
+                statusIntervalRef.current = null
+            }
             if (
                 wsRef.current?.readyState === WebSocket.OPEN
             ) {
@@ -724,12 +897,20 @@ export function useWebSocketChat() {
             const isDirectChat =
                 typeof chatKey === 'string' &&
                 chatKey.startsWith('chat_')
+            // Сервер ожидает массив UID-строк в replied/forwarded_messages,
+            // объекты вызывают ошибку «Невалидный UID»
+            const cleanReplied = (repliedMessages ?? [])
+                .map((r) => r.uid)
+                .filter(Boolean)
+            const cleanForwarded = (forwardedMessages ?? [])
+                .map((f) => f.uid)
+                .filter(Boolean)
             const messageObject: Record<string, unknown> = {
                 content: content,
                 status: status || 'publish',
                 files: files ?? [],
-                replied_messages: repliedMessages ?? [],
-                forwarded_messages: forwardedMessages ?? [],
+                replied_messages: cleanReplied,
+                forwarded_messages: cleanForwarded,
             }
 
             if (isTemporaryChatKey || isDirectChat) {

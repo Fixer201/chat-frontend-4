@@ -177,6 +177,7 @@ export default function MessageComposer({
                           content: replyingMessage.content,
                           from_user:
                               replyingMessage.from_user,
+                          files_list: replyingMessage.files,
                       },
                   ]
                 : undefined

@@ -2,7 +2,6 @@
 
 import { memo } from 'react'
 import { RepliedMessage as RepliedMessageType } from '@shared/types/message'
-import { cn } from '@shared/lib/utils'
 
 /** Пропсы компонента цитируемого (ответного) сообщения */
 interface RepliedMessageProps {
@@ -50,6 +49,21 @@ const RepliedMessage = memo(function RepliedMessage({
 }: RepliedMessageProps) {
     const authorName = getAuthorName(repliedMessage)
 
+    // Если текст пустой, но есть файлы — показываем имя файла
+    const firstFile = repliedMessage.files_list?.[0]
+    const fileName =
+        firstFile?.filename ||
+        (firstFile?.file_url
+            ? decodeURIComponent(
+                  firstFile.file_url
+                      .split('?')[0]
+                      .split('/')
+                      .pop() || '',
+              )
+            : '')
+    const displayContent =
+        repliedMessage.content?.trim() || fileName
+
     /** Обработка клика: навигация к оригинальному сообщению по его uid */
     const handleClick = () => {
         if (repliedMessage.uid && onNavigateToOriginal) {
@@ -65,8 +79,6 @@ const RepliedMessage = memo(function RepliedMessage({
     const isClickable = Boolean(
         repliedMessage.uid && onNavigateToOriginal,
     )
-    const hoverClass = 'hover:bg-accent-violet-primary/20'
-
     return (
         <div
             role={isClickable ? 'button' : undefined}
@@ -108,7 +120,7 @@ const RepliedMessage = memo(function RepliedMessage({
                 line-clamp-1 ограничивает высоту, не зависит от длины текста.
                 Цвет text-text-black — цитируемый текст читается как основной контент. */}
             <p className="line-clamp-1 text-sm text-text-black">
-                {repliedMessage.content}
+                {displayContent}
             </p>
         </div>
     )

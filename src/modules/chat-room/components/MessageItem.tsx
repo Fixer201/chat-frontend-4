@@ -1,6 +1,9 @@
 'use client'
 
-import { Message } from '@shared/types/message'
+import {
+    Message,
+    RepliedMessage as RepliedMessageType,
+} from '@shared/types/message'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
 import Cookies from 'js-cookie'
@@ -60,6 +63,8 @@ interface MessageItemProps {
     readonly searchQuery?: string
     /** Флаг: данное сообщение является текущим результатом поиска */
     readonly isCurrentMatch?: boolean
+    /** Все сообщения чата — для обогащения replied-сообщений данными о файлах */
+    readonly allMessages?: Message[]
 }
 
 /** Статус прочтения исходящего сообщения */
@@ -136,6 +141,7 @@ export default function MessageItem({
     chatName,
     searchQuery = '',
     isCurrentMatch = false,
+    allMessages,
 }: MessageItemProps) {
     const currentUser = useAppSelector(
         (state) => state.user.currentUser,
@@ -432,20 +438,51 @@ export default function MessageItem({
                         {message.repliedMessages &&
                         message.repliedMessages.length > 0
                             ? message.repliedMessages.map(
-                                  (replied, idx) => (
-                                      <RepliedMessage
-                                          key={
-                                              replied.uid ??
-                                              `reply-${idx}`
+                                  (replied, idx) => {
+                                      // Обогащаем replied-сообщение данными из оригинала,
+                                      // если files_list/content пустые (сервер может не присылать)
+                                      let enriched: RepliedMessageType =
+                                          replied
+                                      if (
+                                          allMessages &&
+                                          replied.uid
+                                      ) {
+                                          const original =
+                                              allMessages.find(
+                                                  (m) =>
+                                                      m.uid ===
+                                                      replied.uid,
+                                              )
+                                          if (original) {
+                                              enriched = {
+                                                  ...replied,
+                                                  content:
+                                                      replied.content ||
+                                                      original.content,
+                                                  files_list:
+                                                      replied
+                                                          .files_list
+                                                          ?.length
+                                                          ? replied.files_list
+                                                          : original.files,
+                                              }
                                           }
-                                          repliedMessage={
-                                              replied
-                                          }
-                                          onNavigateToOriginal={
-                                              onNavigateToMessage
-                                          }
-                                      />
-                                  ),
+                                      }
+                                      return (
+                                          <RepliedMessage
+                                              key={
+                                                  replied.uid ??
+                                                  `reply-${idx}`
+                                              }
+                                              repliedMessage={
+                                                  enriched
+                                              }
+                                              onNavigateToOriginal={
+                                                  onNavigateToMessage
+                                              }
+                                          />
+                                      )
+                                  },
                               )
                             : null}
 

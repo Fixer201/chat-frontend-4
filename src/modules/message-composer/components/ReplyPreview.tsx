@@ -33,6 +33,21 @@ export default function ReplyPreview({
 }: ReplyPreviewProps) {
     const authorLabel = getReplyAuthorLabel(message)
 
+    // Если текст пустой, но есть файлы — показываем имя файла
+    const firstFile = message.files?.[0]
+    const fileName =
+        firstFile?.filename ||
+        (firstFile?.file_url
+            ? decodeURIComponent(
+                  firstFile.file_url
+                      .split('?')[0]
+                      .split('/')
+                      .pop() || '',
+              )
+            : '')
+    const displayContent =
+        message.content?.trim() || fileName
+
     return (
         <div
             className={`
@@ -49,7 +64,7 @@ export default function ReplyPreview({
                 {/* Текст цитируемого сообщения: одна строка с обрезкой,
                     чтобы превью не занимало много места над полем ввода */}
                 <span className="line-clamp-1 text-sm text-text-gray">
-                    {message.content}
+                    {displayContent}
                 </span>
             </div>
             {/* Кнопка отмены ответа: cursor-pointer + hover-подсветка */}

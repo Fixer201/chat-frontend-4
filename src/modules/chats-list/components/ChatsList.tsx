@@ -22,7 +22,6 @@ import Search from '@shared/ui/Search'
 import CreateMenuButton from './CreateMenuButton'
 import { cn } from '@shared/lib/utils'
 import { Spinner } from '@shared/ui/Spinner'
-// import { Contact } from '@shared/types/contact'
 import { toast } from 'react-hot-toast'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
 
@@ -75,13 +74,8 @@ export default React.memo(function ChatsList({
         router.push('/contacts')
     }, [router])
 
-    // Статусы сообщений для отображения в списке чатов
-    const messageStatuses: (
-        | 'sent'
-        | 'delivered'
-        | 'read'
-        | null
-    )[] = ['sent', 'delivered', 'read', null]
+    // TODO: статус сообщений (sent/delivered/read) отключён — бэкенд не возвращает
+    // delivered_at/read_at в lastMessage. Для реализации нужно расширить API чатов.
 
     // Фильтрация чатов - исключаем удаленные
     const filteredChats =
@@ -528,10 +522,7 @@ export default React.memo(function ChatsList({
                                                     settings.notificationsEnabled
                                                 }
                                                 messageStatus={
-                                                    messageStatuses[
-                                                        index %
-                                                            messageStatuses.length
-                                                    ]
+                                                    null
                                                 }
                                                 onDeleteChat={() =>
                                                     handleDeleteClick(

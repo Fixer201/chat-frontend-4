@@ -349,6 +349,24 @@ const chatsSlice = createSlice({
                 state.items[existingIndex] = action.payload
             }
         },
+        // Обновление онлайн-статуса пользователя во всех чатах по его UID
+        updateContactStatus: (
+            state,
+            action: PayloadAction<{
+                userUid: string
+                isOnline: boolean
+                wasOnlineAt: number
+            }>,
+        ) => {
+            const { userUid, isOnline, wasOnlineAt } =
+                action.payload
+            state.items.forEach((chat) => {
+                if (chat.chat.uid === userUid) {
+                    chat.chat.isOnline = isOnline
+                    chat.chat.wasOnlineAt = wasOnlineAt
+                }
+            })
+        },
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         debugState: (state) => {
             // Отладочная информация о состоянии
@@ -381,6 +399,7 @@ export const {
     addToContacts,
     resetChatSettings,
     addChat,
+    updateContactStatus,
     debugState,
 } = chatsSlice.actions
 export default chatsSlice.reducer

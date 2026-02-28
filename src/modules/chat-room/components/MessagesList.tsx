@@ -359,6 +359,9 @@ export default function MessagesList({
                                         isCurrentMatch={
                                             isCurrentMatch
                                         }
+                                        allMessages={
+                                            chatMessages
+                                        }
                                     />
                                 </li>
                             </Fragment>
