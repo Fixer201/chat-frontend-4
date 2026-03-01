@@ -3,6 +3,7 @@ import {
     CreateChatCallback,
     AddMembersCallback,
     DeleteChatCallback,
+    EditChatCallback,
     WsResponse,
 } from './types'
 
@@ -138,6 +139,65 @@ export function handleDeleteChatResponse(
                     error:
                         parsed.error ||
                         'Failed to delete chat',
+                })
+            }
+            callbacks.delete(requestUid)
+        }
+    }
+}
+
+export function handleEditChatResponse(
+    parsed: WsResponse,
+    callbacks: Map<string, EditChatCallback>,
+): void {
+    console.log(
+        '[WS Service] ✏️ edit_chat response received',
+    )
+    const requestUid = parsed.request_uid
+    if (requestUid) {
+        const callback = callbacks.get(requestUid)
+        console.log(
+            '[WS Service] 🔑 Request UID:',
+            requestUid,
+            'Has callback:',
+            !!callback,
+        )
+        if (callback) {
+            if (parsed.status === 'OK' && parsed.object) {
+                console.log(
+                    '[WS Service] ✅ Chat edited successfully:',
+                    parsed.object,
+                )
+                callback({
+                    success: true,
+                    chat: parsed.object as {
+                        created_by: string
+                        owner_full_name: string
+                        chat_key: string
+                        chat_id: string
+                        name: string
+                        description: string
+                        chat_type: string
+                        avatar?: {
+                            filename: string
+                            url: string
+                        }
+                        added_users?: Array<{
+                            uid: string
+                            full_name: string
+                        }>
+                    },
+                })
+            } else {
+                console.error(
+                    '[WS Service] ❌ Edit chat failed:',
+                    parsed.error,
+                )
+                callback({
+                    success: false,
+                    error:
+                        parsed.error ||
+                        'Failed to edit chat',
                 })
             }
             callbacks.delete(requestUid)

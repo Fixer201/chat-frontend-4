@@ -35,6 +35,7 @@ import { ApiChatItem } from '@shared/types/chat' // Типы API чатов
 import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard' // Хук для копирования в буфер
 import { Toast } from '@shared/ui/toast/Toast' // Toast-уведомления
 import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle' // Кружок с обратным отсчётом
+import { wsChatService } from '@shared/lib/webSocketChatService' // WebSocket сервис
 
 // Типы для вкладок (аналогично GroupInfoSidebar)
 type TabId =
@@ -256,6 +257,33 @@ export default function ChannelInfoSidebar({
         [],
     )
 
+    // Helper to convert File to Base64
+    const fileToBase64 = useCallback(
+        (file: File): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    const result = reader.result as string
+                    // Remove data:image/...;base64, prefix
+                    const base64 = result.split(',')[1]
+                    if (!base64) {
+                        reject(
+                            new Error(
+                                'Failed to extract base64 data from file',
+                            ),
+                        )
+                        return
+                    }
+                    resolve(base64)
+                }
+                reader.onerror = () =>
+                    reject(new Error('FileReader error'))
+                reader.readAsDataURL(file)
+            })
+        },
+        [],
+    )
+
     // Сохранение отредактированных данных канала
     const handleSaveEdit = useCallback(
         async (updatedData: {
@@ -265,56 +293,145 @@ export default function ChannelInfoSidebar({
             notificationsEnabled: boolean
             avatarFile?: File | null
         }) => {
-            // Получаем текущие данные чата из localStorage
-            const currentChat =
-                getChatByIdFromStorage(chatId)
-            if (!currentChat) return
+            console.log(
+                '[ChannelInfo] 📝 Starting save edit via WebSocket',
+                {
+                    chatKey,
+                    name: updatedData.name,
+                    hasAvatar: !!updatedData.avatarFile,
+                },
+            )
 
-            // Определяем новый тип чата (public-channel или private-channel)
-            const newChatType =
-                updatedData.type === 'public'
-                    ? 'public-channel'
-                    : 'private-channel'
-
-            // Создаём обновлённый объект чата
-            const updatedChat: ApiChatItem = {
-                ...currentChat,
-            }
-            updatedChat.name = updatedData.name
-            updatedChat.description =
-                updatedData.description
-            updatedChat.chat_type = newChatType
-
-            // Если выбран новый аватар - сжимаем и добавляем
+            // Prepare avatar if provided
+            let avatar = null
             if (updatedData.avatarFile) {
                 try {
-                    const compressedBase64 =
-                        await compressImage(
-                            updatedData.avatarFile,
-                        )
-                    updatedChat.chat = {
-                        ...currentChat.chat,
-                        avatar_url: compressedBase64,
+                    const base64Data = await fileToBase64(
+                        updatedData.avatarFile,
+                    )
+                    avatar = {
+                        filename:
+                            updatedData.avatarFile.name,
+                        data: base64Data,
                     }
+                    console.log(
+                        '[ChannelInfo] 🖼️ Avatar prepared for upload',
+                    )
                 } catch (error) {
                     console.error(
-                        'Ошибка сжатия аватара',
+                        '[ChannelInfo] ❌ Error preparing avatar:',
                         error,
                     )
                 }
             }
 
-            // Сохраняем в localStorage
-            const allChats = loadChatsFromStorage() || []
-            const index = allChats.findIndex(
-                (c) => c.id === chatId,
+            // Call WebSocket editChat method
+            // API expects chat_type: 'chat' for both groups and channels
+            const result = await wsChatService.editChat({
+                chatKey: chatKey,
+                name: updatedData.name,
+                description: updatedData.description,
+                avatar: avatar,
+                chatType: 'chat',
+            })
+
+            console.log(
+                '[ChannelInfo] 📥 WebSocket editChat result:',
+                result,
             )
-            if (index !== -1) {
-                allChats[index] = updatedChat
-                saveChatsToStorage(allChats)
+
+            if (result.success && result.chat) {
+                console.log(
+                    '[ChannelInfo] ✅ Channel updated successfully via WebSocket',
+                )
+
+                // Update localStorage with the response data
+                const currentChat =
+                    getChatByIdFromStorage(chatId)
+                if (currentChat) {
+                    const updatedChat: ApiChatItem = {
+                        ...currentChat,
+                        name: result.chat.name,
+                        description:
+                            result.chat.description,
+                        chat_type: result.chat
+                            .chatType as ApiChatItem['chat_type'],
+                    }
+                    if (result.chat.avatar?.url) {
+                        updatedChat.chat = {
+                            ...currentChat.chat,
+                            avatar_url:
+                                result.chat.avatar.url,
+                        }
+                    }
+
+                    const allChats =
+                        loadChatsFromStorage() || []
+                    const index = allChats.findIndex(
+                        (c) => c.id === chatId,
+                    )
+                    if (index !== -1) {
+                        allChats[index] = updatedChat
+                        saveChatsToStorage(allChats)
+                        console.log(
+                            '[ChannelInfo] 💾 Updated localStorage',
+                        )
+                    }
+                }
+            } else {
+                console.error(
+                    '[ChannelInfo] ❌ WebSocket edit failed, falling back to localStorage',
+                    result.error,
+                )
+
+                // Fallback: Update localStorage directly
+                const currentChat =
+                    getChatByIdFromStorage(chatId)
+                if (!currentChat) return
+
+                const newChatType =
+                    updatedData.type === 'public'
+                        ? 'public-channel'
+                        : 'private-channel'
+
+                const updatedChat: ApiChatItem = {
+                    ...currentChat,
+                }
+                updatedChat.name = updatedData.name
+                updatedChat.description =
+                    updatedData.description
+                updatedChat.chat_type = newChatType
+
+                if (updatedData.avatarFile) {
+                    try {
+                        const compressedBase64 =
+                            await compressImage(
+                                updatedData.avatarFile,
+                            )
+                        updatedChat.chat = {
+                            ...currentChat.chat,
+                            avatar_url: compressedBase64,
+                        }
+                    } catch (error) {
+                        console.error(
+                            'Ошибка сжатия аватара',
+                            error,
+                        )
+                    }
+                }
+
+                const allChats =
+                    loadChatsFromStorage() || []
+                const index = allChats.findIndex(
+                    (c) => c.id === chatId,
+                )
+                if (index !== -1) {
+                    allChats[index] = updatedChat
+                    saveChatsToStorage(allChats)
+                }
             }
 
-            // Если изменился статус уведомлений - вызываем колбэк
+            // If notifications changed - call callback
             if (
                 updatedData.notificationsEnabled !==
                 notificationsEnabled
@@ -324,15 +441,17 @@ export default function ChannelInfoSidebar({
                 )
             }
 
-            setIsEditing(false) // Выходим из режима редактирования
-            onChannelUpdated?.() // Уведомляем родителя об обновлении
+            setIsEditing(false)
+            onChannelUpdated?.()
         },
         [
             chatId,
+            chatKey,
             notificationsEnabled,
             onNotificationsChange,
             onChannelUpdated,
             compressImage,
+            fileToBase64,
         ],
     )
 

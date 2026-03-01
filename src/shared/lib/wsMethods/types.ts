@@ -28,6 +28,28 @@ export type DeleteChatCallback = (response: {
     error?: string
 }) => void
 
+export type EditChatCallback = (response: {
+    success: boolean
+    chat?: {
+        created_by: string
+        owner_full_name: string
+        chat_key: string
+        chat_id: string
+        name: string
+        description: string
+        chat_type: string
+        avatar?: {
+            filename: string
+            url: string
+        }
+        added_users?: Array<{
+            uid: string
+            full_name: string
+        }>
+    }
+    error?: string
+}) => void
+
 // Generic WebSocket response parser
 export interface WsResponse {
     action: string

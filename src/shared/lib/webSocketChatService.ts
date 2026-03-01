@@ -3,9 +3,11 @@ import {
     CreateChatCallback,
     AddMembersCallback,
     DeleteChatCallback,
+    EditChatCallback,
     createChatMethod,
     addMembersMethod,
     deleteChatMethod,
+    editChatMethod,
     parseAndRouteMessage,
     createSender,
     ConnectionManager,
@@ -16,6 +18,8 @@ import {
     AddMembersResult,
     DeleteChatParams,
     DeleteChatResult,
+    EditChatParams,
+    EditChatResult,
 } from './wsMethods'
 
 // WebSocket service class
@@ -27,6 +31,7 @@ class WebSocketChatService {
         createChat: new Map<string, CreateChatCallback>(),
         addMembers: new Map<string, AddMembersCallback>(),
         deleteChat: new Map<string, DeleteChatCallback>(),
+        editChat: new Map<string, EditChatCallback>(),
     }
 
     // Getters
@@ -152,6 +157,20 @@ class WebSocketChatService {
             this.isConnected,
             this.connectionState,
             this.callbacks.deleteChat,
+            (data) => this.send(data),
+            () => this.connect(),
+        )(params)
+    }
+
+    // Edit chat via WebSocket
+    editChat(
+        params: EditChatParams,
+    ): Promise<EditChatResult> {
+        return editChatMethod(
+            this.conn.getSocket(),
+            this.isConnected,
+            this.connectionState,
+            this.callbacks.editChat,
             (data) => this.send(data),
             () => this.connect(),
         )(params)
