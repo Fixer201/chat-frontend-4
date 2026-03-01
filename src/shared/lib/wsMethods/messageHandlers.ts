@@ -4,6 +4,7 @@ import {
     AddMembersCallback,
     DeleteChatCallback,
     EditChatCallback,
+    LeaveChatCallback,
     WsResponse,
 } from './types'
 
@@ -198,6 +199,62 @@ export function handleEditChatResponse(
                     error:
                         parsed.error ||
                         'Failed to edit chat',
+                })
+            }
+            callbacks.delete(requestUid)
+        }
+    }
+}
+
+export function handleLeaveChatResponse(
+    parsed: WsResponse,
+    callbacks: Map<string, LeaveChatCallback>,
+): void {
+    console.log(
+        '[WS Service] 🚪 leave_chat response received',
+    )
+    const requestUid = parsed.request_uid
+    if (requestUid) {
+        const callback = callbacks.get(requestUid)
+        console.log(
+            '[WS Service] 🔑 Request UID:',
+            requestUid,
+            'Has callback:',
+            !!callback,
+        )
+        if (callback) {
+            if (parsed.status === 'OK' && parsed.object) {
+                console.log(
+                    '[WS Service] ✅ Left chat successfully:',
+                    parsed.object,
+                )
+                const obj = parsed.object as {
+                    chat_key: string
+                    chat_type: string
+                    left_user: {
+                        uid: string
+                        full_name: string
+                    }
+                }
+                callback({
+                    success: true,
+                    chatKey: obj.chat_key,
+                    chatType: obj.chat_type,
+                    leftUser: {
+                        uid: obj.left_user.uid,
+                        fullName: obj.left_user.full_name,
+                    },
+                })
+            } else {
+                console.error(
+                    '[WS Service] ❌ Leave chat failed:',
+                    parsed.error,
+                )
+                callback({
+                    success: false,
+                    error:
+                        parsed.error ||
+                        'Failed to leave chat',
                 })
             }
             callbacks.delete(requestUid)

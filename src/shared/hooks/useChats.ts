@@ -209,6 +209,112 @@ export const useChats = () => {
         [dispatch, items],
     )
 
+    // Leave chat (for groups/channels)
+    const leaveChat = useCallback(
+        async (chatId: number) => {
+            console.log(
+                '\n=========================================',
+            )
+            console.log(
+                '[useChats] 🚪 Starting leave chat process',
+            )
+            console.log('[useChats] 📝 Chat ID:', chatId)
+
+            // Find chat to get chatKey
+            const chat = items.find((c) => c.id === chatId)
+            console.log('[useChats] 📊 Found chat:', chat)
+
+            if (!chat) {
+                console.error(
+                    '[useChats] ❌ Chat not found, using Redux fallback',
+                )
+                dispatch(markAsDeleted(chatId))
+                return
+            }
+
+            const accessToken = Cookies.get('access_token')
+            let wsSuccess = false
+
+            // ========== STEP 1: Try WebSocket first ==========
+            if (accessToken && chat.chatKey) {
+                console.log(
+                    '[useChats] 📡 STEP 1: Trying WebSocket...',
+                )
+                console.log(
+                    '[useChats] 🔑 Chat key:',
+                    chat.chatKey,
+                )
+                console.log(
+                    '[useChats] 👤 Chat name:',
+                    chat.name,
+                )
+                console.log(
+                    '[useChats] 📋 Chat type:',
+                    chat.chatType,
+                )
+
+                try {
+                    const result =
+                        await wsChatService.leaveChat({
+                            chatKey: chat.chatKey,
+                        })
+
+                    console.log(
+                        '[useChats] 📥 WebSocket result:',
+                        result,
+                    )
+
+                    if (result.success) {
+                        console.log(
+                            '[useChats] ✅ WebSocket leave success',
+                        )
+                        wsSuccess = true
+                    } else {
+                        console.warn(
+                            '[useChats] ⚠️ WebSocket leave failed:',
+                            result.error,
+                        )
+                        // If error is "not a member", we should still remove from UI
+                        if (
+                            result.error?.includes(
+                                'не состоите',
+                            )
+                        ) {
+                            console.log(
+                                '[useChats] ℹ️ User not a member on server, removing from UI anyway',
+                            )
+                            wsSuccess = true
+                        }
+                    }
+                } catch (error) {
+                    console.error(
+                        '[useChats] ❌ WebSocket error:',
+                        error,
+                    )
+                }
+            } else {
+                console.log(
+                    '[useChats] ⏳ No token or chatKey, skipping WebSocket',
+                )
+            }
+
+            // ========== STEP 2: Always mark as deleted in Redux ==========
+            console.log(
+                '[useChats] 💾 STEP 2: Marking as deleted in Redux...',
+            )
+            dispatch(markAsDeleted(chatId))
+            console.log('[useChats] ✅ Redux updated')
+
+            console.log(
+                '[useChats] 🔐 Leave process finished',
+            )
+            console.log(
+                '=========================================\n',
+            )
+        },
+        [dispatch, items],
+    )
+
     // Добавление чата в список контактов
     const addChatToContacts = useCallback(
         (chatId: number) => {
@@ -305,6 +411,7 @@ export const useChats = () => {
         markAsRead: markChatAsRead,
         markAsUnread: markChatAsUnread,
         deleteChat,
+        leaveChat,
         addToContacts: addChatToContacts,
         resetChatSettings: resetAllChatSettings,
         getChatSettings,

@@ -4,6 +4,7 @@ import {
     handleAddMembersResponse,
     handleDeleteChatResponse,
     handleEditChatResponse,
+    handleLeaveChatResponse,
 } from './messageHandlers'
 import {
     WsResponse,
@@ -11,6 +12,7 @@ import {
     AddMembersCallback,
     DeleteChatCallback,
     EditChatCallback,
+    LeaveChatCallback,
 } from './types'
 
 export interface CallbackMaps {
@@ -18,6 +20,7 @@ export interface CallbackMaps {
     addMembers: Map<string, AddMembersCallback>
     deleteChat: Map<string, DeleteChatCallback>
     editChat: Map<string, EditChatCallback>
+    leaveChat: Map<string, LeaveChatCallback>
 }
 
 export function routeMessage(
@@ -45,6 +48,11 @@ export function routeMessage(
             handleEditChatResponse(
                 parsed,
                 callbacks.editChat,
+            ),
+        leave_chat: () =>
+            handleLeaveChatResponse(
+                parsed,
+                callbacks.leaveChat,
             ),
     }
 

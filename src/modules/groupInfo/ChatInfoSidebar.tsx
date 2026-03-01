@@ -46,6 +46,7 @@ export default function ChatInfoSidebar({
         chatSettings,
         toggleNotifications,
         deleteChat,
+        leaveChat,
         loadChats,
         selectChat,
     } = useChats()
@@ -152,10 +153,10 @@ export default function ChatInfoSidebar({
     // Обработчик выхода из чата/группы/канала
     const handleLeaveChat = useCallback(async () => {
         if (selectedChatId) {
-            await deleteChat(selectedChatId) // Удаляем чат
+            await leaveChat(selectedChatId) // Выходим из чата через WebSocket
             handleCloseSidebar() // Закрываем сайдбар
         }
-    }, [selectedChatId, deleteChat, handleCloseSidebar])
+    }, [selectedChatId, leaveChat, handleCloseSidebar])
 
     // Обработчик удаления чата (для групп/каналов, где пользователь владелец)
     const handleDeleteChat = useCallback(async () => {

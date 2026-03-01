@@ -50,6 +50,17 @@ export type EditChatCallback = (response: {
     error?: string
 }) => void
 
+export type LeaveChatCallback = (response: {
+    success: boolean
+    chatKey?: string
+    chatType?: string
+    leftUser?: {
+        uid: string
+        fullName: string
+    }
+    error?: string
+}) => void
+
 // Generic WebSocket response parser
 export interface WsResponse {
     action: string
