@@ -15,6 +15,8 @@ import { useWebSocket } from '@shared/context/websocketContext'
 import { useCurrentUserId } from '@shared/hooks/useCurrentUserId'
 import { useMessages } from '@shared/hooks/useMessages'
 import { cn } from '@shared/lib/utils'
+import { Contact } from '@shared/hooks/useContactData'
+import PersonalChatSidebar from './PersonalChatSidebar'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -89,6 +91,12 @@ export default function ChatRoom({
     /** Общее количество найденных результатов. Обновляется через handleSearchMatchesFound. */
     const [totalSearchResults, setTotalSearchResults] =
         useState(0)
+
+    // --- Состояние сайдбара контакта ---
+    const [isSidebarOpen, setIsSidebarOpen] =
+        useState(false)
+    const [sidebarContact, setSidebarContact] =
+        useState<Contact | null>(null)
 
     const { sendMessage, deleteMessage } = useWebSocket()
 
@@ -385,6 +393,37 @@ export default function ChatRoom({
         isLocalChat,
     )
 
+    // --- Обработчики для сайдбара контакта ---
+    const handleOpenSidebar = useCallback(
+        (contact: Contact) => {
+            setSidebarContact(contact)
+            setIsSidebarOpen(true)
+        },
+        [],
+    )
+
+    const handleCloseSidebar = useCallback(() => {
+        setIsSidebarOpen(false)
+        // Можно оставить contact для плавного закрытия, но при следующем открытии он перезатрётся
+    }, [])
+
+    const handleClearChat = useCallback(
+        (deleteForEveryone: boolean) => {
+            // Здесь можно добавить логику очистки чата
+            console.log('Clear chat', deleteForEveryone)
+            // Например, отправить специальное сообщение или вызвать API
+        },
+        [],
+    )
+
+    const handleNotificationsChange = useCallback(
+        (enabled: boolean) => {
+            // Здесь можно обновлять настройки уведомлений в сторе/API
+            console.log('Notifications enabled:', enabled)
+        },
+        [],
+    )
+
     return (
         <div className="relative flex h-full flex-col rounded-md bg-gray-light">
             <ChatHeader
@@ -401,6 +440,7 @@ export default function ChatRoom({
                 onSearchClose={handleSearchClose}
                 currentMatchIndex={currentMatchIndex}
                 totalSearchResults={totalSearchResults}
+                onSidebarOpen={handleOpenSidebar}
             />
 
             <CallModal
@@ -416,7 +456,7 @@ export default function ChatRoom({
                     className={cn(
                         'fixed',
                         'inset-0',
-                        'z-[60]',
+                        'z-60',
                         'flex',
                         'items-center',
                         'justify-center',
@@ -488,65 +528,108 @@ export default function ChatRoom({
                 </div>
             )}
 
+            {/* Основной контент с адаптивной шириной */}
             <div
-                role="presentation"
-                className="flex-1 overflow-y-auto"
-                onClick={() => {
-                    if (isSearchOpen) {
-                        handleSearchClose()
-                    }
-                }}
+                className={cn(
+                    `
+                      relative flex flex-1 flex-col transition-all duration-300
+                      ease-in-out
+                    `,
+                    isSidebarOpen ? 'mr-80' : 'mr-0',
+                )}
             >
-                <MessagesList
-                    chatKey={chat.chatKey}
-                    apiMessages={apiMessages}
-                    contactUid={
-                        chat.tempContactUid || chat.chat.uid
-                    }
-                    isTemporary={chat.isTemporary}
-                    onEditMessage={handleEditMessage}
-                    onReplyMessage={handleReplyMessage}
-                    onSelectMessage={handleSelectMessage}
-                    onForwardMessage={handleForwardMessage}
-                    isSelectionMode={isSelectionMode}
-                    selectedMessages={selectedMessages}
-                    chatName={chatName}
-                    searchQuery={
-                        isSearchOpen ? searchQuery : ''
-                    }
-                    currentMatchIndex={currentMatchIndex}
-                    onSearchMatchesFound={
-                        handleSearchMatchesFound
-                    }
-                    onSearchNavigate={setCurrentMatchIndex}
-                />
-            </div>
+                {/* Оверлей для мобильных устройств */}
+                {isSidebarOpen && (
+                    <div
+                        className={`
+                          absolute inset-0 z-40 bg-black/20
+                          md:hidden
+                        `}
+                        onKeyDown={(e) => {
+                            if (
+                                e.key === 'Enter' ||
+                                e.key === ' '
+                            ) {
+                                handleCloseSidebar()
+                            }
+                        }}
+                        onClick={handleCloseSidebar}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Закрыть sidebar"
+                    />
+                )}
 
-            {/* Нижняя панель: в режиме выбора — тулбар с действиями,
+                {/* Контейнер для MessagesList - занимает всё доступное пространство */}
+                <div
+                    role="presentation"
+                    className="flex-1 overflow-y-auto"
+                    onClick={() => {
+                        if (isSearchOpen) {
+                            handleSearchClose()
+                        }
+                    }}
+                >
+                    <MessagesList
+                        chatKey={chat.chatKey}
+                        apiMessages={apiMessages}
+                        contactUid={
+                            chat.tempContactUid ||
+                            chat.chat.uid
+                        }
+                        isTemporary={chat.isTemporary}
+                        onEditMessage={handleEditMessage}
+                        onReplyMessage={handleReplyMessage}
+                        onSelectMessage={
+                            handleSelectMessage
+                        }
+                        onForwardMessage={
+                            handleForwardMessage
+                        }
+                        isSelectionMode={isSelectionMode}
+                        selectedMessages={selectedMessages}
+                        chatName={chatName}
+                        searchQuery={
+                            isSearchOpen ? searchQuery : ''
+                        }
+                        currentMatchIndex={
+                            currentMatchIndex
+                        }
+                        onSearchMatchesFound={
+                            handleSearchMatchesFound
+                        }
+                        onSearchNavigate={
+                            setCurrentMatchIndex
+                        }
+                    />
+                </div>
+
+                {/* Нижняя панель: в режиме выбора — тулбар с действиями,
                 иначе — поле ввода сообщения (MessageComposer) */}
-            {isSelectionMode ? (
-                <SelectionToolbar
-                    selectedMessages={selectedMessages}
-                    onClose={handleClearSelection}
-                    onForward={handleForwardSelected}
-                    onCopy={handleCopySelected}
-                    onDelete={handleDeleteSelected}
-                />
-            ) : (
-                <MessageComposer
-                    key={
-                        editingMessage?.uid ??
-                        replyingMessage?.uid ??
-                        'new'
-                    }
-                    toUserId={chat.chat.uid}
-                    chatKey={chat.chatKey}
-                    editingMessage={editingMessage}
-                    replyingMessage={replyingMessage}
-                    onCancelEdit={handleCancelEdit}
-                    onCancelReply={handleCancelReply}
-                />
-            )}
+                {isSelectionMode ? (
+                    <SelectionToolbar
+                        selectedMessages={selectedMessages}
+                        onClose={handleClearSelection}
+                        onForward={handleForwardSelected}
+                        onCopy={handleCopySelected}
+                        onDelete={handleDeleteSelected}
+                    />
+                ) : (
+                    <MessageComposer
+                        key={
+                            editingMessage?.uid ??
+                            replyingMessage?.uid ??
+                            'new'
+                        }
+                        toUserId={chat.chat.uid}
+                        chatKey={chat.chatKey}
+                        editingMessage={editingMessage}
+                        replyingMessage={replyingMessage}
+                        onCancelEdit={handleCancelEdit}
+                        onCancelReply={handleCancelReply}
+                    />
+                )}
+            </div>
 
             <ForwardMessageModal
                 open={forwardModalOpen}
@@ -573,6 +656,31 @@ export default function ChatRoom({
                 visible={copyToastVisible}
                 onHide={handleHideCopyToast}
             />
+
+            {/* Сайдбар информации о контакте */}
+            {isSidebarOpen && sidebarContact && (
+                <div
+                    className={cn(
+                        'absolute top-0 right-0 h-full w-80',
+                        'z-50 shadow-xl',
+                        'rounded-l-md bg-gray-main',
+                        'border-l border-gray-border',
+                        'transition-all duration-300 ease-in-out',
+                    )}
+                >
+                    <PersonalChatSidebar
+                        contact={sidebarContact}
+                        chatKey={chat.chatKey}
+                        chatUid={chat.chat.uid}
+                        notificationsEnabled={false}
+                        onNotificationsChange={
+                            handleNotificationsChange
+                        }
+                        onClose={handleCloseSidebar}
+                        onClearChat={handleClearChat}
+                    />
+                </div>
+            )}
         </div>
     )
 }
