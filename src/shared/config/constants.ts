@@ -79,7 +79,6 @@ export const ContactsListDB: Contact[] = [
         isOnline: false,
         wasOnlineAt: 1696161600000,
     },
-
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afa7',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa7',
@@ -97,9 +96,8 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: '2025-12-26T10:00:00Z',
+        wasOnlineAt: 1736762400000, // 2025-12-26T10:00:00Z
     },
-
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb1',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb1',
@@ -117,9 +115,8 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: '2025-12-25T12:00:00Z',
+        wasOnlineAt: 1736676000000, // 2025-12-25T12:00:00Z
     },
-
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb2',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb2',
@@ -139,7 +136,6 @@ export const ContactsListDB: Contact[] = [
         isOnline: false,
         wasOnlineAt: 48,
     },
-
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb3',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb3',
@@ -157,9 +153,8 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: '22.01.2022',
+        wasOnlineAt: 1642809600000, // 22.01.2022 (полночь UTC)
     },
-
     {
         uid: '3fa85f64-5717-4562-b3fc-2c963f66afb9',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb9',
@@ -177,7 +172,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: '22.03.2025',
+        wasOnlineAt: 1742601600000, // 22.03.2025 (полночь UTC)
     },
     {
         uid: '3fa85f64-5717-4562-b3fc-bfsgnshgfn5165',
@@ -196,7 +191,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: '22.03.2025',
+        wasOnlineAt: 1742601600000, // 22.03.2025
     },
     {
         uid: '3fa85f64-5717-4562-b3fc-fhsdgnhs453543fdh',
@@ -216,7 +211,7 @@ export const ContactsListDB: Contact[] = [
         birthday: 0,
         chatId: 0,
         isOnline: false,
-        wasOnlineAt: '22.03.2025',
+        wasOnlineAt: 1742601600000, // 22.03.2025
     },
 ]
 

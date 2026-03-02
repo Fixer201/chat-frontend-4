@@ -1,19 +1,11 @@
-import { getContactWebStatus } from '@shared/lib/getContactWebStatus'
 import { Contact } from '@shared/types/contact'
+import { getContactWebStatus } from './getContactWebStatus'
 
 export const getStatusText = (
     contact: Contact,
     searchValue: string,
 ) => {
     const lowerSearch = searchValue.toLowerCase()
-    // console.log('getStatusText:', {
-    //     searchValue,
-    //     lowerSearch,
-    //     phone: contact.phone,
-    //     nickname: contact.nickname,
-    //     isOnline: contact.isOnline,
-    //     wasOnlineAt: contact.wasOnlineAt,
-    // })
 
     if (
         lowerSearch &&
@@ -32,10 +24,7 @@ export const getStatusText = (
             contact.isOnline,
             contact.wasOnlineAt,
         )
-        // console.log(
-        //     'Status from getContactWebStatus:',
-        //     status,
-        // )
+
         return status
     }
 }

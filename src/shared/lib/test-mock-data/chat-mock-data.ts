@@ -85,7 +85,7 @@ function generateMockGroupParticipants(
                 '/images/chatHeader/userAvatar.svg',
             isOwner: false,
             isBlocked: false,
-            isOnline: Math.random() > 0.5,
+            isOnline: false,
             wasOnlineAt:
                 Date.now() -
                 Math.floor(Math.random() * 3600000),

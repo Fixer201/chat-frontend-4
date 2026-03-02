@@ -28,6 +28,8 @@ import { Spinner } from '@shared/ui/Spinner'
 import { useChats } from '@shared/hooks/useChats'
 import { useAppSelector } from '@redux/store'
 import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import { Contact } from '@shared/hooks/useContactData'
+import PersonalChatSidebar from './PersonalChatSidebar'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
@@ -111,6 +113,12 @@ export default function ChatRoom({
     /** Общее количество найденных результатов. Обновляется через handleSearchMatchesFound. */
     const [totalSearchResults, setTotalSearchResults] =
         useState(0)
+
+    // --- Состояние сайдбара контакта ---
+    const [isSidebarOpen, setIsSidebarOpen] =
+        useState(false)
+    const [sidebarContact, setSidebarContact] =
+        useState<Contact | null>(null)
 
     const { sendMessage, deleteMessage, markMessagesRead } =
         useWebSocket()
@@ -258,26 +266,6 @@ export default function ChatRoom({
     }
 
     const isLocalChat = chat.isTemporary === true
-    /**
-     * Определяем, является ли чат локальным (созданным только на клиенте).
-     *
-     * Локальные чаты — группы/каналы, созданные офлайн до первой
-     * синхронизации с сервером. Для них API-загрузка истории не нужна.
-     *
-     * Проверка: chatKey === 'chat_key_0' (дефолтный ключ до назначения
-     * сервером) И НЕ временный (isTemporary).
-     *
-     * ⚠️ Важно: нельзя проверять по chat.id > 1e12, потому что
-     * при переходе временного чата в реальный (после отправки первого
-     * сообщения) isTemporary сбрасывается в false, но id остаётся
-     * большим — такая проверка ошибочно классифицирует конвертированный
-     * чат как «локальный», и useMessages очистит историю (setMessages([])).
-     *
-     * Три типа чатов:
-     * 1. Временный (isTemporary=true, chatKey='chat_key_0') → загружать API-историю
-     * 2. Конвертированный (isTemporary=false, chatKey='chat_3401') → загружать
-     * 3. Локальный (isTemporary=false, chatKey='chat_key_0') → НЕ загружать
-     */
 
     /**
      * Открытие режима поиска.
@@ -447,9 +435,9 @@ export default function ChatRoom({
 
         // Для локальных/временных чатов (id > 10^12) серверного чата ещё нет —
         // пропускаем API-вызов, иначе получим 404
-        const isLocalChat =
+        const isLocalChatById =
             chat.isTemporary || chat.id > 1000000000000
-        if (chat.lastMessage?.id && !isLocalChat) {
+        if (chat.lastMessage?.id && !isLocalChatById) {
             const lastSeenKey = `${chat.id}:${chat.lastMessage.id}`
             if (lastSeenRef.current !== lastSeenKey) {
                 lastSeenRef.current = lastSeenKey
@@ -488,12 +476,40 @@ export default function ChatRoom({
         apiMessages,
         chat.chatKey,
         chat.id,
+        chat.isTemporary,
         chat.lastMessage?.id,
         currentUserId,
         markAsRead,
         markAsReadOnServer,
         markMessagesRead,
     ])
+
+    // --- Обработчики для сайдбара контакта ---
+    const handleOpenSidebar = useCallback(
+        (contact: Contact) => {
+            setSidebarContact(contact)
+            setIsSidebarOpen(true)
+        },
+        [],
+    )
+
+    const handleCloseSidebar = useCallback(() => {
+        setIsSidebarOpen(false)
+    }, [])
+
+    const handleClearChat = useCallback(
+        (deleteForEveryone: boolean) => {
+            console.log('Clear chat', deleteForEveryone)
+        },
+        [],
+    )
+
+    const handleNotificationsChange = useCallback(
+        (enabled: boolean) => {
+            console.log('Notifications enabled:', enabled)
+        },
+        [],
+    )
 
     return (
         <div className="relative flex h-full flex-col rounded-md bg-gray-light">
@@ -511,6 +527,7 @@ export default function ChatRoom({
                 onSearchClose={handleSearchClose}
                 currentMatchIndex={currentMatchIndex}
                 totalSearchResults={totalSearchResults}
+                onSidebarOpen={handleOpenSidebar}
             />
 
             <CallModal
@@ -526,7 +543,7 @@ export default function ChatRoom({
                     className={cn(
                         'fixed',
                         'inset-0',
-                        'z-[60]',
+                        'z-60',
                         'flex',
                         'items-center',
                         'justify-center',
@@ -598,125 +615,172 @@ export default function ChatRoom({
                 </div>
             )}
 
+            {/* Основной контент с адаптивной шириной */}
             <div
-                ref={scrollContainerRef}
-                role="presentation"
-                className="flex-1 overflow-y-auto"
-                onClick={() => {
-                    if (isSearchOpen) {
-                        handleSearchClose()
-                    }
-                }}
+                className={cn(
+                    `
+                      relative flex min-h-0 flex-1 flex-col transition-all
+                      duration-300 ease-in-out
+                    `,
+                    isSidebarOpen ? 'mr-80' : 'mr-0',
+                )}
             >
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none sticky top-0 z-20 h-0"
-                >
+                {/* Оверлей для мобильных устройств */}
+                {isSidebarOpen && (
                     <div
-                        className={cn(
-                            `
-                              flex justify-center pt-2 transition-opacity
-                              duration-200
-                            `,
-                            activeTimestamp
-                                ? 'opacity-100'
-                                : 'opacity-0',
-                        )}
+                        className={`
+                          absolute inset-0 z-40 bg-black/20
+                          md:hidden
+                        `}
+                        onKeyDown={(e) => {
+                            if (
+                                e.key === 'Enter' ||
+                                e.key === ' '
+                            ) {
+                                handleCloseSidebar()
+                            }
+                        }}
+                        onClick={handleCloseSidebar}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Закрыть sidebar"
+                    />
+                )}
+
+                {/* Контейнер для MessagesList с floating date pill */}
+                <div
+                    ref={scrollContainerRef}
+                    role="presentation"
+                    className="flex-1 overflow-y-auto"
+                    onClick={() => {
+                        if (isSearchOpen) {
+                            handleSearchClose()
+                        }
+                    }}
+                >
+                    {/* Floating date pill */}
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none sticky top-0 z-20 h-0"
                     >
-                        <time
+                        <div
                             className={cn(
-                                'rounded-lg',
-                                'bg-accent-violet-dark/60',
-                                'px-2',
-                                'py-0.5',
-                                'text-sm',
-                                'leading-[120%]',
-                                'font-medium',
-                                'text-white',
-                                'backdrop-blur-[4px]',
+                                `
+                                  flex justify-center pt-2 transition-opacity
+                                  duration-200
+                                `,
+                                activeTimestamp
+                                    ? 'opacity-100'
+                                    : 'opacity-0',
                             )}
                         >
-                            {activeTimestamp
-                                ? formatDividerDate(
-                                      activeTimestamp,
-                                  )
-                                : ''}
-                        </time>
+                            <time
+                                className={cn(
+                                    'rounded-lg',
+                                    'bg-accent-violet-dark/60',
+                                    'px-2',
+                                    'py-0.5',
+                                    'text-sm',
+                                    'leading-[120%]',
+                                    'font-medium',
+                                    'text-white',
+                                    'backdrop-blur-[4px]',
+                                )}
+                            >
+                                {activeTimestamp
+                                    ? formatDividerDate(
+                                          activeTimestamp,
+                                      )
+                                    : ''}
+                            </time>
+                        </div>
                     </div>
+
+                    {messagesLoading &&
+                    apiMessages.length === 0 ? (
+                        <div className="flex h-full items-center justify-center">
+                            <Spinner />
+                        </div>
+                    ) : (
+                        <MessagesList
+                            chatKey={chat.chatKey}
+                            apiMessages={
+                                optimisticApiMessages
+                            }
+                            contactUid={
+                                chat.tempContactUid ||
+                                chat.chat.uid
+                            }
+                            isTemporary={chat.isTemporary}
+                            currentUserId={currentUserId}
+                            peerUid={
+                                chat.chatType === 'chat'
+                                    ? chat.chat.uid
+                                    : undefined
+                            }
+                            onEditMessage={
+                                handleEditMessage
+                            }
+                            onReplyMessage={
+                                handleReplyMessage
+                            }
+                            onSelectMessage={
+                                handleSelectMessage
+                            }
+                            onForwardMessage={
+                                handleForwardMessage
+                            }
+                            isSelectionMode={
+                                isSelectionMode
+                            }
+                            selectedMessages={
+                                selectedMessages
+                            }
+                            chatName={chatName}
+                            searchQuery={
+                                isSearchOpen
+                                    ? searchQuery
+                                    : ''
+                            }
+                            currentMatchIndex={
+                                currentMatchIndex
+                            }
+                            onSearchMatchesFound={
+                                handleSearchMatchesFound
+                            }
+                            onSearchNavigate={
+                                setCurrentMatchIndex
+                            }
+                        />
+                    )}
                 </div>
 
-                {messagesLoading &&
-                apiMessages.length === 0 ? (
-                    <div className="flex h-full items-center justify-center">
-                        <Spinner />
-                    </div>
-                ) : (
-                    <MessagesList
-                        chatKey={chat.chatKey}
-                        apiMessages={optimisticApiMessages}
-                        contactUid={
-                            chat.tempContactUid ||
-                            chat.chat.uid
-                        }
-                        isTemporary={chat.isTemporary}
-                        currentUserId={currentUserId}
-                        peerUid={
-                            chat.chatType === 'chat'
-                                ? chat.chat.uid
-                                : undefined
-                        }
-                        onEditMessage={handleEditMessage}
-                        onReplyMessage={handleReplyMessage}
-                        onSelectMessage={
-                            handleSelectMessage
-                        }
-                        onForwardMessage={
-                            handleForwardMessage
-                        }
-                        isSelectionMode={isSelectionMode}
+                {/* Нижняя панель: в режиме выбора — тулбар с действиями,
+                иначе — поле ввода сообщения (MessageComposer) */}
+                {isSelectionMode ? (
+                    <SelectionToolbar
                         selectedMessages={selectedMessages}
-                        chatName={chatName}
-                        searchQuery={
-                            isSearchOpen ? searchQuery : ''
-                        }
-                        currentMatchIndex={
-                            currentMatchIndex
-                        }
-                        onSearchMatchesFound={
-                            handleSearchMatchesFound
-                        }
-                        onSearchNavigate={
-                            setCurrentMatchIndex
-                        }
+                        onClose={handleClearSelection}
+                        onForward={handleForwardSelected}
+                        onCopy={handleCopySelected}
+                        onDelete={handleDeleteSelected}
+                    />
+                ) : (
+                    <MessageComposer
+                        key={`${chat.chatKey}-${
+                            editingMessage?.uid ??
+                            replyingMessage?.uid ??
+                            'new'
+                        }`}
+                        toUserId={chat.chat.uid}
+                        chatKey={chat.chatKey}
+                        editingMessage={editingMessage}
+                        replyingMessage={replyingMessage}
+                        onCancelEdit={handleCancelEdit}
+                        onCancelReply={handleCancelReply}
                     />
                 )}
             </div>
-
-            {/* Нижняя панель: в режиме выбора — тулбар с действиями,
-                иначе — поле ввода сообщения (MessageComposer) */}
-            {isSelectionMode ? (
-                <SelectionToolbar
-                    selectedMessages={selectedMessages}
-                    onClose={handleClearSelection}
-                    onForward={handleForwardSelected}
-                    onCopy={handleCopySelected}
-                    onDelete={handleDeleteSelected}
-                />
-            ) : (
-                <MessageComposer
-                    key={`${chat.chatKey}-${
-                        editingMessage?.uid ??
-                        replyingMessage?.uid ??
-                        'new'
-                    }`}
-                    toUserId={chat.chat.uid}
-                    chatKey={chat.chatKey}
-                    editingMessage={editingMessage}
-                    replyingMessage={replyingMessage}
-                    onCancelEdit={handleCancelEdit}
-                    onCancelReply={handleCancelReply}
-                />
-            )}
 
             <ForwardMessageModal
                 open={forwardModalOpen}
@@ -743,6 +807,31 @@ export default function ChatRoom({
                 visible={copyToastVisible}
                 onHide={handleHideCopyToast}
             />
+
+            {/* Сайдбар информации о контакте */}
+            {isSidebarOpen && sidebarContact && (
+                <div
+                    className={cn(
+                        'absolute top-0 right-0 h-full w-80',
+                        'z-50 shadow-xl',
+                        'rounded-l-md bg-gray-main',
+                        'border-l border-gray-border',
+                        'transition-all duration-300 ease-in-out',
+                    )}
+                >
+                    <PersonalChatSidebar
+                        contact={sidebarContact}
+                        chatKey={chat.chatKey}
+                        chatUid={chat.chat.uid}
+                        notificationsEnabled={false}
+                        onNotificationsChange={
+                            handleNotificationsChange
+                        }
+                        onClose={handleCloseSidebar}
+                        onClearChat={handleClearChat}
+                    />
+                </div>
+            )}
         </div>
     )
 }
