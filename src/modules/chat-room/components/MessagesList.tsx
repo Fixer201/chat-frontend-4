@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
 import DateDivider from './DateDivider'
+import UnreadDivider from './UnreadDivider'
 import {
     Fragment,
     useCallback,
@@ -73,6 +74,7 @@ export default function MessagesList({
     isSelectionMode,
     selectedMessages,
     chatName,
+    firstUnreadUid,
 
     searchQuery = '',
     currentMatchIndex,
@@ -91,6 +93,7 @@ export default function MessagesList({
     isSelectionMode?: boolean
     selectedMessages?: Message[]
     chatName?: string
+    firstUnreadUid?: string
     searchQuery?: string
     currentMatchIndex?: number | null
     onSearchMatchesFound?: (count: number) => void
@@ -315,12 +318,11 @@ export default function MessagesList({
                                     message.created_at,
                                 ))
 
+                        const showUnreadDivider =
+                            firstUnreadUid &&
+                            message.uid === firstUnreadUid
+
                         return (
-                            /*
-                             * Fragment необходим для рендеринга двух элементов
-                             * (DateDivider + li) под одним key без лишнего DOM-узла.
-                             * key на Fragment наследуется от message.uid.
-                             */
                             <Fragment key={message.uid}>
                                 {showDivider && (
                                     <DateDivider
@@ -328,6 +330,9 @@ export default function MessagesList({
                                             message.created_at!
                                         }
                                     />
+                                )}
+                                {showUnreadDivider && (
+                                    <UnreadDivider />
                                 )}
                                 <li
                                     data-message-uid={
