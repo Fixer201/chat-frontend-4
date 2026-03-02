@@ -177,6 +177,7 @@ export default function MessageComposer({
                           content: replyingMessage.content,
                           from_user:
                               replyingMessage.from_user,
+                          files_list: replyingMessage.files,
                       },
                   ]
                 : undefined
@@ -186,6 +187,7 @@ export default function MessageComposer({
                 content: inputValue,
                 toUserId: toUserId,
                 status: 'publish',
+                // chatType удалён, так как не входит в тип Message
                 repliedMessages,
             })
 

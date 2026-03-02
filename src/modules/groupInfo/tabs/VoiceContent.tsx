@@ -266,9 +266,7 @@ export default function VoiceContent({
                     return (
                         <div
                             key={message.id}
-                            className={`
-                          border-b border-app-divider p-3
-                        `}
+                            className={`border-b border-app-divider p-3`}
                         >
                             <div className="flex items-center gap-3">
                                 {/* Кнопка play/pause */}
@@ -318,13 +316,13 @@ export default function VoiceContent({
                                 <div className="flex-1">
                                     <div
                                         className={`
-                                      mb-1 flex items-center justify-between
-                                    `}
+                                          mb-1 flex items-center justify-between
+                                        `}
                                     >
                                         <span
                                             className={`
-                                          font-medium text-text-black
-                                        `}
+                                              font-medium text-text-black
+                                            `}
                                         >
                                             {message.name}{' '}
                                             {/* Название файла */}
@@ -334,9 +332,9 @@ export default function VoiceContent({
                                     {/* Метаданные: длительность и дата */}
                                     <div
                                         className={cn(`
-                                      flex items-center gap-2 text-sm
-                                      text-text-gray
-                                    `)}
+                                          flex items-center gap-2 text-sm
+                                          text-text-gray
+                                        `)}
                                     >
                                         <span className="text-sm text-text-gray">
                                             {displayTime}{' '}

@@ -125,7 +125,7 @@ const createMockChatFromResponse = (
     let avatarUrl = photoUrl
     if (!avatarUrl) {
         if (chatType.includes('group')) {
-            avatarUrl = '/images/chatHeader/groupAvatar.svg' // убедитесь, что файл существует
+            avatarUrl = '/images/chatHeader/groupAvatar.svg'
         } else if (chatType.includes('channel')) {
             avatarUrl =
                 '/images/chatHeader/channelAvatar.svg'
@@ -179,10 +179,15 @@ const createMockChatFromResponse = (
                 uid: '',
                 from_user: 'Вы',
                 content:
-                    participants.length > 0
-                        ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
-                        : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
-                files_summary: { types: [], count: 0 },
+                    chatType === 'chat'
+                        ? ''
+                        : participants.length > 0
+                          ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
+                          : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
+                files_summary: {
+                    types: [],
+                    count: 0,
+                },
                 has_replied_message: false,
                 has_forwarded_message: false,
                 new: false,
@@ -210,9 +215,11 @@ const createMockChatFromResponse = (
         last_message: {
             ...baseMockChat.last_message,
             content:
-                participants.length > 0
-                    ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
-                    : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
+                chatType === 'chat'
+                    ? ''
+                    : participants.length > 0
+                      ? `Создана ${chatType.includes('group') ? 'группа' : 'канал'}. Участников: ${participants.length}`
+                      : `Создана ${chatType.includes('group') ? 'группа' : 'канал'}`,
         },
     }
     return modifiedMockChat
@@ -250,7 +257,7 @@ export const createGroup = createAsyncThunk<
                     }
 
                     const response = await fetch(
-                        'https://api.test.chat.ktsf.ru/api/v1/chat/create-group',
+                        '/api/v1/chat/create-group',
                         {
                             method: 'POST',
                             headers: {
@@ -392,7 +399,7 @@ export const createChannel = createAsyncThunk<
                     }
 
                     const response = await fetch(
-                        'https://api.test.chat.ktsf.ru/api/v1/chat/create-channel',
+                        '/api/v1/chat/create-channel',
                         {
                             method: 'POST',
                             headers: {
@@ -499,7 +506,7 @@ export const createChannel = createAsyncThunk<
     },
 )
 
-// Thunk для создания личного чата (оставляем как в dev — мок)
+// Thunk для создания личного чата
 export const createChat = createAsyncThunk<
     ChatWithSettings,
     string,
@@ -509,6 +516,17 @@ export const createChat = createAsyncThunk<
     async (toUserId, { rejectWithValue, getState }) => {
         try {
             const state = getState()
+            // Берём контакт из store, чтобы для локального чата сохранить имя/аватар
+            const contact = state.contacts.list.find(
+                (item) =>
+                    item.userUid === toUserId ||
+                    item.uid === toUserId,
+            )
+            const contactDisplayName =
+                `${contact?.firstName || ''} ${contact?.lastName || ''}`.trim() ||
+                contact?.nickname ||
+                contact?.phone ||
+                'Личный чат'
             const existingChat = state.chats.items.find(
                 (chat: ChatItem) =>
                     chat.chat.uid === toUserId ||
@@ -538,24 +556,54 @@ export const createChat = createAsyncThunk<
                 }
             }
 
-            // Создаём локальный моковый чат для личного общения
+            // Локальный мок для личного чата (используется до появления реального чата с сервера)
             const mockChatData = createMockChatFromResponse(
-                'Личный чат',
+                contactDisplayName,
                 '',
                 'chat',
-                null,
+                contact?.avatarUrl ||
+                    contact?.avatarWebpUrl ||
+                    contact?.avatar ||
+                    null,
                 [],
             )
 
             const transformedData =
                 transformFromApi(mockChatData)
+
+            // Прокидываем данные контакта, чтобы в списке чатов сразу было имя и аватар
             const enhancedChat: ChatItem = {
                 ...transformedData,
                 isTemporary: true,
                 tempContactUid: toUserId,
+                name: contactDisplayName,
                 chat: {
                     ...transformedData.chat,
                     uid: toUserId,
+                    username:
+                        contact?.username ||
+                        transformedData.chat.username,
+                    nickname:
+                        contact?.nickname ||
+                        transformedData.chat.nickname,
+                    firstName:
+                        contact?.firstName ||
+                        transformedData.chat.firstName,
+                    lastName:
+                        contact?.lastName ||
+                        transformedData.chat.lastName,
+                    avatar:
+                        contact?.avatar ||
+                        transformedData.chat.avatar,
+                    avatarUrl:
+                        contact?.avatarUrl ||
+                        transformedData.chat.avatarUrl,
+                    avatarWebp:
+                        contact?.avatarWebp ||
+                        transformedData.chat.avatarWebp,
+                    avatarWebpUrl:
+                        contact?.avatarWebpUrl ||
+                        transformedData.chat.avatarWebpUrl,
                     isInContacts: true,
                 },
             }

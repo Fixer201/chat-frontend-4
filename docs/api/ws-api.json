@@ -1,1387 +1,620 @@
 {
-  "api": {
-    "title": "WebSocket Chat API",
-    "version": "1.0",
-    "baseUrl": "/ws/chat",
-    "protocol": "WebSocket",
-    "authentication": {
-      "description": "Подключение происходит через авторизацию двумя способами",
-      "methods": [
-        {
-          "type": "Query Parameter",
-          "format": "/ws/chat?authorization={{token}}",
-          "description": "Передача токена через параметр запроса"
-        },
-        {
-          "type": "Header",
-          "format": "Authorization: Token {{token}}",
-          "description": "Передача токена через заголовок"
-        }
-      ],
-      "note": "где token - актуальный токен пользователя"
-    },
-    "operations": [
+  "api_version": "1.0",
+  "api_type": "WebSocket",
+  "base_path": "/ws/chat",
+  "authentication": {
+    "method": "Token-based",
+    "options": [
       {
-        "id": 1,
-        "action": "_connect",
-        "method": "SEND",
-        "path": "/ws/chat::_connect",
-        "title": "Подключение",
-        "description": "Подключение к WebSocket через авторизацию",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "note": "Подключение происходит автоматически при инициализации WebSocket с авторизацией"
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Успешное подключение",
-            "example": {
-              "status": "connected",
-              "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-            }
-          }
-        }
+        "type": "Query Parameter",
+        "format": "/ws/chat?authorization={{token}}"
       },
       {
-        "id": 2,
-        "action": "add_members_to_chat",
-        "method": "SEND",
-        "path": "/ws/chat::add_members_to_chat",
-        "title": "Добавление пользователей в группу или канал",
-        "description": "Позволяет владельцу добавить новых участников в существующую группу или канал.\nТолько владелец имеет право добавлять участников.\nДобавляемые пользователи получают уведомление о вступлении в чат.\nДля новых участников автоматически запускается асинхронная синхронизация истории сообщений (по умолчанию последние 1000 сообщений).",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "add_members_to_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-              "uid_users_list": [
-                "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07"
-              ]
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["add_members_to_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid",
-                "description": "Уникальный идентификатор запроса"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key", "uid_users_list"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string",
-                    "description": "Ключ группы/канала"
-                  },
-                  "uid_users_list": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "description": "Список UID пользователей для добавления"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Пользователи успешно добавлены",
-            "example": {
-              "action": "add_members_to_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group",
-                "added_users": [
-                  {
-                    "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                    "full_name": "Иван Петров"
-                  },
-                  {
-                    "uid": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                    "full_name": "Мария Сидорова"
-                  }
-                ]
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при добавлении пользователей",
-            "example": {
-              "action": "add_members_to_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Insufficient permissions",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 3,
-        "action": "change_status_read_message",
-        "method": "SEND",
-        "path": "/ws/chat::change_status_read_message",
-        "title": "Изменение статуса прочтения сообщения",
-        "description": "Отмечает сообщение как прочитанное получателем.\nПозволяет отслеживать статус доставки и прочтения сообщений в чате.\nВлияет только на собственные непрочитанные сообщения.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "change_status_read_message",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "uid": "msg_123456789",
-              "reader_uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-              "new_read_status": true,
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["change_status_read_message"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["uid", "reader_uid", "new_read_status", "chat_key"],
-                "properties": {
-                  "uid": {
-                    "type": "string",
-                    "description": "UID сообщения"
-                  },
-                  "reader_uid": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "UID пользователя, прочитавшего сообщение"
-                  },
-                  "new_read_status": {
-                    "type": "boolean",
-                    "description": "Статус прочтения"
-                  },
-                  "chat_key": {
-                    "type": "string",
-                    "description": "Ключ чата"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Статус успешно обновлен",
-            "example": {
-              "action": "change_status_read_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "id": 12345,
-                "uid": "msg_123456789",
-                "from_user": {
-                  "uid": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                  "username": "ivan.petrov",
-                  "first_name": "Иван",
-                  "last_name": "Петров",
-                  "avatar_url": "https://example.com/avatar.jpg"
-                },
-                "to_user": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "username": "maria.sidorova",
-                  "first_name": "Мария",
-                  "last_name": "Сидорова",
-                  "avatar_url": "https://example.com/avatar2.jpg"
-                },
-                "reader_uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                "created_at": 1707124740,
-                "updated_at": 1707124800
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при обновлении статуса",
-            "example": {
-              "action": "change_status_read_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Message not found",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 4,
-        "action": "create_chat",
-        "method": "SEND",
-        "path": "/ws/chat::create_chat",
-        "title": "Создание группы или канала",
-        "description": "Создает новую группу или канал с указанными параметрами и добавляет участников.\nТребуется авторизация. Создатель автоматически становится владельцем.\nПосле создания все участники получают уведомление о новом чате.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "create_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "name": "Отдел разработки",
-              "description": "Чат для обсуждения вопросов разработки",
-              "avatar": {
-                "filename": "avatar.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkEEjIZJj8LZgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAgAElEQVR42u2deZxcVZ3/3+fcW1Vd1d3V3VX..."
-              },
-              "chat_type": "private-group",
-              "uid_users_list": [
-                "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07"
-              ]
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["create_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["name", "chat_type"],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100,
-                    "description": "Название группы/канала"
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 250,
-                    "description": "Описание группы/канала (опционально)"
-                  },
-                  "avatar": {
-                    "type": "object",
-                    "properties": {
-                      "filename": {
-                        "type": "string"
-                      },
-                      "data": {
-                        "type": "string",
-                        "description": "Base64 закодированное изображение (минимум 320x320px, JPEG/PNG/BMP, до 5МБ)"
-                      }
-                    }
-                  },
-                  "chat_type": {
-                    "type": "string",
-                    "enum": ["public-group", "private-group", "public-channel", "private-channel"],
-                    "description": "Тип чата"
-                  },
-                  "uid_users_list": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "description": "Список UID пользователей для добавления"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Группа/канал успешно создана",
-            "example": {
-              "action": "create_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "created_by": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                "owner_full_name": "Иван Петров",
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_id": "550e8400-e29b-41d4-a716-446655440000",
-                "name": "Отдел разработки",
-                "description": "Чат для обсуждения вопросов разработки",
-                "chat_type": "private-group",
-                "avatar": {
-                  "filename": "avatar.png",
-                  "url": "https://example.com/avatars/avatar.png"
-                },
-                "added_users": [
-                  {
-                    "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                    "full_name": "Мария Сидорова"
-                  }
-                ]
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при создании чата",
-            "example": {
-              "action": "create_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Chat name is required",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 5,
-        "action": "create_text_message",
-        "method": "SEND",
-        "path": "/ws/chat::create_text_message",
-        "title": "Отправка сообщения в чат/группу/канал",
-        "description": "Отправляет текстовое сообщение или файлы в существующий чат или группу/канал, либо создает новый приватный чат между пользователями.\nПри отправке в чат между пользователями передается to_user_uid.\nПри отправке в группу/канал передается chat_key.\nОдновременное использование атрибутов forwarded_messages и files невозможно.\nПоддерживает пересылку сообщений и вложения файлов.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "create_text_message",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "to_user_uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-              "chat_key": null,
-              "content": "Привет! Как дела?",
-              "status": "publish",
-              "files": [],
-              "replied_messages": [],
-              "forwarded_messages": []
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["create_text_message"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "properties": {
-                  "to_user_uid": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "UID получателя (для личного сообщения)"
-                  },
-                  "chat_key": {
-                    "type": "string",
-                    "description": "Ключ чата (для группы/канала)"
-                  },
-                  "content": {
-                    "type": "string",
-                    "description": "Содержание сообщения"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": ["publish", "draft"],
-                    "default": "publish"
-                  },
-                  "files": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "filename": {
-                          "type": "string"
-                        },
-                        "data": {
-                          "type": "string",
-                          "description": "Base64 кодированный файл"
-                        }
-                      }
-                    }
-                  },
-                  "replied_messages": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "UIDs сообщений для ответа"
-                  },
-                  "forwarded_messages": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "UIDs сообщений для пересылки"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Сообщение успешно отправлено",
-            "example": {
-              "id": 54321,
-              "uid": "msg_123456789",
-              "from_user": {
-                "uid": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                "username": "ivan.petrov",
-                "nickname": "jxsxpwr31",
-                "first_name": "Иван",
-                "last_name": "Петров",
-                "avatar_url": "https://example.com/avatar.jpg",
-                "avatar_webp_url": "https://example.com/avatar.webp"
-              },
-              "to_user": {
-                "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                "username": "maria.sidorova",
-                "nickname": "egvikop73bm5jbe.h03vevcip2v",
-                "first_name": "Мария",
-                "last_name": "Сидорова",
-                "avatar_url": "https://example.com/avatar2.jpg",
-                "avatar_webp_url": "https://example.com/avatar2.webp"
-              },
-              "content": "Привет! Как дела?",
-              "files_list": [],
-              "replied_messages": [],
-              "forwarded_messages": [],
-              "new": true,
-              "created_at": 1707124740,
-              "updated_at": 1707124740,
-              "chat_id": "550e8400-e29b-41d4-a716-446655440000",
-              "chat_key": "dm_550e8400-e29b-41d4-a716-446655440000",
-              "chat_type": "direct-message"
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при отправке сообщения",
-            "example": {
-              "action": "create_text_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Recipient not found",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 6,
-        "action": "delete_chat",
-        "method": "SEND",
-        "path": "/ws/chat::delete_chat",
-        "title": "Удаление чата или канала",
-        "description": "Удаление чата для всех участников или канала владельцем.\nТолько владелец канала может удалить канал.\nПосле удаления все участники получают уведомление о закрытии чата.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "delete_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["delete_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string",
-                    "description": "Ключ чата для удаления"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Чат успешно удален",
-            "example": {
-              "action": "delete_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group"
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при удалении чата",
-            "example": {
-              "action": "delete_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Only owner can delete chat",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 7,
-        "action": "delete_message",
-        "method": "SEND",
-        "path": "/ws/chat::delete_message",
-        "title": "Удаление сообщения",
-        "description": "Владелец группы может удалять любое сообщение как для себя так и для всех в группе.\nУчастник группы может удалить свои сообщения как для себя так и для всех в группе.\nУчастник группы может удалить чужие сообщения только для себя.\nТолько владелец канала может удалять сообщения в канале.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "delete_message",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "uid": "msg_123456789",
-              "for_all": true,
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["delete_message"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["uid", "for_all", "chat_key"],
-                "properties": {
-                  "uid": {
-                    "type": "string",
-                    "description": "UID сообщения для удаления"
-                  },
-                  "for_all": {
-                    "type": "boolean",
-                    "description": "Удалить для всех участников"
-                  },
-                  "chat_key": {
-                    "type": "string",
-                    "description": "Ключ чата"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Сообщение успешно удалено",
-            "example": {
-              "action": "delete_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "id": 54321,
-                "uid": "msg_123456789",
-                "chat_id": 123,
-                "from_user": {
-                  "uid": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                  "username": "ivan.petrov",
-                  "first_name": "Иван",
-                  "last_name": "Петров"
-                },
-                "to_user": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "username": "maria.sidorova",
-                  "first_name": "Мария",
-                  "last_name": "Сидорова"
-                }
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при удалении сообщения",
-            "example": {
-              "action": "delete_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Message not found",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 8,
-        "action": "edit_chat",
-        "method": "SEND",
-        "path": "/ws/chat::edit_chat",
-        "title": "Редактирование группы или канала",
-        "description": "Позволяет владельцу редактировать параметры существующей группы или канала:\n- название (должно быть от 1 до 100 символов)\n- описание (должно быть не длиннее 250 символов)\n- аватар группы/канала в формате Base64 (минимум 320x320px, форматы JPEG/PNG/BMP, до 5МБ)\n- тип доступа\nТолько владелец имеет право изменять настройки чата.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "edit_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-              "name": "Отдел разработки (обновлено)",
-              "description": "Обновленное описание",
-              "avatar": {
-                "filename": "avatar.png",
-                "data": "iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkEEjIZJj8LZgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAgAElEQVR42u2deZxcVZ3/3+fcW1Vd1d3V3VX..."
-              },
-              "chat_type": "private-group"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["edit_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 250
-                  },
-                  "avatar": {
-                    "type": "object",
-                    "properties": {
-                      "filename": {
-                        "type": "string"
-                      },
-                      "data": {
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "chat_type": {
-                    "type": "string",
-                    "enum": ["public-group", "private-group", "public-channel", "private-channel"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Чат успешно обновлен",
-            "example": {
-              "action": "edit_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "created_by": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                "owner_full_name": "Иван Петров",
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_id": "550e8400-e29b-41d4-a716-446655440000",
-                "name": "Отдел разработки (обновлено)",
-                "description": "Обновленное описание",
-                "chat_type": "private-group",
-                "avatar": {
-                  "filename": "avatar.png",
-                  "url": "https://example.com/avatars/avatar.png"
-                },
-                "added_users": []
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при редактировании",
-            "example": {
-              "action": "edit_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Only owner can edit chat",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 9,
-        "action": "get_status_list_chat",
-        "method": "SEND",
-        "path": "/ws/chat::get_status_list_chat",
-        "title": "Получение списка статусов собственных чатов",
-        "description": "Возвращает информацию о статусах всех пользователей в чатах, где участвует текущий пользователь.\nВключает статус online/offline и время последней активности участников.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "get_status_list_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["get_status_list_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Статусы успешно получены",
-            "example": {
-              "action": "get_status_list_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "is_online": true,
-                "was_online_at": 1707124800,
-                "user": {
-                  "uid": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                  "username": "ivan.petrov",
-                  "nickname": "jxsxpwr31",
-                  "first_name": "Иван",
-                  "last_name": "Петров",
-                  "avatar_url": "https://example.com/avatar.jpg",
-                  "additional_information": "Разработчик"
-                }
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при получении статусов",
-            "example": {
-              "action": "get_status_list_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Unauthorized",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 10,
-        "action": "join_by_invite_link",
-        "method": "SEND",
-        "path": "/ws/chat::join_by_invite_link",
-        "title": "Присоединение к чату по приглашению",
-        "description": "Обработчик вступления в чат по инвайт-ссылке.\nПосле успешного присоединения инициатор получает обычный ответ.\nОстальные участники чата получают push-уведомление с ключом action=member_added.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "join_by_invite_link",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-              "token": "abc123def456xyz789"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["join_by_invite_link"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key", "token"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string",
-                    "description": "Ключ чата"
-                  },
-                  "token": {
-                    "type": "string",
-                    "description": "Токен приглашения"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Пользователь успешно присоединен",
-            "example": {
-              "action": "join_by_invite_link",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group",
-                "joined_user": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "full_name": "Мария Сидорова"
-                }
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при присоединении",
-            "example": {
-              "action": "join_by_invite_link",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Invalid invite token",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 11,
-        "action": "leave_chat",
-        "method": "SEND",
-        "path": "/ws/chat::leave_chat",
-        "title": "Выход участника из группы/канала",
-        "description": "Обычные участники могут покидать группу/канал.\nВладелец группы/канала не может покидать их без передачи прав другому участнику.\nПосле выхода участники получают уведомление об успешном выходе.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "leave_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["leave_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Пользователь успешно вышел из чата",
-            "example": {
-              "action": "leave_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group",
-                "left_user": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "full_name": "Мария Сидорова"
-                }
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при выходе",
-            "example": {
-              "action": "leave_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Owner cannot leave without transfer",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 12,
-        "action": "remove_members_from_chat",
-        "method": "SEND",
-        "path": "/ws/chat::remove_members_from_chat",
-        "title": "Удаление участников из группы/канала владельцем",
-        "description": "Позволяет владельцу удалить участников из группы или канала.\nТолько владелец имеет право удалять участников.\nУдаленные пользователи теряют доступ к группе/каналу.\nУчастники получают уведомление об удалении.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "remove_members_from_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-              "uid_users_list": [
-                "e81b33ba-d660-4c8f-bf99-0c04e93f55cf"
-              ]
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["remove_members_from_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key", "uid_users_list"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string"
-                  },
-                  "uid_users_list": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Участники успешно удалены",
-            "example": {
-              "action": "remove_members_from_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group",
-                "remove_users": [
-                  {
-                    "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                    "full_name": "Мария Сидорова"
-                  }
-                ]
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при удалении",
-            "example": {
-              "action": "remove_members_from_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Only owner can remove members",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 13,
-        "action": "self_join_chat",
-        "method": "SEND",
-        "path": "/ws/chat::self_join_chat",
-        "title": "Самостоятельное вступление в открытую группу/публичный канал",
-        "description": "Позволяет пользователю самому вступить в публичную группу или публичный канал, указав chat_key.\nВступление в закрытые группы и приватные каналы запрещено.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "self_join_chat",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["self_join_chat"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Пользователь успешно вступил",
-            "example": {
-              "action": "join_by_invite_link",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "public-group",
-                "joined_user": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "full_name": "Мария Сидорова"
-                }
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при вступлении",
-            "example": {
-              "action": "self_join_chat",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Cannot join private chat",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 14,
-        "action": "transfer_owner",
-        "method": "SEND",
-        "path": "/ws/chat::transfer_owner",
-        "title": "Передача прав владельца группы/канала другому участнику",
-        "description": "Позволяет текущему владельцу группы или канала передать права владельца другому участнику, который состоит в этой группе/канале.\nНовый владелец получает уведомление о передаче прав.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "transfer_owner",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-              "new_owner_uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf"
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["transfer_owner"]
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key", "new_owner_uid"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string"
-                  },
-                  "new_owner_uid": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Права владельца успешно переданы",
-            "example": {
-              "action": "transfer_owner",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group",
-                "new_owner": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "full_name": "Мария Сидорова"
-                }
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при передаче прав",
-            "example": {
-              "action": "transfer_owner",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "User is not a member of this chat",
-              "object": null
-            }
-          }
-        }
-      },
-      {
-        "id": 15,
-        "action": "update_message",
-        "method": "SEND",
-        "path": "/ws/chat::update_message",
-        "title": "Редактирование сообщения",
-        "description": "Позволяет автору изменить содержимое ранее отправленного сообщения.\nРедактировать можно только собственные сообщения.\nПоддерживается изменение текста и замена файлов.",
-        "parameters": [],
-        "requestBody": {
-          "contentType": "application/json",
-          "example": {
-            "action": "update_message",
-            "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "object": {
-              "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-              "uid": "msg_123456789",
-              "content": "Обновленный текст сообщения",
-              "status": "publish",
-              "files": []
-            }
-          },
-          "schema": {
-            "type": "object",
-            "required": ["action", "request_uid", "object"],
-            "properties": {
-              "action": {
-                "type": "string",
-                "enum": ["update_message"]
-              },
-              "request_uid": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "object": {
-                "type": "object",
-                "required": ["chat_key", "uid", "content"],
-                "properties": {
-                  "chat_key": {
-                    "type": "string"
-                  },
-                  "uid": {
-                    "type": "string",
-                    "description": "UID сообщения для редактирования"
-                  },
-                  "content": {
-                    "type": "string",
-                    "description": "Новое содержание сообщения"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": ["publish", "draft"],
-                    "default": "publish"
-                  },
-                  "files": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "filename": {
-                          "type": "string"
-                        },
-                        "data": {
-                          "type": "string",
-                          "description": "Base64 кодированный файл"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "status": "OK",
-            "description": "Сообщение успешно обновлено",
-            "example": {
-              "action": "update_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "OK",
-              "error": null,
-              "object": {
-                "id": 54321,
-                "uid": "msg_123456789",
-                "from_user": {
-                  "uid": "f92c44bb-e771-4d9f-cg00-1d15g04g66dg07",
-                  "username": "ivan.petrov",
-                  "first_name": "Иван",
-                  "last_name": "Петров"
-                },
-                "to_user": {
-                  "uid": "e81b33ba-d660-4c8f-bf99-0c04e93f55cf",
-                  "username": "maria.sidorova",
-                  "first_name": "Мария",
-                  "last_name": "Сидорова"
-                },
-                "content": "Обновленный текст сообщения",
-                "files_list": [],
-                "new": false,
-                "created_at": 1707124740,
-                "updated_at": 1707124860,
-                "chat_key": "group_550e8400-e29b-41d4-a716-446655440000",
-                "chat_type": "private-group"
-              }
-            }
-          },
-          "400": {
-            "status": "error",
-            "description": "Ошибка при редактировании",
-            "example": {
-              "action": "update_message",
-              "request_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              "status": "error",
-              "error": "Can only edit your own messages",
-              "object": null
-            }
-          }
-        }
+        "type": "Header",
+        "format": "Authorization: Token {{token}}"
       }
     ],
-    "commonFields": {
-      "action": {
-        "description": "Тип действия/команды",
-        "type": "string"
-      },
-      "request_uid": {
-        "description": "Уникальный идентификатор запроса (UUID)",
-        "type": "string",
-        "format": "uuid"
-      },
-      "status": {
-        "description": "Статус ответа",
-        "type": "string",
-        "enum": ["OK", "error"]
-      },
-      "error": {
-        "description": "Описание ошибки (null если успешно)",
-        "type": ["string", "null"]
-      },
-      "object": {
-        "description": "Объект с данными ответа или null при ошибке",
-        "type": ["object", "null"]
+    "description": "Требуется актуальный токен пользователя"
+  },
+  "operations": [
+    {
+      "id": 1,
+      "action": "_connect",
+      "method": "SEND",
+      "path": "/ws/chat::_connect",
+      "title": "Подключение",
+      "description": "Подключение происходит через авторизацию. Это может происходить двумя способами: через параметр или через заголовок",
+      "parameters": [],
+      "request_body": null,
+      "responses": {
+        "200": "Успешное подключение"
       }
     },
-    "chatTypes": {
-      "public-group": "Открытая группа",
-      "private-group": "Закрытая группа",
-      "public-channel": "Публичный канал",
-      "private-channel": "Частный канал",
-      "direct-message": "Прямое сообщение между пользователями"
+    {
+      "id": 2,
+      "action": "add_members_to_chat",
+      "method": "SEND",
+      "path": "/ws/chat::add_members_to_chat",
+      "title": "Добавление пользователей в группу или канал",
+      "description": "Позволяет владельцу добавить новых участников в существующую группу или канал. Только владелец имеет право добавлять участников. Добавляемые пользователи получают уведомление о вступлении в чат. Для новых участников автоматически запускается асинхронная синхронизация истории сообщений (по умолчанию последние 1000 сообщений).",
+      "permissions": "owner",
+      "parameters": [],
+      "request_body": {
+        "action": "add_members_to_chat",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "uid_users_list": ["string"]
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "add_members_to_chat",
+          "request_uid": "uuid",
+          "status": "OK",
+          "error": "string",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "added_users": [
+              {
+                "uid": "uuid",
+                "full_name": "string"
+              }
+            ]
+          }
+        },
+        "400": {
+          "status": "error",
+          "error": "string",
+          "object": null
+        }
+      }
+    },
+    {
+      "id": 3,
+      "action": "change_status_read_message",
+      "method": "SEND",
+      "path": "/ws/chat::change_status_read_message",
+      "title": "Изменение статуса прочтения сообщения",
+      "description": "Отмечает сообщение как прочитанное получателем. Позволяет отслеживать статус доставки и прочтения сообщений в чате. Влияет только на собственные непрочитанные сообщения.",
+      "parameters": [],
+      "request_body": {
+        "action": "change_status_read_message",
+        "request_uid": "uuid",
+        "object": {
+          "uid": "string (message_uid)",
+          "reader_uid": "string (user_uid)",
+          "new_read_status": true,
+          "chat_key": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "change_status_read_message",
+          "status": "OK",
+          "object": {
+            "id": 0,
+            "uid": "uuid",
+            "from_user": "object",
+            "to_user": "object",
+            "new": true,
+            "created_at": 0,
+            "updated_at": 0,
+            "chat_data": {
+              "chat_key": "string",
+              "chat_type": "string"
+            },
+            "reader_uid": "string"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 4,
+      "action": "clear_group_messages",
+      "method": "SEND",
+      "path": "/ws/chat::clear_group_messages",
+      "title": "Очистка всех сообщений группы/канала",
+      "description": "Удаляет все сообщения группы/канала для ВСЕХ участников. Доступно только владельцу. Требуется подтверждение (confirm=true). Повторные запросы ограничены (rate limit) - не чаще одного раза в минуту.",
+      "permissions": "owner",
+      "rate_limit": "1 раз в минуту",
+      "parameters": [],
+      "request_body": {
+        "action": "clear_group_messages",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "confirm": true
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "clear_group_messages",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "cleared_by": "uuid"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 5,
+      "action": "create_chat",
+      "method": "SEND",
+      "path": "/ws/chat::create_chat",
+      "title": "Создание группы или канала",
+      "description": "Создает новую группу или канал с указанными параметрами и добавляет участников. Требуется авторизация. Создатель автоматически становится владельцем. После создания все участники получают уведомление о новом чате.",
+      "parameters": [],
+      "request_body": {
+        "action": "create_chat",
+        "request_uid": "uuid",
+        "object": {
+          "name": "string (1-100 символов)",
+          "description": "string (до 250 символов, опционально)",
+          "avatar": {
+            "filename": "string",
+            "data": "base64 (320x320px, JPEG/PNG/BMP, до 5МБ)"
+          },
+          "chat_type": "public-group | private-group | public-channel | private-channel",
+          "uid_users_list": ["uuid"]
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "create_chat",
+          "status": "OK",
+          "object": {
+            "created_by": "uuid",
+            "owner_full_name": "string",
+            "chat_key": "string",
+            "chat_id": "string",
+            "name": "string",
+            "description": "string",
+            "chat_type": "string",
+            "avatar": {
+              "filename": "string",
+              "url": "string"
+            },
+            "added_users": [
+              {
+                "uid": "uuid",
+                "full_name": "string"
+              }
+            ]
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 6,
+      "action": "create_text_message",
+      "method": "SEND",
+      "path": "/ws/chat::create_text_message",
+      "title": "Отправка сообщения в чат/группу/канал",
+      "description": "Отправляет текстовое сообщение или файлы в существующий чат или группу/канал, либо создает новый приватный чат между пользователями. При отправке в чат между пользователями передается to_user_uid. При отправке в группу/канал передается chat_key. Поддерживает пересылку сообщений и вложения файлов. Одновременное использование forwarded_messages и files невозможно.",
+      "parameters": [],
+      "request_body": {
+        "action": "create_text_message",
+        "request_uid": "uuid",
+        "object": {
+          "to_user_uid": "uuid (для личных чатов)",
+          "chat_key": "string (для групп/каналов)",
+          "content": "string",
+          "status": "publish",
+          "files": [
+            {
+              "filename": "string",
+              "data": "base64"
+            }
+          ],
+          "replied_messages": ["uuid"],
+          "forwarded_messages": ["uuid"]
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "create_text_message",
+          "status": "OK",
+          "object": {
+            "id": 0,
+            "uid": "uuid",
+            "from_user": "object",
+            "to_user": "object | null",
+            "content": "string",
+            "replied_messages": "array",
+            "forwarded_messages": "array",
+            "files_list": "array",
+            "new": true,
+            "created_at": 0,
+            "updated_at": 0,
+            "chat_id": "string",
+            "chat_key": "string",
+            "chat_type": "string",
+            "message_rtc": "object"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 7,
+      "action": "delete_chat",
+      "method": "SEND",
+      "path": "/ws/chat::delete_chat",
+      "title": "Удаление чата или канала",
+      "description": "Удаление чата для всех участников или канала владельцем. Только владелец канала может удалить канал. После удаления все участники получают уведомление о закрытии чата.",
+      "permissions": "owner",
+      "parameters": [],
+      "request_body": {
+        "action": "delete_chat",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "delete_chat",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 8,
+      "action": "delete_message",
+      "method": "SEND",
+      "path": "/ws/chat::delete_message",
+      "title": "Удаление сообщения",
+      "description": "Владелец группы может удалять любое сообщение как для себя, так и для всех в группе. Участник группы может удалить свои сообщения как для себя, так и для всех в группе. Участник группы может удалить чужие сообщения только для себя. Только владелец канала может удалять сообщения в канале.",
+      "parameters": [],
+      "request_body": {
+        "action": "delete_message",
+        "request_uid": "uuid",
+        "object": {
+          "uid": "string (message_uid)",
+          "for_all": true,
+          "chat_key": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "delete_message",
+          "status": "OK",
+          "object": {
+            "id": 0,
+            "uid": "uuid",
+            "chat_id": 0,
+            "from_user": "object",
+            "to_user": "object"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 9,
+      "action": "edit_chat",
+      "method": "SEND",
+      "path": "/ws/chat::edit_chat",
+      "title": "Редактирование группы или канала",
+      "description": "Позволяет владельцу редактировать параметры существующей группы или канала: название (1-100 символов), описание (до 250 символов), аватар, тип доступа. Только владелец имеет право изменять настройки чата.",
+      "permissions": "owner",
+      "parameters": [],
+      "request_body": {
+        "action": "edit_chat",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "name": "string",
+          "description": "string",
+          "avatar": {
+            "filename": "string",
+            "data": "base64"
+          },
+          "chat_type": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "edit_chat",
+          "status": "OK",
+          "object": {
+            "created_by": "uuid",
+            "owner_full_name": "string",
+            "chat_key": "string",
+            "chat_id": "string",
+            "name": "string",
+            "description": "string",
+            "chat_type": "string",
+            "avatar": "object",
+            "added_users": "array"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 10,
+      "action": "get_status_list_chat",
+      "method": "SEND",
+      "path": "/ws/chat::get_status_list_chat",
+      "title": "Получение списка статусов собственных чатов",
+      "description": "Возвращает информацию о статусах всех пользователей в чатах, где участвует текущий пользователь. Включает статус online/offline и время последней активности участников.",
+      "parameters": [],
+      "request_body": {
+        "action": "get_status_list_chat",
+        "request_uid": "uuid"
+      },
+      "responses": {
+        "200": {
+          "action": "get_status_list_chat",
+          "status": "OK",
+          "object": {
+            "is_online": true,
+            "was_online_at": 0,
+            "user": "object"
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 11,
+      "action": "join_by_invite_link",
+      "method": "SEND",
+      "path": "/ws/chat::join_by_invite_link",
+      "title": "Присоединение к чату по приглашению",
+      "description": "Обработчик вступления в чат по инвайт-ссылке. После успешного присоединения инициатор получает обычный ответ. Остальные участники чата получают push-уведомление с action=member_added",
+      "parameters": [],
+      "request_body": {
+        "action": "join_by_invite_link",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "token": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "join_by_invite_link",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "joined_user": {
+              "uid": "uuid",
+              "full_name": "string"
+            }
+          }
+        },
+        "400": "error"
+      },
+      "notification_to_others": {
+        "action": "member_added",
+        "status": "OK",
+        "object": {
+          "chat_key": "string",
+          "chat_type": "string",
+          "joined_user": "object"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "action": "leave_chat",
+      "method": "SEND",
+      "path": "/ws/chat::leave_chat",
+      "title": "Выход участника из группы/канала",
+      "description": "Обычные участники могут покидать группу/канал. Владелец группы/канала не может покидать их без передачи прав другому участнику. После выхода участники получают уведомление об успешном выходе.",
+      "restrictions": "Владелец не может выйти без передачи прав",
+      "parameters": [],
+      "request_body": {
+        "action": "leave_chat",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "leave_chat",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "left_user": {
+              "uid": "uuid",
+              "full_name": "string"
+            }
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 13,
+      "action": "remove_members_from_chat",
+      "method": "SEND",
+      "path": "/ws/chat::remove_members_from_chat",
+      "title": "Удаление участников из группы/канала владельцем",
+      "description": "Позволяет владельцу удалить участников из группы или канала. Только владелец имеет право удалять участников. Удаленные пользователи теряют доступ к группе/каналу. Участники получают уведомление об удалении.",
+      "permissions": "owner",
+      "parameters": [],
+      "request_body": {
+        "action": "remove_members_from_chat",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "uid_users_list": ["uuid"]
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "remove_members_from_chat",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "remove_users": [
+              {
+                "uid": "uuid",
+                "full_name": "string"
+              }
+            ]
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 14,
+      "action": "self_join_chat",
+      "method": "SEND",
+      "path": "/ws/chat::self_join_chat",
+      "title": "Самостоятельное вступление в открытую группу/публичный канал",
+      "description": "Позволяет пользователю самому вступить в публичную группу или публичный канал, указав chat_key. Вступление в закрытые группы и приватные каналы запрещено.",
+      "restrictions": "Только для публичных групп и каналов",
+      "parameters": [],
+      "request_body": {
+        "action": "self_join_chat",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "join_by_invite_link",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "joined_user": {
+              "uid": "uuid",
+              "full_name": "string"
+            }
+          }
+        },
+        "400": "error"
+      }
+    },
+    {
+      "id": 15,
+      "action": "transfer_owner",
+      "method": "SEND",
+      "path": "/ws/chat::transfer_owner",
+      "title": "Передача прав владельца группы/канала другому участнику",
+      "description": "Позволяет текущему владельцу группы или канала передать права владельца другому участнику, который состоит в этой группе/канале. Новый владелец получает уведомление о передаче прав (action=owner_transferred)",
+      "permissions": "owner",
+      "parameters": [],
+      "request_body": {
+        "action": "transfer_owner",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "new_owner_uid": "uuid"
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "transfer_owner",
+          "status": "OK",
+          "object": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "new_owner": {
+              "uid": "uuid",
+              "full_name": "string"
+            }
+          }
+        },
+        "400": "error"
+      },
+      "notification_to_new_owner": {
+        "action": "owner_transferred",
+        "status": "OK",
+        "object": {
+          "chat_key": "string",
+          "chat_type": "string",
+          "new_owner": "object"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "action": "update_message",
+      "method": "SEND",
+      "path": "/ws/chat::update_message",
+      "title": "Редактирование сообщения",
+      "description": "Позволяет автору изменить содержимое ранее отправленного сообщения. Редактировать можно только собственные сообщения. Поддерживается изменение текста и замена файлов.",
+      "parameters": [],
+      "request_body": {
+        "action": "update_message",
+        "request_uid": "uuid",
+        "object": {
+          "chat_key": "string",
+          "uid": "string (message_uid)",
+          "content": "string",
+          "status": "publish",
+          "files": [
+            {
+              "filename": "string",
+              "data": "base64"
+            }
+          ]
+        }
+      },
+      "responses": {
+        "200": {
+          "action": "update_message",
+          "status": "OK",
+          "object": {
+            "id": 0,
+            "uid": "uuid",
+            "from_user": "object",
+            "to_user": "object",
+            "content": "string",
+            "replied_messages": "array",
+            "forwarded_messages": "array",
+            "files_list": "array",
+            "new": true,
+            "created_at": 0,
+            "updated_at": 0,
+            "chat_id": 0,
+            "chat_key": "string",
+            "chat_type": "string",
+            "message_rtc": "object"
+          }
+        },
+        "400": "error"
+      }
     }
+  ],
+  "chat_types": {
+    "public-group": "Открытая группа (может вступить любой)",
+    "private-group": "Закрытая группа (требуется приглашение)",
+    "public-channel": "Публичный канал (может вступить любой)",
+    "private-channel": "Частный канал (требуется приглашение)"
+  },
+  "permissions": {
+    "owner": "Только владелец чата",
+    "any_user": "Любой авторизованный пользователь",
+    "member": "Только участник чата"
+  },
+  "data_types": {
+    "uuid": "Уникальный идентификатор (UUID v4)",
+    "base64": "Данные в формате Base64",
+    "unix_timestamp": "Unix timestamp в миллисекундах"
   }
 }

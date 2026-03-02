@@ -1,1331 +1,726 @@
 {
-    "api_version": "v1",
-    "base_url": "/api/v1",
-    "endpoints": [
-        {
-            "id": 1,
-            "method": "GET",
-            "path": "/api/v1/chat/list/",
-            "description": "Получение списка чатов",
-            "parameters": {
-                "query": [
-                    {
-                        "name": "is_active",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Активные чаты"
-                    },
-                    {
-                        "name": "is_blocked",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Заблокированные чаты"
-                    },
-                    {
-                        "name": "is_favorite",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Избранные чаты"
-                    },
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false,
-                        "description": "Сортировка (is_favorite, last_activity_at)"
-                    },
-                    {
-                        "name": "page",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Номер страницы"
-                    },
-                    {
-                        "name": "page_size",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Размер страницы"
-                    },
-                    {
-                        "name": "search",
-                        "type": "string",
-                        "required": false,
-                        "description": "Поиск по username, nickname, first_name, last_name, patronymic, content"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "content_type": "application/json",
-                    "example": {
-                        "count": 123,
-                        "next": "http://api.example.org/accounts/?page=4",
-                        "previous": "http://api.example.org/accounts/?page=2",
-                        "results": [
-                            {
-                                "id": 0,
-                                "chat": {
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "username": "string",
-                                    "nickname": "string",
-                                    "first_name": "string",
-                                    "last_name": "string",
-                                    "avatar_url": "string",
-                                    "avatar_webp_url": "string",
-                                    "is_blocked": true,
-                                    "is_online": true,
-                                    "was_online_at": 0,
-                                    "is_in_contacts": true
-                                },
-                                "is_favorite": true,
-                                "notifications": true,
-                                "new_message_count": 0,
-                                "name": "string",
-                                "chat_type": "chat",
-                                "chat_key": "string",
-                                "last_activity_at": 0,
-                                "last_seen_message": {
-                                    "id": 0,
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                                },
-                                "first_new_message": {
-                                    "id": 0,
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                                },
-                                "last_message": {
-                                    "id": 0,
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "from_user": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "content": "string",
-                                    "files_summary": {
-                                        "types": ["string"],
-                                        "count": 0
-                                    },
-                                    "has_replied_message": true,
-                                    "has_forwarded_message": true,
-                                    "new": true,
-                                    "created_at": 0,
-                                    "updated_at": 0
-                                }
-                            }
-                        ]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "414": {
-                    "description": "URI слишком длинный",
-                    "example": {
-                        "detail": "Размер query-параметра превышает установленный лимит."
-                    }
-                }
-            }
+  "api_version": "1.0",
+  "base_url": "https://api.example.com",
+  "api_section": "chat",
+  "endpoints": [
+    {
+      "id": "chat_list_get",
+      "method": "GET",
+      "path": "/api/v1/chat/list/",
+      "description": "Получение списка чатов",
+      "notes": [
+        "Доступен поиск по username, nickname, first_name, last_name, patronymic и по тексту сообщений",
+        "Доступна сортировка по is_favorite и last_activity_at",
+        "last_message.files_summary содержит до 3 уникальных MIME-типов"
+      ],
+      "parameters": {
+        "query": [
+          {
+            "name": "is_active",
+            "type": "boolean",
+            "description": "Активные чаты"
+          },
+          {
+            "name": "is_blocked",
+            "type": "boolean",
+            "description": "Заблокированные чаты"
+          },
+          {
+            "name": "is_favorite",
+            "type": "boolean",
+            "description": "Избранные чаты"
+          },
+          {
+            "name": "ordering",
+            "type": "string",
+            "description": "Поле для сортировки результатов"
+          },
+          {
+            "name": "page",
+            "type": "integer",
+            "description": "Номер страницы"
+          },
+          {
+            "name": "page_size",
+            "type": "integer",
+            "description": "Количество результатов на странице"
+          },
+          {
+            "name": "search",
+            "type": "string",
+            "description": "Поисковый запрос"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Успешный ответ",
+          "content_type": "application/json",
+          "schema": {
+            "count": "integer",
+            "next": "string (url)",
+            "previous": "string (url)",
+            "results": "array[ChatListItem]"
+          }
         },
-        {
-            "id": 2,
-            "method": "POST",
-            "path": "/api/v1/chat/list/{id}/",
-            "description": "Изменение свойств чата",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "id",
-                        "type": "integer",
-                        "required": true,
-                        "description": "ID чата"
-                    }
-                ]
-            },
-            "request_body": {
-                "content_type": "application/json",
-                "fields": [
-                    {
-                        "name": "is_favorite",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Добавить в избранное"
-                    },
-                    {
-                        "name": "notifications",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Включить уведомления"
-                    },
-                    {
-                        "name": "index",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Индекс сортировки"
-                    },
-                    {
-                        "name": "last_seen_message",
-                        "type": "integer",
-                        "required": false,
-                        "description": "ID последнего просмотренного сообщения"
-                    }
-                ],
-                "example": {
-                    "is_favorite": true,
-                    "notifications": true,
-                    "index": 2147483647,
-                    "last_seen_message": 0
-                }
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "is_favorite": true,
-                        "notifications": true,
-                        "index": 2147483647,
-                        "last_seen_message": 0,
-                        "last_seen_message_uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    }
-                },
-                "400": {
-                    "description": "Ошибка валидации",
-                    "example": {
-                        "message": ["Ошибка валидации запроса"]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
+        "401": {
+          "description": "Не предоставлены учетные данные"
         },
-        {
-            "id": 3,
-            "method": "DELETE",
-            "path": "/api/v1/chat/list/{id}/",
-            "description": "Удаление своего чата со всеми сообщениями",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "id",
-                        "type": "integer",
-                        "required": true,
-                        "description": "ID чата"
-                    }
-                ]
-            },
-            "responses": {
-                "204": {
-                    "description": "Успешно удалено"
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 4,
-            "method": "POST",
-            "path": "/api/v1/chat/list/clear/{id}/",
-            "description": "Очистка своего чата (удаление всех сообщений)",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "id",
-                        "type": "integer",
-                        "required": true,
-                        "description": "ID чата"
-                    }
-                ]
-            },
-            "responses": {
-                "204": {
-                    "description": "Успешно очищено"
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 5,
-            "method": "POST",
-            "path": "/api/v1/chat/list/generate-invite/{chat_key}/",
-            "description": "Генерация пригласительной ссылки для группы/канала",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "chat_key",
-                        "type": "string",
-                        "required": true,
-                        "description": "Ключ группы/канала"
-                    }
-                ]
-            },
-            "request_body": {
-                "content_type": "application/json",
-                "fields": [
-                    {
-                        "name": "expires_in",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Время жизни приглашения в секундах (86400 = 1 день)"
-                    }
-                ],
-                "example": {
-                    "expires_in": 86400
-                }
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "chat_key": "string",
-                        "chat_type": "string",
-                        "invite_link": "string",
-                        "expires_at": 0
-                    }
-                },
-                "400": {
-                    "description": "Ошибка валидации",
-                    "example": {
-                        "message": ["Ошибка валидации запроса"]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                }
-            }
-        },
-        {
-            "id": 6,
-            "method": "GET",
-            "path": "/api/v1/chat/list/groups_or_channels/{chat_key}/",
-            "description": "Получение группы или канала по chat_key",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "chat_key",
-                        "type": "string",
-                        "required": true,
-                        "description": "Ключ группы/канала"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "id": 0,
-                        "chat": {
-                            "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                            "username": "string",
-                            "nickname": "string",
-                            "avatar": "string",
-                            "avatar_url": "string",
-                            "avatar_webp": "string",
-                            "avatar_webp_url": "string"
-                        },
-                        "is_active": true,
-                        "is_favorite": true,
-                        "notifications": true,
-                        "index": 2147483647,
-                        "message_count": 0,
-                        "file_count": 0,
-                        "new_message_count": 0,
-                        "last_message": {
-                            "id": 0,
-                            "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                            "from_user": "string",
-                            "content": "string",
-                            "files_list": [
-                                {
-                                    "id": 0,
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "file": "string",
-                                    "file_url": "string",
-                                    "file_webp": "string",
-                                    "file_webp_url": "string",
-                                    "file_type": "string",
-                                    "new": true,
-                                    "created_at": 0,
-                                    "updated_at": 0
-                                }
-                            ],
-                            "new": true,
-                            "replied_messages": [0],
-                            "forwarded_messages": [0],
-                            "created_at": 0,
-                            "updated_at": 0
-                        },
-                        "last_seen_message": {
-                            "id": 0,
-                            "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                        },
-                        "first_new_message": {
-                            "id": 0,
-                            "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                        },
-                        "name": "string",
-                        "chat_type": "public-group",
-                        "chat_key": "string",
-                        "description": "string",
-                        "created_by": "string",
-                        "owner_full_name": "string",
-                        "participants": [
-                            {
-                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                "full_name": "string"
-                            }
-                        ],
-                        "created_at": "2026-02-05T05:31:55.625Z",
-                        "updated_at": "2026-02-05T05:31:55.625Z"
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 7,
-            "method": "POST",
-            "path": "/api/v1/chat/list/groups_or_channels/{chat_key}/clear/",
-            "description": "Удаление всех сообщений в группе или канале для всех участников",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "chat_key",
-                        "type": "string",
-                        "required": true,
-                        "description": "Ключ группы/канала"
-                    }
-                ],
-                "query": [
-                    {
-                        "name": "confirm",
-                        "type": "boolean",
-                        "required": true,
-                        "description": "Подтверждение операции (должно быть true)"
-                    }
-                ]
-            },
-            "responses": {
-                "204": {
-                    "description": "Успешно очищено"
-                },
-                "400": {
-                    "description": "Ошибка",
-                    "example": {
-                        "detail": "Для очистки сообщений требуется подтверждение: добавьте параметр ?confirm=true"
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 8,
-            "method": "GET",
-            "path": "/api/v1/chat/list/groups_or_channels/{chat_key}/participants/",
-            "description": "Получение списка участников группы/канала",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "chat_key",
-                        "type": "string",
-                        "required": true,
-                        "description": "Ключ группы/канала"
-                    }
-                ],
-                "query": [
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false,
-                        "description": "Сортировка"
-                    },
-                    {
-                        "name": "page",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Номер страницы"
-                    },
-                    {
-                        "name": "page_size",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Размер страницы"
-                    },
-                    {
-                        "name": "search",
-                        "type": "string",
-                        "required": false,
-                        "description": "Поиск по имени и фамилии"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "count": 123,
-                        "next": "http://api.example.org/accounts/?page=4",
-                        "previous": "http://api.example.org/accounts/?page=2",
-                        "results": [
-                            {
-                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                "first_name": "string",
-                                "last_name": "string",
-                                "avatar_url": "string",
-                                "avatar_webp_url": "string",
-                                "is_owner": true,
-                                "is_blocked": true,
-                                "is_online": true,
-                                "was_online_at": 0,
-                                "is_in_contacts": true
-                            }
-                        ]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 9,
-            "method": "GET",
-            "path": "/api/v1/chat/list/groups_or_channels/preview",
-            "description": "Превью группы/канала по invite-token",
-            "parameters": {
-                "query": [
-                    {
-                        "name": "token",
-                        "type": "string",
-                        "required": true,
-                        "description": "JWT token из пригласительной ссылки"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "name": "string",
-                        "description": "string",
-                        "participants_count": 0,
-                        "avatar_webp": "string"
-                    }
-                },
-                "400": {
-                    "description": "Ошибка валидации",
-                    "example": {
-                        "message": ["Ошибка валидации запроса"]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                },
-                "410": {
-                    "description": "Истекло",
-                    "example": {
-                        "detail": "Срок действия приглашения истек."
-                    }
-                },
-                "422": {
-                    "description": "Недействительный токен",
-                    "example": {
-                        "detail": "Недействительный токен приглашения."
-                    }
-                }
-            }
-        },
-        {
-            "id": 10,
-            "method": "GET",
-            "path": "/api/v1/chat/list/users-for-add/",
-            "description": "Получение списка пользователей для добавления в группу/канал",
-            "parameters": {
-                "query": [
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false,
-                        "description": "Сортировка"
-                    },
-                    {
-                        "name": "page",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Номер страницы"
-                    },
-                    {
-                        "name": "page_size",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Размер страницы"
-                    },
-                    {
-                        "name": "search",
-                        "type": "string",
-                        "required": false,
-                        "description": "Поиск по имени и фамилии"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "count": 123,
-                        "next": "http://api.example.org/accounts/?page=4",
-                        "previous": "http://api.example.org/accounts/?page=2",
-                        "results": [
-                            {
-                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                "avatar_url": "string",
-                                "avatar_webp_url": "string",
-                                "is_online": true,
-                                "was_online_at": 0,
-                                "first_name": "string",
-                                "last_name": "string"
-                            }
-                        ]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                }
-            }
-        },
-        {
-            "id": 11,
-            "method": "GET",
-            "path": "/api/v1/chat/message/files/{user_uid}/",
-            "description": "Получение списка файлов чата",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "user_uid",
-                        "type": "string",
-                        "required": true,
-                        "description": "UID собеседника или виртуального пользователя группы/канала"
-                    }
-                ],
-                "query": [
-                    {
-                        "name": "is_active",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Активные чаты"
-                    },
-                    {
-                        "name": "is_blocked",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Заблокированные чаты"
-                    },
-                    {
-                        "name": "is_favorite",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Избранные чаты"
-                    },
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false,
-                        "description": "Сортировка"
-                    },
-                    {
-                        "name": "page",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Номер страницы"
-                    },
-                    {
-                        "name": "page_size",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Размер страницы"
-                    },
-                    {
-                        "name": "search",
-                        "type": "string",
-                        "required": false,
-                        "description": "Поиск по MIME-типу"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "count": 123,
-                        "next": "http://api.example.org/accounts/?page=4",
-                        "previous": "http://api.example.org/accounts/?page=2",
-                        "results": [
-                            {
-                                "id": 0,
-                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                "message_id": 0,
-                                "forwarded_in": [
-                                    {
-                                        "id": 0,
-                                        "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                        "from_user": "string"
-                                    }
-                                ],
-                                "file_url": "string",
-                                "file_webp_url": "string",
-                                "file_type": "string",
-                                "size": 0,
-                                "new": true,
-                                "updated_at": 0,
-                                "created_at": 0
-                            }
-                        ]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 12,
-            "method": "GET",
-            "path": "/api/v1/chat/message/links/{user_uid}/",
-            "description": "Получение списка ссылок чата",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "user_uid",
-                        "type": "string",
-                        "required": true,
-                        "description": "UID собеседника или виртуального пользователя группы/канала"
-                    }
-                ],
-                "query": [
-                    {
-                        "name": "is_active",
-                        "type": "boolean",
-                        "required": false
-                    },
-                    {
-                        "name": "is_blocked",
-                        "type": "boolean",
-                        "required": false
-                    },
-                    {
-                        "name": "is_favorite",
-                        "type": "boolean",
-                        "required": false
-                    },
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "name": "page",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "name": "page_size",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "name": "search",
-                        "type": "string",
-                        "required": false
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "count": 123,
-                        "next": "http://api.example.org/accounts/?page=4",
-                        "previous": "http://api.example.org/accounts/?page=2",
-                        "results": [
-                            {
-                                "url": "string",
-                                "title": "string",
-                                "from_user": {
-                                    "first_name": "string",
-                                    "last_name": "string"
-                                },
-                                "message_id": 0,
-                                "forwarded_in": [
-                                    {
-                                        "id": 0,
-                                        "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                        "from_user": "string"
-                                    }
-                                ],
-                                "created_at": 0,
-                                "updated_at": 0
-                            }
-                        ]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "403": {
-                    "description": "Нет доступа",
-                    "example": {
-                        "detail": "У вас недостаточно прав для выполнения данного действия."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                }
-            }
-        },
-        {
-            "id": 13,
-            "method": "GET",
-            "path": "/api/v1/chat/message/text/{user_uid}/",
-            "description": "Получение списка сообщений пользователя или чата",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "user_uid",
-                        "type": "string",
-                        "required": true,
-                        "description": "UID собеседника или виртуального пользователя группы/канала"
-                    }
-                ],
-                "query": [
-                    {
-                        "name": "from_me",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Исходящие сообщения"
-                    },
-                    {
-                        "name": "new",
-                        "type": "boolean",
-                        "required": false,
-                        "description": "Новые сообщения"
-                    },
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false,
-                        "description": "Сортировка"
-                    },
-                    {
-                        "name": "page",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "name": "page_size",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "name": "range_time_end_created",
-                        "type": "number",
-                        "required": false,
-                        "description": "Сообщения созданные до..."
-                    },
-                    {
-                        "name": "range_time_end_updated",
-                        "type": "number",
-                        "required": false,
-                        "description": "Сообщения обновленные до..."
-                    },
-                    {
-                        "name": "range_time_start_created",
-                        "type": "number",
-                        "required": false,
-                        "description": "Сообщения созданные с..."
-                    },
-                    {
-                        "name": "range_time_start_updated",
-                        "type": "number",
-                        "required": false,
-                        "description": "Сообщения обновленные с..."
-                    },
-                    {
-                        "name": "search",
-                        "type": "string",
-                        "required": false,
-                        "description": "Поиск по content"
-                    }
-                ]
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "count": 123,
-                        "next": "http://api.example.org/accounts/?page=4",
-                        "previous": "http://api.example.org/accounts/?page=2",
-                        "results": [
-                            {
-                                "id": 0,
-                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                "from_user": {
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "username": "string",
-                                    "nickname": "vtv5h6wye6k4arce5dv52i24p",
-                                    "first_name": "string",
-                                    "last_name": "string",
-                                    "avatar_url": "string",
-                                    "avatar_webp_url": "string"
-                                },
-                                "to_user": {
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "username": "string",
-                                    "nickname": "gd_fyh4jdcz605",
-                                    "first_name": "string",
-                                    "last_name": "string",
-                                    "avatar_url": "string",
-                                    "avatar_webp_url": "string"
-                                },
-                                "content": "string",
-                                "replied_messages": [
-                                    {
-                                        "id": 0,
-                                        "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                        "from_user": "string",
-                                        "first_name": "string",
-                                        "last_name": "string",
-                                        "content": "string",
-                                        "files_list": [
-                                            {
-                                                "id": 0,
-                                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                                "file_url": "string",
-                                                "file_webp_url": "string",
-                                                "file_type": "string",
-                                                "created_at": 0,
-                                                "updated_at": 0
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "forwarded_messages": [
-                                    {
-                                        "id": 0,
-                                        "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                        "from_user": "string",
-                                        "first_name": "string",
-                                        "last_name": "string",
-                                        "content": "string",
-                                        "files_list": [
-                                            {
-                                                "id": 0,
-                                                "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                                "file_url": "string",
-                                                "file_webp_url": "string",
-                                                "file_type": "string",
-                                                "created_at": 0,
-                                                "updated_at": 0
-                                            }
-                                        ],
-                                        "avatar_webp_url": "string"
-                                    }
-                                ],
-                                "files_list": [
-                                    {
-                                        "id": 0,
-                                        "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                        "file_url": "string",
-                                        "file_webp_url": "string",
-                                        "file_type": "string",
-                                        "created_at": 0,
-                                        "updated_at": 0
-                                    }
-                                ],
-                                "new": true,
-                                "created_at": 0,
-                                "updated_at": 0,
-                                "chat_id": 0,
-                                "chat_key": "string",
-                                "chat_type": "string",
-                                "message_rtc": {
-                                    "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                    "duration": 0,
-                                    "status": "string",
-                                    "updated_at": 0,
-                                    "created_at": 0
-                                }
-                            }
-                        ]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                },
-                "404": {
-                    "description": "Не найдено",
-                    "example": {
-                        "detail": "Страница не найдена."
-                    }
-                },
-                "414": {
-                    "description": "URI слишком длинный",
-                    "example": {
-                        "detail": "Размер query-параметра превышает установленный лимит."
-                    }
-                }
-            }
-        },
-        {
-            "id": 14,
-            "method": "POST",
-            "path": "/api/v1/chat/message/text/{user_uid}/search",
-            "description": "Поиск позиции сообщения в чате по content или id_or_uid",
-            "parameters": {
-                "path": [
-                    {
-                        "name": "user_uid",
-                        "type": "string",
-                        "required": true,
-                        "description": "UID собеседника или виртуального пользователя группы/канала"
-                    }
-                ],
-                "query": [
-                    {
-                        "name": "ordering",
-                        "type": "string",
-                        "required": false,
-                        "description": "Поля сортировки списка сообщений"
-                    }
-                ]
-            },
-            "request_body": {
-                "content_type": "application/json",
-                "fields": [
-                    {
-                        "name": "field",
-                        "type": "string",
-                        "required": true,
-                        "description": "Поле для поиска (id_or_uid или content)"
-                    },
-                    {
-                        "name": "query",
-                        "type": "string",
-                        "required": true,
-                        "description": "Значение для поиска"
-                    },
-                    {
-                        "name": "chat_page_size",
-                        "type": "integer",
-                        "required": false,
-                        "description": "Размер страницы для пагинации"
-                    }
-                ],
-                "example": {
-                    "field": "id_or_uid",
-                    "query": "string",
-                    "chat_page_size": 1
-                }
-            },
-            "responses": {
-                "200": {
-                    "description": "Успешно",
-                    "example": {
-                        "id": 0,
-                        "uid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        "page": 0,
-                        "position": 0
-                    }
-                },
-                "400": {
-                    "description": "Ошибка валидации",
-                    "example": {
-                        "message": ["Ошибка валидации запроса"]
-                    }
-                },
-                "401": {
-                    "description": "Не авторизован",
-                    "example": {
-                        "detail": "Учетные данные не были предоставлены."
-                    }
-                }
-            }
+        "414": {
+          "description": "Размер query-параметра превышает лимит"
         }
-    ],
-    "data_types": {
-        "ChatListItem": {
-            "id": "integer",
-            "chat": {
-                "uid": "uuid",
-                "username": "string",
-                "nickname": "string",
-                "first_name": "string",
-                "last_name": "string",
-                "avatar_url": "string",
-                "avatar_webp_url": "string",
-                "is_blocked": "boolean",
-                "is_online": "boolean",
-                "was_online_at": "timestamp",
-                "is_in_contacts": "boolean"
-            },
+      }
+    },
+    {
+      "id": "chat_list_update",
+      "method": "POST",
+      "path": "/api/v1/chat/list/{id}/",
+      "description": "Изменение свойств чата",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "ID чата"
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "is_favorite": "boolean",
+          "notifications": "boolean",
+          "index": "integer",
+          "last_seen_message": "integer"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Успешно обновлено",
+          "schema": {
             "is_favorite": "boolean",
             "notifications": "boolean",
-            "new_message_count": "integer",
-            "name": "string",
-            "chat_type": "enum(chat, public-group, private-group, channel)",
-            "chat_key": "string",
-            "last_activity_at": "timestamp",
-            "last_seen_message": {
-                "id": "integer",
-                "uid": "uuid"
-            },
-            "first_new_message": {
-                "id": "integer",
-                "uid": "uuid"
-            },
-            "last_message": {
-                "id": "integer",
-                "uid": "uuid",
-                "from_user": "uuid",
-                "content": "string",
-                "files_summary": {
-                    "types": ["string"],
-                    "count": "integer"
-                },
-                "has_replied_message": "boolean",
-                "has_forwarded_message": "boolean",
-                "new": "boolean",
-                "created_at": "timestamp",
-                "updated_at": "timestamp"
-            }
+            "index": "integer",
+            "last_seen_message": "integer",
+            "last_seen_message_uid": "string (uuid)"
+          }
         },
-        "Message": {
-            "id": "integer",
-            "uid": "uuid",
-            "from_user": {
-                "uid": "uuid",
-                "username": "string",
-                "nickname": "string",
-                "first_name": "string",
-                "last_name": "string",
-                "avatar_url": "string",
-                "avatar_webp_url": "string"
-            },
-            "to_user": {
-                "uid": "uuid",
-                "username": "string",
-                "nickname": "string",
-                "first_name": "string",
-                "last_name": "string",
-                "avatar_url": "string",
-                "avatar_webp_url": "string"
-            },
-            "content": "string",
-            "files_list": ["array"],
-            "replied_messages": ["array"],
-            "forwarded_messages": ["array"],
-            "new": "boolean",
-            "created_at": "timestamp",
-            "updated_at": "timestamp",
-            "chat_id": "integer",
-            "chat_key": "string",
-            "chat_type": "string"
+        "400": {
+          "description": "Ошибка валидации запроса"
         },
-        "GroupChannelParticipant": {
-            "uid": "uuid",
-            "first_name": "string",
-            "last_name": "string",
-            "avatar_url": "string",
-            "avatar_webp_url": "string",
-            "is_owner": "boolean",
-            "is_blocked": "boolean",
-            "is_online": "boolean",
-            "was_online_at": "timestamp",
-            "is_in_contacts": "boolean"
+        "401": {
+          "description": "Не предоставлены учетные данные"
         },
-        "GroupChannelFile": {
-            "id": "integer",
-            "uid": "uuid",
-            "message_id": "integer",
-            "file_url": "string",
-            "file_webp_url": "string",
-            "file_type": "string",
-            "size": "integer",
-            "new": "boolean",
-            "created_at": "timestamp",
-            "updated_at": "timestamp"
+        "403": {
+          "description": "Недостаточно прав"
         },
-        "MessageLink": {
-            "url": "string",
-            "title": "string",
-            "from_user": {
-                "first_name": "string",
-                "last_name": "string"
-            },
-            "message_id": "integer",
-            "created_at": "timestamp",
-            "updated_at": "timestamp"
+        "404": {
+          "description": "Чат не найден"
         }
+      }
     },
-    "authentication": {
-        "type": "Token-based",
-        "required": true,
-        "header": "Authorization: Token <token>"
+    {
+      "id": "chat_list_delete",
+      "method": "DELETE",
+      "path": "/api/v1/chat/list/{id}/",
+      "description": "Удаление чата со всеми сообщениями",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "204": {
+          "description": "Успешно удалено"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        },
+        "404": {
+          "description": "Чат не найден"
+        }
+      }
     },
-    "pagination": {
-        "supported": true,
-        "parameters": ["page", "page_size"],
-        "default_page_size": 20,
-        "max_page_size": 100
+    {
+      "id": "chat_list_clear",
+      "method": "POST",
+      "path": "/api/v1/chat/list/clear/{id}/",
+      "description": "Очистка чата (удаление всех сообщений)",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "204": {
+          "description": "Успешно очищено"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        },
+        "404": {
+          "description": "Чат не найден"
+        }
+      }
     },
-    "error_codes": {
-        "200": "OK - Успешно",
-        "204": "No Content - Успешно (без содержимого)",
-        "400": "Bad Request - Неправильный запрос",
-        "401": "Unauthorized - Не авторизован",
-        "403": "Forbidden - Доступ запрещен",
-        "404": "Not Found - Не найдено",
-        "410": "Gone - Ресурс больше не доступен",
-        "414": "URI Too Long - URI слишком длинный",
-        "422": "Unprocessable Entity - Недействительные данные"
+    {
+      "id": "chat_generate_invite",
+      "method": "POST",
+      "path": "/api/v1/chat/list/generate-invite/{chat_key}/",
+      "description": "Генерация пригласительной ссылки для группы/канала",
+      "notes": [
+        "Доступно только владельцу",
+        "Создает JWT-приглашение"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "chat_key",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "expires_in": "integer (секунды)"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Ссылка создана",
+          "schema": {
+            "chat_key": "string",
+            "chat_type": "string",
+            "invite_link": "string",
+            "expires_at": "integer (timestamp)"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        }
+      }
+    },
+    {
+      "id": "group_channel_get",
+      "method": "GET",
+      "path": "/api/v1/chat/list/groups_or_channels/{chat_key}/",
+      "description": "Получение группы или канала по chat_key",
+      "notes": [
+        "Требуется аутентификация",
+        "Публичные группы доступны всем авторизованным",
+        "Приватные группы доступны только участникам"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "chat_key",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Успешный ответ",
+          "schema": {
+            "id": "integer",
+            "chat": "object",
+            "is_active": "boolean",
+            "is_favorite": "boolean",
+            "notifications": "boolean",
+            "name": "string",
+            "description": "string",
+            "chat_type": "string (public-group, private-group, channel)",
+            "participants": "array[object]",
+            "created_at": "datetime",
+            "updated_at": "datetime"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        },
+        "404": {
+          "description": "Группа/канал не найден"
+        }
+      }
+    },
+    {
+      "id": "group_participants_list",
+      "method": "GET",
+      "path": "/api/v1/chat/list/groups_or_channels/{chat_key}/participants/",
+      "description": "Получение списка участников группы/канала",
+      "notes": [
+        "Владелец группы всегда отображается первым",
+        "Доступна фильтрация по имени",
+        "Требуется аутентификация"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "chat_key",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          },
+          {
+            "name": "search",
+            "type": "string"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список участников",
+          "schema": {
+            "count": "integer",
+            "results": "array[GroupChannelParticipant]"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        },
+        "404": {
+          "description": "Группа/канал не найден"
+        }
+      }
+    },
+    {
+      "id": "group_preview",
+      "method": "GET",
+      "path": "/api/v1/chat/list/groups_or_channels/preview",
+      "description": "Превью группы/канала по invite-token",
+      "parameters": {
+        "query": [
+          {
+            "name": "token",
+            "type": "string",
+            "required": true,
+            "description": "JWT token из пригласительной ссылки"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Превью группы/канала",
+          "schema": {
+            "name": "string",
+            "description": "string",
+            "participants_count": "integer",
+            "avatar_webp": "string"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "404": {
+          "description": "Приглашение не найдено"
+        },
+        "410": {
+          "description": "Срок действия приглашения истек"
+        },
+        "422": {
+          "description": "Недействительный токен приглашения"
+        }
+      }
+    },
+    {
+      "id": "message_files_legacy",
+      "method": "GET",
+      "path": "/api/v1/chat/message/file/{user_uid}/",
+      "description": "!!! Не использовать. Легаси. Будет удален !!!",
+      "deprecated": true,
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "from_me",
+            "type": "boolean"
+          },
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          },
+          {
+            "name": "search",
+            "type": "string"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список файлов"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "404": {
+          "description": "Не найдено"
+        }
+      }
+    },
+    {
+      "id": "message_files",
+      "method": "GET",
+      "path": "/api/v1/chat/message/files/{user_uid}/",
+      "description": "Получение списка файлов чата",
+      "notes": [
+        "Включает файлы из пересланных сообщений",
+        "Требуется аутентификация",
+        "Публичные группы доступны для превью"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "is_active",
+            "type": "boolean"
+          },
+          {
+            "name": "is_blocked",
+            "type": "boolean"
+          },
+          {
+            "name": "is_favorite",
+            "type": "boolean"
+          },
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          },
+          {
+            "name": "search",
+            "type": "string",
+            "description": "Фильтрация по MIME-типу"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список файлов",
+          "schema": {
+            "count": "integer",
+            "results": "array[GroupChannelFile]"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        },
+        "404": {
+          "description": "Не найдено"
+        }
+      }
+    },
+    {
+      "id": "message_links",
+      "method": "GET",
+      "path": "/api/v1/chat/message/links/{user_uid}/",
+      "description": "Получение списка ссылок из сообщений чата",
+      "notes": [
+        "Ограничение: только последние 500 сообщений",
+        "Сортировка: новые ссылки вверху по created_at",
+        "Требуется аутентификация"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "is_active",
+            "type": "boolean"
+          },
+          {
+            "name": "is_blocked",
+            "type": "boolean"
+          },
+          {
+            "name": "is_favorite",
+            "type": "boolean"
+          },
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          },
+          {
+            "name": "search",
+            "type": "string"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список ссылок",
+          "schema": {
+            "count": "integer",
+            "results": "array[MessageLink]"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав"
+        },
+        "404": {
+          "description": "Не найдено"
+        }
+      }
+    },
+    {
+      "id": "message_text_list",
+      "method": "GET",
+      "path": "/api/v1/chat/message/text/{user_uid}/",
+      "description": "Получение списка сообщений пользователя или чата",
+      "notes": [
+        "Доступен поиск по content",
+        "Сортировка по created_at",
+        "Требуется аутентификация"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "from_me",
+            "type": "boolean",
+            "description": "Исходящие сообщения"
+          },
+          {
+            "name": "new",
+            "type": "boolean"
+          },
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          },
+          {
+            "name": "search",
+            "type": "string"
+          },
+          {
+            "name": "range_time_start_created",
+            "type": "string",
+            "description": "Сообщения созданные с..."
+          },
+          {
+            "name": "range_time_end_created",
+            "type": "string",
+            "description": "Сообщения созданные до..."
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список сообщений",
+          "schema": {
+            "count": "integer",
+            "results": "array[Message]"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "404": {
+          "description": "Не найдено"
+        },
+        "414": {
+          "description": "Размер query-параметра превышает лимит"
+        }
+      }
+    },
+    {
+      "id": "message_text_search",
+      "method": "POST",
+      "path": "/api/v1/chat/message/text/{user_uid}/search",
+      "description": "Поиск позиции сообщения в чате по content или id_or_uid",
+      "notes": [
+        "Поиск по content регистронезависимо по частичному совпадению",
+        "Можно передать chat_page_size для учета пагинации"
+      ],
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string",
+            "description": "Поля сортировки списка сообщений"
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "field": "string (id_or_uid или content)",
+          "query": "string",
+          "chat_page_size": "integer"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Позиция сообщения найдена",
+          "schema": {
+            "id": "integer",
+            "uid": "string (uuid)",
+            "page": "integer",
+            "position": "integer"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации запроса"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        }
+      }
     }
+  ],
+  "authentication": {
+    "type": "Bearer Token",
+    "header": "Authorization"
+  },
+  "common_http_codes": {
+    "200": "OK - Успешный запрос",
+    "204": "No Content - Успешно, нет содержимого",
+    "400": "Bad Request - Ошибка валидации",
+    "401": "Unauthorized - Требуется аутентификация",
+    "403": "Forbidden - Недостаточно прав",
+    "404": "Not Found - Ресурс не найден",
+    "410": "Gone - Ресурс больше недоступен",
+    "414": "URI Too Long - Query параметр слишком длинный",
+    "422": "Unprocessable Entity - Неправильные данные"
+  },
+  "data_types": {
+    "ChatListItem": {
+      "id": "integer",
+      "chat": "UserProfile",
+      "is_favorite": "boolean",
+      "notifications": "boolean",
+      "new_message_count": "integer",
+      "name": "string",
+      "chat_type": "string",
+      "chat_key": "string",
+      "last_activity_at": "timestamp",
+      "last_message": "MessagePreview"
+    },
+    "Message": {
+      "id": "integer",
+      "uid": "uuid",
+      "from_user": "UserProfile",
+      "to_user": "UserProfile",
+      "content": "string",
+      "files_list": "array[File]",
+      "replied_messages": "array[Message]",
+      "forwarded_messages": "array[Message]",
+      "new": "boolean",
+      "created_at": "timestamp",
+      "updated_at": "timestamp"
+    }
+  }
 }

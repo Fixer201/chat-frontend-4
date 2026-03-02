@@ -1,0 +1,475 @@
+{
+  "api_version": "1.0",
+  "base_url": "https://api.example.com",
+  "api_section": "contact",
+  "endpoints": [
+    {
+      "id": "contact_get_user",
+      "method": "GET",
+      "path": "/api/v1/contact/{user_uid}/",
+      "description": "Получение пользователя по UID",
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Пользователь найден",
+          "schema": {
+            "uid": "uuid",
+            "is_deleted": "boolean",
+            "username": "string",
+            "nickname": "string",
+            "first_name": "string",
+            "last_name": "string",
+            "avatar": "string",
+            "avatar_url": "string",
+            "avatar_webp": "string",
+            "avatar_webp_url": "string",
+            "is_filled": "boolean",
+            "additional_information": "string",
+            "birthday": "timestamp",
+            "is_online": "boolean",
+            "was_online_at": "timestamp",
+            "is_blocked": "boolean",
+            "chat_id": "integer"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "404": {
+          "description": "Пользователь не найден"
+        }
+      }
+    },
+    {
+      "id": "contact_blacklist_get",
+      "method": "GET",
+      "path": "/api/v1/contact/blacklist/",
+      "description": "Получение черного списка (с авторизацией)",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список заблокированных пользователей",
+          "schema": {
+            "count": "integer",
+            "next": "string",
+            "previous": "string",
+            "results": "array[BlockedUser]"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        }
+      }
+    },
+    {
+      "id": "contact_blacklist_add",
+      "method": "POST",
+      "path": "/api/v1/contact/blacklist/add/{user_uid}/",
+      "description": "Добавление в черный список",
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {}
+      },
+      "responses": {
+        "201": {
+          "description": "Пользователь добавлен в ЧС",
+          "schema": {
+            "blocked_user": "UserProfile"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации запроса"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        }
+      }
+    },
+    {
+      "id": "contact_blacklist_delete",
+      "method": "DELETE",
+      "path": "/api/v1/contact/blacklist/delete/{user_uid}/",
+      "description": "Удаление из черного списка",
+      "parameters": {
+        "path": [
+          {
+            "name": "user_uid",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "204": {
+          "description": "Пользователь удален из ЧС"
+        },
+        "400": {
+          "description": "Ошибка валидации запроса"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        }
+      }
+    },
+    {
+      "id": "contact_check_full_list",
+      "method": "POST",
+      "path": "/api/v1/contact/check/full-list/",
+      "description": "Поиск зарегистрированных пользователей (полная информация)",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "phone_or_nickname": "array[object with phone_or_nickname string]"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Список зарегистрированных пользователей",
+          "schema": {
+            "count": "integer",
+            "next": "string",
+            "previous": "string",
+            "results": "array[UserContact]"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации запроса"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        }
+      }
+    },
+    {
+      "id": "contact_check_list",
+      "method": "POST",
+      "path": "/api/v1/contact/check/list/",
+      "description": "Проверка наличия пользователей в приложении",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "phone_or_nickname": "array[object with phone_or_nickname string]"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Проверка пользователей",
+          "schema": {
+            "count": "integer",
+            "results": "array[UserContact]"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации запроса"
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        }
+      }
+    },
+    {
+      "id": "contact_messenger_add_by_phone",
+      "method": "POST",
+      "path": "/api/v1/contact/messenger-add-by-phone/",
+      "description": "Добавление контакта мессенджера",
+      "parameters": {},
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "phone": "string",
+          "first_name": "string",
+          "last_name": "string"
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Контакт добавлен",
+          "schema": {
+            "uid": "uuid",
+            "owner_user": "uuid",
+            "system_contact": "UserProfile",
+            "first_name": "string",
+            "last_name": "string",
+            "phone": "string"
+          }
+        },
+        "400": {
+          "description": "Ошибка валидации запроса"
+        }
+      }
+    },
+    {
+      "id": "contact_messenger_bulk_create",
+      "method": "POST",
+      "path": "/api/v1/contact/messenger-bulk-create/",
+      "description": "Групповое добавление контактов по номерам телефонов",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "phones": "array[string]"
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Контакты добавлены",
+          "schema": {
+            "count": "integer",
+            "next": "string",
+            "previous": "string",
+            "results": "array[ContactCreated]"
+          }
+        }
+      }
+    },
+    {
+      "id": "contact_messenger_delete_contact",
+      "method": "DELETE",
+      "path": "/api/v1/contact/messenger-delete-contact/{uid}/",
+      "description": "Удаление контакта по UID пользователя",
+      "parameters": {
+        "path": [
+          {
+            "name": "uid",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "204": {
+          "description": "Контакт удален"
+        }
+      }
+    },
+    {
+      "id": "contact_messenger_list",
+      "method": "GET",
+      "path": "/api/v1/contact/messenger-list/",
+      "description": "Получение контактов в мессенджере",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список контактов мессенджера",
+          "schema": {
+            "count": "integer",
+            "results": "array[MessengerContact]"
+          }
+        }
+      }
+    },
+    {
+      "id": "contact_messenger_bulk_delete",
+      "method": "POST",
+      "path": "/api/v1/contact/messenger/bulk-delete/",
+      "description": "Групповое удаление контактов по UID",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "type": "integer"
+          },
+          {
+            "name": "page_size",
+            "type": "integer"
+          }
+        ]
+      },
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "contact_uids": "array[uuid]"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Контакты удалены",
+          "schema": {
+            "count": "integer",
+            "results": "array[ContactDeleted]"
+          }
+        }
+      }
+    }
+  ],
+  "authentication": {
+    "type": "Bearer Token",
+    "header": "Authorization"
+  },
+  "common_http_codes": {
+    "200": "OK - Успешный запрос",
+    "201": "Created - Ресурс создан",
+    "204": "No Content - Успешно, нет содержимого",
+    "400": "Bad Request - Ошибка валидации",
+    "401": "Unauthorized - Требуется аутентификация",
+    "403": "Forbidden - Недостаточно прав",
+    "404": "Not Found - Ресурс не найден"
+  },
+  "data_types": {
+    "UserProfile": {
+      "uid": "uuid",
+      "is_deleted": "boolean",
+      "username": "string",
+      "nickname": "string",
+      "first_name": "string",
+      "last_name": "string",
+      "avatar": "string",
+      "avatar_url": "string",
+      "avatar_webp": "string",
+      "avatar_webp_url": "string",
+      "is_filled": "boolean",
+      "additional_information": "string",
+      "birthday": "timestamp",
+      "is_online": "boolean",
+      "was_online_at": "timestamp",
+      "is_blocked": "boolean",
+      "chat_id": "integer"
+    },
+    "BlockedUser": {
+      "blocked_user": {
+        "uid": "uuid",
+        "is_deleted": "boolean",
+        "username": "string",
+        "nickname": "string",
+        "phone": "string",
+        "first_name": "string",
+        "last_name": "string",
+        "avatar": "string",
+        "avatar_url": "string",
+        "avatar_webp": "string",
+        "avatar_webp_url": "string",
+        "additional_information": "string",
+        "birthday": "timestamp",
+        "chat_id": "integer",
+        "is_online": "boolean",
+        "was_online_at": "timestamp"
+      }
+    },
+    "UserContact": {
+      "uid": "uuid",
+      "is_deleted": "boolean",
+      "username": "string",
+      "nickname": "string",
+      "phone": "string",
+      "first_name": "string",
+      "last_name": "string",
+      "avatar": "string",
+      "avatar_url": "string",
+      "avatar_webp": "string",
+      "avatar_webp_url": "string",
+      "additional_information": "string",
+      "birthday": "timestamp",
+      "chat_id": "integer",
+      "is_online": "boolean",
+      "was_online_at": "timestamp"
+    },
+    "MessengerContact": {
+      "uid": "uuid",
+      "owner_user": "uuid",
+      "system_contact": "UserProfile",
+      "first_name": "string",
+      "last_name": "string",
+      "phone": "string"
+    },
+    "ContactCreated": {
+      "uid": "uuid",
+      "first_name": "string",
+      "last_name": "string"
+    },
+    "ContactDeleted": {
+      "uid": "uuid",
+      "first_name": "string",
+      "last_name": "string"
+    }
+  }
+}

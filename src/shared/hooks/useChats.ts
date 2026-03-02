@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
     useAppDispatch,
     useAppSelector,
 } from '../../redux/store'
+import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import {
     fetchChats,
     hydrateLocalChats,
@@ -28,6 +29,9 @@ import { onNextProps } from '../types/createGroup'
 // Абстрагирует взаимодействие с Redux store, предоставляя простой API для компонентов
 export const useChats = () => {
     const dispatch = useAppDispatch()
+    const fetchData = useApiFetcher()
+    const LOCAL_CHATS_STORAGE_KEY = 'localChats'
+    const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 
     // Селекторы для получения данных из состояния чатов
     const {
@@ -112,6 +116,34 @@ export const useChats = () => {
         [dispatch],
     )
 
+    const markChatAsReadOnServer = useCallback(
+        async (
+            chatId: number,
+            lastSeenMessageId?: number,
+        ) => {
+            if (!lastSeenMessageId) return
+
+            try {
+                await fetchData(
+                    `/api/v1/chat/list/${chatId}/`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            last_seen_message:
+                                lastSeenMessageId,
+                        }),
+                    },
+                )
+            } catch (error) {
+                console.warn(
+                    'Не удалось обновить статус прочитанного:',
+                    error,
+                )
+            }
+        },
+        [fetchData],
+    )
+
     // Пометка чата как непрочитанного
     const markChatAsUnread = useCallback(
         (chatId: number) => {
@@ -121,11 +153,57 @@ export const useChats = () => {
     )
 
     // Мягкое удаление чата (помечаем как удаленный)
+    // Удаляем чат на сервере и помечаем локально удалённым (для локальных чатов — чистим localStorage)
     const deleteChat = useCallback(
-        (chatId: number) => {
+        async (chatId: number) => {
+            const chat = items.find(
+                (item) => item.id === chatId,
+            )
+
+            if (!chat) {
+                return
+            }
+
+            if (
+                chat.id > LOCAL_CHAT_ID_THRESHOLD ||
+                chat.isTemporary
+            ) {
+                if (typeof window !== 'undefined') {
+                    try {
+                        const storedChats =
+                            window.localStorage.getItem(
+                                LOCAL_CHATS_STORAGE_KEY,
+                            )
+                        const parsedChats = storedChats
+                            ? (JSON.parse(
+                                  storedChats,
+                              ) as ChatItem[])
+                            : []
+                        const filtered = parsedChats.filter(
+                            (item) => item.id !== chatId,
+                        )
+                        window.localStorage.setItem(
+                            LOCAL_CHATS_STORAGE_KEY,
+                            JSON.stringify(filtered),
+                        )
+                    } catch (error) {
+                        console.warn(
+                            'Не удалось обновить localChats:',
+                            error,
+                        )
+                    }
+                }
+                dispatch(markAsDeleted(chatId))
+                return
+            }
+
+            await fetchData(
+                `/api/v1/chat/list/${chatId}/`,
+                { method: 'DELETE' },
+            )
             dispatch(markAsDeleted(chatId))
         },
-        [dispatch],
+        [dispatch, fetchData, items],
     )
 
     // Добавление чата в список контактов
@@ -207,29 +285,58 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Возвращаемый объект с методами и данными
-    return {
-        chats: items,
-        loading,
-        error,
-        selectedChatId,
-        chatSettings,
-        loadChats,
-        hydrateChats,
-        selectChat,
-        updateChat: updateChatData,
-        updateChatSettings: updateChatSettingsData,
-        toggleFavorite: toggleFavoriteChat,
-        toggleNotifications: toggleChatNotifications,
-        markAsRead: markChatAsRead,
-        markAsUnread: markChatAsUnread,
-        deleteChat,
-        addToContacts: addChatToContacts,
-        resetChatSettings: resetAllChatSettings,
-        getChatSettings,
-        getChatWithSettings,
-        createChat,
-        createGroup,
-        createChannel,
-    }
+    // Мемоизация возвращаемого объекта — предотвращает пересоздание
+    // на каждый рендер, стабилизирует ссылку для потребителей хука
+    return useMemo(
+        () => ({
+            chats: items,
+            loading,
+            error,
+            selectedChatId,
+            chatSettings,
+            loadChats,
+            hydrateChats,
+            selectChat,
+            updateChat: updateChatData,
+            updateChatSettings: updateChatSettingsData,
+            toggleFavorite: toggleFavoriteChat,
+            toggleNotifications: toggleChatNotifications,
+            markAsRead: markChatAsRead,
+            markAsReadOnServer: markChatAsReadOnServer,
+            markAsUnread: markChatAsUnread,
+            deleteChat,
+            addToContacts: addChatToContacts,
+            resetChatSettings: resetAllChatSettings,
+            getChatSettings,
+            getChatWithSettings,
+            createChat,
+            createGroup,
+            createChannel,
+        }),
+        [
+            items,
+            loading,
+            error,
+            selectedChatId,
+            chatSettings,
+            loadChats,
+            hydrateChats,
+            selectChat,
+            updateChatData,
+            updateChatSettingsData,
+            toggleFavoriteChat,
+            toggleChatNotifications,
+            markChatAsRead,
+            markChatAsReadOnServer,
+            markChatAsUnread,
+            deleteChat,
+            addChatToContacts,
+            resetAllChatSettings,
+            getChatSettings,
+            getChatWithSettings,
+            createChat,
+            createGroup,
+            createChannel,
+        ],
+    )
 }

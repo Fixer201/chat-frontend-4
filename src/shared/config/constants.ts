@@ -1,3 +1,4 @@
+import { Contact } from '@shared/types/contact'
 import { Category } from '@shared/types/Emoji'
 import TimeIcon from '@public/icons/messageComposer/emojiCategories/time.svg'
 import EmotionIcon from '@public/icons/messageComposer/emojiCategories/smiley.svg'
@@ -20,8 +21,9 @@ export const ALLOWED_FILE_TYPES = [
 export const DEFAULT_AVATAR =
     '/images/chatHeader/userAvatar.svg'
 
-export const ContactsListDB = [
+export const ContactsListDB: Contact[] = [
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         username: 'string',
         nickname: '@vlad',
@@ -40,6 +42,7 @@ export const ContactsListDB = [
         wasOnlineAt: 0,
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afa9',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa9',
         username: 'string',
         nickname: 'string',
@@ -58,6 +61,7 @@ export const ContactsListDB = [
         wasOnlineAt: 0,
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afa8',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa8',
         username: 'string',
         nickname: 'string',
@@ -76,6 +80,7 @@ export const ContactsListDB = [
         wasOnlineAt: 1696161600000,
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afa7',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afa7',
         username: 'string',
         nickname: '@egor',
@@ -94,6 +99,7 @@ export const ContactsListDB = [
         wasOnlineAt: 1736762400000, // 2025-12-26T10:00:00Z
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afb1',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb1',
         username: 'string',
         nickname: 'string',
@@ -112,6 +118,7 @@ export const ContactsListDB = [
         wasOnlineAt: 1736676000000, // 2025-12-25T12:00:00Z
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afb2',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb2',
         username: 'string',
         nickname: 'string',
@@ -130,6 +137,7 @@ export const ContactsListDB = [
         wasOnlineAt: 48,
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afb3',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb3',
         username: 'string',
         nickname: 'string',
@@ -148,6 +156,7 @@ export const ContactsListDB = [
         wasOnlineAt: 1642809600000, // 22.01.2022 (полночь UTC)
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-2c963f66afb9',
         userUid: '3fa85f64-5717-4562-b3fc-2c963f66afb9',
         username: 'string',
         nickname: 'string',
@@ -166,6 +175,7 @@ export const ContactsListDB = [
         wasOnlineAt: 1742601600000, // 22.03.2025 (полночь UTC)
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-bfsgnshgfn5165',
         userUid: '3fa85f64-5717-4562-b3fc-bfsgnshgfn5165',
         username: 'string',
         nickname: 'string',
@@ -184,6 +194,7 @@ export const ContactsListDB = [
         wasOnlineAt: 1742601600000, // 22.03.2025
     },
     {
+        uid: '3fa85f64-5717-4562-b3fc-fhsdgnhs453543fdh',
         userUid:
             '3fa85f64-5717-4562-b3fc-fhsdgnhs453543fdh',
         username: 'string',

@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// URL бэкенда из env (см. комментарий в send-code/route.ts)
+const BACKEND_URL =
+    process.env.BACKEND_URL ||
+    'https://api.test.chat.ktsf.ru'
+
 // Прокси для мягкого удаления профиля по UID через бэкенд.
 // Задача: принять DELETE с фронта, пробросить на API и вернуть ответ как есть.
 export async function DELETE(
@@ -22,7 +27,7 @@ export async function DELETE(
             request.headers.get('authorization')
 
         const response = await fetch(
-            `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/${uid}/`,
+            `${BACKEND_URL}/api/v1/auth/messenger/profile/${uid}/`,
             {
                 method: 'DELETE',
                 headers: {

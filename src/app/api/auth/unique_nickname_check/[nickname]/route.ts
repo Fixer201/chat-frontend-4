@@ -1,6 +1,11 @@
 // /api/auth/unique_nickname_check/[nickname]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
+// URL бэкенда из env (см. комментарий в send-code/route.ts)
+const BACKEND_URL =
+    process.env.BACKEND_URL ||
+    'https://api.test.chat.ktsf.ru'
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ nickname: string }> },
@@ -16,8 +21,8 @@ export async function GET(
 
     const apiKey = process.env.NEXT_PUBLIC_API_KEY
     const url = apiKey
-        ? `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/unique_nickname_check/${encodeURIComponent(nickname)}/?api_key=${apiKey}`
-        : `https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/unique_nickname_check/${encodeURIComponent(nickname)}/`
+        ? `${BACKEND_URL}/api/v1/auth/messenger/profile/unique_nickname_check/${encodeURIComponent(nickname)}/?api_key=${apiKey}`
+        : `${BACKEND_URL}/api/v1/auth/messenger/profile/unique_nickname_check/${encodeURIComponent(nickname)}/`
 
     try {
         const response = await fetch(url)

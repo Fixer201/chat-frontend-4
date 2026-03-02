@@ -72,6 +72,7 @@ export type Message = {
     from_user?: string // от кого сообщение (приходит от сервера)
     created_at?: number // timestamp создания (unix timestamp в секундах)
     updated_at?: number // timestamp обновления (unix timestamp в секундах)
+    isEdited?: boolean // флаг редактирования — устанавливается только при action: update_message
 
     // Статусы прочтения (для своих сообщений)
     delivered_at?: number // timestamp доставки (unix timestamp в секундах)

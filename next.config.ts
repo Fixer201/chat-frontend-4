@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+    // Next.js по умолчанию делает 308 редирект, убирая trailing slash из URL.
+    // Django-бэкенд требует trailing slashes (APPEND_SLASH) и возвращает 404 без них.
+    // Отключаем автоматический редирект, чтобы запросы вида /api/v1/chat/list/
+    // доходили до catch-all route handler с сохранённым trailing slash.
+    skipTrailingSlashRedirect: true,
     images: {
         remotePatterns: [
             {
@@ -33,28 +38,6 @@ const nextConfig: NextConfig = {
                 hostname: 'api.test.chat.ktsf.ru',
             },
         ],
-    },
-    // Добавляем headers для CORS (чтобы разрешить запросы к /api/* из браузера)
-    async headers() {
-        return [
-            {
-                source: '/api/:path*', // Применяется ко всем путям под /api/
-                headers: [
-                    {
-                        key: 'Access-Control-Allow-Origin',
-                        value: '*',
-                    }, // Разрешает запросы от любого домена (для dev; в prod указать конкретный домен)
-                    {
-                        key: 'Access-Control-Allow-Methods',
-                        value: 'GET,POST,PUT,DELETE',
-                    }, // Разрешённые методы
-                    {
-                        key: 'Access-Control-Allow-Headers',
-                        value: 'Content-Type,Authorization,X-CSRFTOKEN',
-                    }, // Разрешённые заголовки
-                ],
-            },
-        ]
     },
     // Конфигурация для Turbopack (используется в dev)
     turbopack: {
