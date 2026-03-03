@@ -9,13 +9,13 @@ import { RootState } from '@redux/store'
 import { setContacts } from '@redux/slices/contactsSlice'
 import {
     Contact, // Тип контакта
-    GroupParticipant, // Тип участника группы
 } from '@shared/types/contact'
+import type { Participant } from '@shared/types/chat'
 
 // Интерфейс пропсов
 interface InviteMembersContentProps {
     groupId?: string // ID группы (опционально)
-    currentParticipants: GroupParticipant[] // Текущие участники группы
+    currentParticipants: Participant[] // Текущие участники группы
     onInvite?: (selectedContacts: Contact[]) => void // Функция приглашения
     onCancel?: () => void // Функция отмены
     isInviting?: boolean // Флаг процесса приглашения
