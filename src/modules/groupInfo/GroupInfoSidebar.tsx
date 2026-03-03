@@ -2,6 +2,7 @@
 'use client'
 
 import { cn } from '@shared/lib/utils'
+import type { MenuItem } from '@shared/ui/dropdown/DropdownMenu'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import {
@@ -630,58 +631,60 @@ export default function GroupInfoSidebar({
                         menuWidth={220}
                         placement="bottom-right"
                         ariaLabel="Настройки группы"
-                        items={[
-                            {
-                                label: 'Очистить чат',
-                                icon: (
-                                    <Image
-                                        src="/icons/clean.svg"
-                                        alt=""
-                                        width={24}
-                                        height={24}
-                                    />
-                                ),
-                                onClick: () =>
-                                    setClearChatModalOpen(
-                                        true,
+                        items={
+                            [
+                                {
+                                    label: 'Очистить чат',
+                                    icon: (
+                                        <Image
+                                            src="/icons/clean.svg"
+                                            alt=""
+                                            width={24}
+                                            height={24}
+                                        />
                                     ),
-                            },
-                            // Пункт "Покинуть группу" для всех, кроме владельца
-                            !isCurrentUserOwner && {
-                                label: 'Покинуть группу',
-                                icon: (
-                                    <Image
-                                        src="/icons/leave.svg"
-                                        alt=""
-                                        width={24}
-                                        height={24}
-                                    />
-                                ),
-                                onClick: () =>
-                                    setLeaveGroupModalOpen(
-                                        true,
+                                    onClick: () =>
+                                        setClearChatModalOpen(
+                                            true,
+                                        ),
+                                },
+                                // Пункт "Покинуть группу" для всех, кроме владельца
+                                !isCurrentUserOwner && {
+                                    label: 'Покинуть группу',
+                                    icon: (
+                                        <Image
+                                            src="/icons/leave.svg"
+                                            alt=""
+                                            width={24}
+                                            height={24}
+                                        />
                                     ),
-                                hasDivider: true, // Разделитель перед пунктом
-                            },
-                            // Пункт "Удалить группу" только для владельца
-                            isCurrentUserOwner && {
-                                label: 'Удалить группу',
-                                icon: (
-                                    <Image
-                                        src="/icons/delete.svg"
-                                        alt=""
-                                        width={24}
-                                        height={24}
-                                    />
-                                ),
-                                onClick: () =>
-                                    setDeleteGroupModalOpen(
-                                        true,
+                                    onClick: () =>
+                                        setLeaveGroupModalOpen(
+                                            true,
+                                        ),
+                                    hasDivider: true, // Разделитель перед пунктом
+                                },
+                                // Пункт "Удалить группу" только для владельца
+                                isCurrentUserOwner && {
+                                    label: 'Удалить группу',
+                                    icon: (
+                                        <Image
+                                            src="/icons/delete.svg"
+                                            alt=""
+                                            width={24}
+                                            height={24}
+                                        />
                                     ),
-                                hasDivider: true,
-                                isDanger: true, // Красный цвет для опасного действия
-                            },
-                        ].filter(Boolean)} // Отфильтровываем false (убираем неактуальные пункты)
+                                    onClick: () =>
+                                        setDeleteGroupModalOpen(
+                                            true,
+                                        ),
+                                    hasDivider: true,
+                                    isDanger: true, // Красный цвет для опасного действия
+                                },
+                            ].filter(Boolean) as MenuItem[]
+                        } // Отфильтровываем false (убираем неактуальные пункты)
                     />
                 </div>
             </div>
