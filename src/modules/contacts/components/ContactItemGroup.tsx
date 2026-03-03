@@ -16,6 +16,8 @@ interface ContactItemProps {
     onSetSelectedContact: (uid: string) => void
     onDelete?: (contact: Contact | GroupParticipant) => void
     canDelete?: boolean
+    onTransferOwnership?: () => void // <-- новый
+    canTransferOwnership?: boolean // <-- новый
 }
 
 const STYLES = {
@@ -39,6 +41,8 @@ export const ContactItemGroup: React.FC<
     onSetSelectedContact,
     onDelete,
     canDelete = false,
+    onTransferOwnership,
+    canTransferOwnership,
 }) => {
     const [contextMenuOpen, setContextMenuOpen] =
         useState(false)
@@ -71,7 +75,10 @@ export const ContactItemGroup: React.FC<
         onDelete?.(contact)
         setContextMenuOpen(false)
     }, [onDelete, contact])
-
+    const handleTransferOwnership = useCallback(() => {
+        onTransferOwnership?.()
+        setContextMenuOpen(false)
+    }, [onTransferOwnership])
     return (
         <div
             className={STYLES.container}
@@ -106,12 +113,37 @@ export const ContactItemGroup: React.FC<
                     minWidth={150}
                     maxWidth={250}
                 >
-                    <Dropdown.Item
-                        danger
-                        onSelect={handleDelete}
-                    >
-                        Удалить
-                    </Dropdown.Item>
+                    {/* Пункт передачи прав, если разрешено */}
+                    {canTransferOwnership &&
+                        onTransferOwnership &&
+                        !(
+                            'isOwner' in contact &&
+                            contact.isOwner
+                        ) && (
+                            <Dropdown.Item
+                                onSelect={
+                                    handleTransferOwnership
+                                }
+                                // Можно добавить иконку, например, crown
+                            >
+                                Передать права владельца
+                            </Dropdown.Item>
+                        )}
+
+                    {/* Пункт удаления */}
+                    {canDelete &&
+                        onDelete &&
+                        !(
+                            'isOwner' in contact &&
+                            contact.isOwner
+                        ) && (
+                            <Dropdown.Item
+                                danger
+                                onSelect={handleDelete}
+                            >
+                                Удалить
+                            </Dropdown.Item>
+                        )}
                 </Dropdown.Content>
             </Dropdown>
         </div>

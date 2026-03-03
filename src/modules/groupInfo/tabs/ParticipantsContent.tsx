@@ -1,7 +1,7 @@
 // ParticipantsContent.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import Cookies from 'js-cookie'
 import {
@@ -278,7 +278,16 @@ export default function ParticipantsContent({
             )
         }
     }
-
+    const handleTransferOwnership = useCallback(
+        (participant: GroupParticipant) => {
+            console.log(
+                'Передача прав владельца участнику:',
+                participant,
+            )
+            // TODO: реализовать логику передачи прав через WebSocket/API
+        },
+        [],
+    )
     // Обработчик удаления участника
     const handleParticipantRemoved = (
         removedUid: string,
@@ -349,6 +358,9 @@ export default function ParticipantsContent({
                     canRemoveParticipants={
                         isCurrentUserOwner
                     } // Право на удаление
+                    onTransferOwnership={
+                        handleTransferOwnership
+                    }
                 />
             ) : (
                 // Экран приглашения

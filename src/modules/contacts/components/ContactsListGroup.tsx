@@ -14,7 +14,17 @@ import { GroupParticipant } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
 import { useProfile } from '@shared/hooks/useProfile' // <-- импортируем хук
-
+interface ContactsListGroupProps {
+    owner: GroupParticipant | null
+    participants: GroupParticipant[]
+    onInviteClick?: () => void
+    chatKey: string
+    onParticipantRemoved?: (uid: string) => void
+    canRemoveParticipants?: boolean
+    onTransferOwnership?: (
+        participant: GroupParticipant,
+    ) => void // <-- новый проп
+}
 export default memo(function ContactsListGroup({
     owner,
     participants,
@@ -22,6 +32,7 @@ export default memo(function ContactsListGroup({
     chatKey,
     onParticipantRemoved,
     canRemoveParticipants = false,
+    onTransferOwnership,
 }: ContactsListGroupProps) {
     const [searchValue, setSearchValue] = useState('')
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -158,6 +169,17 @@ export default memo(function ContactsListGroup({
                                 onDelete={
                                     handleDeleteParticipant
                                 }
+                                onTransferOwnership={
+                                    onTransferOwnership
+                                        ? () =>
+                                              onTransferOwnership(
+                                                  contact,
+                                              )
+                                        : undefined
+                                } // <-- передаём, только если есть обработчик
+                                canTransferOwnership={
+                                    canRemoveParticipants
+                                } // только владелец группы может передавать права
                             />
                         </>
                     )}
@@ -198,6 +220,17 @@ export default memo(function ContactsListGroup({
                                     }
                                     onDelete={
                                         handleDeleteParticipant
+                                    }
+                                    onTransferOwnership={
+                                        onTransferOwnership
+                                            ? () =>
+                                                  onTransferOwnership(
+                                                      contact,
+                                                  )
+                                            : undefined
+                                    }
+                                    canTransferOwnership={
+                                        canRemoveParticipants
                                     }
                                 />
                             ),

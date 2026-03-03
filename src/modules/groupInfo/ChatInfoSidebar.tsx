@@ -62,10 +62,12 @@ export default function ChatInfoSidebar({
     useEffect(() => {
         if (!selectedChatId) {
             setChatData(null)
+            setLoading(false)
             return
         }
 
         setLoading(true)
+        setChatData(null)
         const timer = setTimeout(() => {
             try {
                 const rawData =
