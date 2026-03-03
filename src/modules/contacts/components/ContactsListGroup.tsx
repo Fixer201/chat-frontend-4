@@ -10,13 +10,13 @@ import Modal from '@shared/ui/modal/Modal'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import { GroupParticipant } from '@shared/types/contact'
+import type { Contact } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
 
 interface ContactsListGroupProps {
-    owner: GroupParticipant | null
-    participants: GroupParticipant[]
+    owner: Contact | null
+    participants: Contact[]
     onInviteClick?: () => void
     chatKey: string
     onParticipantRemoved?: (uid: string) => void
@@ -34,7 +34,7 @@ export default memo(function ContactsListGroup({
     const [searchValue, setSearchValue] = useState('')
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [participantToDelete, setParticipantToDelete] =
-        useState<GroupParticipant | null>(null)
+        useState<Contact | null>(null)
 
     const dispatch = useDispatch()
     const selectedUid = useSelector(
@@ -50,7 +50,7 @@ export default memo(function ContactsListGroup({
         ])
 
     const handleDeleteParticipant = (
-        participant: GroupParticipant,
+        participant: Contact,
     ) => {
         if (!canRemoveParticipants) return
         setParticipantToDelete(participant)

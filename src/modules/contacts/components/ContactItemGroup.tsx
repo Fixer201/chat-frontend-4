@@ -2,17 +2,16 @@
 
 import React, { useState, useCallback } from 'react'
 import type { Contact } from '@shared/types/contact'
-import type { Participant } from '@shared/types/chat'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
 import { getStatusText } from '@shared/lib/getStatusText'
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 
 interface ContactItemProps {
-    contact: Contact | Participant
+    contact: Contact
     selectedUid: string | null
     searchValue: string
     onSetSelectedContact: (uid: string) => void
-    onDelete?: (contact: Contact | Participant) => void
+    onDelete?: (contact: Contact) => void
     canDelete?: boolean
 }
 
