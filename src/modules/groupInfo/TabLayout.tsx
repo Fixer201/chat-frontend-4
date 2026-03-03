@@ -6,6 +6,7 @@ import { Button } from '@shared/ui/button/Button'
 import { useRef, useEffect, useMemo } from 'react'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
+import type { CustomScrollbarRef } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 
 // Типы для вкладок
 type TabId =
@@ -44,7 +45,9 @@ export default function TabLayout({
     // Refs для DOM-элементов
     const tabsRef = useRef<(HTMLButtonElement | null)[]>([]) // Массив ref-ов кнопок табов
     const containerRef = useRef<HTMLDivElement>(null) // Контейнер для горизонтального скролла табов
-    const scrollbarRef = useRef<unknown>(null) // Ref для кастомного скроллбара
+    const scrollbarRef = useRef<CustomScrollbarRef | null>(
+        null,
+    ) // Ref для кастомного скроллбара
     const isInitialMount = useRef(true) // Флаг первого монтирования (для отключения анимации при первом скролле)
     const scrollTimeoutRef = useRef<ReturnType<
         typeof setTimeout
