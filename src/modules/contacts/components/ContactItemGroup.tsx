@@ -1,17 +1,17 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import type { Contact } from '@shared/types/contact'
+import type { GroupParticipant } from '@shared/types/contact'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
 import { getStatusText } from '@shared/lib/getStatusText'
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 
 interface ContactItemProps {
-    contact: Contact
+    contact: GroupParticipant
     selectedUid: string | null
     searchValue: string
     onSetSelectedContact: (uid: string) => void
-    onDelete?: (contact: Contact) => void
+    onDelete?: (contact: GroupParticipant) => void
     canDelete?: boolean
 }
 
@@ -42,19 +42,17 @@ export const ContactItemGroup: React.FC<
     const [contextMenuPosition, setContextMenuPosition] =
         useState({ x: 0, y: 0 })
 
-    // Вычисляем статус только для Contact
-    const secondaryText =
-        'isOnline' in contact && 'wasOnlineAt' in contact
-            ? getStatusText(contact as Contact, searchValue)
-            : ''
+    // Для GroupParticipant вычисляем статус
+    const secondaryText = getStatusText(
+        contact,
+        searchValue,
+    )
 
     const handleContextMenu = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault()
-            const isOwner =
-                'isOwner' in contact && contact.isOwner
-            if (!onDelete || !canDelete || isOwner) return
-
+            if (!onDelete || !canDelete || contact.isOwner)
+                return
             setContextMenuPosition({
                 x: e.clientX,
                 y: e.clientY,
@@ -78,23 +76,16 @@ export const ContactItemGroup: React.FC<
             <div className={STYLES.avatarWrapper}>
                 <ContactAvatar
                     src={
-                        'avatarUrl' in contact &&
                         contact.avatarUrl
                             ? `/images/contacts/${contact.avatarUrl}`
                             : ''
                     }
                     name={
-                        'firstName' in contact &&
-                        'lastName' in contact
-                            ? `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim()
-                            : 'Участник'
+                        `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim() ||
+                        'Участник'
                     }
                     mode="contact"
-                    isOnline={
-                        'isOnline' in contact
-                            ? contact.isOnline
-                            : false
-                    }
+                    isOnline={contact.isOnline}
                     statusText={secondaryText}
                     onClick={() =>
                         onSetSelectedContact(contact.uid)

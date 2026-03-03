@@ -10,13 +10,16 @@ import Modal from '@shared/ui/modal/Modal'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import type { Contact } from '@shared/types/contact'
+import type {
+    Contact,
+    GroupParticipant,
+} from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
 
 interface ContactsListGroupProps {
-    owner: Contact | null
-    participants: Contact[]
+    owner: GroupParticipant | null
+    participants: GroupParticipant[]
     onInviteClick?: () => void
     chatKey: string
     onParticipantRemoved?: (uid: string) => void
