@@ -20,7 +20,7 @@ import {
     removeParticipant, // Экшен для удаления участника из Redux
 } from '@redux/slices/groupParticipantsSlice'
 import { wsChatService } from '@shared/lib/webSocketChatService'
-
+import { useProfile } from '@shared/hooks/useProfile'
 // Тип для отображения: список участников или приглашение
 type View = 'participants' | 'invite'
 
@@ -51,29 +51,52 @@ export default function ParticipantsContent({
     const [inviteError, setInviteError] = useState<
         string | null
     >(null) // Ошибка при приглашении
+    const { profile } = useProfile()
 
     // Загрузка данных из localStorage и синхронизация с Redux
     useEffect(() => {
         setLoading(true)
-        const data = findGroupParticipantsByChatKey(chatKey) // Получаем данные из localStorage
+        const data = findGroupParticipantsByChatKey(chatKey)
         if (data) {
-            // Разделяем владельца и остальных участников
+            let processedData = data
+            if (profile?.uid) {
+                processedData = data.map((p) => {
+                    if (p.uid === 'current-user-uid') {
+                        return {
+                            ...p,
+                            uid: profile.uid,
+                            firstName:
+                                profile.first_name ||
+                                p.firstName,
+                            lastName:
+                                profile.last_name ||
+                                p.lastName,
+                            avatarUrl:
+                                profile.avatar_url ||
+                                p.avatarUrl,
+                            avatarWebpUrl:
+                                profile.avatar_webp_url ||
+                                p.avatarWebpUrl,
+                        }
+                    }
+                    return p
+                })
+            }
+
             const ownerData =
-                data.find((p) => p.isOwner) || null
-            const otherParticipants = data.filter(
+                processedData.find((p) => p.isOwner) || null
+            const otherParticipants = processedData.filter(
                 (p) => !p.isOwner,
             )
             setOwner(ownerData)
             setParticipantsLocal(otherParticipants)
-            // Синхронизируем с Redux
             dispatch(
                 setParticipants({
                     chatKey,
-                    participants: data,
+                    participants: processedData,
                 }),
             )
         } else {
-            // Если данных нет - устанавливаем пустые значения
             setOwner(null)
             setParticipantsLocal([])
             dispatch(
@@ -84,7 +107,7 @@ export default function ParticipantsContent({
             )
         }
         setLoading(false)
-    }, [chatKey, dispatch])
+    }, [chatKey, dispatch, profile])
 
     // Обновление счётчика участников при изменении списка
     useEffect(() => {
