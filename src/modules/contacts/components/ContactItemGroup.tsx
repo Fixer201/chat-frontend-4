@@ -43,11 +43,11 @@ export const ContactItemGroup: React.FC<
     const [contextMenuPosition, setContextMenuPosition] =
         useState({ x: 0, y: 0 })
 
-    // Вычисляем статус напрямую, без useEffect
-    const secondaryText = getStatusText(
-        contact,
-        searchValue,
-    )
+    // Вычисляем статус только для Contact
+    const secondaryText =
+        'isOnline' in contact && 'wasOnlineAt' in contact
+            ? getStatusText(contact as Contact, searchValue)
+            : ''
 
     const handleContextMenu = useCallback(
         (e: React.MouseEvent) => {
@@ -78,10 +78,24 @@ export const ContactItemGroup: React.FC<
             <div className={STYLES.divider} />
             <div className={STYLES.avatarWrapper}>
                 <ContactAvatar
-                    src={`/images/contacts/${contact?.avatarUrl}`}
-                    name={`${contact.firstName} ${contact.lastName}`}
+                    src={
+                        'avatarUrl' in contact &&
+                        contact.avatarUrl
+                            ? `/images/contacts/${contact.avatarUrl}`
+                            : ''
+                    }
+                    name={
+                        'firstName' in contact &&
+                        'lastName' in contact
+                            ? `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim()
+                            : 'Участник'
+                    }
                     mode="contact"
-                    isOnline={contact.isOnline}
+                    isOnline={
+                        'isOnline' in contact
+                            ? contact.isOnline
+                            : false
+                    }
                     statusText={secondaryText}
                     onClick={() =>
                         onSetSelectedContact(contact.uid)
