@@ -32,8 +32,6 @@ import { wsChatService } from '../lib/webSocketChatService'
 export const useChats = () => {
     const dispatch = useAppDispatch()
     const fetchData = useApiFetcher()
-    const LOCAL_CHATS_STORAGE_KEY = 'localChats'
-    const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 
     // Селекторы для получения данных из состояния чатов
     const {
@@ -178,7 +176,6 @@ export const useChats = () => {
             }
 
             const accessToken = Cookies.get('access_token')
-            let wsSuccess = false
 
             // ========== STEP 1: Try WebSocket first ==========
             if (accessToken && chat.chatKey) {
@@ -205,7 +202,6 @@ export const useChats = () => {
                         console.log(
                             '[useChats] ✅ WebSocket delete success',
                         )
-                        wsSuccess = true
                     } else {
                         console.warn(
                             '[useChats] ⚠️ WebSocket delete failed:',
@@ -265,7 +261,6 @@ export const useChats = () => {
             }
 
             const accessToken = Cookies.get('access_token')
-            let wsSuccess = false
 
             // ========== STEP 1: Try WebSocket first ==========
             if (accessToken && chat.chatKey) {
@@ -300,7 +295,6 @@ export const useChats = () => {
                         console.log(
                             '[useChats] ✅ WebSocket leave success',
                         )
-                        wsSuccess = true
                     } else {
                         console.warn(
                             '[useChats] ⚠️ WebSocket leave failed:',
@@ -315,7 +309,6 @@ export const useChats = () => {
                             console.log(
                                 '[useChats] ℹ️ User not a member on server, removing from UI anyway',
                             )
-                            wsSuccess = true
                         }
                     }
                 } catch (error) {
@@ -344,7 +337,7 @@ export const useChats = () => {
                 '=========================================\n',
             )
         },
-        [dispatch, fetchData, items],
+        [dispatch, items],
     )
 
     // Добавление чата в список контактов
@@ -446,6 +439,7 @@ export const useChats = () => {
             markAsReadOnServer: markChatAsReadOnServer,
             markAsUnread: markChatAsUnread,
             deleteChat,
+            leaveChat,
             addToContacts: addChatToContacts,
             resetChatSettings: resetAllChatSettings,
             getChatSettings,
@@ -471,6 +465,7 @@ export const useChats = () => {
             markChatAsReadOnServer,
             markChatAsUnread,
             deleteChat,
+            leaveChat,
             addChatToContacts,
             resetAllChatSettings,
             getChatSettings,

@@ -171,7 +171,7 @@ export default memo(function ContactsListGroup({
                                     onTransferOwnership
                                         ? () =>
                                               onTransferOwnership(
-                                                  contact,
+                                                  ownerDisplay,
                                               )
                                         : undefined
                                 } // <-- передаём, только если есть обработчик
