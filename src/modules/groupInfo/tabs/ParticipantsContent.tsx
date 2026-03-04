@@ -1,8 +1,9 @@
 // ParticipantsContent.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
+import Cookies from 'js-cookie'
 import {
     findGroupParticipantsByChatKey, // Поиск участников группы в localStorage по ключу чата
     saveGroupParticipants, // Сохранение участников группы в localStorage
@@ -18,7 +19,8 @@ import {
     setParticipants, // Экшен для установки списка участников в Redux
     removeParticipant, // Экшен для удаления участника из Redux
 } from '@redux/slices/groupParticipantsSlice'
-
+import { wsChatService } from '@shared/lib/webSocketChatService'
+import { useProfile } from '@shared/hooks/useProfile'
 // Тип для отображения: список участников или приглашение
 type View = 'participants' | 'invite'
 
@@ -28,6 +30,7 @@ interface ParticipantsContentProps {
     onTitleChange?: (title: string | null) => void // Колбэк для изменения заголовка (родительский компонент)
     onParticipantsChange?: (count: number) => void // Колбэк при изменении количества участников
     isCurrentUserOwner?: boolean // Флаг, является ли текущий пользователь владельцем группы
+    onOwnerChanged?: () => void
 }
 
 export default function ParticipantsContent({
@@ -35,6 +38,7 @@ export default function ParticipantsContent({
     onTitleChange,
     onParticipantsChange,
     isCurrentUserOwner = false,
+    onOwnerChanged,
 }: ParticipantsContentProps) {
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(true) // Состояние загрузки
@@ -49,29 +53,53 @@ export default function ParticipantsContent({
     const [inviteError, setInviteError] = useState<
         string | null
     >(null) // Ошибка при приглашении
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
+    const { profile } = useProfile()
 
     // Загрузка данных из localStorage и синхронизация с Redux
     useEffect(() => {
         setLoading(true)
-        const data = findGroupParticipantsByChatKey(chatKey) // Получаем данные из localStorage
+        const data = findGroupParticipantsByChatKey(chatKey)
         if (data) {
-            // Разделяем владельца и остальных участников
+            let processedData = data
+            if (profile?.uid) {
+                processedData = data.map((p) => {
+                    if (p.uid === 'current-user-uid') {
+                        return {
+                            ...p,
+                            uid: profile.uid,
+                            firstName:
+                                profile.first_name ||
+                                p.firstName,
+                            lastName:
+                                profile.last_name ||
+                                p.lastName,
+                            avatarUrl:
+                                profile.avatar_url ||
+                                p.avatarUrl,
+                            avatarWebpUrl:
+                                profile.avatar_webp_url ||
+                                p.avatarWebpUrl,
+                        }
+                    }
+                    return p
+                })
+            }
+
             const ownerData =
-                data.find((p) => p.isOwner) || null
-            const otherParticipants = data.filter(
+                processedData.find((p) => p.isOwner) || null
+            const otherParticipants = processedData.filter(
                 (p) => !p.isOwner,
             )
             setOwner(ownerData)
             setParticipantsLocal(otherParticipants)
-            // Синхронизируем с Redux
             dispatch(
                 setParticipants({
                     chatKey,
-                    participants: data,
+                    participants: processedData,
                 }),
             )
         } else {
-            // Если данных нет - устанавливаем пустые значения
             setOwner(null)
             setParticipantsLocal([])
             dispatch(
@@ -82,7 +110,7 @@ export default function ParticipantsContent({
             )
         }
         setLoading(false)
-    }, [chatKey, dispatch])
+    }, [chatKey, dispatch, profile, refreshTrigger])
 
     // Обновление счётчика участников при изменении списка
     useEffect(() => {
@@ -102,15 +130,92 @@ export default function ParticipantsContent({
         }
     }, [currentView, onTitleChange])
 
-    // Обработчик приглашения участников
+    // Обработчик приглашения участников (WebSocket -> localStorage fallback)
     const handleInvite = async (
         selectedContacts: Contact[],
     ) => {
+        console.log(
+            '\n=========================================',
+        )
+        console.log(
+            '[ParticipantsContent] 🚀 Starting invite process',
+        )
+        console.log(
+            '[ParticipantsContent] 📝 Chat key:',
+            chatKey,
+        )
+        console.log(
+            '[ParticipantsContent] 👥 Selected contacts:',
+            selectedContacts.map((c) => ({
+                uid: c.uid,
+                name: `${c.firstName} ${c.lastName}`,
+            })),
+        )
+        console.log(
+            '=========================================',
+        )
+
         setIsInviting(true)
         setInviteError(null)
 
+        const accessToken = Cookies.get('access_token')
+        let wsSuccess = false
+
+        // ========== STEP 1: Try WebSocket first ==========
+        if (accessToken) {
+            console.log(
+                '[ParticipantsContent] 📡 STEP 1: Trying WebSocket...',
+            )
+            try {
+                const uids = selectedContacts.map(
+                    (c) => c.uid,
+                )
+                console.log(
+                    '[ParticipantsContent] 🔑 UIDs to invite:',
+                    uids,
+                )
+
+                const result =
+                    await wsChatService.addMembersToChat({
+                        chat_key: chatKey,
+                        uid_users_list: uids,
+                    })
+
+                console.log(
+                    '[ParticipantsContent] 📥 WebSocket result:',
+                    result,
+                )
+
+                if (result.success && result.result) {
+                    console.log(
+                        '[ParticipantsContent] ✅ WebSocket success, members added:',
+                        result.result.added_users,
+                    )
+                    wsSuccess = true
+                } else {
+                    console.warn(
+                        '[ParticipantsContent] ⚠️ WebSocket failed:',
+                        result.error,
+                    )
+                }
+            } catch (error) {
+                console.error(
+                    '[ParticipantsContent] ❌ WebSocket error:',
+                    error,
+                )
+            }
+        } else {
+            console.log(
+                '[ParticipantsContent] ⏳ No access token, skipping WebSocket',
+            )
+        }
+
+        // ========== STEP 2: Fallback to localStorage ==========
+        console.log(
+            '[ParticipantsContent] 💾 STEP 2: Saving to localStorage...',
+        )
         try {
-            // Имитация задержки сети
+            // Имитация задержки сети (только для UX)
             await new Promise((resolve) =>
                 setTimeout(resolve, 500),
             )
@@ -130,6 +235,9 @@ export default function ParticipantsContent({
 
             // Сохраняем в localStorage
             saveGroupParticipants(chatKey, fullList)
+            console.log(
+                '[ParticipantsContent] ✅ Saved to localStorage',
+            )
 
             // Обновляем локальное состояние
             setOwner(
@@ -147,9 +255,17 @@ export default function ParticipantsContent({
                 }),
             )
 
+            console.log(
+                '[ParticipantsContent] ✅ State updated successfully',
+            )
+
             // Возвращаемся к списку участников
             setCurrentView('participants')
         } catch (error) {
+            console.error(
+                '[ParticipantsContent] ❌ Error:',
+                error,
+            )
             setInviteError(
                 error instanceof Error
                     ? error.message
@@ -157,9 +273,50 @@ export default function ParticipantsContent({
             )
         } finally {
             setIsInviting(false)
+            console.log(
+                '[ParticipantsContent] 🔐 Invite process finished',
+            )
+            console.log(
+                '=========================================\n',
+            )
         }
     }
-
+    const handleTransferOwnership = useCallback(
+        async (participant: GroupParticipant) => {
+            console.log(
+                'Передача прав владельца участнику:',
+                participant,
+            )
+            try {
+                const result =
+                    await wsChatService.transferOwner({
+                        chat_key: chatKey,
+                        new_owner_uid: participant.uid,
+                    })
+                if (result.success && result.result) {
+                    console.log(
+                        '✅ Права успешно переданы:',
+                        result.result,
+                    )
+                    // Принудительно перезагружаем список участников
+                    setRefreshTrigger((prev) => prev + 1)
+                    // Уведомляем родителя (GroupInfoSidebar) об изменениях
+                    onOwnerChanged?.()
+                    // Также можно показать уведомление об успехе
+                } else {
+                    console.error(
+                        '❌ Ошибка передачи прав:',
+                        result.error,
+                    )
+                    // TODO: показать toast с ошибкой
+                }
+            } catch (error) {
+                console.error('❌ Ошибка WebSocket:', error)
+                // TODO: показать toast
+            }
+        },
+        [chatKey, onOwnerChanged],
+    )
     // Обработчик удаления участника
     const handleParticipantRemoved = (
         removedUid: string,
@@ -230,6 +387,9 @@ export default function ParticipantsContent({
                     canRemoveParticipants={
                         isCurrentUserOwner
                     } // Право на удаление
+                    onTransferOwnership={
+                        handleTransferOwnership
+                    }
                 />
             ) : (
                 // Экран приглашения

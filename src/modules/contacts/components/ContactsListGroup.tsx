@@ -13,7 +13,7 @@ import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
 import type { GroupParticipant } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
-
+import { useProfile } from '@shared/hooks/useProfile' // <-- импортируем хук
 interface ContactsListGroupProps {
     owner: GroupParticipant | null
     participants: GroupParticipant[]
@@ -21,8 +21,10 @@ interface ContactsListGroupProps {
     chatKey: string
     onParticipantRemoved?: (uid: string) => void
     canRemoveParticipants?: boolean
+    onTransferOwnership?: (
+        participant: GroupParticipant,
+    ) => void // <-- новый проп
 }
-
 export default memo(function ContactsListGroup({
     owner,
     participants,
@@ -30,6 +32,7 @@ export default memo(function ContactsListGroup({
     chatKey,
     onParticipantRemoved,
     canRemoveParticipants = false,
+    onTransferOwnership,
 }: ContactsListGroupProps) {
     const [searchValue, setSearchValue] = useState('')
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -40,6 +43,9 @@ export default memo(function ContactsListGroup({
     const selectedUid = useSelector(
         (state: RootState) => state.SelectedContactTemp.uid,
     )
+
+    // Получаем профиль текущего пользователя
+    const { profile } = useProfile()
 
     const { filteredValue: filteredParticipants } =
         useSearch(participants, searchValue, [
@@ -72,6 +78,24 @@ export default memo(function ContactsListGroup({
         setIsModalOpen(false)
         setParticipantToDelete(null)
     }
+
+    // Формируем объект для отображения владельца: если это текущий пользователь,
+    // подставляем реальные имя и фамилию из профиля
+    const ownerDisplay =
+        owner && profile?.uid
+            ? owner.uid === 'current-user-uid' ||
+              owner.uid === profile.uid
+                ? {
+                      ...owner,
+                      firstName:
+                          profile.first_name ||
+                          owner.firstName,
+                      lastName:
+                          profile.last_name ||
+                          owner.lastName,
+                  }
+                : owner
+            : owner
 
     return (
         <>
@@ -113,7 +137,7 @@ export default memo(function ContactsListGroup({
 
             <div className="flex flex-col">
                 <CustomScrollbar>
-                    {owner && (
+                    {ownerDisplay && (
                         <>
                             <div
                                 className={`
@@ -126,8 +150,8 @@ export default memo(function ContactsListGroup({
                                 </p>
                             </div>
                             <ContactItemGroup
-                                key={owner.uid}
-                                contact={owner}
+                                key={ownerDisplay.uid}
+                                contact={ownerDisplay}
                                 searchValue={searchValue}
                                 selectedUid={selectedUid}
                                 onSetSelectedContact={(
@@ -143,6 +167,17 @@ export default memo(function ContactsListGroup({
                                 onDelete={
                                     handleDeleteParticipant
                                 }
+                                onTransferOwnership={
+                                    onTransferOwnership
+                                        ? () =>
+                                              onTransferOwnership(
+                                                  contact,
+                                              )
+                                        : undefined
+                                } // <-- передаём, только если есть обработчик
+                                canTransferOwnership={
+                                    canRemoveParticipants
+                                } // только владелец группы может передавать права
                             />
                         </>
                     )}
@@ -183,6 +218,17 @@ export default memo(function ContactsListGroup({
                                     }
                                     onDelete={
                                         handleDeleteParticipant
+                                    }
+                                    onTransferOwnership={
+                                        onTransferOwnership
+                                            ? () =>
+                                                  onTransferOwnership(
+                                                      contact,
+                                                  )
+                                            : undefined
+                                    }
+                                    canTransferOwnership={
+                                        canRemoveParticipants
                                     }
                                 />
                             ),

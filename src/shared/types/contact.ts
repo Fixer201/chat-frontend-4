@@ -84,3 +84,40 @@ export interface ApiAddedContact {
     is_online: boolean
     was_online_at: number // Timestamp в секундах
 }
+
+// API Group Participant type (from backend)
+export interface ApiGroupParticipant {
+    uid: string
+    first_name: string
+    last_name: string
+    avatar_url: string | null
+    avatar_webp_url: string | null
+    is_online: boolean
+    was_online_at: number | string | Date | null
+    is_owner: boolean
+    is_blocked: boolean
+    is_in_contacts: boolean
+}
+
+// Frontend Group Participant type
+export interface GroupParticipant {
+    uid: string
+    firstName?: string
+    lastName?: string
+    username?: string
+    nickname?: string
+    phone?: string
+    patronymic?: string
+    avatar?: string | null
+    avatarUrl?: string | null
+    avatarWebp?: string | null
+    avatarWebpUrl?: string | null
+    additionalInformation?: string
+    birthday?: number
+    chatId?: number
+    isOnline: boolean
+    wasOnlineAt: number | string | Date | null
+    isOwner: boolean
+    isBlocked: boolean
+    isInContacts: boolean
+}

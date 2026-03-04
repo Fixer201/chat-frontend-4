@@ -37,6 +37,7 @@ import { ApiChatItem } from '@shared/types/chat' // Типы API чатов
 import { useCopyToClipboard } from '@shared/hooks/useCopyToClipboard' // Хук для копирования в буфер
 import { Toast } from '@shared/ui/toast/Toast' // Toast-уведомления
 import { CountdownCircle } from '@shared/ui/countdown/CountdownCircle' // Кружок с обратным отсчётом для отмены действий
+import { wsChatService } from '@shared/lib/webSocketChatService' // WebSocket сервис
 
 // Типы для вкладок
 type TabId =
@@ -54,6 +55,7 @@ function getTabContent(
     setDynamicTabTitle: (t: string | null) => void, // Колбэк для установки динамического заголовка
     onParticipantsChange?: (count: number) => void, // Колбэк при изменении количества участников
     isCurrentUserOwner?: boolean, // Флаг, является ли текущий пользователь владельцем
+    onOwnerChanged?: () => void,
 ) {
     switch (tabId) {
         case 'participants':
@@ -65,6 +67,7 @@ function getTabContent(
                         onParticipantsChange
                     }
                     isCurrentUserOwner={isCurrentUserOwner} // Передаём право на удаление участников
+                    onOwnerChanged={onOwnerChanged}
                 />
             )
         case 'media':
@@ -256,6 +259,33 @@ export default function GroupInfoSidebar({
         [],
     )
 
+    // Helper to convert File to Base64
+    const fileToBase64 = useCallback(
+        (file: File): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    const result = reader.result as string
+                    // Remove data:image/...;base64, prefix
+                    const base64 = result.split(',')[1]
+                    if (!base64) {
+                        reject(
+                            new Error(
+                                'Failed to extract base64 data from file',
+                            ),
+                        )
+                        return
+                    }
+                    resolve(base64)
+                }
+                reader.onerror = () =>
+                    reject(new Error('FileReader error'))
+                reader.readAsDataURL(file)
+            })
+        },
+        [],
+    )
+
     // Сохранение отредактированных данных группы
     const handleSaveEdit = useCallback(
         async (updatedData: {
@@ -265,57 +295,145 @@ export default function GroupInfoSidebar({
             notificationsEnabled: boolean
             avatarFile?: File | null
         }) => {
-            // Получаем текущие данные чата из localStorage
-            const currentChat =
-                getChatByIdFromStorage(chatId)
-            if (!currentChat) return
+            console.log(
+                '[GroupInfo] 📝 Starting save edit via WebSocket',
+                {
+                    chatKey,
+                    name: updatedData.name,
+                    hasAvatar: !!updatedData.avatarFile,
+                },
+            )
 
-            // Определяем новый тип чата (public-group или private-group)
-            const newChatType =
-                updatedData.type === 'open'
-                    ? 'public-group'
-                    : 'private-group'
-
-            // Создаём обновлённый объект чата
-            const updatedChat: ApiChatItem = {
-                ...currentChat,
-            }
-
-            updatedChat.name = updatedData.name
-            updatedChat.description =
-                updatedData.description
-            updatedChat.chat_type = newChatType
-
-            // Если выбран новый аватар - сжимаем и добавляем
+            // Prepare avatar if provided
+            let avatar = null
             if (updatedData.avatarFile) {
                 try {
-                    const compressedBase64 =
-                        await compressImage(
-                            updatedData.avatarFile,
-                        )
-                    updatedChat.chat = {
-                        ...currentChat.chat,
-                        avatar_url: compressedBase64,
+                    const base64Data = await fileToBase64(
+                        updatedData.avatarFile,
+                    )
+                    avatar = {
+                        filename:
+                            updatedData.avatarFile.name,
+                        data: base64Data,
                     }
+                    console.log(
+                        '[GroupInfo] 🖼️ Avatar prepared for upload',
+                    )
                 } catch (error) {
                     console.error(
-                        'Ошибка сжатия аватара',
+                        '[GroupInfo] ❌ Error preparing avatar:',
                         error,
                     )
                 }
             }
 
-            // Сохраняем в localStorage
-            const allChats = loadChatsFromStorage() || []
-            const index = allChats.findIndex(
-                (c) => c.id === chatId,
+            // Call WebSocket editChat method
+            // API expects chat_type: 'chat' for both groups and channels
+            const result = await wsChatService.editChat({
+                chatKey: chatKey,
+                name: updatedData.name,
+                description: updatedData.description,
+                avatar: avatar,
+                chatType: 'chat',
+            })
+
+            console.log(
+                '[GroupInfo] 📥 WebSocket editChat result:',
+                result,
             )
-            if (index !== -1) {
-                allChats[index] = updatedChat
-                saveChatsToStorage(allChats)
+
+            if (result.success && result.chat) {
+                console.log(
+                    '[GroupInfo] ✅ Group updated successfully via WebSocket',
+                )
+
+                // Update localStorage with the response data
+                const currentChat =
+                    getChatByIdFromStorage(chatId)
+                if (currentChat) {
+                    const updatedChat: ApiChatItem = {
+                        ...currentChat,
+                        name: result.chat.name,
+                        description:
+                            result.chat.description,
+                        chat_type: result.chat
+                            .chatType as ApiChatItem['chat_type'],
+                    }
+                    if (result.chat.avatar?.url) {
+                        updatedChat.chat = {
+                            ...currentChat.chat,
+                            avatar_url:
+                                result.chat.avatar.url,
+                        }
+                    }
+
+                    const allChats =
+                        loadChatsFromStorage() || []
+                    const index = allChats.findIndex(
+                        (c) => c.id === chatId,
+                    )
+                    if (index !== -1) {
+                        allChats[index] = updatedChat
+                        saveChatsToStorage(allChats)
+                        console.log(
+                            '[GroupInfo] 💾 Updated localStorage',
+                        )
+                    }
+                }
+            } else {
+                console.error(
+                    '[GroupInfo] ❌ WebSocket edit failed, falling back to localStorage',
+                    result.error,
+                )
+
+                // Fallback: Update localStorage directly
+                const currentChat =
+                    getChatByIdFromStorage(chatId)
+                if (!currentChat) return
+
+                const newChatType =
+                    updatedData.type === 'open'
+                        ? 'public-group'
+                        : 'private-group'
+
+                const updatedChat: ApiChatItem = {
+                    ...currentChat,
+                }
+                updatedChat.name = updatedData.name
+                updatedChat.description =
+                    updatedData.description
+                updatedChat.chat_type = newChatType
+
+                if (updatedData.avatarFile) {
+                    try {
+                        const compressedBase64 =
+                            await compressImage(
+                                updatedData.avatarFile,
+                            )
+                        updatedChat.chat = {
+                            ...currentChat.chat,
+                            avatar_url: compressedBase64,
+                        }
+                    } catch (error) {
+                        console.error(
+                            'Ошибка сжатия аватара',
+                            error,
+                        )
+                    }
+                }
+
+                const allChats =
+                    loadChatsFromStorage() || []
+                const index = allChats.findIndex(
+                    (c) => c.id === chatId,
+                )
+                if (index !== -1) {
+                    allChats[index] = updatedChat
+                    saveChatsToStorage(allChats)
+                }
             }
 
-            // Если изменился статус уведомлений - вызываем колбэк
+            // If notifications changed - call callback
             if (
                 updatedData.notificationsEnabled !==
                 notificationsEnabled
@@ -325,15 +443,17 @@ export default function GroupInfoSidebar({
                 )
             }
 
-            setIsEditing(false) // Выходим из режима редактирования
-            onGroupUpdated?.() // Уведомляем родителя об обновлении
+            setIsEditing(false)
+            onGroupUpdated?.()
         },
         [
             chatId,
+            chatKey,
             notificationsEnabled,
             onNotificationsChange,
             onGroupUpdated,
             compressImage,
+            fileToBase64,
         ],
     )
 
@@ -521,6 +641,7 @@ export default function GroupInfoSidebar({
                     setDynamicTabTitle,
                     handleParticipantsChange,
                     isCurrentUserOwner, // Передаём флаг владельца для вкладки участников
+                    onGroupUpdated,
                 )}
             </TabLayout>
         )
@@ -952,6 +1073,7 @@ export default function GroupInfoSidebar({
                             onParticipantsChange={
                                 handleParticipantsChange
                             }
+                            onOwnerChanged={onGroupUpdated}
                         />
                     </div>
                 </div>

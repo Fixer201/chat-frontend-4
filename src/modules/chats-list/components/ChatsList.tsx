@@ -76,10 +76,13 @@ export default React.memo(function ChatsList({
     // TODO: статус сообщений (sent/delivered/read) отключён — бэкенд не возвращает
     // delivered_at/read_at в lastMessage. Для реализации нужно расширить API чатов.
 
-    // Фильтрация чатов - исключаем удаленные
+    // Фильтрация чатов - исключаем удаленные и чаты с невалидными ID
     const filteredChats =
         chats?.filter(
-            (chat) => !chatSettings[chat.id]?.isDeleted,
+            (chat) =>
+                !chatSettings[chat.id]?.isDeleted &&
+                typeof chat.id === 'number' &&
+                !isNaN(chat.id),
         ) || []
 
     // Поиск по чатам с использованием хука useSearch

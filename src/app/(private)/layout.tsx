@@ -8,6 +8,7 @@ import { Spinner } from '@shared/ui/Spinner'
 import { NotFoundView } from '@modules/core/components/NotFoundView'
 import '@app/globals.css'
 import { WebSocketProvider } from '@shared/context/websocketContext'
+import { Toaster } from 'react-hot-toast'
 
 export default function PrivateLayout({
     children,
@@ -39,6 +40,16 @@ export default function PrivateLayout({
             <TrpcProvider>
                 <WebSocketProvider>
                     <AppShell>{children}</AppShell>
+                    <Toaster
+                        position="top-center"
+                        toastOptions={{
+                            duration: 3000,
+                            style: {
+                                background: '#363636',
+                                color: '#fff',
+                            },
+                        }}
+                    />
                 </WebSocketProvider>
             </TrpcProvider>
         </ReduxProvider>

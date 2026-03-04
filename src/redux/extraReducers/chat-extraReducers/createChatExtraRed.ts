@@ -19,6 +19,7 @@ import { addChatToStorage } from '@shared/lib/localStorageChats'
 import { saveGroupParticipants } from '@shared/lib/localStorageGroupParticipants'
 import { contactToGroupParticipant } from '@shared/lib/participantUtils'
 import { RootState } from '@redux/store'
+import { wsChatService } from '@shared/lib/webSocketChatService'
 
 // Типы для payload при создании группы и канала
 interface CreateGroupPayload {
@@ -225,7 +226,208 @@ const createMockChatFromResponse = (
     return modifiedMockChat
 }
 
-// Thunk для создания группы (API + fallback на моки)
+// Helper function to convert File to base64 for WebSocket
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+            const result = reader.result as string
+            // Remove data:image/...;base64, prefix
+            const base64 = result.split(',')[1]
+            if (!base64) {
+                reject(
+                    new Error(
+                        'Failed to extract base64 data from file',
+                    ),
+                )
+                return
+            }
+            resolve(base64)
+        }
+        reader.onerror = () =>
+            reject(new Error('FileReader error'))
+        reader.readAsDataURL(file)
+    })
+}
+
+// Helper to get correct file extension from MIME type
+const getExtensionFromMimeType = (
+    mimeType: string,
+): string => {
+    const mimeToExt: Record<string, string> = {
+        'image/jpeg': '.jpg',
+        'image/jpg': '.jpg',
+        'image/png': '.png',
+        'image/bmp': '.bmp',
+        'image/webp': '.webp',
+    }
+    return mimeToExt[mimeType] || '.png'
+}
+
+// Helper to get correct filename with proper extension
+const getAvatarFilename = (file: File): string => {
+    const ext = getExtensionFromMimeType(file.type)
+    // Remove existing extension and add correct one
+    const baseName =
+        file.name.replace(/\.[^/.]+$/, '') || 'avatar'
+    return `${baseName}${ext}`
+}
+
+// Validate avatar file before sending
+const validateAvatarFile = (
+    file: File,
+): { valid: boolean; error?: string } => {
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+        return {
+            valid: false,
+            error: `File size exceeds 5MB (${(file.size / 1024 / 1024).toFixed(2)}MB)`,
+        }
+    }
+
+    // Check MIME type
+    const allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/bmp',
+    ]
+    if (!allowedTypes.includes(file.type)) {
+        return {
+            valid: false,
+            error: `Invalid file type: ${file.type}. Allowed: JPEG, PNG, BMP`,
+        }
+    }
+
+    return { valid: true }
+}
+
+// Helper function to transform WebSocket response to ApiChatItem
+const transformWsResponseToApiChatItem = (
+    obj: Record<string, unknown>,
+    chatType: string,
+    members: Contact[],
+    photoUrl: string | null,
+): ApiChatItem => {
+    const now = Math.floor(Date.now() / 1000)
+    const participants = members.map((m) => ({
+        uid: m.uid,
+        full_name:
+            `${m.firstName || ''} ${m.lastName || ''}`.trim() ||
+            m.nickname ||
+            m.username ||
+            'Участник',
+    }))
+
+    // Add creator if not in participants
+    const createdBy =
+        (obj.created_by as string) || 'current-user-uid'
+    const ownerFullName =
+        (obj.owner_full_name as string) || 'Создатель'
+
+    if (!participants.some((p) => p.uid === createdBy)) {
+        participants.unshift({
+            uid: createdBy,
+            full_name: ownerFullName,
+        })
+    }
+
+    const avatarUrl =
+        (obj.avatar as { url?: string })?.url ||
+        photoUrl ||
+        '/images/chatHeader/groupAvatar.svg'
+
+    // Safe ID parsing - ensure we never get NaN
+    const generateUniqueId = () =>
+        Math.floor(Date.now() / 1000) * 1000 +
+        Math.floor(Math.random() * 1000)
+
+    const rawChatId = obj.chat_id
+    let chatId: number
+    if (
+        typeof rawChatId === 'number' &&
+        !isNaN(rawChatId)
+    ) {
+        chatId = rawChatId
+    } else if (
+        typeof rawChatId === 'string' &&
+        rawChatId.trim() !== ''
+    ) {
+        const parsed = parseInt(rawChatId, 10)
+        chatId = isNaN(parsed) ? generateUniqueId() : parsed
+    } else {
+        chatId = generateUniqueId()
+    }
+
+    return {
+        id: chatId,
+        chat: {
+            uid: createdBy,
+            username: '',
+            nickname: ownerFullName,
+            first_name: ownerFullName,
+            last_name: '',
+            avatar: avatarUrl.replace(
+                '/images/chatHeader/',
+                '',
+            ),
+            avatar_url: avatarUrl,
+            avatar_webp: avatarUrl
+                .replace('/images/chatHeader/', '')
+                .replace('.svg', '.webp'),
+            avatar_webp_url: avatarUrl,
+            is_blocked: false,
+            is_online: true,
+            was_online_at: now,
+            is_in_contacts: true,
+        },
+        is_active: true,
+        is_favorite: false,
+        notifications: true,
+        index: chatId,
+        message_count: 0,
+        file_count: 0,
+        new_message_count: 0,
+        new_file_count: 0,
+        name: (obj.name as string) || 'Группа',
+        chat_type: chatType as
+            | 'chat'
+            | 'public-group'
+            | 'private-group'
+            | 'public-channel'
+            | 'private-channel',
+        chat_key:
+            (obj.chat_key as string) ||
+            `chat_${Date.now()}`,
+        description: (obj.description as string) || '',
+        created_by: createdBy,
+        owner_full_name: ownerFullName,
+        participants: participants,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_activity_at: now,
+        last_seen_message: { id: 0, uid: '' },
+        first_new_message: { id: 0, uid: '' },
+        last_message: {
+            id: 0,
+            uid: '',
+            from_user: 'Вы',
+            content:
+                participants.length > 0
+                    ? `Создана группа. Участников: ${participants.length}`
+                    : 'Создана группа',
+            files_summary: { types: [], count: 0 },
+            has_replied_message: false,
+            has_forwarded_message: false,
+            new: false,
+            created_at: now,
+            updated_at: now,
+        },
+    }
+}
+
+// Thunk для создания группы (WebSocket -> HTTP API -> Mock fallback)
 export const createGroup = createAsyncThunk<
     ChatWithSettings,
     CreateGroupPayload,
@@ -236,17 +438,159 @@ export const createGroup = createAsyncThunk<
         { groupData, members },
         { rejectWithValue, getState },
     ) => {
+        console.log(
+            '\n=========================================',
+        )
+        console.log(
+            '[createGroup] 🚀 Starting group creation',
+        )
+        console.log('[createGroup] 📝 Group data:', {
+            name: groupData.name,
+            description: groupData.description,
+            type: groupData.type,
+            hasPhoto: !!groupData.photo,
+            photoName: groupData.photo?.name,
+            photoType: groupData.photo?.type,
+            photoSize: groupData.photo?.size,
+        })
+        console.log(
+            '[createGroup] 👥 Members:',
+            members.map((m) => ({
+                uid: m.uid,
+                name: m.firstName,
+            })),
+        )
+        console.log(
+            '=========================================',
+        )
+
         try {
             const accessToken = Cookies.get('access_token')
-            let apiChat: ApiChatItem | null = null
-            let apiError = false
+            console.log(
+                '[createGroup] 🔑 Has access token:',
+                !!accessToken,
+            )
 
+            const chatType =
+                groupData.type === 'open'
+                    ? 'public-group'
+                    : 'private-group'
+            console.log(
+                '[createGroup] 🏠 Chat type:',
+                chatType,
+            )
+
+            let apiChat: ApiChatItem | null = null
+            let wsError = false
+            let httpError = false
+
+            // ========== STEP 1: Try WebSocket first ==========
             if (accessToken) {
+                console.log(
+                    '[createGroup] 📡 STEP 1: Trying WebSocket...',
+                )
                 try {
-                    const chatType =
-                        groupData.type === 'open'
-                            ? 'public-group'
-                            : 'private-group'
+                    // Prepare avatar if exists
+                    let avatar: {
+                        filename: string
+                        data: string
+                    } | null = null
+                    if (groupData.photo) {
+                        // Validate avatar file
+                        const validation =
+                            validateAvatarFile(
+                                groupData.photo,
+                            )
+                        if (!validation.valid) {
+                            console.warn(
+                                '[createGroup] Avatar validation failed:',
+                                validation.error,
+                            )
+                        } else {
+                            try {
+                                const base64Data =
+                                    await fileToBase64(
+                                        groupData.photo,
+                                    )
+                                const filename =
+                                    getAvatarFilename(
+                                        groupData.photo,
+                                    )
+                                avatar = {
+                                    filename: filename,
+                                    data: base64Data,
+                                }
+                                console.log(
+                                    '[createGroup] Avatar prepared:',
+                                    {
+                                        filename: filename,
+                                        type: groupData
+                                            .photo.type,
+                                        size: `${(groupData.photo.size / 1024).toFixed(2)}KB`,
+                                        base64Length:
+                                            base64Data.length,
+                                    },
+                                )
+                            } catch (e) {
+                                console.warn(
+                                    '[createGroup] Failed to convert avatar to base64:',
+                                    e,
+                                )
+                            }
+                        }
+                    }
+
+                    // Call WebSocket service
+                    const wsResult =
+                        await wsChatService.createChat({
+                            name: groupData.name,
+                            description:
+                                groupData.description,
+                            chatType: chatType,
+                            uidUsersList: members.map(
+                                (m) => m.uid,
+                            ),
+                            avatar: avatar,
+                        })
+
+                    if (wsResult.success && wsResult.chat) {
+                        // Transform WebSocket response to ApiChatItem
+                        const photoUrl = createPhotoUrl(
+                            groupData.photo,
+                        )
+                        apiChat =
+                            transformWsResponseToApiChatItem(
+                                wsResult.chat as Record<
+                                    string,
+                                    unknown
+                                >,
+                                chatType,
+                                members,
+                                photoUrl,
+                            )
+                        console.log(
+                            '[createGroup] WebSocket success:',
+                            apiChat,
+                        )
+                    } else {
+                        console.warn(
+                            '[createGroup] WebSocket failed:',
+                            wsResult.error,
+                        )
+                        wsError = true
+                    }
+                } catch (error) {
+                    console.warn(
+                        '[createGroup] WebSocket error:',
+                        error,
+                    )
+                    wsError = true
+                }
+            }
+
+            // ========== STEP 2: Fallback to HTTP API ==========
+            if (wsError && accessToken) {
+                try {
                     const body = {
                         name: groupData.name,
                         description: groupData.description,
@@ -270,32 +614,44 @@ export const createGroup = createAsyncThunk<
                     )
                     if (response.ok) {
                         apiChat = await response.json()
+                        console.log(
+                            '[createGroup] HTTP API success:',
+                            apiChat,
+                        )
                     } else {
-                        apiError = true
+                        console.warn(
+                            '[createGroup] HTTP API failed:',
+                            response.status,
+                        )
+                        httpError = true
                     }
-                } catch {
-                    apiError = true
+                } catch (error) {
+                    console.warn(
+                        '[createGroup] HTTP API error:',
+                        error,
+                    )
+                    httpError = true
                 }
             }
 
+            // ========== STEP 3: Fallback to Mock ==========
             let finalApiChat: ApiChatItem
-            if (!apiError && apiChat) {
+            if (apiChat) {
                 finalApiChat = apiChat
             } else {
-                // Fallback на мок
                 const photoUrl = createPhotoUrl(
                     groupData.photo,
                 )
-                const chatType =
-                    groupData.type === 'open'
-                        ? 'public-group'
-                        : 'private-group'
                 finalApiChat = createMockChatFromResponse(
                     groupData.name,
                     groupData.description,
                     chatType,
                     photoUrl,
                     members,
+                )
+                console.log(
+                    '[createGroup] Using mock fallback:',
+                    finalApiChat,
                 )
             }
 
@@ -366,7 +722,7 @@ export const createGroup = createAsyncThunk<
     },
 )
 
-// Thunk для создания канала (API + fallback на моки)
+// Thunk для создания канала (WebSocket -> HTTP API -> Mock fallback)
 export const createChannel = createAsyncThunk<
     ChatWithSettings,
     CreateChannelPayload,
@@ -379,15 +735,126 @@ export const createChannel = createAsyncThunk<
     ) => {
         try {
             const accessToken = Cookies.get('access_token')
-            let apiChat: ApiChatItem | null = null
-            let apiError = false
+            const chatType =
+                channelData.type === 'public'
+                    ? 'public-channel'
+                    : 'private-channel'
 
+            let apiChat: ApiChatItem | null = null
+            let wsError = false
+            let httpError = false
+
+            // ========== STEP 1: Try WebSocket first ==========
             if (accessToken) {
                 try {
-                    const chatType =
-                        channelData.type === 'public'
-                            ? 'public-channel'
-                            : 'private-channel'
+                    // Prepare avatar if exists
+                    let avatar: {
+                        filename: string
+                        data: string
+                    } | null = null
+                    if (channelData.photo) {
+                        // Validate avatar file
+                        const validation =
+                            validateAvatarFile(
+                                channelData.photo,
+                            )
+                        if (!validation.valid) {
+                            console.warn(
+                                '[createChannel] Avatar validation failed:',
+                                validation.error,
+                            )
+                        } else {
+                            try {
+                                const base64Data =
+                                    await fileToBase64(
+                                        channelData.photo,
+                                    )
+                                const filename =
+                                    getAvatarFilename(
+                                        channelData.photo,
+                                    )
+                                avatar = {
+                                    filename: filename,
+                                    data: base64Data,
+                                }
+                                console.log(
+                                    '[createChannel] Avatar prepared:',
+                                    {
+                                        filename: filename,
+                                        type: channelData
+                                            .photo.type,
+                                        size: `${(channelData.photo.size / 1024).toFixed(2)}KB`,
+                                        base64Length:
+                                            base64Data.length,
+                                    },
+                                )
+                            } catch (e) {
+                                console.warn(
+                                    '[createChannel] Failed to convert avatar to base64:',
+                                    e,
+                                )
+                            }
+                        }
+                    }
+
+                    // Call WebSocket service
+                    const wsResult =
+                        await wsChatService.createChat({
+                            name: channelData.name,
+                            description:
+                                channelData.description,
+                            chatType: chatType,
+                            uidUsersList: members.map(
+                                (m) => m.uid,
+                            ),
+                            avatar: avatar,
+                        })
+
+                    if (wsResult.success && wsResult.chat) {
+                        // Transform WebSocket response to ApiChatItem
+                        const photoUrl = createPhotoUrl(
+                            channelData.photo,
+                        )
+                        apiChat =
+                            transformWsResponseToApiChatItem(
+                                wsResult.chat as Record<
+                                    string,
+                                    unknown
+                                >,
+                                chatType,
+                                members,
+                                photoUrl,
+                            )
+                        // Override name for channel
+                        apiChat.name = (
+                            wsResult.chat as Record<
+                                string,
+                                unknown
+                            >
+                        ).name as string
+                        console.log(
+                            '[createChannel] WebSocket success:',
+                            apiChat,
+                        )
+                    } else {
+                        console.warn(
+                            '[createChannel] WebSocket failed:',
+                            wsResult.error,
+                        )
+                        wsError = true
+                    }
+                } catch (error) {
+                    console.warn(
+                        '[createChannel] WebSocket error:',
+                        error,
+                    )
+                    wsError = true
+                }
+            }
+
+            // ========== STEP 2: Fallback to HTTP API ==========
+            if (wsError && accessToken) {
+                try {
                     const body = {
                         name: channelData.name,
                         description:
@@ -412,31 +879,49 @@ export const createChannel = createAsyncThunk<
                     )
                     if (response.ok) {
                         apiChat = await response.json()
+                        console.log(
+                            '[createChannel] HTTP API success:',
+                            apiChat,
+                        )
                     } else {
-                        apiError = true
+                        console.warn(
+                            '[createChannel] HTTP API failed:',
+                            response.status,
+                        )
+                        httpError = true
                     }
-                } catch {
-                    apiError = true
+                } catch (error) {
+                    console.warn(
+                        '[createChannel] HTTP API error:',
+                        error,
+                    )
+                    httpError = true
                 }
             }
 
+            // ========== STEP 3: Fallback to Mock ==========
             let finalApiChat: ApiChatItem
-            if (!apiError && apiChat) {
+            if (apiChat) {
                 finalApiChat = apiChat
             } else {
                 const photoUrl = createPhotoUrl(
                     channelData.photo,
                 )
-                const chatType =
-                    channelData.type === 'public'
-                        ? 'public-channel'
-                        : 'private-channel'
                 finalApiChat = createMockChatFromResponse(
                     channelData.name,
                     channelData.description,
                     chatType,
                     photoUrl,
                     members,
+                )
+                // Override last message for channel
+                finalApiChat.last_message.content =
+                    members.length > 0
+                        ? `Создан канал. Участников: ${members.length}`
+                        : 'Создан канал'
+                console.log(
+                    '[createChannel] Using mock fallback:',
+                    finalApiChat,
                 )
             }
 

@@ -11,7 +11,7 @@ import { ApiChatItem, ChatItem } from '@shared/types/chat' // Типы чато�
 import GroupInfoSidebar from '@modules/groupInfo/GroupInfoSidebar' // Компонент информации о группе
 import ChannelInfoSidebar from '@modules/groupInfo/ChannelInfoSidebar' // Компонент информации о канале
 import { useChats } from '@shared/hooks/useChats' // Хук для работы с чатами
-
+import { useProfile } from '@shared/hooks/useProfile'
 // Временные заглушки для других типов чатов
 const UserInfoPlaceholder = () => (
     <div className="flex h-full items-center justify-center p-4 text-text-gray">
@@ -40,12 +40,14 @@ export default function ChatInfoSidebar({
     const selectedChatId = useSelector(
         (state: RootState) => state.chats.selectedChatId,
     )
-
+    const { profile } = useProfile()
+    const currentUserUid = profile?.uid
     // Хук для работы с чатами
     const {
         chatSettings,
         toggleNotifications,
         deleteChat,
+        leaveChat,
         loadChats,
         selectChat,
     } = useChats()
@@ -61,23 +63,24 @@ export default function ChatInfoSidebar({
     useEffect(() => {
         if (!selectedChatId) {
             setChatData(null)
+            setLoading(false)
             return
         }
 
         setLoading(true)
+        setChatData(null)
         const timer = setTimeout(() => {
             try {
                 const rawData =
-                    getChatByIdFromStorage(selectedChatId) // Получаем сырые данные
+                    getChatByIdFromStorage(selectedChatId)
                 if (rawData) {
-                    // Трансформируем в формат для отображения
                     const transformed =
                         transformFromApi<ApiChatItem>(
                             rawData,
                         ) as ChatItem
                     setChatData(transformed)
 
-                    // Для групп и каналов проверяем, является ли текущий пользователь владельцем
+                    // Определяем, является ли текущий пользователь владельцем
                     if (
                         transformed.chatType.includes(
                             'group',
@@ -90,12 +93,30 @@ export default function ChatInfoSidebar({
                             findGroupParticipantsByChatKey(
                                 transformed.chatKey,
                             )
-                        const owner = participants?.find(
-                            (p) => p.isOwner,
-                        )
-                        setIsCurrentUserOwner(
-                            owner?.uid === CURRENT_USER_UID,
-                        )
+                        if (participants) {
+                            const owner = participants.find(
+                                (p) => p.isOwner,
+                            )
+                            // Сравниваем с реальным uid из профиля (или с плейсхолдером, если профиль ещё не загружен)
+                            if (profile?.uid) {
+                                setIsCurrentUserOwner(
+                                    owner?.uid ===
+                                        profile.uid ||
+                                        owner?.uid ===
+                                            'current-user-uid' ||
+                                        owner?.uid ===
+                                            currentUserUid,
+                                )
+                            } else {
+                                // Если профиль не загружен, считаем владельцем только если uid === плейсхолдер
+                                setIsCurrentUserOwner(
+                                    owner?.uid ===
+                                        'current-user-uid',
+                                )
+                            }
+                        } else {
+                            setIsCurrentUserOwner(false)
+                        }
                     } else {
                         setIsCurrentUserOwner(false)
                     }
@@ -116,7 +137,7 @@ export default function ChatInfoSidebar({
         }, 0)
 
         return () => clearTimeout(timer)
-    }, [selectedChatId, updateTrigger])
+    }, [selectedChatId, updateTrigger, profile?.uid])
 
     // Обработчик обновления группы/канала
     const handleGroupUpdated = useCallback(() => {
@@ -152,10 +173,10 @@ export default function ChatInfoSidebar({
     // Обработчик выхода из чата/группы/канала
     const handleLeaveChat = useCallback(async () => {
         if (selectedChatId) {
-            await deleteChat(selectedChatId) // Удаляем чат
+            await leaveChat(selectedChatId) // Выходим из чата через WebSocket
             handleCloseSidebar() // Закрываем сайдбар
         }
-    }, [selectedChatId, deleteChat, handleCloseSidebar])
+    }, [selectedChatId, leaveChat, handleCloseSidebar])
 
     // Обработчик удаления чата (для групп/каналов, где пользователь владелец)
     const handleDeleteChat = useCallback(async () => {
