@@ -64,7 +64,7 @@ export function AppHeader() {
                         onClick={handleOpenThanksModal}
                     />
                     <Image
-                        src="/images/header/googlePlay.svg"
+                        src="/images/header/googleplay.svg"
                         alt="googlePlay"
                         width={150}
                         height={44}
