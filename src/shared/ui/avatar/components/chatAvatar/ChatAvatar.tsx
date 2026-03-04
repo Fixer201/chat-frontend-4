@@ -112,8 +112,7 @@ export const ChatAvatar = forwardRef<
                     <Image
                         src={src}
                         alt={alt ?? name} // Используем alt из пропсов или name как fallback
-                        width={60}
-                        height={60}
+                        fill // fill вместо фиксированных width/height — аватар заполняет родительский контейнер (h-15 w-15), адаптируясь к его размерам
                         className="object-cover" // object-cover заполняет контейнер с сохранением пропорций
                         // Добавляем unoptimized для локальных SVG, если нужно
                         unoptimized={src.endsWith('.svg')}

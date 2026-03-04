@@ -10,8 +10,7 @@ import {
     useContactData,
     Contact,
 } from '@shared/hooks/useContactData'
-import { useSelector } from 'react-redux'
-import { RootState } from '@redux/store'
+import { useContactsMap } from '@shared/hooks/useContactsMap'
 
 /**
  * Шапка чата — аватар, имя собеседника, статус онлайн и кнопки действий.
@@ -36,6 +35,7 @@ export default function ChatHeader({
     onSearchClose,
     currentMatchIndex,
     totalSearchResults = 0,
+    onSidebarOpen,
 }: Readonly<{
     chat: ChatItem
     onBack?: () => void
@@ -48,38 +48,73 @@ export default function ChatHeader({
     onSearchClose?: () => void
     currentMatchIndex?: number | null
     totalSearchResults?: number
+    onSidebarOpen?: (contact: Contact) => void
 }>) {
-    // Получаем свежие данные контакта по UID (теперь типа Contact)
-    const shouldLoadData =
-        chat.chatType === 'chat' && chat.chat.uid
+    // Группы и каналы используют отдельную логику отображения
+    const isGroupOrChannel = chat.chatType !== 'chat'
+
+    // Данные контакта загружаются только для личных чатов
     const {
         data: contactData,
         loading,
         error,
-    } = useContactData(shouldLoadData ? chat.chat.uid : '')
-    const contactsList = useSelector(
-        (state: RootState) => state.contacts.list,
+    } = useContactData(
+        !isGroupOrChannel && chat.chat.uid
+            ? chat.chat.uid
+            : '',
     )
-    const contactMatch = contactsList.find(
-        (contact) =>
-            contact.userUid === chat.chat.uid ||
-            contact.uid === chat.chat.uid,
-    )
+    const contactsMap = useContactsMap()
+    const contactMatch = !isGroupOrChannel
+        ? contactsMap.get(chat.chat.uid)
+        : undefined
 
-    // Используем данные из API или fallback на chat.chat (с добавлением userUid)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const currentContact: Contact =
-        contactMatch ||
-        contactData ||
-        ({
-            ...chat.chat,
-            userUid: chat.chat.uid, // Добавляем userUid (UID пользователя)
-        } as Contact)
+    // Контакт для личного чата: список контактов → API → fallback на chat.chat
+    const currentContact: Contact | null = !isGroupOrChannel
+        ? contactMatch ||
+          contactData ||
+          ({
+              ...chat.chat,
+              userUid: chat.chat.uid,
+          } as Contact)
+        : null
 
-    // Вычисляем secondaryText декларативно с useMemo (на клиенте после гидрации)
+    // Имя в шапке: для групп — chat.name, для личных — данные контакта
+    const displayName = isGroupOrChannel
+        ? chat.name || 'Группа'
+        : `${currentContact?.firstName || ''} ${currentContact?.lastName || ''}`.trim() ||
+          currentContact?.nickname ||
+          currentContact?.phone ||
+          currentContact?.username ||
+          'Контакт'
+
+    // Аватар: для групп — из объекта чата, для личных — из контакта
+    const avatarData = isGroupOrChannel
+        ? chat.chat
+        : currentContact || chat.chat
+
+    // Подпись: для групп — кол-во участников, для личных — онлайн-статус
     const secondaryText = useMemo(() => {
-        return getStatusText(currentContact, '')
-    }, [currentContact])
+        if (isGroupOrChannel) {
+            const count = chat.participants?.length ?? 0
+            if (count === 0) return chat.description || ''
+            const lastTwo = count % 100
+            const lastOne = count % 10
+            if (lastTwo >= 11 && lastTwo <= 19)
+                return `${count} участников`
+            if (lastOne === 1) return `${count} участник`
+            if (lastOne >= 2 && lastOne <= 4)
+                return `${count} участника`
+            return `${count} участников`
+        }
+        return currentContact
+            ? getStatusText(currentContact, '')
+            : ''
+    }, [
+        isGroupOrChannel,
+        chat.participants,
+        chat.description,
+        currentContact,
+    ])
 
     /**
      * Условный рендеринг: режим поиска vs обычная шапка.
@@ -124,7 +159,21 @@ export default function ChatHeader({
             `}
         >
             <div className="flex items-center justify-between gap-2">
-                <div className="flex flex-row items-center gap-4">
+                <div
+                    className="flex flex-row items-center gap-4"
+                    onKeyDown={(e) => {
+                        if (
+                            e.key === 'Enter' ||
+                            e.key === ' '
+                        ) {
+                            onSidebarOpen?.(currentContact)
+                        }
+                    }}
+                    onClick={() =>
+                        onSidebarOpen?.(currentContact)
+                    }
+                    role="button"
+                >
                     {onBack && (
                         <button
                             onClick={onBack}
@@ -147,16 +196,11 @@ export default function ChatHeader({
                             />
                         </button>
                     )}
-                    {/* Аватар: используем currentContact */}
                     <Image
-                        src={getAvatarSrc(currentContact)}
+                        src={getAvatarSrc(avatarData)}
                         width={40}
                         height={40}
-                        alt={
-                            currentContact.firstName +
-                            ' ' +
-                            currentContact.lastName
-                        }
+                        alt={displayName}
                         className={`
                           cursor-pointer rounded-full transition-opacity
                           hover:opacity-80
@@ -165,18 +209,13 @@ export default function ChatHeader({
                     />
 
                     <div className="flex min-w-0 flex-col">
-                        {/* Имя: используем currentContact */}
                         <h2 className="truncate font-semibold">
-                            {`${currentContact.firstName || ''} ${currentContact.lastName || ''}`.trim() ||
-                                currentContact.nickname ||
-                                currentContact.phone ||
-                                currentContact.username ||
-                                'Контакт'}
+                            {displayName}
                         </h2>
                         <p className="text-sm text-text-gray">
-                            {loading
+                            {!isGroupOrChannel && loading
                                 ? 'Загрузка...'
-                                : error
+                                : !isGroupOrChannel && error
                                   ? 'Ошибка'
                                   : secondaryText}
                         </p>

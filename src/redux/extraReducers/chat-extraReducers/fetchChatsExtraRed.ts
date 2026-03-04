@@ -51,33 +51,23 @@ export const fetchChats = createAsyncThunk(
             let apiData: ApiChatItem[] | null = null
             let apiError: string | null = null
 
-            // Пытаемся загрузить с API, если есть токен
             if (accessToken) {
                 try {
-                    const url = new URL(
-                        'https://api.test.chat.ktsf.ru/api/v1/chat/list/',
-                    )
+                    // Относительный URL — запрос проксируется через catch-all route handler
+                    // (src/app/api/v1/[...path]/route.ts), который пробрасывает его на Django-бэкенд.
+                    // page_size вместо limit — так требует Django REST Framework pagination.
+                    let url = `/api/v1/chat/list/?page_size=${count}`
                     if (search)
-                        url.searchParams.append(
-                            'search',
-                            search,
-                        )
-                    url.searchParams.append(
-                        'limit',
-                        count.toString(),
-                    )
+                        url += `&search=${encodeURIComponent(search)}`
 
-                    const response = await fetch(
-                        url.toString(),
-                        {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type':
-                                    'application/json',
-                                Authorization: `Bearer ${accessToken}`,
-                            },
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+                            Authorization: `Bearer ${accessToken}`,
                         },
-                    )
+                    })
 
                     if (response.status === 401) {
                         // Попытка refresh token
@@ -113,17 +103,14 @@ export const fetchChats = createAsyncThunk(
                                 )
                                 // Повторный запрос с новым токеном
                                 const retryResponse =
-                                    await fetch(
-                                        url.toString(),
-                                        {
-                                            method: 'GET',
-                                            headers: {
-                                                'Content-Type':
-                                                    'application/json',
-                                                Authorization: `Bearer ${data.access}`,
-                                            },
+                                    await fetch(url, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-Type':
+                                                'application/json',
+                                            Authorization: `Bearer ${data.access}`,
                                         },
-                                    )
+                                    })
                                 if (retryResponse.ok) {
                                     const retryData: {
                                         results: ApiChatItem[]
@@ -241,7 +228,19 @@ export const handleFetchChats = (
             ) => {
                 state.loading = false
 
-                // Извлекаем только данные чатов (без settings)
+                const selectedChat =
+                    state.selectedChatId != null
+                        ? state.items.find(
+                              (chat) =>
+                                  chat.id ===
+                                  state.selectedChatId,
+                          )
+                        : undefined
+                const selectedTempContactUid =
+                    selectedChat?.isTemporary
+                        ? selectedChat.tempContactUid
+                        : undefined
+
                 const fetchedItems = action.payload.map(
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     ({ settings, ...chatData }) => chatData,
@@ -256,15 +255,25 @@ export const handleFetchChats = (
                         (chat) => chat.chat.uid,
                     ),
                 )
+                // Сохраняем локальные чаты, которых ещё нет на сервере
                 const localOnlyItems = state.items.filter(
                     (chat) => {
                         if (fetchedIds.has(chat.id))
                             return false
                         if (
                             chat.isTemporary &&
-                            chat.tempContactUid &&
                             fetchedContactUids.has(
-                                chat.tempContactUid,
+                                chat.tempContactUid ??
+                                    chat.chat.uid,
+                            )
+                        ) {
+                            return false
+                        }
+                        // Удаляем локальный чат, если сервер уже вернул чат с тем же пользователем
+                        if (
+                            chat.id > 1000000000000 &&
+                            fetchedContactUids.has(
+                                chat.chat.uid,
                             )
                         ) {
                             return false
@@ -278,7 +287,18 @@ export const handleFetchChats = (
                     ...fetchedItems,
                 ]
 
-                // Сохраняем настройки для каждого чата
+                if (selectedTempContactUid) {
+                    const realChat = fetchedItems.find(
+                        (chat) =>
+                            chat.chat.uid ===
+                            selectedTempContactUid,
+                    )
+                    if (realChat) {
+                        state.selectedChatId = realChat.id
+                    }
+                }
+
+                // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {
                     if (
                         chat.settings &&

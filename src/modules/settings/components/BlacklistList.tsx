@@ -48,7 +48,7 @@ const BlacklistContactsList = memo(
             const loadBlacklist = async () => {
                 try {
                     const data = await fetchData(
-                        'https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/',
+                        '/api/v1/contact/blacklist/',
                         {
                             method: 'GET',
                         },
@@ -149,7 +149,7 @@ const BlacklistContactsList = memo(
 
                 // API требует uid в path-param; метод DELETE не содержит body.
                 await fetchData(
-                    `https://api.test.chat.ktsf.ru/api/v1/contact/blacklist/delete/${selectedContactUid}/`,
+                    `/api/v1/contact/blacklist/delete/${selectedContactUid}/`,
                     {
                         method: 'DELETE',
                     },

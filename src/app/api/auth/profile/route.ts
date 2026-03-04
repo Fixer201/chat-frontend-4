@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// URL бэкенда из env (см. комментарий в send-code/route.ts)
+const BACKEND_URL =
+    process.env.BACKEND_URL ||
+    'https://api.test.chat.ktsf.ru'
+
 export async function POST(request: NextRequest) {
     try {
         const authHeader =
@@ -34,7 +39,7 @@ export async function POST(request: NextRequest) {
         }
 
         const response = await fetch(
-            'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/',
+            `${BACKEND_URL}/api/v1/auth/messenger/profile/`,
             {
                 method: 'POST',
                 headers: outboundHeaders,
@@ -77,7 +82,7 @@ export async function GET(request: NextRequest) {
             request.headers.get('authorization')
 
         const response = await fetch(
-            'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/profile/',
+            `${BACKEND_URL}/api/v1/auth/messenger/profile/`,
             {
                 method: 'POST',
                 headers: {

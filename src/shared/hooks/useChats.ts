@@ -1,9 +1,10 @@
-import { useCallback } from 'react'
 import Cookies from 'js-cookie'
+import { useCallback, useMemo } from 'react'
 import {
     useAppDispatch,
     useAppSelector,
 } from '../../redux/store'
+import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 import {
     fetchChats,
     hydrateLocalChats,
@@ -30,6 +31,9 @@ import { wsChatService } from '../lib/webSocketChatService'
 // Абстрагирует взаимодействие с Redux store, предоставляя простой API для компонентов
 export const useChats = () => {
     const dispatch = useAppDispatch()
+    const fetchData = useApiFetcher()
+    const LOCAL_CHATS_STORAGE_KEY = 'localChats'
+    const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 
     // Селекторы для получения данных из состояния чатов
     const {
@@ -112,6 +116,34 @@ export const useChats = () => {
             dispatch(markAsRead(chatId))
         },
         [dispatch],
+    )
+
+    const markChatAsReadOnServer = useCallback(
+        async (
+            chatId: number,
+            lastSeenMessageId?: number,
+        ) => {
+            if (!lastSeenMessageId) return
+
+            try {
+                await fetchData(
+                    `/api/v1/chat/list/${chatId}/`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            last_seen_message:
+                                lastSeenMessageId,
+                        }),
+                    },
+                )
+            } catch (error) {
+                console.warn(
+                    'Не удалось обновить статус прочитанного:',
+                    error,
+                )
+            }
+        },
+        [fetchData],
     )
 
     // Пометка чата как непрочитанного
@@ -312,7 +344,7 @@ export const useChats = () => {
                 '=========================================\n',
             )
         },
-        [dispatch, items],
+        [dispatch, fetchData, items],
     )
 
     // Добавление чата в список контактов
@@ -394,30 +426,58 @@ export const useChats = () => {
         [dispatch],
     )
 
-    // Возвращаемый объект с методами и данными
-    return {
-        chats: items,
-        loading,
-        error,
-        selectedChatId,
-        chatSettings,
-        loadChats,
-        hydrateChats,
-        selectChat,
-        updateChat: updateChatData,
-        updateChatSettings: updateChatSettingsData,
-        toggleFavorite: toggleFavoriteChat,
-        toggleNotifications: toggleChatNotifications,
-        markAsRead: markChatAsRead,
-        markAsUnread: markChatAsUnread,
-        deleteChat,
-        leaveChat,
-        addToContacts: addChatToContacts,
-        resetChatSettings: resetAllChatSettings,
-        getChatSettings,
-        getChatWithSettings,
-        createChat,
-        createGroup,
-        createChannel,
-    }
+    // Мемоизация возвращаемого объекта — предотвращает пересоздание
+    // на каждый рендер, стабилизирует ссылку для потребителей хука
+    return useMemo(
+        () => ({
+            chats: items,
+            loading,
+            error,
+            selectedChatId,
+            chatSettings,
+            loadChats,
+            hydrateChats,
+            selectChat,
+            updateChat: updateChatData,
+            updateChatSettings: updateChatSettingsData,
+            toggleFavorite: toggleFavoriteChat,
+            toggleNotifications: toggleChatNotifications,
+            markAsRead: markChatAsRead,
+            markAsReadOnServer: markChatAsReadOnServer,
+            markAsUnread: markChatAsUnread,
+            deleteChat,
+            addToContacts: addChatToContacts,
+            resetChatSettings: resetAllChatSettings,
+            getChatSettings,
+            getChatWithSettings,
+            createChat,
+            createGroup,
+            createChannel,
+        }),
+        [
+            items,
+            loading,
+            error,
+            selectedChatId,
+            chatSettings,
+            loadChats,
+            hydrateChats,
+            selectChat,
+            updateChatData,
+            updateChatSettingsData,
+            toggleFavoriteChat,
+            toggleChatNotifications,
+            markChatAsRead,
+            markChatAsReadOnServer,
+            markChatAsUnread,
+            deleteChat,
+            addChatToContacts,
+            resetAllChatSettings,
+            getChatSettings,
+            getChatWithSettings,
+            createChat,
+            createGroup,
+            createChannel,
+        ],
+    )
 }

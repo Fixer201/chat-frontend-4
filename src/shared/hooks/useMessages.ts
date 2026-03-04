@@ -58,6 +58,7 @@ import { useApiFetcher } from '@shared/hooks/useApiFetcher'
 export const useMessages = (
     userUid: string,
     isLocalChat: boolean = false,
+    pageSize: number = 50,
 ) => {
     // Добавьте isLocalChat
     const [messages, setMessages] = useState<Message[]>([])
@@ -76,10 +77,12 @@ export const useMessages = (
         setLoading(true)
         setError(null)
         try {
-            const data = await fetchData(
-                `https://api.test.chat.ktsf.ru/api/v1/chat/message/text/${userUid}/`,
-                { method: 'GET' },
-            )
+            // Относительный URL — проксируется на бэкенд через catch-all route handler.
+            // page_size увеличен, чтобы не получать только 5 сообщений по умолчанию (лимит Django).
+            const url = `/api/v1/chat/message/text/${userUid}/?page_size=${pageSize}`
+            const data = await fetchData(url, {
+                method: 'GET',
+            })
             // Маппинг API-ответа в Message[] с использованием ApiMessage и ваших типов
             const mappedMessages: Message[] =
                 data.results.map(
@@ -151,7 +154,7 @@ export const useMessages = (
         } finally {
             setLoading(false)
         }
-    }, [userUid, isLocalChat, fetchData]) // Добавьте isLocalChat в зависимости
+    }, [userUid, isLocalChat, pageSize, fetchData]) // Добавьте isLocalChat в зависимости
 
     useEffect(() => {
         loadMessages()

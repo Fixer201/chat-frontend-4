@@ -1,0 +1,99 @@
+{
+  "api_version": "1.0",
+  "base_url": "https://api.example.com",
+  "api_section": "notifications",
+  "endpoints": [
+    {
+      "id": "notifications_device_token_list",
+      "method": "GET",
+      "path": "/api/v1/notifications/device_token/",
+      "description": "Получение списка токенов устройств",
+      "parameters": {
+        "query": [
+          {
+            "name": "ordering",
+            "type": "string",
+            "description": "Поле для сортировки результатов"
+          },
+          {
+            "name": "page",
+            "type": "integer",
+            "description": "Номер страницы"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Список токенов устройств",
+          "schema": {
+            "count": "integer",
+            "next": "string (url)",
+            "previous": "string (url)",
+            "results": "array[DeviceToken]"
+          }
+        },
+        "414": {
+          "description": "Размер query-параметра превышает установленный лимит"
+        }
+      }
+    },
+    {
+      "id": "notifications_device_token_register",
+      "method": "POST",
+      "path": "/api/v1/notifications/device_token/",
+      "description": "Регистрация устройства для push-уведомлений",
+      "notes": [
+        "app_type: 0 = Доктор, 1 = Пациент"
+      ],
+      "parameters": {},
+      "request_body": {
+        "content_type": "application/json",
+        "schema": {
+          "device_token": "string (токен устройства для push-уведомлений)",
+          "app_type": "integer (0 или 1)"
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Устройство успешно зарегистрировано",
+          "schema": {
+            "device_token": "string",
+            "app_type": "integer"
+          }
+        },
+        "401": {
+          "description": "Не предоставлены учетные данные"
+        },
+        "403": {
+          "description": "Недостаточно прав для выполнения действия"
+        }
+      }
+    }
+  ],
+  "authentication": {
+    "type": "Bearer Token",
+    "header": "Authorization"
+  },
+  "common_http_codes": {
+    "200": "OK - Успешный запрос",
+    "201": "Created - Ресурс создан",
+    "401": "Unauthorized - Требуется аутентификация",
+    "403": "Forbidden - Недостаточно прав",
+    "414": "URI Too Long - Query параметр слишком длинный"
+  },
+  "data_types": {
+    "DeviceToken": {
+      "device_token": "string",
+      "app_type": "integer (0=Доктор, 1=Пациент)"
+    }
+  },
+  "app_types": {
+    "0": "Доктор",
+    "1": "Пациент"
+  },
+  "features": {
+    "push_notifications": "Система управления push-уведомлениями для мобильных приложений",
+    "device_registration": "Регистрация устройств с помощью токенов",
+    "app_type_distinction": "Разделение функционала между приложениями для докторов и пациентов"
+  }
+}

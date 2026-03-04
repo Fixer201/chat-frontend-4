@@ -1,11 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Search from '@shared/ui/Search'
 import { useChats } from '@shared/hooks/useChats'
 import { createEscapeKeyHandler } from '@shared/lib/keyboard-handlers'
 import { formatLastSeen } from '@shared/lib/formatLastSeen'
+import { useContactsMap } from '@shared/hooks/useContactsMap'
+import getAvatarSrc from '@shared/lib/getAvatarSrc'
+import type { ChatItem } from '@shared/types/chat'
 
 /**
  * Модальное окно пересылки сообщения — выбор чата-получателя.
@@ -34,6 +37,53 @@ export default function ForwardMessageModal({
 }: Readonly<ForwardMessageModalProps>) {
     const [searchValue, setSearchValue] = useState('')
     const { chats } = useChats()
+    const contactsMap = useContactsMap()
+
+    // Вычисляет отображаемое имя чата с fallback-логикой,
+    // аналогичной ChatsList: chat.name → контакт → профиль чата
+    const getDisplayName = useCallback(
+        (chat: ChatItem): string => {
+            if (chat.name) return chat.name
+
+            if (chat.chatType === 'chat') {
+                const contactMatch = contactsMap.get(
+                    chat.chat.uid,
+                )
+                if (contactMatch) {
+                    const contactName =
+                        `${contactMatch.firstName || ''} ${contactMatch.lastName || ''}`.trim() ||
+                        contactMatch.nickname ||
+                        contactMatch.phone ||
+                        chat.chat.nickname ||
+                        chat.chat.username
+                    if (contactName) return contactName
+                }
+            }
+
+            return (
+                `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
+                chat.chat.nickname ||
+                chat.chat.username ||
+                'Неизвестный чат'
+            )
+        },
+        [contactsMap],
+    )
+
+    // Возвращает URL аватара с учётом данных контакта
+    const getItemAvatarSrc = useCallback(
+        (chat: ChatItem): string => {
+            if (chat.chatType === 'chat') {
+                const contactMatch = contactsMap.get(
+                    chat.chat.uid,
+                )
+                if (contactMatch)
+                    return getAvatarSrc(contactMatch)
+            }
+            return getAvatarSrc(chat.chat)
+        },
+        [contactsMap],
+    )
 
     // Фильтрация чатов по имени — регистронезависимый поиск по подстроке.
     // При пустом поиске возвращаем полный список без лишних итераций.
@@ -41,9 +91,9 @@ export default function ForwardMessageModal({
         if (!searchValue.trim()) return chats
         const q = searchValue.toLowerCase()
         return chats.filter((chat) =>
-            chat.name.toLowerCase().includes(q),
+            getDisplayName(chat).toLowerCase().includes(q),
         )
-    }, [chats, searchValue])
+    }, [chats, searchValue, getDisplayName])
 
     // Выбор чата: оборачиваем chatKey в массив для совместимости с API,
     // рассчитанным на множественный выбор (мультипересылка в будущем)
@@ -159,14 +209,12 @@ export default function ForwardMessageModal({
                                     `}
                                 >
                                     <Image
-                                        src={
-                                            chat.chat
-                                                .avatarWebpUrl ||
-                                            chat.chat
-                                                .avatarUrl ||
-                                            '/images/contacts/DefaultAvatar.svg'
-                                        }
-                                        alt={chat.name}
+                                        src={getItemAvatarSrc(
+                                            chat,
+                                        )}
+                                        alt={getDisplayName(
+                                            chat,
+                                        )}
                                         fill
                                         sizes="40px"
                                         className="object-cover"
@@ -179,15 +227,17 @@ export default function ForwardMessageModal({
                                 >
                                     <span
                                         className={`
-                                          truncate text-sm font-medium
-                                          text-text-black
+                                          max-w-full truncate text-sm
+                                          font-medium text-text-black
                                         `}
                                     >
-                                        {chat.name}
+                                        {getDisplayName(
+                                            chat,
+                                        )}
                                     </span>
                                     <span
                                         className={`
-                                          truncate text-xs
+                                          max-w-full truncate text-xs
                                           ${
                                               chat.chat
                                                   .isOnline
@@ -200,7 +250,8 @@ export default function ForwardMessageModal({
                                             ? 'в сети'
                                             : formatLastSeen(
                                                   chat.chat
-                                                      .wasOnlineAt,
+                                                      .wasOnlineAt *
+                                                      1000,
                                               )}
                                     </span>
                                 </div>

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// URL бэкенда вынесен в env-переменную, чтобы не хардкодить адрес в коде.
+// В production может отличаться от dev-окружения.
+// Fallback на test-сервер — для удобства локальной разработки без .env.local.
+const BACKEND_URL =
+    process.env.BACKEND_URL ||
+    'https://api.test.chat.ktsf.ru'
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
 
         const response = await fetch(
-            'https://api.test.chat.ktsf.ru/api/v1/auth/messenger/login/get/code/',
+            `${BACKEND_URL}/api/v1/auth/messenger/login/get/code/`,
             {
                 method: 'POST',
                 headers: {

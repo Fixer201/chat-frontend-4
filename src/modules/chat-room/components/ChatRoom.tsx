@@ -2,6 +2,7 @@
 
 import ChatHeader from './ChatHeader'
 import CallModal from './CallModal'
+import CallTypeSelectorModal from './CallTypeSelectorModal'
 import MessagesList from './MessagesList'
 import SelectionToolbar from './SelectionToolbar'
 import ForwardMessageModal from './ForwardMessageModal'
@@ -9,27 +10,44 @@ import DeleteMessageModal from './DeleteMessageModal'
 import CopyToast from './CopyToast'
 import MessageComposer from '@modules/message-composer/components/MessageComposer'
 import { ChatItem } from '@shared/types/chat'
-import { Message } from '@shared/types/message'
-import { useCallback, useState } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
-import { useCurrentUserId } from '@shared/hooks/useCurrentUserId'
 import { useMessages } from '@shared/hooks/useMessages'
 import { cn } from '@shared/lib/utils'
+import { useFloatingDate } from './useFloatingDate'
+import { formatDividerDate } from './DateDivider'
+import Cookies from 'js-cookie'
+import { getUserIdFromToken } from '@shared/lib/getUserIdFromToken'
+import { Spinner } from '@shared/ui/Spinner'
+import { useChats } from '@shared/hooks/useChats'
+import { useAppSelector } from '@redux/store'
+import { MOCK_CURRENT_USER_ID } from '@shared/mocks/messages'
+import PersonalChatSidebar from './PersonalChatSidebar'
+import { useScrollToUnread } from '../hooks/useScrollToUnread'
+import { useMessageActions } from '../hooks/useMessageActions'
+import { useInChatSearch } from '../hooks/useInChatSearch'
+import { useMarkAsRead } from '../hooks/useMarkAsRead'
+import { useChatSidebar } from '../hooks/useChatSidebar'
 
 /**
  * Корневой компонент комнаты чата — оркестратор взаимодействия.
  *
- * Управляет состоянием всех режимов работы с сообщениями:
- * - Режим редактирования (editingMessage) — редактирование собственного сообщения
- * - Режим ответа (replyingMessage) — ответ на любое сообщение
- * - Режим выбора (selectedMessages) — множественный выбор для пересылки/копирования/удаления
- * - Режим поиска (isSearchOpen) — поиск по содержимому сообщений с навигацией по результатам
+ * Делегирует бизнес-логику специализированным хукам:
+ * - useMessageActions — редактирование, ответ, выбор, пересылка, удаление, копирование
+ * - useInChatSearch — поиск по сообщениям с навигацией по результатам
+ * - useMarkAsRead — пометка сообщений прочитанными + вычисление firstUnreadUid
+ * - useChatSidebar — открытие/закрытие правой панели контакта
  *
- * Режимы взаимоисключающие: при активации редактирования сбрасывается ответ и наоборот.
- * Режим выбора заменяет MessageComposer на SelectionToolbar в нижней части.
- *
- * Паттерн key на MessageComposer: при смене editingMessage/replyingMessage
- * React пересоздаёт компонент, сбрасывая внутренний state поля ввода.
+ * Сам компонент отвечает только за:
+ * - Определение currentUserId и параметров чата
+ * - Загрузку сообщений (useMessages)
+ * - Скролл и floating date pill
+ * - Композицию JSX-layout из дочерних компонентов
  */
 export default function ChatRoom({
     chat,
@@ -38,229 +56,90 @@ export default function ChatRoom({
     chat: ChatItem
     onBack?: () => void
 }>) {
-    const currentUserId = useCurrentUserId()
+    const currentUser = useAppSelector(
+        (state) => state.user.currentUser,
+    ) as { id?: string } | null
+    const currentUserId =
+        currentUser?.id ||
+        getUserIdFromToken(
+            localStorage.getItem('access_token') ||
+                Cookies.get('access_token'),
+        ) ||
+        MOCK_CURRENT_USER_ID
 
-    // --- Состояние режимов работы с сообщениями ---
-    /** Сообщение в режиме редактирования (null = режим неактивен) */
-    const [editingMessage, setEditingMessage] =
-        useState<Message | null>(null)
-    /** Сообщение, на которое отвечает пользователь (null = режим неактивен) */
-    const [replyingMessage, setReplyingMessage] =
-        useState<Message | null>(null)
-    /** Массив выбранных сообщений (пустой = режим выбора неактивен) */
-    const [selectedMessages, setSelectedMessages] =
-        useState<Message[]>([])
+    const isLocalChat = chat.isTemporary === true
+    const chatName = chat.name
 
-    // --- Состояние модальных окон ---
-    const [forwardModalOpen, setForwardModalOpen] =
-        useState(false)
-    /** Сообщения для пересылки — может быть одно (из контекстного меню) или несколько (из тулбара) */
-    const [messagesToForward, setMessagesToForward] =
-        useState<Message[]>([])
-    const [copyToastVisible, setCopyToastVisible] =
-        useState(false)
-    const [
+    // --- Подключение контекстов и хуков данных ---
+    const { sendMessage, deleteMessage, markMessagesRead } =
+        useWebSocket()
+    const { chats, markAsRead, markAsReadOnServer } =
+        useChats()
+
+    // --- Делегирование бизнес-логики хукам ---
+    const {
+        editingMessage,
+        replyingMessage,
+        selectedMessages,
+        isSelectionMode,
+        forwardModalOpen,
+        copyToastVisible,
         deleteSelectedModalOpen,
-        setDeleteSelectedModalOpen,
-    ] = useState(false)
+        handleEditMessage,
+        handleReplyMessage,
+        handleSelectMessage,
+        handleForwardMessage,
+        handleForwardSelected,
+        handleForwardConfirm,
+        handleForwardModalClose,
+        handleCopySelected,
+        handleHideCopyToast,
+        handleDeleteSelected,
+        handleDeleteSelectedConfirm,
+        handleDeleteModalClose,
+        handleClearSelection,
+        handleCancelEdit,
+        handleCancelReply,
+    } = useMessageActions({
+        sendMessage,
+        deleteMessage,
+        chats,
+    })
+
+    const {
+        isSearchOpen,
+        searchQuery,
+        currentMatchIndex,
+        totalSearchResults,
+        setCurrentMatchIndex,
+        handleSearchOpen,
+        handleSearchClose,
+        handleSearchQueryChange,
+        handleSearchMatchesFound,
+        handleSearchNavigate,
+    } = useInChatSearch()
+
+    const {
+        isSidebarOpen,
+        sidebarContact,
+        handleOpenSidebar,
+        handleCloseSidebar,
+        handleClearChat,
+        handleNotificationsChange,
+    } = useChatSidebar()
+
+    // --- ВРЕМЕННО: состояние звонков для тестов UI ---
     const [isCallModalOpen, setIsCallModalOpen] =
         useState(false)
-    // ВРЕМЕННО: модалка выбора типа звонка для тестов UI.
     const [
         isCallTypeSelectorOpen,
         setIsCallTypeSelectorOpen,
     ] = useState(false)
-    // ВРЕМЕННО: выбранный тип звонка для тестов UI.
     const [callVariant, setCallVariant] = useState<
         'outgoing' | 'incoming'
     >('outgoing')
 
-    // --- Состояние режима поиска ---
-    /** Флаг активности режима поиска. При true ChatHeader показывает InChatSearch. */
-    const [isSearchOpen, setIsSearchOpen] = useState(false)
-    /** Поисковый запрос для фильтрации сообщений (case-insensitive) */
-    const [searchQuery, setSearchQuery] = useState('')
-    /**
-     * Индекс текущего результата поиска в массиве совпадений (0-based).
-     * null = нет активного результата, 0 = первый результат (нижний/последний по времени).
-     */
-    const [currentMatchIndex, setCurrentMatchIndex] =
-        useState<number | null>(null)
-    /** Общее количество найденных результатов. Обновляется через handleSearchMatchesFound. */
-    const [totalSearchResults, setTotalSearchResults] =
-        useState(0)
-
-    const { sendMessage, deleteMessage } = useWebSocket()
-
-    /** Флаг режима выбора: активируется при первом выбранном сообщении */
-    const isSelectionMode = selectedMessages.length > 0
-
-    // Переход в режим редактирования: сбрасываем ответ,
-    // чтобы одновременно не было двух режимов
-    const handleEditMessage = (message: Message) => {
-        setEditingMessage(message)
-        setReplyingMessage(null)
-    }
-
-    // Переход в режим ответа: сбрасываем редактирование
-    const handleReplyMessage = (message: Message) => {
-        setReplyingMessage(message)
-        setEditingMessage(null)
-    }
-
-    // Переключение выбора сообщения: toggle-логика (повторный клик снимает выделение)
-    const handleSelectMessage = (message: Message) => {
-        setSelectedMessages((prev) => {
-            const isSelected = prev.some(
-                (m) => m.uid === message.uid,
-            )
-            if (isSelected) {
-                return prev.filter(
-                    (m) => m.uid !== message.uid,
-                )
-            }
-            return [...prev, message]
-        })
-    }
-
-    // Пересылка одного сообщения из контекстного меню
-    const handleForwardMessage = (message: Message) => {
-        setMessagesToForward([message])
-        setForwardModalOpen(true)
-    }
-
-    // Пересылка выбранных сообщений из тулбара
-    const handleForwardSelected = () => {
-        setMessagesToForward(selectedMessages)
-        setForwardModalOpen(true)
-    }
-
-    /**
-     * Подтверждение пересылки: отправляем каждое сообщение в каждый выбранный чат.
-     *
-     * Для каждого пересылаемого сообщения формируем объект ForwardedMessage
-     * с метаданными автора (from_user, first_name, last_name), чтобы
-     * компонент ForwardedMessage мог корректно отобразить источник.
-     *
-     * content корневого сообщения остаётся пустым — бэкенд берёт
-     * текст из forwardedMessages[].content.
-     */
-    const handleForwardConfirm = (
-        selectedChatKeys: string[],
-    ) => {
-        messagesToForward.forEach((msg) => {
-            selectedChatKeys.forEach((chatKey) => {
-                sendMessage({
-                    chatKey,
-                    content: '',
-                    status: 'publish',
-                    // uid оригинального сообщения — бэкенд сам
-                    // подтянет контент и метаданные по UID
-                    forwardedMessages: [
-                        {
-                            uid: msg.uid,
-                            content: msg.content,
-                            from_user: msg.from_user,
-                        },
-                    ],
-                })
-            })
-        })
-
-        setForwardModalOpen(false)
-        setMessagesToForward([])
-        setSelectedMessages([])
-    }
-
-    // Копирование выбранных сообщений из тулбара
-    const handleCopySelected = () => {
-        const text = selectedMessages
-            .map((m) => m.content)
-            .join('\n')
-        navigator.clipboard.writeText(text)
-        setCopyToastVisible(true)
-        setSelectedMessages([])
-    }
-
-    const handleHideCopyToast = useCallback(() => {
-        setCopyToastVisible(false)
-    }, [])
-
-    // Открытие модалки удаления для выбранных сообщений
-    const handleDeleteSelected = () => {
-        setDeleteSelectedModalOpen(true)
-    }
-
-    // Подтверждение удаления выбранных сообщений: отправляем запрос
-    // на удаление каждого сообщения через WebSocket. Проверяем наличие uid и chatKey,
-    // так как локальные (ещё не отправленные) сообщения могут их не иметь.
-    const handleDeleteSelectedConfirm = (
-        forAll: boolean,
-    ) => {
-        selectedMessages.forEach((msg) => {
-            if (msg.uid && msg.chatKey) {
-                deleteMessage({
-                    uid: msg.uid,
-                    chatKey: msg.chatKey,
-                    forAll,
-                })
-            }
-        })
-        setDeleteSelectedModalOpen(false)
-        setSelectedMessages([])
-    }
-
-    const handleClearSelection = () => {
-        setSelectedMessages([])
-    }
-
-    const handleCancelEdit = () => {
-        setEditingMessage(null)
-    }
-
-    const handleCancelReply = () => {
-        setReplyingMessage(null)
-    }
-
-    /**
-     * Определяем, является ли чат локальным (созданным только на клиенте).
-     *
-     * Локальные чаты — группы/каналы, созданные офлайн до первой
-     * синхронизации с сервером. Для них API-загрузка истории не нужна.
-     *
-     * Проверка: chatKey === 'chat_key_0' (дефолтный ключ до назначения
-     * сервером) И НЕ временный (isTemporary).
-     *
-     * ⚠️ Важно: нельзя проверять по chat.id > 1e12, потому что
-     * при переходе временного чата в реальный (после отправки первого
-     * сообщения) isTemporary сбрасывается в false, но id остаётся
-     * большим — такая проверка ошибочно классифицирует конвертированный
-     * чат как «локальный», и useMessages очистит историю (setMessages([])).
-     *
-     * Три типа чатов:
-     * 1. Временный (isTemporary=true, chatKey='chat_key_0') → загружать API-историю
-     * 2. Конвертированный (isTemporary=false, chatKey='chat_3401') → загружать
-     * 3. Локальный (isTemporary=false, chatKey='chat_key_0') → НЕ загружать
-     */
-    const isLocalChat =
-        chat.chatKey === 'chat_key_0' && !chat.isTemporary
-
-    /**
-     * Открытие режима поиска.
-     * Очищаем все состояния поиска для чистого старта.
-     * ChatHeader переключается в режим InChatSearch при isSearchOpen === true.
-     *
-     * Vercel pattern: useCallback без зависимостей для стабильной ссылки.
-     */
-    const handleSearchOpen = useCallback(() => {
-        setIsSearchOpen(true)
-        setSearchQuery('')
-        setCurrentMatchIndex(null)
-        setTotalSearchResults(0)
-    }, [])
-
     const handleCallOpen = useCallback(() => {
-        // ВРЕМЕННО: открываем модалку выбора типа звонка.
         setIsCallTypeSelectorOpen(true)
     }, [])
 
@@ -268,7 +147,6 @@ export default function ChatRoom({
         setIsCallModalOpen(false)
     }, [])
 
-    // ВРЕМЕННО: выбор типа звонка для тестов UI.
     const handleCallTypeSelect = useCallback(
         (variant: 'outgoing' | 'incoming') => {
             setCallVariant(variant)
@@ -278,111 +156,47 @@ export default function ChatRoom({
         [],
     )
 
-    /**
-     * Закрытие режима поиска.
-     * Полностью очищаем состояние поиска и возвращаемся к обычному виду шапки.
-     * ChatHeader автоматически переключится обратно в обычный режим.
-     */
-    const handleSearchClose = useCallback(() => {
-        setIsSearchOpen(false)
-        setSearchQuery('')
-        setCurrentMatchIndex(null)
-        setTotalSearchResults(0)
-    }, [])
+    // --- Загрузка сообщений ---
+    const {
+        messages: apiMessages,
+        loading: messagesLoading,
+        reloadMessages,
+    } = useMessages(chat.chat.uid, isLocalChat)
 
-    /**
-     * Изменение поискового запроса.
-     * При вводе нового текста сбрасываем currentMatchIndex в null,
-     * чтобы MessagesList пересчитал совпадения и установил индекс на первый результат (снизу).
-     *
-     * Также сбрасываем totalSearchResults в 0, чтобы избежать показа "0 из N"
-     * в момент между вводом и пересчётом результатов.
-     *
-     */
-    const handleSearchQueryChange = useCallback(
-        (query: string) => {
-            setSearchQuery(query)
-            // Сброс индекса и счётчика: новый поиск начинается заново
-            setCurrentMatchIndex(null)
-            setTotalSearchResults(0)
+    useEffect(() => {
+        if (!isLocalChat) {
+            reloadMessages()
+        }
+    }, [chat.chatKey, isLocalChat, reloadMessages])
+
+    // read_at приходит только от сервера через change_status_read_message —
+    // не подставляем его оптимистично, чтобы галочки отражали реальный статус
+    const optimisticApiMessages = apiMessages
+
+    // --- Mark-as-read + firstUnreadUid ---
+    const { firstUnreadUid, messagesReady } = useMarkAsRead(
+        {
+            chat,
+            apiMessages,
+            messagesLoading,
+            currentUserId,
+            markAsRead,
+            markAsReadOnServer,
+            markMessagesRead,
         },
-        [],
     )
 
-    /**
-     * Callback вызываемый MessagesList когда пересчитаны совпадения.
-     * Обновляем totalSearchResults и при первом результате устанавливаем индекс.
-     *
-     * Логика инициализации индекса:
-     * - Если найдены результаты (count > 0)
-     * - И текущий индекс не установлен (currentMatchIndex === null)
-     * - И есть активный поисковый запрос
-     * → Устанавливаем индекс 0, который соответствует последнему (нижнему) результату
-     *
-     * Почему 0 = нижний результат:
-     * MessagesList возвращает индексы в порядке снизу вверх согласно дизайну.
-     */
-    const handleSearchMatchesFound = useCallback(
-        (count: number) => {
-            setTotalSearchResults(count)
-
-            // Автоматическая установка индекса при первом результате
-            if (
-                count > 0 &&
-                currentMatchIndex === null &&
-                searchQuery
-            ) {
-                setCurrentMatchIndex(0)
-            }
-        },
-        [currentMatchIndex, searchQuery],
+    // --- Скролл и floating date ---
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const activeTimestamp = useFloatingDate(
+        scrollContainerRef,
     )
 
-    /**
-     * Навигация по результатам поиска.
-     *
-     * matchingMessageIndices упорядочен сверху вниз (индекс 0 = самый старый/верхний).
-     *
-     * Направления:
-     * - 'up' → переход к более старым сообщениям (индекс уменьшается)
-     * - 'down' → переход к более новым сообщениям (индекс увеличивается)
-     *
-     * Циклическая навигация (wrap around):
-     * - При достижении верха → переход к самому новому (индекс totalSearchResults - 1)
-     * - При достижении низа → переход к самому старому (индекс 0)
-     *
-     */
-    const handleSearchNavigate = useCallback(
-        (direction: 'up' | 'down') => {
-            if (totalSearchResults === 0) return
-
-            setCurrentMatchIndex((prev) => {
-                // Граничный случай: индекс не установлен
-                if (prev === null) return 0
-
-                if (direction === 'up') {
-                    // Навигация вверх: к более старым сообщениям (меньший индекс)
-                    // Если достигли верха → переход к самому новому (циклическая навигация)
-                    return prev - 1 < 0
-                        ? totalSearchResults - 1
-                        : prev - 1
-                } else {
-                    // Навигация вниз: к более новым сообщениям (больший индекс)
-                    // Если достигли низа → переход к самому старому (циклическая навигация)
-                    return prev + 1 >= totalSearchResults
-                        ? 0
-                        : prev + 1
-                }
-            })
-        },
-        [totalSearchResults],
-    )
-
-    const chatName = chat.name
-    // Загрузка сообщений из API
-    const { messages: apiMessages } = useMessages(
-        chat.chat.uid,
-        isLocalChat,
+    useScrollToUnread(
+        scrollContainerRef,
+        firstUnreadUid,
+        chat.chatKey,
+        messagesReady,
     )
 
     return (
@@ -401,6 +215,7 @@ export default function ChatRoom({
                 onSearchClose={handleSearchClose}
                 currentMatchIndex={currentMatchIndex}
                 totalSearchResults={totalSearchResults}
+                onSidebarOpen={handleOpenSidebar}
             />
 
             <CallModal
@@ -410,158 +225,188 @@ export default function ChatRoom({
                 variant={callVariant}
             />
 
-            {/* ВРЕМЕННО: модалка выбора типа звонка для тестов UI. */}
-            {isCallTypeSelectorOpen && (
-                <div
-                    className={cn(
-                        'fixed',
-                        'inset-0',
-                        'z-[60]',
-                        'flex',
-                        'items-center',
-                        'justify-center',
-                        'bg-black/40',
-                    )}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Выбор типа звонка"
-                >
-                    <div
-                        className={cn(
-                            'w-[320px]',
-                            'rounded-xl',
-                            'bg-white',
-                            'px-6',
-                            'py-5',
-                            'text-center',
-                            'shadow-lg',
-                        )}
-                    >
-                        <p className="text-base font-semibold text-text-black">
-                            Тесты звонков
-                        </p>
-                        <div className="mt-5 flex flex-col gap-3">
-                            <button
-                                type="button"
-                                className={cn(
-                                    'rounded-lg',
-                                    'bg-accent-violet-primary',
-                                    'px-4',
-                                    'py-2',
-                                    'text-sm',
-                                    'font-semibold',
-                                    'text-white',
-                                )}
-                                onClick={() =>
-                                    handleCallTypeSelect(
-                                        'incoming',
-                                    )
-                                }
-                            >
-                                Тебе звонят
-                            </button>
-                            <button
-                                type="button"
-                                className={cn(
-                                    'rounded-lg',
-                                    'border',
-                                    'border-accent-violet-primary',
-                                    'px-4',
-                                    'py-2',
-                                    'text-sm',
-                                    'font-semibold',
-                                    'text-accent-violet-primary',
-                                )}
-                                onClick={() =>
-                                    handleCallTypeSelect(
-                                        'outgoing',
-                                    )
-                                }
-                            >
-                                Ты звонишь
-                            </button>
-                        </div>
-                        <p className="mt-4 text-xs text-text-gray">
-                            Только для тестов звонков
-                        </p>
-                    </div>
-                </div>
-            )}
+            <CallTypeSelectorModal
+                open={isCallTypeSelectorOpen}
+                onSelect={handleCallTypeSelect}
+            />
 
+            {/* Основной контент с адаптивной шириной */}
             <div
-                role="presentation"
-                className="flex-1 overflow-y-auto"
-                onClick={() => {
-                    if (isSearchOpen) {
-                        handleSearchClose()
-                    }
-                }}
+                className={cn(
+                    `
+                      relative flex min-h-0 flex-1 flex-col transition-all
+                      duration-300 ease-in-out
+                    `,
+                    isSidebarOpen ? 'mr-80' : 'mr-0',
+                )}
             >
-                <MessagesList
-                    chatKey={chat.chatKey}
-                    apiMessages={apiMessages}
-                    contactUid={
-                        chat.tempContactUid || chat.chat.uid
-                    }
-                    isTemporary={chat.isTemporary}
-                    onEditMessage={handleEditMessage}
-                    onReplyMessage={handleReplyMessage}
-                    onSelectMessage={handleSelectMessage}
-                    onForwardMessage={handleForwardMessage}
-                    isSelectionMode={isSelectionMode}
-                    selectedMessages={selectedMessages}
-                    chatName={chatName}
-                    searchQuery={
-                        isSearchOpen ? searchQuery : ''
-                    }
-                    currentMatchIndex={currentMatchIndex}
-                    onSearchMatchesFound={
-                        handleSearchMatchesFound
-                    }
-                    onSearchNavigate={setCurrentMatchIndex}
-                />
-            </div>
+                {/* Оверлей для мобильных устройств */}
+                {isSidebarOpen && (
+                    <div
+                        className={`
+                          absolute inset-0 z-40 bg-black/20
+                          md:hidden
+                        `}
+                        onKeyDown={(e) => {
+                            if (
+                                e.key === 'Enter' ||
+                                e.key === ' '
+                            ) {
+                                handleCloseSidebar()
+                            }
+                        }}
+                        onClick={handleCloseSidebar}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Закрыть sidebar"
+                    />
+                )}
 
-            {/* Нижняя панель: в режиме выбора — тулбар с действиями,
+                {/* Контейнер для MessagesList с floating date pill */}
+                <div
+                    ref={scrollContainerRef}
+                    role="presentation"
+                    className="flex-1 overflow-y-auto"
+                    onClick={() => {
+                        if (isSearchOpen) {
+                            handleSearchClose()
+                        }
+                    }}
+                >
+                    {/* Floating date pill */}
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none sticky top-0 z-20 h-0"
+                    >
+                        <div
+                            className={cn(
+                                `
+                                  flex justify-center pt-2 transition-opacity
+                                  duration-200
+                                `,
+                                activeTimestamp
+                                    ? 'opacity-100'
+                                    : 'opacity-0',
+                            )}
+                        >
+                            <time
+                                className={cn(
+                                    'rounded-lg',
+                                    'bg-accent-violet-dark/60',
+                                    'px-2',
+                                    'py-0.5',
+                                    'text-sm',
+                                    'leading-[120%]',
+                                    'font-medium',
+                                    'text-white',
+                                    'backdrop-blur-[4px]',
+                                )}
+                            >
+                                {activeTimestamp
+                                    ? formatDividerDate(
+                                          activeTimestamp,
+                                      )
+                                    : ''}
+                            </time>
+                        </div>
+                    </div>
+
+                    {messagesLoading &&
+                    apiMessages.length === 0 ? (
+                        <div className="flex h-full items-center justify-center">
+                            <Spinner />
+                        </div>
+                    ) : (
+                        <MessagesList
+                            chatKey={chat.chatKey}
+                            apiMessages={
+                                optimisticApiMessages
+                            }
+                            contactUid={
+                                chat.tempContactUid ||
+                                chat.chat.uid
+                            }
+                            isTemporary={chat.isTemporary}
+                            currentUserId={currentUserId}
+                            peerUid={
+                                chat.chatType === 'chat'
+                                    ? chat.chat.uid
+                                    : undefined
+                            }
+                            onEditMessage={
+                                handleEditMessage
+                            }
+                            onReplyMessage={
+                                handleReplyMessage
+                            }
+                            onSelectMessage={
+                                handleSelectMessage
+                            }
+                            onForwardMessage={
+                                handleForwardMessage
+                            }
+                            isSelectionMode={
+                                isSelectionMode
+                            }
+                            selectedMessages={
+                                selectedMessages
+                            }
+                            chatName={chatName}
+                            firstUnreadUid={firstUnreadUid}
+                            searchQuery={
+                                isSearchOpen
+                                    ? searchQuery
+                                    : ''
+                            }
+                            currentMatchIndex={
+                                currentMatchIndex
+                            }
+                            onSearchMatchesFound={
+                                handleSearchMatchesFound
+                            }
+                            onSearchNavigate={
+                                setCurrentMatchIndex
+                            }
+                        />
+                    )}
+                </div>
+
+                {/* Нижняя панель: в режиме выбора — тулбар с действиями,
                 иначе — поле ввода сообщения (MessageComposer) */}
-            {isSelectionMode ? (
-                <SelectionToolbar
-                    selectedMessages={selectedMessages}
-                    onClose={handleClearSelection}
-                    onForward={handleForwardSelected}
-                    onCopy={handleCopySelected}
-                    onDelete={handleDeleteSelected}
-                />
-            ) : (
-                <MessageComposer
-                    key={
-                        editingMessage?.uid ??
-                        replyingMessage?.uid ??
-                        'new'
-                    }
-                    toUserId={chat.chat.uid}
-                    chatKey={chat.chatKey}
-                    editingMessage={editingMessage}
-                    replyingMessage={replyingMessage}
-                    onCancelEdit={handleCancelEdit}
-                    onCancelReply={handleCancelReply}
-                />
-            )}
+                {isSelectionMode ? (
+                    <SelectionToolbar
+                        selectedMessages={selectedMessages}
+                        onClose={handleClearSelection}
+                        onForward={handleForwardSelected}
+                        onCopy={handleCopySelected}
+                        onDelete={handleDeleteSelected}
+                    />
+                ) : (
+                    <MessageComposer
+                        key={`${chat.chatKey}-${
+                            editingMessage?.uid ??
+                            replyingMessage?.uid ??
+                            'new'
+                        }`}
+                        toUserId={chat.chat.uid}
+                        chatKey={chat.chatKey}
+                        editingMessage={editingMessage}
+                        replyingMessage={replyingMessage}
+                        onCancelEdit={handleCancelEdit}
+                        onCancelReply={handleCancelReply}
+                    />
+                )}
+            </div>
 
             <ForwardMessageModal
                 open={forwardModalOpen}
-                onClose={() => {
-                    setForwardModalOpen(false)
-                    setMessagesToForward([])
-                }}
+                onClose={handleForwardModalClose}
                 onConfirm={handleForwardConfirm}
             />
 
             <DeleteMessageModal
                 open={deleteSelectedModalOpen}
-                onClose={() =>
-                    setDeleteSelectedModalOpen(false)
-                }
+                onClose={handleDeleteModalClose}
                 onConfirm={handleDeleteSelectedConfirm}
                 isOwnMessage={selectedMessages.every(
                     (m) => m.from_user === currentUserId,
@@ -573,6 +418,31 @@ export default function ChatRoom({
                 visible={copyToastVisible}
                 onHide={handleHideCopyToast}
             />
+
+            {/* Сайдбар информации о контакте */}
+            {isSidebarOpen && sidebarContact && (
+                <div
+                    className={cn(
+                        'absolute top-0 right-0 h-full w-80',
+                        'z-50 shadow-xl',
+                        'rounded-l-md bg-gray-main',
+                        'border-l border-gray-border',
+                        'transition-all duration-300 ease-in-out',
+                    )}
+                >
+                    <PersonalChatSidebar
+                        contact={sidebarContact}
+                        chatKey={chat.chatKey}
+                        chatUid={chat.chat.uid}
+                        notificationsEnabled={false}
+                        onNotificationsChange={
+                            handleNotificationsChange
+                        }
+                        onClose={handleCloseSidebar}
+                        onClearChat={handleClearChat}
+                    />
+                </div>
+            )}
         </div>
     )
 }

@@ -52,7 +52,7 @@ export default function ChatsListWrapper({
 
     // Загрузка чатов при монтировании компонента
     useEffect(() => {
-        loadChats(15)
+        loadChats('', 15)
     }, [loadChats])
 
     // Обработчик перехода к созданию группы

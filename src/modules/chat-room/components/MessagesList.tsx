@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
 import MessageItem from './MessageItem'
 import DateDivider from './DateDivider'
+import UnreadDivider from './UnreadDivider'
 import {
     Fragment,
     useCallback,
@@ -28,10 +29,6 @@ import { Message } from '@shared/types/message'
  * Семантика: section[role="log"] с aria-live="polite" для экранных читалок,
  * обновляющий контент без прерывания текущей озвучки.
  */
-
-// Временный флаг: показывать все сообщения без фильтрации по chatKey.
-// Используется на этапе разработки, пока не реализована полноценная логика контактов.
-const USE_MOCK = false // TODO: удалить после реализации контактов
 
 /**
  * Проверяет, принадлежат ли два Unix-timestamp (в секундах) одному
@@ -68,6 +65,8 @@ export default function MessagesList({
     apiMessages = [],
     contactUid,
     isTemporary = false,
+    currentUserId,
+    peerUid,
     onEditMessage,
     onReplyMessage,
     onSelectMessage,
@@ -75,6 +74,7 @@ export default function MessagesList({
     isSelectionMode,
     selectedMessages,
     chatName,
+    firstUnreadUid,
 
     searchQuery = '',
     currentMatchIndex,
@@ -84,6 +84,8 @@ export default function MessagesList({
     apiMessages?: Message[]
     contactUid?: string
     isTemporary?: boolean
+    currentUserId?: string
+    peerUid?: string
     onEditMessage?: (message: Message) => void
     onReplyMessage?: (message: Message) => void
     onSelectMessage?: (message: Message) => void
@@ -91,6 +93,7 @@ export default function MessagesList({
     isSelectionMode?: boolean
     selectedMessages?: Message[]
     chatName?: string
+    firstUnreadUid?: string
     searchQuery?: string
     currentMatchIndex?: number | null
     onSearchMatchesFound?: (count: number) => void
@@ -178,16 +181,21 @@ export default function MessagesList({
             )
         })
 
-        console.debug('[MessagesList] filter', {
-            chatKey,
-            isTemporary,
-            contactUid,
-            total: allMessages.length,
-            filtered: filtered.length,
-        })
-
         return filtered
     }, [allMessages, chatKey, isTemporary, contactUid])
+
+    const messagesMap = useMemo(() => {
+        const map = new Map<string, Message>()
+        for (const msg of chatMessages) {
+            if (msg.uid) map.set(msg.uid, msg)
+        }
+        return map
+    }, [chatMessages])
+
+    const selectedUids = useMemo(
+        () => new Set(selectedMessages?.map((m) => m.uid)),
+        [selectedMessages],
+    )
 
     // --- Логика поиска по сообщениям ---
 
@@ -310,12 +318,11 @@ export default function MessagesList({
                                     message.created_at,
                                 ))
 
+                        const showUnreadDivider =
+                            firstUnreadUid &&
+                            message.uid === firstUnreadUid
+
                         return (
-                            /*
-                             * Fragment необходим для рендеринга двух элементов
-                             * (DateDivider + li) под одним key без лишнего DOM-узла.
-                             * key на Fragment наследуется от message.uid.
-                             */
                             <Fragment key={message.uid}>
                                 {showDivider && (
                                     <DateDivider
@@ -324,6 +331,9 @@ export default function MessagesList({
                                         }
                                     />
                                 )}
+                                {showUnreadDivider && (
+                                    <UnreadDivider />
+                                )}
                                 <li
                                     data-message-uid={
                                         message.uid
@@ -331,6 +341,10 @@ export default function MessagesList({
                                 >
                                     <MessageItem
                                         message={message}
+                                        currentUserId={
+                                            currentUserId
+                                        }
+                                        peerUid={peerUid}
                                         onEdit={
                                             onEditMessage
                                         }
@@ -349,10 +363,8 @@ export default function MessagesList({
                                         isSelectionMode={
                                             isSelectionMode
                                         }
-                                        isSelected={selectedMessages?.some(
-                                            (m) =>
-                                                m.uid ===
-                                                message.uid,
+                                        isSelected={selectedUids.has(
+                                            message.uid,
                                         )}
                                         chatName={chatName}
                                         searchQuery={
@@ -362,6 +374,9 @@ export default function MessagesList({
                                         }
                                         isCurrentMatch={
                                             isCurrentMatch
+                                        }
+                                        messagesMap={
+                                            messagesMap
                                         }
                                     />
                                 </li>
