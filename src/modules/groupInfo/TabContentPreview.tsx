@@ -22,6 +22,7 @@ interface TabContentPreviewProps {
     chatKey: string // Ключ чата (для участников)
     chatUid: string // UID чата (для медиа, файлов и т.д.)
     onParticipantsChange?: (count: number) => void // Колбэк при изменении количества участников
+    onOwnerChanged?: () => void
 }
 
 export default function TabContentPreview({
@@ -29,6 +30,7 @@ export default function TabContentPreview({
     chatKey,
     chatUid,
     onParticipantsChange,
+    onOwnerChanged,
 }: TabContentPreviewProps) {
     // Функция, возвращающая соответствующий компонент в зависимости от activeTab
     const getPreviewComponent = () => {
@@ -41,6 +43,7 @@ export default function TabContentPreview({
                             onParticipantsChange // Пробрасываем колбэк для обновления счётчика
                         }
                         // Не передаём onTitleChange и isCurrentUserOwner, так как это предпросмотр
+                        onOwnerChanged={onOwnerChanged}
                     />
                 )
             case 'media':
