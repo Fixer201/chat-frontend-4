@@ -63,7 +63,8 @@ export default function CallModal({
                 'flex',
                 'items-center',
                 'justify-center',
-                'bg-transparent',
+                'bg-black/40',
+                'backdrop-blur-sm',
                 isFullscreen ? 'px-0' : 'px-4',
                 isFullscreen ? 'py-0' : 'py-6',
             )}
