@@ -67,7 +67,7 @@ export default function ParticipantsContent({
                     if (p.uid === 'current-user-uid') {
                         return {
                             ...p,
-                            uid: profile.uid,
+                            uid: profile.uid ?? p.uid,
                             firstName:
                                 profile.first_name ||
                                 p.firstName,
@@ -159,7 +159,6 @@ export default function ParticipantsContent({
         setInviteError(null)
 
         const accessToken = Cookies.get('access_token')
-        let wsSuccess = false
 
         // ========== STEP 1: Try WebSocket first ==========
         if (accessToken) {
@@ -191,7 +190,6 @@ export default function ParticipantsContent({
                         '[ParticipantsContent] ✅ WebSocket success, members added:',
                         result.result.added_users,
                     )
-                    wsSuccess = true
                 } else {
                     console.warn(
                         '[ParticipantsContent] ⚠️ WebSocket failed:',
