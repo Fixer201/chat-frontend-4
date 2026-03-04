@@ -7,9 +7,9 @@ import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@redux/store'
 import { setContacts } from '@redux/slices/contactsSlice'
-import {
-    Contact, // Тип контакта
-    GroupParticipant, // Тип участника группы
+import type {
+    Contact,
+    GroupParticipant,
 } from '@shared/types/contact'
 
 // Интерфейс пропсов
@@ -22,14 +22,15 @@ interface InviteMembersContentProps {
     error?: string | null // Текст ошибки
 }
 
-export default function InviteMembersContent({
-    groupId,
-    currentParticipants,
-    onInvite,
-    onCancel,
-    isInviting = false,
-    error = null,
-}: InviteMembersContentProps) {
+export default function InviteMembersContent(
+    props: InviteMembersContentProps,
+) {
+    const {
+        currentParticipants,
+        onInvite,
+        isInviting = false,
+        error = null,
+    } = props
     // Состояние: ID выбранных контактов
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])

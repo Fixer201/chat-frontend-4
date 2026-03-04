@@ -95,6 +95,14 @@ export default function CallModal({
                     'text-white',
                     'shadow-context-shadow',
                 )}
+                style={
+                    isIncoming
+                        ? {
+                              backgroundColor:
+                                  'var(--color-call-modal-incoming-bg, #d6d2f6)',
+                          }
+                        : undefined
+                }
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) =>
                     event.stopPropagation()

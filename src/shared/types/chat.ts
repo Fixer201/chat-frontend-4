@@ -227,4 +227,5 @@ export interface ChatListItemProps extends Omit<
     isChatRead?: boolean
     onAddToContacts?: () => void
     isInContacts?: boolean
+    onOpenInfoPanel?: () => void
 }

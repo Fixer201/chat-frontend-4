@@ -1,20 +1,17 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import {
-    Contact,
-    GroupParticipant,
-} from '@shared/types/contact'
+import type { GroupParticipant } from '@shared/types/contact'
 import { ContactAvatar } from '@shared/ui/avatar/components/ContactAvatar'
 import { getStatusText } from '@shared/lib/getStatusText'
 import Dropdown from '@shared/ui/dropdown/Dropdown'
 
 interface ContactItemProps {
-    contact: Contact | GroupParticipant
+    contact: GroupParticipant
     selectedUid: string | null
     searchValue: string
     onSetSelectedContact: (uid: string) => void
-    onDelete?: (contact: Contact | GroupParticipant) => void
+    onDelete?: (contact: GroupParticipant) => void
     canDelete?: boolean
 }
 
@@ -45,7 +42,7 @@ export const ContactItemGroup: React.FC<
     const [contextMenuPosition, setContextMenuPosition] =
         useState({ x: 0, y: 0 })
 
-    // Вычисляем статус напрямую, без useEffect
+    // Для GroupParticipant вычисляем статус
     const secondaryText = getStatusText(
         contact,
         searchValue,
@@ -54,10 +51,8 @@ export const ContactItemGroup: React.FC<
     const handleContextMenu = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault()
-            const isOwner =
-                'isOwner' in contact && contact.isOwner
-            if (!onDelete || !canDelete || isOwner) return
-
+            if (!onDelete || !canDelete || contact.isOwner)
+                return
             setContextMenuPosition({
                 x: e.clientX,
                 y: e.clientY,
@@ -80,8 +75,15 @@ export const ContactItemGroup: React.FC<
             <div className={STYLES.divider} />
             <div className={STYLES.avatarWrapper}>
                 <ContactAvatar
-                    src={`/images/contacts/${contact?.avatarUrl}`}
-                    name={`${contact.firstName} ${contact.lastName}`}
+                    src={
+                        contact.avatarUrl
+                            ? `/images/contacts/${contact.avatarUrl}`
+                            : ''
+                    }
+                    name={
+                        `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim() ||
+                        'Участник'
+                    }
                     mode="contact"
                     isOnline={contact.isOnline}
                     statusText={secondaryText}

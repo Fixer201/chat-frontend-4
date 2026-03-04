@@ -1,18 +1,24 @@
-import { Contact } from '@shared/types/contact'
+import type {
+    Contact,
+    GroupParticipant,
+} from '@shared/types/contact'
 import { getContactWebStatus } from './getContactWebStatus'
 
-export const getStatusText = (
-    contact: Contact,
+export function getStatusText(
+    contact: Contact | GroupParticipant,
     searchValue: string,
-) => {
+) {
     const lowerSearch = searchValue.toLowerCase()
 
+    // Для Contact ищем по телефону/нику, для GroupParticipant только статус
     if (
+        'phone' in contact &&
         lowerSearch &&
         contact.phone?.toLowerCase().includes(lowerSearch)
     ) {
         return contact.phone
     } else if (
+        'nickname' in contact &&
         lowerSearch &&
         contact.nickname
             ?.toLowerCase()
@@ -24,7 +30,6 @@ export const getStatusText = (
             contact.isOnline,
             contact.wasOnlineAt,
         )
-
         return status
     }
 }

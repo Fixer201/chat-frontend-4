@@ -69,15 +69,24 @@ export default function ChatHeader({
         : undefined
 
     // Контакт для личного чата: список контактов → API → fallback на chat.chat
-    const currentContact: Contact | null = !isGroupOrChannel
-        ? contactMatch ||
-          contactData ||
-          ({
-              ...chat.chat,
-              userUid: chat.chat.uid,
-              phone: chat.chat.phone,
-          } as Contact)
-        : null
+    const currentContact: Contact | null = useMemo(() => {
+        if (!isGroupOrChannel) {
+            return (
+                contactMatch ||
+                contactData ||
+                ({
+                    ...chat.chat,
+                    userUid: chat.chat.uid,
+                } as Contact)
+            )
+        }
+        return null
+    }, [
+        isGroupOrChannel,
+        contactMatch,
+        contactData,
+        chat.chat,
+    ])
 
     // Имя в шапке: для групп — chat.name, для личных — данные контакта
     const displayName = isGroupOrChannel
@@ -164,13 +173,15 @@ export default function ChatHeader({
                     className="flex flex-row items-center gap-4"
                     onKeyDown={(e) => {
                         if (
-                            e.key === 'Enter' ||
-                            e.key === ' '
+                            (e.key === 'Enter' ||
+                                e.key === ' ') &&
+                            currentContact
                         ) {
                             onSidebarOpen?.(currentContact)
                         }
                     }}
                     onClick={() =>
+                        currentContact &&
                         onSidebarOpen?.(currentContact)
                     }
                     role="button"
