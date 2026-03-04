@@ -26,6 +26,9 @@ import DropdownMenuButton from '@shared/ui/dropdown/DropdownMenu'
 import TabContentPreview from '@modules/groupInfo/TabContentPreview'
 import ClearChatModal from '@modules/groupInfo/modals/ClearChatModal'
 import { formatBirthday } from '@shared/lib/formatDateBirthday'
+import { useSelector } from 'react-redux'
+import { RootState } from '@redux/store'
+import { useAddContact } from '@shared/hooks/useAddContact' // Добавлен импорт
 
 // Типы для вкладок
 type TabId = 'media' | 'files' | 'voice' | 'links'
@@ -88,6 +91,10 @@ export default function PersonalChatSidebar({
     const [copiedPhone, copyPhoneToClipboard] =
         useCopyToClipboard(700)
 
+    // Хук для добавления в контакты
+    const { addContact, isAdding: isAddingToContacts } =
+        useAddContact()
+
     // Имя для отображения
     const displayName = useMemo(() => {
         return (
@@ -118,6 +125,36 @@ export default function PersonalChatSidebar({
     const handleToggleNotifications = useCallback(() => {
         onNotificationsChange?.(!notificationsEnabled)
     }, [notificationsEnabled, onNotificationsChange])
+
+    // Получаем список контактов из Redux
+    const contactsList = useSelector(
+        (state: RootState) => state.contacts.list,
+    )
+
+    // Проверка, есть ли контакт в списке контактов
+    const isContactInList = useMemo(() => {
+        if (
+            !contact.uid &&
+            !contact.nickname &&
+            !contact.phone
+        )
+            return false
+
+        return contactsList.some(
+            (c) =>
+                c.uid === contact.uid ||
+                c.userUid === contact.uid ||
+                (contact.nickname &&
+                    c.nickname === contact.nickname) ||
+                (contact.phone &&
+                    c.phone === contact.phone),
+        )
+    }, [
+        contactsList,
+        contact.uid,
+        contact.nickname,
+        contact.phone,
+    ])
 
     // Очистка чата с отложенным выполнением и отменой
     const handleClearChatConfirm = useCallback(
@@ -202,6 +239,11 @@ export default function PersonalChatSidebar({
             copyPhoneToClipboard(contact.phone)
         }
     }, [contact.phone, copyPhoneToClipboard])
+
+    // функция добавления в контакты
+    const handleAddToContacts = useCallback(async () => {
+        await addContact(contact)
+    }, [addContact, contact])
 
     // Если мы в полноэкранном режиме вкладки
     if (viewMode === 'tab') {
@@ -557,6 +599,66 @@ export default function PersonalChatSidebar({
                             )}
                         </div>
                     </div>
+
+                    {/* Блок добавления в контакты (только если пользователь НЕ в контактах) */}
+                    {!isContactInList && (
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={handleAddToContacts}
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key === 'Enter' ||
+                                    e.key === ' '
+                                ) {
+                                    e.preventDefault()
+                                    handleAddToContacts()
+                                }
+                            }}
+                            className={cn(
+                                `
+                                  flex h-11 w-full items-center justify-between
+                                  px-4
+                                `,
+                                `
+                                  transition-colors
+                                  hover:bg-accent-violet-ultra-light
+                                `,
+                                'cursor-pointer',
+                                isAddingToContacts &&
+                                    'cursor-wait opacity-70',
+                            )}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Image
+                                    src="/icons/addtoGroup.svg"
+                                    alt=""
+                                    width={16}
+                                    height={16}
+                                    className="text-accent-violet-primary"
+                                />
+                                <span
+                                    className={`
+                                      text-base text-accent-violet-primary
+                                    `}
+                                >
+                                    {isAddingToContacts
+                                        ? 'Добавление...'
+                                        : 'Добавить в контакты'}
+                                </span>
+                            </div>
+
+                            {isAddingToContacts && (
+                                <div
+                                    className={`
+                                      h-4 w-4 animate-spin rounded-full border-2
+                                      border-accent-violet-primary
+                                      border-t-transparent
+                                    `}
+                                />
+                            )}
+                        </div>
+                    )}
 
                     {/* Горизонтальные табы */}
                     <div className="mt-2">

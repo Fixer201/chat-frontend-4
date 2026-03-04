@@ -75,6 +75,7 @@ export default function ChatHeader({
           ({
               ...chat.chat,
               userUid: chat.chat.uid,
+              phone: chat.chat.phone,
           } as Contact)
         : null
 
