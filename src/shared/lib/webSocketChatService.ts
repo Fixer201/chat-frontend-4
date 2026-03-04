@@ -1,4 +1,5 @@
 // WebSocket Chat Service - can be used by both React hooks and Redux thunks
+
 import {
     CreateChatCallback,
     AddMembersCallback,
@@ -24,7 +25,13 @@ import {
     EditChatResult,
     LeaveChatParams,
     LeaveChatResult,
+    TransferOwnerCallback,
 } from './wsMethods'
+import {
+    transferOwnerMethod,
+    TransferOwnerParams,
+    TransferOwnerResult,
+} from './wsMethods/transferOwner'
 
 // WebSocket service class
 class WebSocketChatService {
@@ -37,6 +44,10 @@ class WebSocketChatService {
         deleteChat: new Map<string, DeleteChatCallback>(),
         editChat: new Map<string, EditChatCallback>(),
         leaveChat: new Map<string, LeaveChatCallback>(),
+        transferOwner: new Map<
+            string,
+            TransferOwnerCallback
+        >(),
     }
 
     // Getters
@@ -194,7 +205,18 @@ class WebSocketChatService {
             () => this.connect(),
         )(params)
     }
-
+    transferOwner(
+        params: TransferOwnerParams,
+    ): Promise<TransferOwnerResult> {
+        return transferOwnerMethod(
+            this.conn.getSocket(),
+            this.isConnected,
+            this.connectionState,
+            this.callbacks.transferOwner,
+            (data) => this.send(data),
+            () => this.connect(),
+        )(params)
+    }
     // Logging helpers
     private log(emoji: string, ...args: unknown[]): void {
         console.log(`[WS Service] ${emoji}`, ...args)

@@ -61,6 +61,19 @@ export type LeaveChatCallback = (response: {
     error?: string
 }) => void
 
+export type TransferOwnerCallback = (response: {
+    success: boolean
+    result?: {
+        chat_key: string
+        chat_type: string
+        new_owner: {
+            uid: string
+            full_name: string
+        }
+    }
+    error?: string
+}) => void
+
 // Generic WebSocket response parser
 export interface WsResponse {
     action: string

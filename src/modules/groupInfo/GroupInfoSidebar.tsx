@@ -54,6 +54,7 @@ function getTabContent(
     setDynamicTabTitle: (t: string | null) => void, // Колбэк для установки динамического заголовка
     onParticipantsChange?: (count: number) => void, // Колбэк при изменении количества участников
     isCurrentUserOwner?: boolean, // Флаг, является ли текущий пользователь владельцем
+    onOwnerChanged?: () => void,
 ) {
     switch (tabId) {
         case 'participants':
@@ -65,6 +66,7 @@ function getTabContent(
                         onParticipantsChange
                     }
                     isCurrentUserOwner={isCurrentUserOwner} // Передаём право на удаление участников
+                    onOwnerChanged={onOwnerChanged}
                 />
             )
         case 'media':
@@ -638,6 +640,7 @@ export default function GroupInfoSidebar({
                     setDynamicTabTitle,
                     handleParticipantsChange,
                     isCurrentUserOwner, // Передаём флаг владельца для вкладки участников
+                    onGroupUpdated,
                 )}
             </TabLayout>
         )
@@ -1067,6 +1070,7 @@ export default function GroupInfoSidebar({
                             onParticipantsChange={
                                 handleParticipantsChange
                             }
+                            onOwnerChanged={onGroupUpdated}
                         />
                     </div>
                 </div>

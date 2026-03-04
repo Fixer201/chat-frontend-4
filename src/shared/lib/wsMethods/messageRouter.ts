@@ -5,6 +5,7 @@ import {
     handleDeleteChatResponse,
     handleEditChatResponse,
     handleLeaveChatResponse,
+    handleTransferOwnerResponse,
 } from './messageHandlers'
 import {
     WsResponse,
@@ -13,6 +14,7 @@ import {
     DeleteChatCallback,
     EditChatCallback,
     LeaveChatCallback,
+    TransferOwnerCallback,
 } from './types'
 
 export interface CallbackMaps {
@@ -21,6 +23,7 @@ export interface CallbackMaps {
     deleteChat: Map<string, DeleteChatCallback>
     editChat: Map<string, EditChatCallback>
     leaveChat: Map<string, LeaveChatCallback>
+    transferOwner: Map<string, TransferOwnerCallback>
 }
 
 export function routeMessage(
@@ -53,6 +56,11 @@ export function routeMessage(
             handleLeaveChatResponse(
                 parsed,
                 callbacks.leaveChat,
+            ),
+        transfer_owner: () =>
+            handleTransferOwnerResponse(
+                parsed,
+                callbacks.transferOwner,
             ),
     }
 

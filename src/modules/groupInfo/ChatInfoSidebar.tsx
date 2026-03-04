@@ -41,6 +41,7 @@ export default function ChatInfoSidebar({
         (state: RootState) => state.chats.selectedChatId,
     )
     const { profile } = useProfile()
+    const currentUserUid = profile?.uid
     // Хук для работы с чатами
     const {
         chatSettings,
@@ -102,7 +103,9 @@ export default function ChatInfoSidebar({
                                     owner?.uid ===
                                         profile.uid ||
                                         owner?.uid ===
-                                            'current-user-uid',
+                                            'current-user-uid' ||
+                                        owner?.uid ===
+                                            currentUserUid,
                                 )
                             } else {
                                 // Если профиль не загружен, считаем владельцем только если uid === плейсхолдер

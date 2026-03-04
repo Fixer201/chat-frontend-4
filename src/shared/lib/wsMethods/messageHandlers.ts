@@ -6,6 +6,7 @@ import {
     EditChatCallback,
     LeaveChatCallback,
     WsResponse,
+    TransferOwnerCallback,
 } from './types'
 
 export function handleCreateChatResponse(
@@ -255,6 +256,56 @@ export function handleLeaveChatResponse(
                     error:
                         parsed.error ||
                         'Failed to leave chat',
+                })
+            }
+            callbacks.delete(requestUid)
+        }
+    }
+}
+
+export function handleTransferOwnerResponse(
+    parsed: WsResponse,
+    callbacks: Map<string, TransferOwnerCallback>,
+): void {
+    console.log(
+        '[WS Service] 👑 transfer_owner response received',
+    )
+    const requestUid = parsed.request_uid
+    if (requestUid) {
+        const callback = callbacks.get(requestUid)
+        console.log(
+            '[WS Service] 🔑 Request UID:',
+            requestUid,
+            'Has callback:',
+            !!callback,
+        )
+        if (callback) {
+            if (parsed.status === 'OK' && parsed.object) {
+                console.log(
+                    '[WS Service] ✅ Transfer owner successful:',
+                    parsed.object,
+                )
+                callback({
+                    success: true,
+                    result: parsed.object as {
+                        chat_key: string
+                        chat_type: string
+                        new_owner: {
+                            uid: string
+                            full_name: string
+                        }
+                    },
+                })
+            } else {
+                console.error(
+                    '[WS Service] ❌ Transfer owner failed:',
+                    parsed.error,
+                )
+                callback({
+                    success: false,
+                    error:
+                        parsed.error ||
+                        'Failed to transfer ownership',
                 })
             }
             callbacks.delete(requestUid)

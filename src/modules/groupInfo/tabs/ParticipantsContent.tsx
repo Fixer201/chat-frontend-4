@@ -30,6 +30,7 @@ interface ParticipantsContentProps {
     onTitleChange?: (title: string | null) => void // Колбэк для изменения заголовка (родительский компонент)
     onParticipantsChange?: (count: number) => void // Колбэк при изменении количества участников
     isCurrentUserOwner?: boolean // Флаг, является ли текущий пользователь владельцем группы
+    onOwnerChanged?: () => void
 }
 
 export default function ParticipantsContent({
@@ -37,6 +38,7 @@ export default function ParticipantsContent({
     onTitleChange,
     onParticipantsChange,
     isCurrentUserOwner = false,
+    onOwnerChanged,
 }: ParticipantsContentProps) {
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(true) // Состояние загрузки
@@ -51,6 +53,7 @@ export default function ParticipantsContent({
     const [inviteError, setInviteError] = useState<
         string | null
     >(null) // Ошибка при приглашении
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
     const { profile } = useProfile()
 
     // Загрузка данных из localStorage и синхронизация с Redux
@@ -107,7 +110,7 @@ export default function ParticipantsContent({
             )
         }
         setLoading(false)
-    }, [chatKey, dispatch, profile])
+    }, [chatKey, dispatch, profile, refreshTrigger])
 
     // Обновление счётчика участников при изменении списка
     useEffect(() => {
@@ -279,14 +282,40 @@ export default function ParticipantsContent({
         }
     }
     const handleTransferOwnership = useCallback(
-        (participant: GroupParticipant) => {
+        async (participant: GroupParticipant) => {
             console.log(
                 'Передача прав владельца участнику:',
                 participant,
             )
-            // TODO: реализовать логику передачи прав через WebSocket/API
+            try {
+                const result =
+                    await wsChatService.transferOwner({
+                        chat_key: chatKey,
+                        new_owner_uid: participant.uid,
+                    })
+                if (result.success && result.result) {
+                    console.log(
+                        '✅ Права успешно переданы:',
+                        result.result,
+                    )
+                    // Принудительно перезагружаем список участников
+                    setRefreshTrigger((prev) => prev + 1)
+                    // Уведомляем родителя (GroupInfoSidebar) об изменениях
+                    onOwnerChanged?.()
+                    // Также можно показать уведомление об успехе
+                } else {
+                    console.error(
+                        '❌ Ошибка передачи прав:',
+                        result.error,
+                    )
+                    // TODO: показать toast с ошибкой
+                }
+            } catch (error) {
+                console.error('❌ Ошибка WebSocket:', error)
+                // TODO: показать toast
+            }
         },
-        [],
+        [chatKey, onOwnerChanged],
     )
     // Обработчик удаления участника
     const handleParticipantRemoved = (
