@@ -121,7 +121,7 @@ export default function ChatInfoSidebar({
     // Обработчик обновления группы/канала
     const handleGroupUpdated = useCallback(() => {
         setUpdateTrigger((prev) => prev + 1) // Увеличиваем триггер для перезагрузки данных
-        loadChats(15) // Перезагружаем список чатов
+        loadChats('', 15) // Перезагружаем список чатов
     }, [loadChats])
 
     // Обработчик изменения уведомлений

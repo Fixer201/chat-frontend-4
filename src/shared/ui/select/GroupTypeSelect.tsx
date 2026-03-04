@@ -1,13 +1,18 @@
 // Компонент выбора типа группы/канала с радиокнопками
-import { GroupTypeOptionProps } from '@shared/types/createGroup'
+// Используем ChannelTypeOptionProps из EditChannelView
+export interface ChannelTypeOptionProps {
+    value: string // 'public' | 'private'
+    optionName: string // Название опции
+    optionDescription: string // Описание опции
+}
 import { useState } from 'react'
 
 // Пропсы компонента GroupTypeSelect
 export interface GroupTypeSelectProps {
     selectLabel?: string // Заголовок/лейбл для селектора
     value?: string // Текущее выбранное значение
-    options: GroupTypeOptionProps[] // Массив опций для выбора
-    onChange?: (option: GroupTypeOptionProps) => void // Обработчик изменения выбора
+    options: ChannelTypeOptionProps[] // Массив опций для выбора
+    onChange?: (option: ChannelTypeOptionProps) => void // Обработчик изменения выбора
     placeholder?: string // Текст-плейсхолдер при отсутствии выбора
 }
 

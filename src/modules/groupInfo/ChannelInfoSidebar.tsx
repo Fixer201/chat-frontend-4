@@ -2,6 +2,7 @@
 'use client'
 
 import { cn } from '@shared/lib/utils'
+import type { MenuItem } from '@shared/ui/dropdown/DropdownMenu'
 import { Button } from '@shared/ui/button/Button'
 import Image from 'next/image'
 import {
@@ -639,61 +640,61 @@ export default function ChannelInfoSidebar({
                         menuWidth={220}
                         placement="bottom-right"
                         ariaLabel="Настройки канала"
-                        items={[
-                            {
-                                label: 'Очистить чат',
-                                icon: (
-                                    <Image
-                                        src="/icons/clean.svg"
-                                        alt=""
-                                        width={24}
-                                        height={24}
-                                        className="h-6 w-6"
-                                    />
-                                ),
-                                onClick: () =>
-                                    setClearChatModalOpen(
-                                        true,
+                        items={
+                            [
+                                {
+                                    label: 'Очистить чат',
+                                    icon: (
+                                        <Image
+                                            src="/icons/clean.svg"
+                                            alt=""
+                                            width={24}
+                                            height={24}
+                                            className="h-6 w-6"
+                                        />
                                     ),
-                            },
-                            // Пункт "Покинуть канал" для всех, кроме владельца
-                            !isCurrentUserOwner && {
-                                label: 'Покинуть канал',
-                                icon: (
-                                    <Image
-                                        src="/icons/leave.svg"
-                                        alt=""
-                                        width={24}
-                                        height={24}
-                                        className="h-6 w-6"
-                                    />
-                                ),
-                                onClick: () =>
-                                    setLeaveChannelModalOpen(
-                                        true,
+                                    onClick: () =>
+                                        setClearChatModalOpen(
+                                            true,
+                                        ),
+                                },
+                                !isCurrentUserOwner && {
+                                    label: 'Покинуть канал',
+                                    icon: (
+                                        <Image
+                                            src="/icons/leave.svg"
+                                            alt=""
+                                            width={24}
+                                            height={24}
+                                            className="h-6 w-6"
+                                        />
                                     ),
-                                hasDivider: true,
-                            },
-                            // Пункт "Удалить канал" только для владельца
-                            isCurrentUserOwner && {
-                                label: 'Удалить канал',
-                                icon: (
-                                    <Image
-                                        src="/icons/delete.svg"
-                                        alt=""
-                                        width={24}
-                                        height={24}
-                                        className="h-6 w-6"
-                                    />
-                                ),
-                                onClick: () =>
-                                    setDeleteChannelModalOpen(
-                                        true,
+                                    onClick: () =>
+                                        setLeaveChannelModalOpen(
+                                            true,
+                                        ),
+                                    hasDivider: true,
+                                },
+                                isCurrentUserOwner && {
+                                    label: 'Удалить канал',
+                                    icon: (
+                                        <Image
+                                            src="/icons/delete.svg"
+                                            alt=""
+                                            width={24}
+                                            height={24}
+                                            className="h-6 w-6"
+                                        />
                                     ),
-                                hasDivider: true,
-                                isDanger: true, // Красный цвет
-                            },
-                        ].filter(Boolean)} // Убираем false
+                                    onClick: () =>
+                                        setDeleteChannelModalOpen(
+                                            true,
+                                        ),
+                                    hasDivider: true,
+                                    isDanger: true,
+                                },
+                            ].filter(Boolean) as MenuItem[]
+                        }
                     />
                 </div>
             </div>

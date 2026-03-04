@@ -10,7 +10,7 @@ import Modal from '@shared/ui/modal/Modal'
 import { CustomScrollbar } from '@shared/ui/CustomScrollbar/CustomScrollbar'
 import Search from '@shared/ui/Search'
 import EmptySearchState from '@shared/ui/emptySearchState/EmptySearchState'
-import { GroupParticipant } from '@shared/types/contact'
+import type { GroupParticipant } from '@shared/types/contact'
 import { ContactItemGroup } from './ContactItemGroup'
 import { cn } from '@shared/lib/utils'
 
@@ -44,9 +44,7 @@ export default memo(function ContactsListGroup({
     const { filteredValue: filteredParticipants } =
         useSearch(participants, searchValue, [
             (contact) =>
-                `${contact.firstName} ${contact.lastName}`.toLowerCase(),
-            (contact) => `${contact.phone || ''}`,
-            (contact) => `${contact.nickname || ''}`,
+                `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.toLowerCase(),
         ])
 
     const handleDeleteParticipant = (

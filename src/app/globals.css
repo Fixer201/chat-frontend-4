@@ -180,6 +180,8 @@ body {
     /* Colors/Red */
     --app-call-modal-green: hsla(135, 59%, 49%, 1);
     /* Colors/Green */
+    --app-call-modal-incoming-bg: #d6d2f6;
+    --app-call-modal-border: #cec8ff4d;
     /* Frame Name: Chat Tab_Chat_Call Active_Video_Camera front */
     /* I think we don't use it, but I add it just in case — likely a Figma designer error */
     --app-call-timer-green: hsla(140, 100%, 37%, 1);

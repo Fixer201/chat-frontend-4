@@ -542,7 +542,6 @@ export const CustomScrollbar = forwardRef<
         },
 
         scrollToTop: function () {
-            // @ts-expect-error - вызов animateScrollTo из объекта
             this.animateScrollTo(0)
         },
         scrollToBottom: function () {
@@ -550,11 +549,9 @@ export const CustomScrollbar = forwardRef<
             if (!content) return
             const dest =
                 content.scrollHeight - content.clientHeight
-            // @ts-expect-error - вызов animateScrollTo из объекта
             this.animateScrollTo(dest)
         },
         scrollTo: function (position: number) {
-            // @ts-expect-error - вызов animateScrollTo из объекта
             this.animateScrollTo(position)
         },
         getScrollTop: () => {

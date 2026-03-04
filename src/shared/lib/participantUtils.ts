@@ -4,7 +4,6 @@ import {
     GroupParticipant,
     Contact,
 } from '../types/contact'
-import { getAvatarUrl } from './getAvatarUrl'
 
 // Функция преобразования API участника в GroupParticipant
 export const apiParticipantToContact = (
@@ -59,18 +58,8 @@ export const contactToGroupParticipant = (
         uid: contact.uid,
         firstName: contact.firstName,
         lastName: contact.lastName,
-        username: contact.username,
-        nickname: contact.nickname,
-        phone: contact.phone,
-        patronymic: contact.patronymic,
-        avatar: contact.avatarWebpUrl,
         avatarUrl: contact.avatarUrl,
-        avatarWebp: contact.avatarWebpUrl,
         avatarWebpUrl: contact.avatarWebpUrl,
-        additionalInformation:
-            contact.additionalInformation,
-        birthday: contact.birthday,
-        chatId: contact.chatId,
         isOnline: contact.isOnline,
         wasOnlineAt: contact.wasOnlineAt,
         isOwner,
@@ -82,5 +71,7 @@ export const contactToGroupParticipant = (
 export const contactsToGroupParticipants = (
     contacts: Contact[],
 ): GroupParticipant[] => {
-    return contacts.map(contactToGroupParticipant)
+    return contacts.map((contact) =>
+        contactToGroupParticipant(contact),
+    )
 }
