@@ -63,8 +63,7 @@ export default function CallModal({
                 'flex',
                 'items-center',
                 'justify-center',
-                'bg-black/40',
-                'backdrop-blur-sm',
+                'bg-transparent',
                 isFullscreen ? 'px-0' : 'px-4',
                 isFullscreen ? 'py-0' : 'py-6',
             )}
@@ -96,6 +95,14 @@ export default function CallModal({
                     'text-white',
                     'shadow-context-shadow',
                 )}
+                style={
+                    isIncoming
+                        ? {
+                              backgroundColor:
+                                  'var(--color-call-modal-incoming-bg, #d6d2f6)',
+                          }
+                        : undefined
+                }
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) =>
                     event.stopPropagation()
