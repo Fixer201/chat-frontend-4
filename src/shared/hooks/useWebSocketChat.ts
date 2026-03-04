@@ -23,10 +23,7 @@ import {
 import {
     updateChat,
     fetchChats,
-    addChat,
 } from '@redux/slices/chatsSlice'
-import { ApiChatItem } from '@shared/types/chat'
-import { transformFromApi } from '@shared/lib/transformChatData'
 
 const MAX_RECONNECT_ATTEMPTS = 3
 
@@ -53,6 +50,15 @@ export function useWebSocketChat() {
     dispatchRef.current = dispatch
 
     // UID текущего пользователя из JWT-токена.
+    //
+    // Нужен для optimistic-сообщений: при отправке файла мы мгновенно
+    // добавляем сообщение в локальный стейт со статусом 'sending'.
+    // Чтобы MessageItem корректно определил isOwn (выравнивание вправо,
+    // цвет пузыря, иконки статуса) — проставляем from_user = текущий UID.
+    //
+    // Вычисляется один раз (lazy init через if-guard) и хранится в ref,
+    // потому что JWT не меняется в рамках сессии, а sendMessage — useCallback
+    // с пустым массивом зависимостей, и ему нужен доступ через ref.
     const currentUserIdRef = useRef<string | null>(null)
     if (!currentUserIdRef.current) {
         const t = Cookies.get('access_token')
@@ -146,6 +152,8 @@ export function useWebSocketChat() {
                         : (messageData.created_at as
                               | number
                               | undefined),
+                // Сервер возвращает файлы в формате ApiFileItem
+                // (file_url, file_type), маппим через normalizeFileItem
                 files: (
                     (messageData.files_list as
                         | Record<string, unknown>[]
@@ -155,6 +163,8 @@ export function useWebSocketChat() {
                         | undefined) ??
                     []
                 ).map((f) =>
+                    // Если уже есть filename — это локальный файл (base64),
+                    // пропускаем нормализацию чтобы не потерять data
                     (f as MessageFile).filename
                         ? (f as MessageFile)
                         : normalizeFileItem(
@@ -230,7 +240,8 @@ export function useWebSocketChat() {
             socket.onmessage = (event: MessageEvent) => {
                 const data = JSON.parse(event.data)
 
-                // Статусные события (онлайн/офлайн пользователей) — пропускаем
+                // Статусные события (онлайн/офлайн пользователей) —
+                // не логируем, чтобы не засорять консоль десятками сообщений в секунду
                 if (data.action === 'new_status_user')
                     return
 
@@ -261,165 +272,21 @@ export function useWebSocketChat() {
                     return
                 }
 
-                // ========== Обработка создания чата (группы/канала) ==========
-                if (data.action === 'create_chat') {
-                    if (
-                        data.status === 'OK' &&
-                        data.object
-                    ) {
-                        const obj = data.object as {
-                            created_by: string
-                            owner_full_name: string
-                            chat_key: string
-                            chat_id: string
-                            name: string
-                            description?: string
-                            chat_type: string
-                            avatar?: {
-                                filename: string
-                                url: string
-                            }
-                            added_users?: Array<{
-                                uid: string
-                                full_name: string
-                            }>
-                        }
-
-                        // Формируем объект, похожий на ApiChatItem, из ответа
-                        const apiChatItem: ApiChatItem = {
-                            id: parseInt(obj.chat_id),
-                            chat: {
-                                uid: obj.created_by,
-                                username: '',
-                                nickname:
-                                    obj.owner_full_name ||
-                                    '',
-                                first_name:
-                                    obj.owner_full_name ||
-                                    '',
-                                last_name: '',
-                                avatar:
-                                    obj.avatar?.url || '',
-                                avatar_url:
-                                    obj.avatar?.url || '',
-                                avatar_webp: '',
-                                avatar_webp_url: '',
-                                is_blocked: false,
-                                is_online: true,
-                                was_online_at: Math.floor(
-                                    Date.now() / 1000,
-                                ),
-                                is_in_contacts: false,
-                            },
-                            is_active: true,
-                            is_favorite: false,
-                            notifications: true,
-                            index:
-                                parseInt(obj.chat_id) ||
-                                Date.now(),
-                            message_count: 0,
-                            file_count: 0,
-                            new_file_count: 0,
-                            new_message_count: 0,
-                            last_message: {
-                                id: 0,
-                                uid: '',
-                                from_user: '',
-                                content: '',
-                                files_summary: {
-                                    types: [],
-                                    count: 0,
-                                },
-                                has_replied_message: false,
-                                has_forwarded_message: false,
-                                new: false,
-                                created_at: Math.floor(
-                                    Date.now() / 1000,
-                                ),
-                                updated_at: Math.floor(
-                                    Date.now() / 1000,
-                                ),
-                            },
-                            last_seen_message: {
-                                id: 0,
-                                uid: '',
-                            },
-                            first_new_message: {
-                                id: 0,
-                                uid: '',
-                            },
-                            name: obj.name,
-                            chat_type: obj.chat_type,
-                            chat_key: obj.chat_key,
-                            description:
-                                obj.description || '',
-                            created_by: obj.created_by,
-                            owner_full_name:
-                                obj.owner_full_name,
-                            participants: (
-                                obj.added_users || []
-                            ).map((u) => ({
-                                uid: u.uid,
-                                full_name: u.full_name,
-                            })),
-                            created_at:
-                                new Date().toISOString(),
-                            updated_at:
-                                new Date().toISOString(),
-                            last_activity_at: Math.floor(
-                                Date.now() / 1000,
-                            ),
-                        }
-
-                        // Добавляем создателя в participants, если его нет
-                        if (
-                            obj.created_by &&
-                            !apiChatItem.participants.some(
-                                (p) =>
-                                    p.uid ===
-                                    obj.created_by,
-                            )
-                        ) {
-                            apiChatItem.participants.push({
-                                uid: obj.created_by,
-                                full_name:
-                                    obj.owner_full_name ||
-                                    '',
-                            })
-                        }
-
-                        // Трансформируем в ChatItem для Redux
-                        const transformedChat =
-                            transformFromApi<ApiChatItem>(
-                                apiChatItem,
-                            )
-                        dispatchRef.current(
-                            addChat(transformedChat),
-                        )
-
-                        console.log(
-                            '[WebSocket] create_chat success',
-                            transformedChat,
-                        )
-                    } else {
-                        setError(
-                            data.error ||
-                                'Failed to create chat',
-                        )
-                    }
-                    return
-                }
-
-                // ========== Обработка обычных сообщений ==========
                 const normalized =
                     normalizeIncomingMessage(data)
                 if (!normalized) return
 
+                // Сервер возвращает request_uid, который мы передали при отправке.
+                // Это единственный надёжный способ связать ответ сервера
+                // с конкретным optimistic-сообщением в локальном стейте.
+                // Без этого мы бы не знали, какую заглушку удалять.
                 const reqUid = data.request_uid as
                     | string
                     | undefined
 
                 setMessages((prev) => {
+                    // Шаг 1: удаляем optimistic-заглушку (uid вида `_sending_<reqUid>`).
+                    // Если сервер не вернул request_uid — пропускаем (нечего удалять).
                     let filtered = prev
                     let optimistic: Message | undefined
                     if (reqUid) {
@@ -432,6 +299,16 @@ export function useWebSocketChat() {
                         )
                     }
 
+                    // Переносим file_size из optimistic → серверное сообщение.
+                    //
+                    // Зачем: API не возвращает размер файла. При создании
+                    // optimistic-сообщения мы вычисляем его из base64 (length × 0.75)
+                    // и сохраняем в file_size. Без переноса — после замены
+                    // optimistic на серверное сообщение размер пропадёт из UI.
+                    //
+                    // Сопоставление по индексу (files[i]) безопасно, потому что
+                    // MessageComposer отправляет файлы в фиксированном порядке,
+                    // а сервер сохраняет его в files_list.
                     if (
                         optimistic?.files?.length &&
                         normalized.files?.length
@@ -449,6 +326,8 @@ export function useWebSocketChat() {
                             )
                     }
 
+                    // Шаг 2: дедупликация — сервер иногда присылает одно
+                    // сообщение дважды (echo + broadcast), пропускаем повторы
                     if (
                         normalized.uid &&
                         filtered.some(
@@ -461,9 +340,21 @@ export function useWebSocketChat() {
                 })
 
                 // Синхронизация списка чатов в Redux при получении нового сообщения.
+                //
+                // Три сценария:
+                // 1. Временный чат → реальный: пользователь открыл контакт (создался
+                //    временный чат с chatKey "chat_key_0"), отправил/получил сообщение —
+                //    сервер вернул реальный chatKey. Обновляем чат в Redux.
+                // 2. Совершенно новый чат: сообщение от незнакомого пользователя,
+                //    чата нет в списке — перезагружаем список с сервера.
+                // 3. Существующий чат: сообщение уже привязано к известному chatKey —
+                //    ничего делать не нужно, сообщение уже добавлено в messages.
                 if (normalized.chatKey) {
                     const currentChats = chatsRef.current
 
+                    // Ищем временный чат, соответствующий собеседнику.
+                    // toUserId — для исходящих (получатель = контакт),
+                    // from_user — для входящих (отправитель = контакт).
                     const tempChat = currentChats.find(
                         (chat) =>
                             chat.isTemporary &&
@@ -478,6 +369,11 @@ export function useWebSocketChat() {
                         tempChat.chatKey !==
                             normalized.chatKey
                     ) {
+                        // Сценарий 1: заменяем временный chatKey на реальный от сервера.
+                        // Сначала обновляем chatKey для мгновенного отображения,
+                        // затем перезагружаем список чатов с сервера, чтобы
+                        // получить актуальные метаданные (имя, аватар),
+                        // которые во временном чате были моковыми.
                         dispatchRef.current(
                             updateChat({
                                 ...tempChat,
@@ -494,6 +390,9 @@ export function useWebSocketChat() {
                                 normalized.chatKey,
                         )
                     ) {
+                        // Сценарий 2: чат отсутствует в списке —
+                        // загружаем актуальный список чатов с сервера,
+                        // чтобы новый чат появился в боковой панели
                         dispatchRef.current(fetchChats({}))
                     }
                 }
@@ -522,12 +421,24 @@ export function useWebSocketChat() {
             repliedMessages,
             forwardedMessages,
         }: Message) => {
+            // Уникальный идентификатор запроса — связывает optimistic-сообщение
+            // в UI с ответом сервера для корректной замены заглушки на реальные данные
             const requestUid = crypto.randomUUID()
 
             const messageObj = {
                 action: 'create_text_message',
                 request_uid: requestUid,
                 object: {
+                    // Бэкенд принимает ровно один идентификатор адресата:
+                    // — chat_key: для существующих реальных чатов
+                    // — to_user_uid: для новых чатов (первое сообщение контакту)
+                    // Одновременная отправка обоих полей вызывает ошибку.
+                    //
+                    // Логика выбора:
+                    // 1. Если chatKey принадлежит реальному (не временному) чату → chat_key
+                    // 2. Если передан toUserId (обычная отправка) → to_user_uid
+                    // 3. Иначе (пересылка во временный чат) → ищем UID контакта
+                    //    в Redux по chatKey и используем как to_user_uid
                     ...(() => {
                         const realChat =
                             chatsRef.current.find(
@@ -541,6 +452,7 @@ export function useWebSocketChat() {
                             return {
                                 to_user_uid: toUserId,
                             }
+                        // Пересылка во временный чат: находим UID собеседника
                         const tempChat =
                             chatsRef.current.find(
                                 (c) =>
@@ -557,6 +469,8 @@ export function useWebSocketChat() {
                     content: content,
                     status: status,
                     files: files,
+                    // Ответы и пересылка: бэкенд ожидает массив UID
+                    // оригинальных сообщений — контент подтягивается на сервере
                     replied_messages: repliedMessages
                         ?.map((m) => m.uid)
                         .filter(Boolean),
@@ -576,6 +490,10 @@ export function useWebSocketChat() {
                 )
             }
 
+            // Optimistic UI: сообщение с файлами мгновенно появляется в чате
+            // со статусом «sending» (спиннер + иконка часов). Когда сервер
+            // подтвердит доставку (вернёт request_uid), заглушка будет заменена
+            // реальным сообщением в обработчике onmessage.
             if (files && files.length > 0) {
                 setMessages((prev) => [
                     ...prev,
@@ -591,6 +509,10 @@ export function useWebSocketChat() {
                         created_at: Math.floor(
                             Date.now() / 1000,
                         ),
+                        // Предвычисляем file_size из base64, пока data ещё доступна.
+                        // После подтверждения сервером optimistic-сообщение заменяется
+                        // на серверное (без base64), и размер был бы потерян.
+                        // file_size переносится в обработчике onmessage (см. выше).
                         files: files.map((f) => ({
                             ...f,
                             file_size:
@@ -656,7 +578,13 @@ export function useWebSocketChat() {
         [],
     )
 
-    // Отмена отправки файла
+    // Отмена отправки файла: удаляет optimistic-сообщение из UI.
+    //
+    // Ограничение: сообщение уже ушло на сервер через WebSocket —
+    // «отмена» убирает только локальную заглушку. Серверное сообщение
+    // всё равно появится, когда придёт WS-ответ (пользователь увидит
+    // «доставленное» сообщение). Полноценная отмена требует серверной
+    // поддержки (action: cancel_message), которой пока нет.
     const cancelSending = useCallback(
         (requestUid: string) => {
             setMessages((prev) =>
@@ -706,65 +634,12 @@ export function useWebSocketChat() {
         [],
     )
 
-    // ========== Функция создания чата (группы/канала) ==========
-    const createChat = useCallback(
-        ({
-            name,
-            description,
-            avatar,
-            chatType,
-            uidUsersList,
-        }: {
-            name: string
-            description?: string
-            avatar?: {
-                filename: string
-                data: string
-            } | null
-            chatType:
-                | 'public-group'
-                | 'private-group'
-                | 'public-channel'
-                | 'private-channel'
-            uidUsersList: string[]
-        }) => {
-            const requestUid = crypto.randomUUID()
-            const messageObj = {
-                action: 'create_chat',
-                request_uid: requestUid,
-                object: {
-                    name,
-                    description: description || '',
-                    chat_type: chatType,
-                    uid_users_list: uidUsersList,
-                    ...(avatar && { avatar }),
-                },
-            }
-
-            if (
-                wsRef.current?.readyState === WebSocket.OPEN
-            ) {
-                wsRef.current.send(
-                    JSON.stringify(messageObj),
-                )
-                console.log(
-                    '[WebSocket] createChat sent',
-                    messageObj,
-                )
-            } else {
-                setError('WebSocket is not connected')
-            }
-        },
-        [],
-    )
-
     return useMemo(
         () => ({
             sendMessage,
             updateMessage,
             deleteMessage,
             cancelSending,
-            createChat,
             messages,
             status,
             error,
@@ -774,7 +649,6 @@ export function useWebSocketChat() {
             updateMessage,
             deleteMessage,
             cancelSending,
-            createChat,
             messages,
             status,
             error,
