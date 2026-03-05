@@ -181,8 +181,8 @@ export default function ChatInfoSidebar({
         return (
             <div
                 className={`
-      flex h-full items-center justify-center p-4 text-text-gray
-    `}
+                  flex h-full items-center justify-center p-4 text-text-gray
+                `}
             >
                 Загрузка...
             </div>
@@ -191,8 +191,8 @@ export default function ChatInfoSidebar({
         return (
             <div
                 className={`
-      flex h-full items-center justify-center p-4 text-text-gray
-    `}
+                  flex h-full items-center justify-center p-4 text-text-gray
+                `}
             >
                 Чат не найден
             </div>
@@ -265,8 +265,8 @@ export default function ChatInfoSidebar({
     return (
         <div
             className={`
-      flex h-full items-center justify-center p-4 text-text-gray
-    `}
+              flex h-full items-center justify-center p-4 text-text-gray
+            `}
         >
             Неизвестный тип чата
         </div>
