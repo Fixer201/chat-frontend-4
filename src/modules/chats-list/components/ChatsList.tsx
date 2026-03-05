@@ -59,8 +59,35 @@ function ChatListItemWithContactName({
         ? contactFirstName || baseName
         : baseName
 
+type ChatListItemBaseProps = Omit<
+    React.ComponentProps<typeof ChatListItem>,
+    'name'
+>
+
+// Для временных чатов берём имя из contact API (как в шапке),
+// чтобы никнейм не перебивал реальное имя в списке.
+function ChatListItemWithContactName({
+    baseName,
+    contactUid,
+    isTempChat,
+    ...props
+}: ChatListItemBaseProps & {
+    baseName: string
+    contactUid: string
+    isTempChat: boolean
+}) {
+    const { data: contactData } = useContactData(
+        isTempChat ? contactUid : '',
+    )
+    const contactFirstName =
+        contactData?.firstName?.trim() || ''
+    const displayName = isTempChat
+        ? contactFirstName || baseName
+        : baseName
+
     return <ChatListItem {...props} name={displayName} />
 }
+
 export default React.memo(function ChatsList({
     onCreateGroup,
     onCreateChannel,

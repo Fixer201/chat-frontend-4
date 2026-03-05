@@ -1014,11 +1014,20 @@ export const createChat = createAsyncThunk<
         try {
             const state = getState()
             // Берём контакт из store, чтобы для локального чата сохранить имя/аватар
-            const contact = state.contacts.list.find(
-                (item) =>
-                    item.userUid === toUserId ||
-                    item.uid === toUserId,
-            )
+            const contactFromContacts =
+                state.contacts.list.find(
+                    (item) =>
+                        item.userUid === toUserId ||
+                        item.uid === toUserId,
+                )
+            const contactFromTemp =
+                state.contactsTemp.list.find(
+                    (item) =>
+                        item.userUid === toUserId ||
+                        item.uid === toUserId,
+                )
+            const contact =
+                contactFromContacts || contactFromTemp
             const contactDisplayName =
                 `${contact?.firstName || ''} ${contact?.lastName || ''}`.trim() ||
                 contact?.nickname ||
