@@ -27,13 +27,40 @@ import { useAddContact } from '@shared/hooks/useAddContact'
 import { useAppDispatch } from '@redux/store' // или useDispatch, в зависимости от проекта
 import { addToContacts } from '@redux/slices/chatsSlice'
 import { Contact } from '@shared/types/contact'
+import { useContactData } from '@shared/hooks/useContactData'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
     onCreateChannel?: () => void
     onOpenInfoPanel?: (chatId: number) => void
 }
+type ChatListItemBaseProps = Omit<
+    React.ComponentProps<typeof ChatListItem>,
+    'name'
+>
+// Для временных чатов берём имя из contact API (как в шапке),
+// чтобы никнейм не перебивал реальное имя в списке.
+function ChatListItemWithContactName({
+    baseName,
+    contactUid,
+    isTempChat,
+    ...props
+}: ChatListItemBaseProps & {
+    baseName: string
+    contactUid: string
+    isTempChat: boolean
+}) {
+    const { data: contactData } = useContactData(
+        isTempChat ? contactUid : '',
+    )
+    const contactFirstName =
+        contactData?.firstName?.trim() || ''
+    const displayName = isTempChat
+        ? contactFirstName || baseName
+        : baseName
 
+    return <ChatListItem {...props} name={displayName} />
+}
 export default React.memo(function ChatsList({
     onCreateGroup,
     onCreateChannel,
@@ -334,7 +361,7 @@ export default React.memo(function ChatsList({
                         <CustomScrollbar>
                             <div className="flex flex-col">
                                 {sortedChats?.map(
-                                    (chat, index) => {
+                                    (chat) => {
                                         const contactMatch =
                                             chat.chatType ===
                                             'chat'
@@ -414,31 +441,67 @@ export default React.memo(function ChatsList({
                                                 chat.name ||
                                                 'Без названия'
                                         } else {
-                                            const contactName =
-                                                contactMatch
-                                                    ? `${contactMatch.firstName || ''} ${contactMatch.lastName || ''}`.trim() ||
-                                                      contactMatch.nickname ||
-                                                      contactMatch.phone ||
-                                                      chat
-                                                          .chat
-                                                          .nickname ||
-                                                      chat
-                                                          .chat
-                                                          .username
-                                                    : ''
-                                            const fallbackChatName =
-                                                `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
-                                                chat.chat
-                                                    .nickname ||
-                                                chat.chat
-                                                    .username
-                                            displayName =
-                                                contactName ||
-                                                fallbackChatName ||
-                                                chat.name ||
-                                                'Неизвестный чат'
+                                            const isTempChat =
+                                                chat.isTemporary ||
+                                                chat.tempContactUid ||
+                                                chat.chatKey ===
+                                                    'chat_key_0'
+                                            if (
+                                                isTempChat
+                                            ) {
+                                                const contactFirstName =
+                                                    contactMatch?.firstName?.trim() ||
+                                                    ''
+                                                const chatFirstName =
+                                                    chat.chat.firstName?.trim() ||
+                                                    ''
+                                                const normalizedNickname =
+                                                    contactMatch?.nickname?.trim()
+                                                const candidateFirstName =
+                                                    contactFirstName ||
+                                                    chatFirstName
+                                                const isNicknameValue =
+                                                    normalizedNickname &&
+                                                    candidateFirstName &&
+                                                    candidateFirstName.toLowerCase() ===
+                                                        normalizedNickname.toLowerCase()
+                                                const safeFirstName =
+                                                    candidateFirstName &&
+                                                    !isNicknameValue
+                                                        ? candidateFirstName
+                                                        : ''
+                                                displayName =
+                                                    safeFirstName ||
+                                                    contactMatch?.phone ||
+                                                    'Новый чат'
+                                            } else {
+                                                const contactName =
+                                                    contactMatch
+                                                        ? `${contactMatch.firstName || ''} ${contactMatch.lastName || ''}`.trim() ||
+                                                          contactMatch.nickname ||
+                                                          contactMatch.phone ||
+                                                          chat
+                                                              .chat
+                                                              .nickname ||
+                                                          chat
+                                                              .chat
+                                                              .username
+                                                        : ''
+                                                const fallbackChatName =
+                                                    `${chat.chat.firstName || ''} ${chat.chat.lastName || ''}`.trim() ||
+                                                    chat
+                                                        .chat
+                                                        .nickname ||
+                                                    chat
+                                                        .chat
+                                                        .username
+                                                displayName =
+                                                    contactName ||
+                                                    fallbackChatName ||
+                                                    chat.name ||
+                                                    'Неизвестный чат'
+                                            }
                                         }
-
                                         const contactLastSeenMs =
                                             contactMatch?.wasOnlineAt
                                                 ? typeof contactMatch.wasOnlineAt ===
@@ -517,15 +580,28 @@ export default React.memo(function ChatsList({
                                         }
 
                                         return (
-                                            <ChatListItem
+                                            <ChatListItemWithContactName
                                                 key={
                                                     chat.id
                                                 }
                                                 src={
                                                     avatarSrc
                                                 }
-                                                name={
+                                                baseName={
                                                     displayName
+                                                }
+                                                contactUid={
+                                                    chat
+                                                        .chat
+                                                        .uid
+                                                }
+                                                isTempChat={
+                                                    !!(
+                                                        chat.isTemporary ||
+                                                        chat.tempContactUid ||
+                                                        chat.chatKey ===
+                                                            'chat_key_0'
+                                                    )
                                                 }
                                                 messagePreview={
                                                     messagePreview

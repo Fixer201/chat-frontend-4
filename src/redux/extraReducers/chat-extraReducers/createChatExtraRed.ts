@@ -55,10 +55,22 @@ const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 const persistLocalChats = (state: ChatsState) => {
     if (typeof window === 'undefined') return
     try {
+        // Не сохраняем "chat_key_0" — это временные чаты без сообщений.
         const localChats = state.items
-            .filter(
-                (chat) => chat.id > LOCAL_CHAT_ID_THRESHOLD,
-            )
+            .filter((chat) => {
+                const chatKey =
+                    (
+                        chat as {
+                            chatKey?: string
+                            chat_key?: string
+                        }
+                    ).chatKey ||
+                    (chat as { chat_key?: string }).chat_key
+                return (
+                    chat.id > LOCAL_CHAT_ID_THRESHOLD &&
+                    chatKey !== 'chat_key_0'
+                )
+            })
             .map((chat) => ({
                 ...chat,
                 settings: state.chatSettings[chat.id],
