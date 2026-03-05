@@ -35,6 +35,7 @@ export function buildLastMessagePreview(
         message.updated_at ||
         Math.floor(Date.now() / 1000)
 
+    // lastMessage может отсутствовать у временного чата — защищаемся от null.
     const lastMessage = {
         ...(chat.lastMessage || {}),
         uid: message.uid || chat.lastMessage?.uid,

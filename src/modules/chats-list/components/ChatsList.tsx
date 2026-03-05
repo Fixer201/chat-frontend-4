@@ -36,6 +36,8 @@ type ChatListItemBaseProps = Omit<
     'name'
 >
 
+// Для временных чатов берём имя из contact API (как в шапке),
+// чтобы никнейм не перебивал реальное имя в списке.
 function ChatListItemWithContactName({
     baseName,
     contactUid,

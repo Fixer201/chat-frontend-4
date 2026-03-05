@@ -86,6 +86,7 @@ export default function ChatsPage() {
                     const parsedChats =
                         JSON.parse(storedChats)
                     if (Array.isArray(parsedChats)) {
+                        // Убираем временные чаты (chat_key_0), чтобы не восстанавливать их после reload.
                         const cleanedChats =
                             parsedChats.filter((chat) => {
                                 const chatKey =
@@ -138,6 +139,7 @@ export default function ChatsPage() {
         )
         if (existingChat) {
             selectChat(existingChat.id)
+            // Убираем contactId из URL, чтобы reload не пересоздавал временный чат.
             router.replace('/chats')
             return
         }
@@ -145,6 +147,7 @@ export default function ChatsPage() {
         createChat(contactId)
             .then((newChat) => {
                 selectChat(newChat.chat.id)
+                // Сразу чистим URL после создания.
                 router.replace('/chats')
             })
             .catch((error) => {

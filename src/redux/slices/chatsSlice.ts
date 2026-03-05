@@ -62,6 +62,7 @@ const chatsSlice = createSlice({
                         }
                     ).chatKey ||
                     (chat as { chat_key?: string }).chat_key
+                // Пропускаем временные чаты без сообщений (chat_key_0).
                 if (chatKey === 'chat_key_0') {
                     return
                 }
