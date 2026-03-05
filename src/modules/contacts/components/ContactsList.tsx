@@ -8,6 +8,7 @@ import {
     removeContacts,
     setContacts,
 } from '@redux/slices/contactsSlice'
+import { setContacts as setContactsTemp } from '@redux/slices/contactsSliceTemp'
 import { setSelectedContact } from '@redux/slices/selectedContactSlice'
 import { RootState } from '@redux/store'
 import { useApiFetcher } from '@shared/hooks/useApiFetcher'
@@ -52,6 +53,9 @@ export default memo(function ContactsList() {
     )
     const contactsList = useSelector(
         (state: RootState) => state.contacts.list,
+    )
+    const contactsTempList = useSelector(
+        (state: RootState) => state.contactsTemp.list,
     )
     const isBlacklisted = (contact: Contact) =>
         blacklistUids.has(contact.userUid ?? contact.uid) ||
@@ -467,6 +471,24 @@ export default memo(function ContactsList() {
 
     const handleOpenChat = (contact: Contact) => {
         const contactId = contact.userUid ?? contact.uid
+        const isInContacts = contactsList.some(
+            (item) =>
+                item.userUid === contactId ||
+                item.uid === contactId,
+        )
+        const isInTempContacts = contactsTempList.some(
+            (item) =>
+                item.userUid === contactId ||
+                item.uid === contactId,
+        )
+        if (!isInContacts && !isInTempContacts) {
+            dispatch(
+                setContactsTemp([
+                    ...contactsTempList,
+                    contact,
+                ]),
+            )
+        }
         dispatch(setSelectedContact(contact.uid))
         router.push(
             `/chats?contactId=${encodeURIComponent(contactId)}`,

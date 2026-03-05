@@ -54,6 +54,18 @@ const chatsSlice = createSlice({
             >,
         ) => {
             action.payload.forEach((chat) => {
+                const chatKey =
+                    (
+                        chat as {
+                            chatKey?: string
+                            chat_key?: string
+                        }
+                    ).chatKey ||
+                    (chat as { chat_key?: string }).chat_key
+                // Пропускаем временные чаты без сообщений (chat_key_0).
+                if (chatKey === 'chat_key_0') {
+                    return
+                }
                 const existing = state.items.find(
                     (item) => item.id === chat.id,
                 )

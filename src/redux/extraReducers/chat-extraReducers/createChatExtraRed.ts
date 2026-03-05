@@ -55,10 +55,22 @@ const LOCAL_CHAT_ID_THRESHOLD = 1000000000000
 const persistLocalChats = (state: ChatsState) => {
     if (typeof window === 'undefined') return
     try {
+        // Не сохраняем "chat_key_0" — это временные чаты без сообщений.
         const localChats = state.items
-            .filter(
-                (chat) => chat.id > LOCAL_CHAT_ID_THRESHOLD,
-            )
+            .filter((chat) => {
+                const chatKey =
+                    (
+                        chat as {
+                            chatKey?: string
+                            chat_key?: string
+                        }
+                    ).chatKey ||
+                    (chat as { chat_key?: string }).chat_key
+                return (
+                    chat.id > LOCAL_CHAT_ID_THRESHOLD &&
+                    chatKey !== 'chat_key_0'
+                )
+            })
             .map((chat) => ({
                 ...chat,
                 settings: state.chatSettings[chat.id],
@@ -1002,11 +1014,20 @@ export const createChat = createAsyncThunk<
         try {
             const state = getState()
             // Берём контакт из store, чтобы для локального чата сохранить имя/аватар
-            const contact = state.contacts.list.find(
-                (item) =>
-                    item.userUid === toUserId ||
-                    item.uid === toUserId,
-            )
+            const contactFromContacts =
+                state.contacts.list.find(
+                    (item) =>
+                        item.userUid === toUserId ||
+                        item.uid === toUserId,
+                )
+            const contactFromTemp =
+                state.contactsTemp.list.find(
+                    (item) =>
+                        item.userUid === toUserId ||
+                        item.uid === toUserId,
+                )
+            const contact =
+                contactFromContacts || contactFromTemp
             const contactDisplayName =
                 `${contact?.firstName || ''} ${contact?.lastName || ''}`.trim() ||
                 contact?.nickname ||
