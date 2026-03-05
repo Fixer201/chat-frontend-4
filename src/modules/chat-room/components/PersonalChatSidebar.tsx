@@ -345,7 +345,7 @@ export default function PersonalChatSidebar({
                             />
                         }
                         triggerClassName="flex items-center justify-center rounded-full p-0 text-text-black hover:bg-accent-violet-ultra-light"
-                        menuWidth={220}
+                        menuWidth={260}
                         placement="bottom-right"
                         ariaLabel="Действия с чатом"
                         items={[
@@ -380,6 +380,7 @@ export default function PersonalChatSidebar({
                             },
                             {
                                 label: 'Заблокировать',
+                                isDanger: true,
                                 icon: (
                                     <Image
                                         src="/icons/block.svg"
@@ -390,7 +391,6 @@ export default function PersonalChatSidebar({
                                 ),
                                 onClick: () =>
                                     setBlockModalOpen(true),
-                                className: 'text-text-red',
                             },
                         ]}
                     />

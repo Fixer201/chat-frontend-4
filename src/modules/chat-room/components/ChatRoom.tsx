@@ -189,7 +189,7 @@ export default function ChatRoom({
             {/* Левая колонка: шапка + сообщения + поле ввода */}
             <div
                 className={cn(
-                    `flex min-w-0 flex-1 flex-col rounded-md border-app-divider bg-gray-main`,
+                    `flex min-w-0 flex-1 flex-col`,
                 )}
             >
                 <ChatHeader
@@ -235,7 +235,7 @@ export default function ChatRoom({
                 <div
                     ref={scrollContainerRef}
                     role="presentation"
-                    className="flex-1 overflow-y-auto"
+                    className={`flex-1 overflow-y-auto`}
                     onClick={() => {
                         if (isSearchOpen) {
                             handleSearchClose()

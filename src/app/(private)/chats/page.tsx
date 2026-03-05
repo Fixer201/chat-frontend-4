@@ -241,7 +241,7 @@ export default function ChatsPage() {
                     className={cn(
                         panelStyles,
                         `
-                          hidden flex-shrink-0
+                          hidden shrink-0
                           md:block md:w-80
                           lg:w-96
                         `,
