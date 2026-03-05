@@ -38,8 +38,13 @@ export function useChatSidebar() {
     )
 
     // TODO: подключить реальное переключение уведомлений через API
+    const [notificationsEnabled, setNotificationsEnabled] =
+        useState(false)
+
     const handleNotificationsChange = useCallback(
         (enabled: boolean) => {
+            setNotificationsEnabled(enabled)
+            // здесь можно отправить запрос на сервер
             console.log('Notifications enabled:', enabled)
         },
         [],
@@ -51,6 +56,7 @@ export function useChatSidebar() {
         handleOpenSidebar,
         handleCloseSidebar,
         handleClearChat,
+        notificationsEnabled,
         handleNotificationsChange,
     }
 }

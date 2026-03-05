@@ -28,7 +28,9 @@ import ClearChatModal from '@modules/groupInfo/modals/ClearChatModal'
 import { formatBirthday } from '@shared/lib/formatDateBirthday'
 import { useSelector } from 'react-redux'
 import { RootState } from '@redux/store'
-import { useAddContact } from '@shared/hooks/useAddContact' // Добавлен импорт
+import { useAddContact } from '@shared/hooks/useAddContact'
+import { useApiFetcher } from '@shared/hooks/useApiFetcher'
+import BlockModal from '@modules/chats-list/components/BlockModal'
 
 // Типы для вкладок
 type TabId = 'media' | 'files' | 'voice' | 'links'
@@ -155,6 +157,30 @@ export default function PersonalChatSidebar({
         contact.nickname,
         contact.phone,
     ])
+
+    //состояние для блокировки контакта
+    const [blockModalOpen, setBlockModalOpen] =
+        useState(false)
+
+    // функция подтверждения блокировки
+    const fetchData = useApiFetcher()
+
+    const handleBlockConfirm = useCallback(async () => {
+        try {
+            // эндпоинт может отличаться, уточните в API
+            await fetchData(
+                `/api/v1/contact/blacklist/add/${contact.uid}/`,
+                {
+                    method: 'POST',
+                },
+            )
+            setBlockModalOpen(false)
+            // после блокировки можно закрыть сайдбар или показать уведомление
+            onClose() // например, закрыть сайдбар
+        } catch (error) {
+            console.error('Ошибка блокировки:', error)
+        }
+    }, [contact.uid, fetchData, onClose])
 
     // Очистка чата с отложенным выполнением и отменой
     const handleClearChatConfirm = useCallback(
@@ -324,6 +350,20 @@ export default function PersonalChatSidebar({
                         ariaLabel="Действия с чатом"
                         items={[
                             {
+                                label: 'Поделиться профилем',
+                                icon: (
+                                    <Image
+                                        src="/icons/share.svg"
+                                        alt=""
+                                        width={24}
+                                        height={24}
+                                    />
+                                ),
+                                //тут нужна логика пересылки профиля
+                                onClick: () => {},
+                            },
+
+                            {
                                 label: 'Очистить чат',
                                 icon: (
                                     <Image
@@ -337,6 +377,20 @@ export default function PersonalChatSidebar({
                                     setClearChatModalOpen(
                                         true,
                                     ),
+                            },
+                            {
+                                label: 'Заблокировать',
+                                icon: (
+                                    <Image
+                                        src="/icons/block.svg"
+                                        alt=""
+                                        width={24}
+                                        height={24}
+                                    />
+                                ),
+                                onClick: () =>
+                                    setBlockModalOpen(true),
+                                className: 'text-text-red',
                             },
                         ]}
                     />
@@ -736,6 +790,13 @@ export default function PersonalChatSidebar({
                 onClose={() => setClearChatModalOpen(false)}
                 onConfirm={handleClearChatConfirm}
                 groupName={displayName}
+            />
+
+            <BlockModal
+                open={blockModalOpen}
+                onClose={() => setBlockModalOpen(false)}
+                onConfirm={handleBlockConfirm}
+                contactName={displayName}
             />
 
             {/* Toast с отменой очистки */}
