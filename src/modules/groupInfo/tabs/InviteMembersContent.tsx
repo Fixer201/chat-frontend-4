@@ -39,10 +39,10 @@ export default function InviteMembersContent(
 
     // Получаем данные из Redux
     const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContactTemp.uid, // Выбранный контакт
+        (state: RootState) => state.SelectedContact.uid, // Выбранный контакт
     )
     const allContactsList = useSelector(
-        (state: RootState) => state.contactsTemp.list, // Все контакты пользователя
+        (state: RootState) => state.contacts.list, // Все контакты пользователя
     )
 
     // Фильтруем контакты - убираем тех, кто уже в группе
