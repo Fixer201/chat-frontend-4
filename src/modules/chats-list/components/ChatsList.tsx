@@ -23,6 +23,10 @@ import { cn } from '@shared/lib/utils'
 import { Spinner } from '@shared/ui/Spinner'
 import { toast } from 'react-hot-toast'
 import getAvatarSrc from '@shared/lib/getAvatarSrc'
+import { useAddContact } from '@shared/hooks/useAddContact'
+import { useAppDispatch } from '@redux/store' // или useDispatch, в зависимости от проекта
+import { addToContacts } from '@redux/slices/chatsSlice'
+import { Contact } from '@shared/types/contact'
 
 interface ChatsListProps {
     onCreateGroup?: () => void
@@ -68,6 +72,8 @@ export default React.memo(function ChatsList({
         selectChat,
     } = useChats()
 
+    const dispatch = useAppDispatch()
+    const { addContact } = useAddContact()
     // Навигация к странице контактов
     const handleStartChat = useCallback(() => {
         router.push('/contacts')
@@ -164,17 +170,55 @@ export default React.memo(function ChatsList({
 
     // Добавление контакта в список контактов
     const handleAddToContacts = useCallback(
-        (
+        async (
             chatId: number,
             firstName: string,
             lastName: string,
         ) => {
-            const fullName = `${firstName} ${lastName}`
-            setAddedContactName(fullName)
-            addToContacts(chatId)
-            setSuccessToastOpen(true)
+            // Находим чат по ID
+            const chat = chats.find((c) => c.id === chatId)
+            if (!chat || chat.chatType !== 'chat') return // только для личных чатов
+
+            // Формируем объект Contact из данных чата
+            const contactToAdd: Contact = {
+                uid: chat.chat.uid,
+                userUid: chat.chat.uid,
+                firstName: chat.chat.firstName || firstName,
+                lastName: chat.chat.lastName || lastName,
+                nickname: chat.chat.nickname || '',
+                phone: chat.chat.username || '',
+                username: '',
+                patronymic: '',
+                avatar: chat.chat.avatar,
+                avatarUrl: chat.chat.avatarUrl,
+                avatarWebp: chat.chat.avatarWebp,
+                avatarWebpUrl: chat.chat.avatarWebpUrl,
+                additionalInformation: '',
+                birthday: 0,
+                chatId: 0,
+                isOnline: chat.chat.isOnline,
+                wasOnlineAt: chat.chat.wasOnlineAt,
+            }
+
+            try {
+                // Вызов реального API через хук
+                await addContact(contactToAdd)
+
+                // После успеха обновляем флаг isInContacts у чата
+                addToContacts(chatId) // функция из useChats (диспатчит экшен)
+
+                // Показываем кастомный тост
+                const fullName =
+                    `${chat.chat.firstName || firstName} ${chat.chat.lastName || lastName}`.trim() ||
+                    'Контакт'
+                setAddedContactName(fullName)
+                setSuccessToastOpen(true)
+            } catch (error) {
+                // Ошибка уже обработана в useAddContact (показан toast.error)
+                // Дополнительных действий не требуется
+            }
         },
-        [addToContacts],
+        [chats, addContact, addToContacts],
     )
 
     // Закрытие тоста об успешном добавлении

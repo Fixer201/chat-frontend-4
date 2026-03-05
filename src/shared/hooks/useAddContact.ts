@@ -140,7 +140,7 @@ export function useAddContact() {
                 }
 
                 dispatch(addContacts(newContact))
-                toast.success('Контакт добавлен')
+                //toast.success('Контакт добавлен')
             } catch (error: unknown) {
                 console.error(
                     'Ошибка при добавлении контакта:',
@@ -157,7 +157,7 @@ export function useAddContact() {
                             'Этот контакт уже существует',
                         )
                     ) {
-                        toast.success('Контакт добавлен')
+                        //toast.success('Контакт добавлен')
                         return
                     }
 
