@@ -36,18 +36,18 @@ export function buildLastMessagePreview(
         Math.floor(Date.now() / 1000)
 
     const lastMessage = {
-        ...chat.lastMessage,
-        uid: message.uid || chat.lastMessage.uid,
+        ...(chat.lastMessage || {}),
+        uid: message.uid || chat.lastMessage?.uid,
         fromUser:
             message.from_user?.toString() ||
-            chat.lastMessage.fromUser,
+            chat.lastMessage?.fromUser,
         content: message.content || '',
         filesSummary: {
             types:
-                chat.lastMessage.filesSummary?.types || [],
+                chat.lastMessage?.filesSummary?.types || [],
             count:
                 message.files?.length ||
-                chat.lastMessage.filesSummary?.count ||
+                chat.lastMessage?.filesSummary?.count ||
                 0,
         },
         hasRepliedMessage:
@@ -78,9 +78,20 @@ export function persistLocalChatsSnapshot(
 
     try {
         const localChats = items
-            .filter(
-                (chat) => chat.id > LOCAL_CHAT_ID_THRESHOLD,
-            )
+            .filter((chat) => {
+                const chatKey =
+                    (
+                        chat as {
+                            chatKey?: string
+                            chat_key?: string
+                        }
+                    ).chatKey ||
+                    (chat as { chat_key?: string }).chat_key
+                return (
+                    chat.id > LOCAL_CHAT_ID_THRESHOLD &&
+                    chatKey !== 'chat_key_0'
+                )
+            })
             .map((chat) => ({
                 ...chat,
                 settings: chatSettings[chat.id],

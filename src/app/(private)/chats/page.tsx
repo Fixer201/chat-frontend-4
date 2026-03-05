@@ -6,7 +6,7 @@ import {
     useState,
     useCallback,
 } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ChatRoom from '@modules/chat-room/components/ChatRoom'
 import EmptyChatState from '@modules/chat-room/components/EmptyChatState'
 import ChatsListWrapper from '@modules/chats-list/components/ChatsListWrapper'
@@ -35,6 +35,7 @@ export default function ChatsPage() {
         hydrateChats,
     } = useChats()
     const searchParams = useSearchParams()
+    const router = useRouter()
     const processedContactIdRef = useRef<string | null>(
         null,
     )
@@ -85,7 +86,27 @@ export default function ChatsPage() {
                     const parsedChats =
                         JSON.parse(storedChats)
                     if (Array.isArray(parsedChats)) {
-                        hydrateChats(parsedChats)
+                        const cleanedChats =
+                            parsedChats.filter((chat) => {
+                                const chatKey =
+                                    chat?.chatKey ||
+                                    chat?.chat_key
+                                return (
+                                    chatKey !== 'chat_key_0'
+                                )
+                            })
+                        if (
+                            cleanedChats.length !==
+                            parsedChats.length
+                        ) {
+                            window.localStorage.setItem(
+                                'localChats',
+                                JSON.stringify(
+                                    cleanedChats,
+                                ),
+                            )
+                        }
+                        hydrateChats(cleanedChats)
                     }
                 } catch (error) {
                     console.warn(
@@ -117,12 +138,14 @@ export default function ChatsPage() {
         )
         if (existingChat) {
             selectChat(existingChat.id)
+            router.replace('/chats')
             return
         }
 
         createChat(contactId)
             .then((newChat) => {
                 selectChat(newChat.chat.id)
+                router.replace('/chats')
             })
             .catch((error) => {
                 console.error(
@@ -136,6 +159,7 @@ export default function ChatsPage() {
         loading,
         selectChat,
         createChat,
+        router,
     ])
 
     /** Текущий выбранный чат (undefined - ни один чат не открыт) */
