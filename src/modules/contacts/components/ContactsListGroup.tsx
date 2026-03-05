@@ -41,7 +41,7 @@ export default memo(function ContactsListGroup({
 
     const dispatch = useDispatch()
     const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContactTemp.uid,
+        (state: RootState) => state.SelectedContact.uid,
     )
 
     // Получаем профиль текущего пользователя

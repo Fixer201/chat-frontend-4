@@ -172,7 +172,7 @@ export default function ParticipantsContent({
     const handleInvite = async (
         selectedContacts: Contact[],
     ) => {
-        console.log('Invite process started...')
+        console.log('[Invite] Starting invite process...')
         setIsInviting(true)
         setInviteError(null)
 
@@ -189,38 +189,29 @@ export default function ParticipantsContent({
                         chat_key: chatKey,
                         uid_users_list: uids,
                     })
-                if (result.success && result.result) {
-                    console.log(
-                        'WebSocket success, members added',
-                    )
-                } else {
-                    console.warn(
-                        'WebSocket failed:',
-                        result.error,
-                    )
-                }
+                console.log(
+                    '[Invite] WebSocket result:',
+                    result,
+                )
             } catch (error) {
-                console.error('WebSocket error:', error)
+                console.error(
+                    '[Invite] WebSocket error:',
+                    error,
+                )
             }
         }
 
-        // После WebSocket (или если его нет) обновляем список с сервера
-        try {
-            // Можно добавить небольшую задержку, чтобы сервер успел обработать изменения
-            await new Promise((resolve) =>
-                setTimeout(resolve, 500),
-            )
-            await loadParticipantsFromApi() // перезагружаем актуальные данные
-            setCurrentView('participants')
-        } catch (error) {
-            setInviteError(
-                error instanceof Error
-                    ? error.message
-                    : 'Ошибка при приглашении',
-            )
-        } finally {
-            setIsInviting(false)
-        }
+        // Небольшая задержка для обработки на сервере
+        await new Promise((resolve) =>
+            setTimeout(resolve, 1500),
+        )
+
+        // Принудительно обновляем список с сервера
+        await loadParticipantsFromApi()
+
+        // Возвращаемся к списку участников
+        setCurrentView('participants')
+        setIsInviting(false)
     }
 
     // Обработчик передачи прав владельца
