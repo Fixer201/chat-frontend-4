@@ -222,7 +222,7 @@ export default function ChatsPage() {
             {/* Средняя колонка - комната чата или пустое состояние */}
             <div
                 className={cn(
-                    panelStyles,
+                    //  panelStyles,
                     'min-w-0 flex-1', // min-w-0 позволяет flex-элементу корректно занимать всю ширину
                     isChatSelected
                         ? 'block'

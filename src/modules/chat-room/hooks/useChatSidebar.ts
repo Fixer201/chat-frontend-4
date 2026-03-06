@@ -1,35 +1,39 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Contact } from '@shared/hooks/useContactData'
+import { ChatItem } from '@shared/types/chat'
 
-/**
- * Хук управления сайдбаром контактной информации.
- *
- * Контролирует открытие/закрытие правой боковой панели
- * с профилем собеседника и действиями над чатом
- * (очистка чата, настройка уведомлений).
- *
- * Выделен из ChatRoom для изоляции UI-состояния сайдбара
- * от основной логики чата.
- */
-export function useChatSidebar() {
+export function useChatSidebar(chat: ChatItem) {
     const [isSidebarOpen, setIsSidebarOpen] =
         useState(false)
-    const [sidebarContact, setSidebarContact] =
-        useState<Contact | null>(null)
+    const [notificationsEnabled, setNotificationsEnabled] =
+        useState(false)
 
-    const handleOpenSidebar = useCallback(
-        (contact: Contact) => {
-            setSidebarContact(contact)
-            setIsSidebarOpen(true)
-        },
-        [],
-    )
+    // Преобразуем данные чата в объект контакта (мемоизировано)
+    const contactFromChat = useMemo((): Contact | null => {
+        if (chat.chatType !== 'chat') return null
+        return {
+            uid: chat.chat.uid,
+            firstName: chat.chat.firstName,
+            lastName: chat.chat.lastName,
+            nickname: chat.chat.nickname,
+            avatar: chat.chat.avatar,
+            avatarUrl: chat.chat.avatarUrl,
+        } as Contact
+    }, [chat])
+
+    // Обновляем контакт в сайдбаре при смене чата (только если сайдбар открыт)
+    const sidebarContact = isSidebarOpen
+        ? contactFromChat
+        : null
+
+    const handleOpenSidebar = useCallback(() => {
+        setIsSidebarOpen(true)
+    }, [])
 
     const handleCloseSidebar = useCallback(() => {
         setIsSidebarOpen(false)
     }, [])
 
-    // TODO: подключить реальную очистку чата через API
     const handleClearChat = useCallback(
         (deleteForEveryone: boolean) => {
             console.log('Clear chat', deleteForEveryone)
@@ -37,14 +41,9 @@ export function useChatSidebar() {
         [],
     )
 
-    // TODO: подключить реальное переключение уведомлений через API
-    const [notificationsEnabled, setNotificationsEnabled] =
-        useState(false)
-
     const handleNotificationsChange = useCallback(
         (enabled: boolean) => {
             setNotificationsEnabled(enabled)
-            // здесь можно отправить запрос на сервер
             console.log('Notifications enabled:', enabled)
         },
         [],
@@ -53,10 +52,10 @@ export function useChatSidebar() {
     return {
         isSidebarOpen,
         sidebarContact,
+        notificationsEnabled,
         handleOpenSidebar,
         handleCloseSidebar,
         handleClearChat,
-        notificationsEnabled,
         handleNotificationsChange,
     }
 }

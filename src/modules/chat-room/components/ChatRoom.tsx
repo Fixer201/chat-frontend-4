@@ -110,7 +110,7 @@ export default function ChatRoom({
         handleCloseSidebar,
         handleClearChat,
         handleNotificationsChange,
-    } = useChatSidebar()
+    } = useChatSidebar(chat)
 
     // --- ВРЕМЕННО: состояние звонков для тестов UI ---
     const [isCallModalOpen, setIsCallModalOpen] =
@@ -189,7 +189,10 @@ export default function ChatRoom({
             {/* Левая колонка: шапка + сообщения + поле ввода */}
             <div
                 className={cn(
-                    `flex min-w-0 flex-1 flex-col`,
+                    `
+                      flex min-w-0 flex-1 flex-col rounded-md border
+                      border-app-divider bg-gray-main
+                    `,
                 )}
             >
                 <ChatHeader
@@ -403,6 +406,7 @@ export default function ChatRoom({
                     `}
                 >
                     <PersonalChatSidebar
+                        key={chat.chatKey}
                         contact={sidebarContact}
                         chatKey={chat.chatKey}
                         chatUid={chat.chat.uid}

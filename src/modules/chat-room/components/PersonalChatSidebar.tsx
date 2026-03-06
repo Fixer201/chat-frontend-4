@@ -115,13 +115,14 @@ export default function PersonalChatSidebar({
 
     // Обработчик ошибки загрузки аватара
     const [avatarError, setAvatarError] = useState(false)
+
     const handleAvatarError = useCallback(
         () => setAvatarError(true),
         [],
     )
     const avatarSrc = avatarError
         ? '/images/altImage.png'
-        : getAvatarSrc(contact)
+        : getAvatarSrc(contact) + '?uid=' + contact.uid
 
     // Переключение уведомлений
     const handleToggleNotifications = useCallback(() => {
