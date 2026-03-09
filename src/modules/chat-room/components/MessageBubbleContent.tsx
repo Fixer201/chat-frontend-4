@@ -148,9 +148,9 @@ export default function MessageBubbleContent({
                 const timeElement = message.created_at ? (
                     <div
                         className={`
-                              flex shrink-0 items-center gap-1 text-sm
-                              whitespace-nowrap text-text-gray
-                            `}
+                          flex shrink-0 items-center gap-1 text-sm
+                          whitespace-nowrap text-text-gray
+                        `}
                     >
                         <time
                             dateTime={getISOTime(

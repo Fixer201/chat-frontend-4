@@ -1,18 +1,18 @@
-// GroupMembersList.tsx
 'use client'
 
 import { Button } from '@shared/ui/button/Button'
 import BackIcon from '@public/icons/settings-sidebar/Back.svg'
 import ContactsListInvitation from '@modules/contacts/components/ContactsListInvitation'
 import { cn } from '@shared/lib/utils'
-import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '@redux/store'
-import { setContacts } from '@redux/slices/contactsSlice'
-import { Contact } from '@shared/types/contact'
+import { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
+import { useAppSelector } from '@redux/store'
+import { setSelectedContact } from '@redux/slices/selectedContactSlice'
+import { setContacts } from '@redux/slices/contactsSlice' // <-- импортируем экшен
+import { Contact, ApiContact } from '@shared/types/contact' // <-- ApiContact для типизации ответа
 import { onNextProps } from '@shared/types/createGroup'
+import { useApiFetcher } from '@shared/hooks/useApiFetcher' // <-- хук для запросов
 
-// Интерфейс пропсов компонента GroupMembersList
 interface GroupMembersListProps {
     groupData: onNextProps
     onBack: () => void
@@ -21,7 +21,6 @@ interface GroupMembersListProps {
     error?: string | null
 }
 
-// Компонент для выбора участников при создании группы
 export default function GroupMembersList({
     groupData,
     onBack,
@@ -29,21 +28,89 @@ export default function GroupMembersList({
     isCreating = false,
     error = null,
 }: GroupMembersListProps) {
-    // Состояние для хранения ID выбранных контактов
     const [selectedContactIds, setSelectedContactIds] =
         useState<string[]>([])
-
     const dispatch = useDispatch()
+    const fetchData = useApiFetcher()
 
     // Получение данных из Redux store
-    const selectedUid = useSelector(
-        (state: RootState) => state.SelectedContactTemp.uid,
+    const selectedUid = useAppSelector(
+        (state) => state.SelectedContact.uid,
     )
-    const contactsList = useSelector(
-        (state: RootState) => state.contactsTemp.list,
+    const contactsList = useAppSelector(
+        (state) => state.contacts.list,
     )
 
-    // Обработчик выбора/отмены выбора контакта
+    // Загрузка контактов, если их ещё нет
+    useEffect(() => {
+        const loadContacts = async () => {
+            if (contactsList.length > 0) return // уже есть
+
+            try {
+                const data = await fetchData(
+                    '/api/v1/contact/messenger-list/',
+                    {
+                        method: 'GET',
+                    },
+                )
+                const contactsData: ApiContact[] =
+                    data.results || []
+                const mappedContacts: Contact[] =
+                    contactsData.map((item) => {
+                        const systemContact =
+                            item.system_contact
+                        return {
+                            uid: item.uid,
+                            userUid:
+                                systemContact?.uid ??
+                                item.owner_user ??
+                                item.uid,
+                            username: '',
+                            nickname: item.nickname ?? '',
+                            phone: item.phone,
+                            firstName: item.first_name,
+                            lastName: item.last_name,
+                            patronymic: '',
+                            avatar:
+                                systemContact?.avatar ??
+                                item.avatar ??
+                                null,
+                            avatarUrl:
+                                systemContact?.avatar_url ??
+                                item.avatar_url ??
+                                null,
+                            avatarWebp:
+                                systemContact?.avatar_webp ??
+                                item.avatar_webp ??
+                                null,
+                            avatarWebpUrl:
+                                systemContact?.avatar_webp_url ??
+                                item.avatar_webp_url ??
+                                null,
+                            additionalInformation: '',
+                            birthday: 0,
+                            chatId: 0,
+                            isOnline:
+                                systemContact?.is_online ??
+                                item.is_online ??
+                                false,
+                            wasOnlineAt:
+                                systemContact?.was_online_at ??
+                                item.was_online_at ??
+                                null,
+                        }
+                    })
+                dispatch(setContacts(mappedContacts))
+            } catch (error) {
+                console.error(
+                    'Ошибка загрузки контактов:',
+                    error,
+                )
+            }
+        }
+        loadContacts()
+    }, [contactsList.length, fetchData, dispatch])
+
     const handleSelectContact = (uid: string) => {
         setSelectedContactIds((prev) =>
             prev.includes(uid)
@@ -52,7 +119,6 @@ export default function GroupMembersList({
         )
     }
 
-    // Фильтрация выбранных контактов по их ID
     const selectedContacts = contactsList.filter(
         (contact) =>
             selectedContactIds.includes(contact.uid),
@@ -60,12 +126,10 @@ export default function GroupMembersList({
 
     const { name } = groupData
 
-    // Обработчик установки выбранного контакта в Redux
     const handleSetSelectedContact = (uid: string) => {
-        dispatch(setContacts(uid))
+        dispatch(setSelectedContact(uid))
     }
 
-    // Обработчик завершения выбора участников
     const handleFinishClick = () => {
         onFinish(selectedContacts)
     }
@@ -77,7 +141,7 @@ export default function GroupMembersList({
               bg-gray-main
             `}
         >
-            {/* Шапка с кнопкой назад и заголовком */}
+            {/* Шапка */}
             <div
                 className={`
                   flex items-center justify-start gap-3 rounded-t-md border-b
@@ -106,7 +170,7 @@ export default function GroupMembersList({
                 </h2>
             </div>
 
-            {/* Отображение ошибки создания группы */}
+            {/* Ошибка */}
             {error && (
                 <div className="mx-4 mt-4 rounded-md bg-system-red-surface p-3">
                     <p className="text-sm text-system-red">
@@ -115,7 +179,7 @@ export default function GroupMembersList({
                 </div>
             )}
 
-            {/* Список контактов для выбора участников */}
+            {/* Список контактов */}
             <div
                 className={cn(
                     `
@@ -127,7 +191,6 @@ export default function GroupMembersList({
                     'max-h-(--screen-height-list)',
                 )}
             >
-                {/* Компонент списка контактов с возможностью выбора */}
                 <ContactsListInvitation
                     selectedContacts={selectedContactIds}
                     handleSelectContact={
@@ -141,11 +204,10 @@ export default function GroupMembersList({
                 />
             </div>
 
-            {/* Кнопка завершения выбора участников и создания группы */}
+            {/* Кнопка создания */}
             <div className="flex items-center justify-center px-4 pt-4 pb-8">
                 <Button
                     onClick={handleFinishClick}
-                    //disabled={!name.trim() || isCreating}
                     variant="solid"
                     size="md"
                     className={`
