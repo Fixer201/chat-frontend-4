@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useWebSocket } from '@shared/context/websocketContext'
+import { useAppSelector } from '@redux/store'
 import MessageItem from './MessageItem'
 import DateDivider from './DateDivider'
 import UnreadDivider from './UnreadDivider'
@@ -100,6 +101,9 @@ export default function MessagesList({
     onSearchNavigate?: (index: number) => void
 }>) {
     const { messages: wsMessages } = useWebSocket()
+    const messageReadStatuses = useAppSelector(
+        (state) => state.chats.messageReadStatuses,
+    )
 
     /** Ref на контейнер списка для поиска DOM-элементов сообщений по uid */
     const listRef = useRef<HTMLUListElement>(null)
@@ -153,21 +157,63 @@ export default function MessagesList({
         [],
     )
 
-    // Фильтрация сообщений по chatKey текущего чата.
-    // В режиме USE_MOCK отключена — все сообщения отображаются для отладки.
-    // Объединение: API-сообщения + WebSocket (избегайте дубликатов по uid)
+    // Merge: API base + WS overlay (read/delivered/edit) + Redux read_at fallback
+    // Приоритет: ws > redux > api
     const allMessages = useMemo(() => {
-        const combined = [...apiMessages, ...wsMessages]
-        const unique = combined.filter(
-            (msg, index, self) =>
-                index ===
-                self.findIndex((m) => m.uid === msg.uid),
+        const wsMap = new Map<string, Message>()
+        for (const msg of wsMessages) {
+            if (msg.uid) wsMap.set(msg.uid, msg)
+        }
+
+        const apiUids = new Set<string>()
+
+        const merged = apiMessages.map((msg) => {
+            if (msg.uid) apiUids.add(msg.uid)
+
+            const ws = msg.uid
+                ? wsMap.get(msg.uid)
+                : undefined
+            const readAt =
+                ws?.read_at ??
+                (msg.uid
+                    ? messageReadStatuses[msg.uid]
+                    : undefined) ??
+                msg.read_at
+            const deliveredAt =
+                ws?.delivered_at ??
+                (readAt != null
+                    ? (msg.delivered_at ?? readAt)
+                    : msg.delivered_at)
+
+            if (
+                readAt === msg.read_at &&
+                deliveredAt === msg.delivered_at &&
+                !ws?.isEdited
+            )
+                return msg
+
+            return {
+                ...msg,
+                read_at: readAt,
+                delivered_at: deliveredAt,
+                ...(ws?.isEdited && {
+                    content: ws.content,
+                    isEdited: true,
+                    updated_at: ws.updated_at,
+                }),
+            }
+        })
+
+        // WS-only: новые сообщения текущей сессии, ещё не в API
+        const wsOnly = wsMessages.filter(
+            (msg) => msg.uid && !apiUids.has(msg.uid),
         )
-        return unique.sort(
+
+        return [...merged, ...wsOnly].sort(
             (a, b) =>
                 (a.created_at || 0) - (b.created_at || 0),
-        ) // Сортировка по времени
-    }, [apiMessages, wsMessages])
+        )
+    }, [apiMessages, wsMessages, messageReadStatuses])
 
     // Фильтрация по chatKey (уберите USE_MOCK после тестирования)
     const chatMessages = useMemo(() => {

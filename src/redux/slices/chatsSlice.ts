@@ -26,6 +26,7 @@ const initialState: ChatsState = {
     error: null, // Ошибки
     selectedChatId: null, // ID выбранного чата
     chatSettings: {}, // Настройки для каждого чата
+    messageReadStatuses: {}, // WS read-status для API-only сообщений
 }
 
 // Функция для получения настроек по умолчанию для чата
@@ -361,6 +362,56 @@ const chatsSlice = createSlice({
                 state.items[existingIndex] = action.payload
             }
         },
+        // Сохраняет read_at из WS change_status_read_message.
+        // MessagesList использует это для overlay на API-сообщения,
+        // которых нет в wsMessages (загружены из REST, но не из WS-сессии).
+        updateMessageReadStatus: (
+            state,
+            action: PayloadAction<{
+                uid: string
+                readAt: number
+            }>,
+        ) => {
+            state.messageReadStatuses[action.payload.uid] =
+                action.payload.readAt
+        },
+        // Инкремент счётчика непрочитанных при получении нового WS-сообщения.
+        // Пропускает, если чат сейчас открыт (selectedChatId) —
+        // useMarkAsRead уже пометит его прочитанным.
+        incrementUnreadCount: (
+            state,
+            action: PayloadAction<number>,
+        ) => {
+            const chatId = action.payload
+            if (chatId === state.selectedChatId) return
+
+            const chat = state.items.find(
+                (c) => c.id === chatId,
+            )
+            const currentSettings = state.chatSettings[
+                chatId
+            ]
+                ? { ...state.chatSettings[chatId] }
+                : getDefaultSettings(chat)
+
+            const updatedSettings: ChatSettings = {
+                ...currentSettings,
+                isChatRead: false,
+                originalUnreadCount:
+                    (currentSettings.originalUnreadCount ||
+                        0) + 1,
+            }
+
+            state.chatSettings[chatId] = updatedSettings
+
+            const chatIndex = state.items.findIndex(
+                (c) => c.id === chatId,
+            )
+            if (chatIndex !== -1) {
+                state.items[chatIndex].settings =
+                    updatedSettings
+            }
+        },
         // Обновление онлайн-статуса пользователя во всех чатах по его UID
         updateContactStatus: (
             state,
@@ -411,6 +462,8 @@ export const {
     addToContacts,
     resetChatSettings,
     addChat,
+    updateMessageReadStatus,
+    incrementUnreadCount,
     updateContactStatus,
     debugState,
 } = chatsSlice.actions

@@ -75,6 +75,7 @@ export function useWebSocketChat() {
         storedSeenRef,
         lastChatsRefreshRef,
         chatSettings,
+        currentUserId,
     })
     useEffect(() => {
         handlerDepsRef.current = {
@@ -88,12 +89,14 @@ export function useWebSocketChat() {
             storedSeenRef,
             lastChatsRefreshRef,
             chatSettings,
+            currentUserId,
         }
     }, [
         sendOps.setMessages,
         dispatch,
         chatSettings,
         sendOps.pendingMessageMapRef,
+        currentUserId,
     ])
 
     const onMessage = useCallback((event: MessageEvent) => {

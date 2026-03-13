@@ -11,6 +11,8 @@ import { AppDispatch } from '@redux/store'
 import {
     updateChat,
     updateContactStatus,
+    updateMessageReadStatus,
+    incrementUnreadCount,
 } from '@redux/slices/chatsSlice'
 import { fetchChats } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
 import { normalizeIncomingMessage } from './normalizeMessage'
@@ -31,6 +33,7 @@ export interface MessageHandlerDeps {
     storedSeenRef: MutableRefObject<Set<string>>
     lastChatsRefreshRef: MutableRefObject<number>
     chatSettings: Record<string, ChatSettings>
+    currentUserId: string
 }
 
 // --- Per-action handlers ---
@@ -134,6 +137,7 @@ function handleDeleteMessage(
 function handleReadStatus(
     data: Record<string, unknown>,
     setMessages: Dispatch<SetStateAction<Message[]>>,
+    dispatch: AppDispatch,
 ) {
     const obj = data.object as
         | Record<string, unknown>
@@ -146,20 +150,30 @@ function handleReadStatus(
         (obj?.created_at as number | undefined) ||
         Math.floor(Date.now() / 1000)
 
-    if (messageUid) {
-        setMessages((prev) =>
-            prev.map((msg) =>
-                msg.uid === messageUid
-                    ? {
-                          ...msg,
-                          read_at: readAt,
-                          delivered_at:
-                              msg.delivered_at || readAt,
-                      }
-                    : msg,
-            ),
-        )
-    }
+    if (!messageUid) return
+
+    // Обновляем WS-сообщения (для сообщений текущей сессии)
+    setMessages((prev) =>
+        prev.map((msg) =>
+            msg.uid === messageUid
+                ? {
+                      ...msg,
+                      read_at: readAt,
+                      delivered_at:
+                          msg.delivered_at || readAt,
+                  }
+                : msg,
+        ),
+    )
+
+    // Сохраняем в Redux для API-only сообщений (загружены из REST,
+    // нет в wsMessages). MessagesList overlay merge подхватит.
+    dispatch(
+        updateMessageReadStatus({
+            uid: messageUid,
+            readAt,
+        }),
+    )
 }
 
 function handleNormalizedMessage(
@@ -251,6 +265,15 @@ function handleNormalizedMessage(
                 updatedAt: preview.updatedAt,
             }),
         )
+
+        // Инкремент бейджа непрочитанных для входящих сообщений.
+        // Reducer сам пропустит, если чат сейчас открыт (selectedChatId).
+        if (
+            normalized.from_user &&
+            normalized.from_user !== deps.currentUserId
+        ) {
+            dispatch(incrementUnreadCount(preview.chat.id))
+        }
     }
 
     // Update temp chat if needed
@@ -376,7 +399,11 @@ export function createMessageHandler(
             data.action === 'change_status_read_message' &&
             data.status === 'OK'
         ) {
-            handleReadStatus(data, deps.setMessages)
+            handleReadStatus(
+                data,
+                deps.setMessages,
+                deps.dispatch,
+            )
             return
         }
 
