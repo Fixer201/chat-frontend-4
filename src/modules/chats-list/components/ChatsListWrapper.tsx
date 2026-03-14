@@ -1,7 +1,7 @@
 // ChatsListWrapper.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ChatsList from './ChatsList'
 import CreateGroupForm from '@modules/groups/components/CreateGroupForm'
 import GroupMembersList from '@modules/groups/components/GroupMembersList'
@@ -27,8 +27,7 @@ export default function ChatsListWrapper({
     onOpenInfoPanel,
 }: ChatsListWrapperProps) {
     // Хуки для работы с чатами
-    const { createGroup, createChannel, loadChats } =
-        useChats()
+    const { createGroup, createChannel } = useChats()
 
     // Состояния для управления представлениями и данными
     const [currentView, setCurrentView] =
@@ -49,11 +48,6 @@ export default function ChatsListWrapper({
 
     // Ключ для принудительного обновления ChatsList при создании нового чата
     const [chatsListKey, setChatsListKey] = useState(0)
-
-    // Загрузка чатов при монтировании компонента
-    useEffect(() => {
-        loadChats('', 15)
-    }, [loadChats])
 
     // Обработчик перехода к созданию группы
     const handleCreateGroup = () => {

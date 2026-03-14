@@ -10,11 +10,11 @@ import { Message } from '@shared/types/message'
 import { AppDispatch } from '@redux/store'
 import {
     updateChat,
+    addChat,
     updateContactStatus,
     updateMessageReadStatus,
     incrementUnreadCount,
 } from '@redux/slices/chatsSlice'
-import { fetchChats } from '@redux/extraReducers/chat-extraReducers/fetchChatsExtraRed'
 import { normalizeIncomingMessage } from './normalizeMessage'
 import {
     buildLastMessagePreview,
@@ -31,7 +31,6 @@ export interface MessageHandlerDeps {
     ackSeenRef: MutableRefObject<Set<string>>
     normalizeSeenRef: MutableRefObject<Set<string>>
     storedSeenRef: MutableRefObject<Set<string>>
-    lastChatsRefreshRef: MutableRefObject<number>
     chatSettings: Record<string, ChatSettings>
     currentUserId: string
 }
@@ -189,7 +188,6 @@ function handleNormalizedMessage(
         ackSeenRef,
         normalizeSeenRef,
         storedSeenRef,
-        lastChatsRefreshRef,
         chatSettings,
     } = deps
 
@@ -300,7 +298,7 @@ function handleNormalizedMessage(
                 toChatKey: normalized.chatKey,
                 toUserId: normalized.toUserId,
             })
-            dispatch(updateChat(updatedTempChat))
+            dispatch(addChat(updatedTempChat))
             persistLocalChatsSnapshot(
                 chatsRef.current.map((chat) =>
                     chat.id === updatedTempChat.id
@@ -309,21 +307,6 @@ function handleNormalizedMessage(
                 ),
                 chatSettings,
             )
-
-            const now = Date.now()
-            const isChatsPage =
-                typeof window !== 'undefined' &&
-                window.location.pathname.startsWith(
-                    '/chats',
-                )
-
-            if (
-                isChatsPage &&
-                now - lastChatsRefreshRef.current > 3000
-            ) {
-                lastChatsRefreshRef.current = now
-                dispatch(fetchChats({ count: 15 }))
-            }
         }
     }
 }

@@ -10,12 +10,7 @@ import DeleteMessageModal from './DeleteMessageModal'
 import CopyToast from './CopyToast'
 import MessageComposer from '@modules/message-composer/components/MessageComposer'
 import { ChatItem } from '@shared/types/chat'
-import {
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useWebSocket } from '@shared/context/websocketContext'
 import { useMessages } from '@shared/hooks/useMessages'
 import { cn } from '@shared/lib/utils'
@@ -160,14 +155,7 @@ export default function ChatRoom({
     const {
         messages: apiMessages,
         loading: messagesLoading,
-        reloadMessages,
     } = useMessages(chat.chat.uid, isLocalChat)
-
-    useEffect(() => {
-        if (!isLocalChat) {
-            reloadMessages()
-        }
-    }, [chat.chatKey, isLocalChat, reloadMessages])
 
     // read_at приходит только от сервера через change_status_read_message —
     // не подставляем его оптимистично, чтобы галочки отражали реальный статус
@@ -383,7 +371,7 @@ export default function ChatRoom({
                     />
                 ) : (
                     <MessageComposer
-                        key={`${chat.chatKey}-${
+                        key={`${chat.id}-${
                             editingMessage?.uid ??
                             replyingMessage?.uid ??
                             'new'
