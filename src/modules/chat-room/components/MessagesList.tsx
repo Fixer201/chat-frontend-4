@@ -14,6 +14,7 @@ import {
     useRef,
 } from 'react'
 import { Message } from '@shared/types/message'
+import { useViewportReadReceipts } from '../hooks/useViewportReadReceipts'
 
 /**
  * Список сообщений чата — основная область отображения переписки.
@@ -80,6 +81,10 @@ export default function MessagesList({
     searchQuery = '',
     currentMatchIndex,
     onSearchMatchesFound,
+
+    scrollContainerRef,
+    markMessagesRead,
+    wsStatus,
 }: Readonly<{
     chatKey: string
     apiMessages?: Message[]
@@ -99,6 +104,12 @@ export default function MessagesList({
     currentMatchIndex?: number | null
     onSearchMatchesFound?: (count: number) => void
     onSearchNavigate?: (index: number) => void
+    scrollContainerRef: React.RefObject<HTMLDivElement | null>
+    markMessagesRead: (params: {
+        chatKey: string
+        messageUids: string[]
+    }) => void
+    wsStatus: string
 }>) {
     const { messages: wsMessages } = useWebSocket()
     const messageReadStatuses = useAppSelector(
@@ -229,6 +240,17 @@ export default function MessagesList({
 
         return filtered
     }, [allMessages, chatKey, isTemporary, contactUid])
+
+    // Viewport-based read receipts: marks messages as read
+    // only when they are actually visible in the scroll container
+    useViewportReadReceipts({
+        scrollContainerRef,
+        chatKey,
+        currentUserId: currentUserId ?? '',
+        allMessages: chatMessages,
+        markMessagesRead,
+        wsStatus,
+    })
 
     const messagesMap = useMemo(() => {
         const map = new Map<string, Message>()

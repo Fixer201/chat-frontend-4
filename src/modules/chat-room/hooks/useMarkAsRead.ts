@@ -12,21 +12,21 @@ interface UseMarkAsReadParams {
         chatId: number,
         lastMessageId: number,
     ) => void
-    markMessagesRead: (params: {
-        chatKey: string
-        messageUids: string[]
-    }) => void
 }
 
 /**
- * Хук пометки сообщений как прочитанных.
+ * Хук первичной обработки при открытии чата.
  *
  * Решает три задачи:
  * 1. Вычисляет uid первого непрочитанного сообщения (один раз при загрузке),
  *    чтобы UnreadDivider и useScrollToUnread знали позицию прокрутки.
  * 2. Обновляет локальный Redux-стейт чата (markAsRead) — убирает бейдж непрочитанных.
- * 3. Отправляет на сервер last_seen_message (markAsReadOnServer) и change_status_read_message
- *    через WebSocket (markMessagesRead) — синхронизирует статус прочтения.
+ * 3. Отправляет на сервер last_seen_message (markAsReadOnServer) — серверный курсор
+ *    для восстановления позиции после перезагрузки.
+ *
+ * WS read receipts (change_status_read_message) НЕ отправляются здесь —
+ * они обрабатываются хуком useViewportReadReceipts, который помечает сообщения
+ * прочитанными только когда они реально видны в viewport пользователя.
  *
  * Важно: firstUnreadUid вычисляется один раз и фиксируется в state,
  * чтобы mark-as-read не стирал разделитель непрочитанных до того,
@@ -39,12 +39,7 @@ export function useMarkAsRead({
     currentUserId,
     markAsRead,
     markAsReadOnServer,
-    markMessagesRead,
 }: UseMarkAsReadParams) {
-    // Набор uid сообщений, для которых уже отправлен WS change_status_read_message,
-    // чтобы не дублировать запросы при ре-рендерах
-    const readMessageUidsRef = useRef(new Set<string>())
-
     // Дедупликация серверных вызовов markAsReadOnServer:
     // запоминаем ключ "chatId:lastMessageId" последнего вызова
     const lastSeenRef = useRef<string | null>(null)
@@ -52,10 +47,6 @@ export function useMarkAsRead({
     // uid первого непрочитанного — вычисляется один раз при загрузке,
     // чтобы mark-as-read не стёр разделитель и цель скролла.
     // undefined = ещё не вычислено, null = вычислено, непрочитанных нет.
-    //
-    // Паттерн «adjusting state during render» (React docs):
-    // setState вызывается в теле рендера с проверкой предыдущего значения,
-    // React отбрасывает текущий JSX и перерендерит с новым состоянием.
     const [prevChatKey, setPrevChatKey] = useState(
         chat.chatKey,
     )
@@ -92,11 +83,9 @@ export function useMarkAsRead({
     }
 
     const firstUnreadUid = firstUnreadState ?? undefined
-    // messagesReady = firstUnreadUid вычислен,
-    // чтобы useScrollToUnread не сработал до готовности
     const messagesReady = firstUnreadState !== undefined
 
-    // Эффект mark-as-read: обновляет локальный стейт, сервер и WS
+    // Эффект: обновляет Redux badge + серверный курсор last_seen_message
     useEffect(() => {
         if (!chat?.id) return
         if (apiMessages.length === 0) return
@@ -112,49 +101,19 @@ export function useMarkAsRead({
             const lastSeenKey = `${chat.id}:${chat.lastMessage.id}`
             if (lastSeenRef.current !== lastSeenKey) {
                 lastSeenRef.current = lastSeenKey
-                // Фиксируем на сервере last_seen_message, чтобы статус сохранялся после перезагрузки
                 markAsReadOnServer(
                     chat.id,
                     chat.lastMessage.id,
                 )
             }
         }
-
-        // Отправляем WS change_status_read_message для непрочитанных входящих,
-        // чтобы собеседник увидел галочки прочтения
-        const unreadIncoming = apiMessages
-            .filter(
-                (message) =>
-                    message.uid &&
-                    !message.read_at &&
-                    message.from_user &&
-                    message.from_user !== currentUserId,
-            )
-            .map((message) => message.uid!)
-            .filter(
-                (uid) =>
-                    !readMessageUidsRef.current.has(uid),
-            )
-
-        if (unreadIncoming.length) {
-            unreadIncoming.forEach((uid) =>
-                readMessageUidsRef.current.add(uid),
-            )
-            markMessagesRead({
-                chatKey: chat.chatKey,
-                messageUids: unreadIncoming,
-            })
-        }
     }, [
         apiMessages,
-        chat.chatKey,
         chat.id,
         chat.isTemporary,
         chat.lastMessage?.id,
-        currentUserId,
         markAsRead,
         markAsReadOnServer,
-        markMessagesRead,
     ])
 
     return { firstUnreadUid, messagesReady }

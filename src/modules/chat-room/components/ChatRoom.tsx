@@ -50,8 +50,12 @@ export default function ChatRoom({
     const isLocalChat = chat.isTemporary === true
     const chatName = chat.name
 
-    const { sendMessage, deleteMessage, markMessagesRead } =
-        useWebSocket()
+    const {
+        sendMessage,
+        deleteMessage,
+        markMessagesRead,
+        status: wsStatus,
+    } = useWebSocket()
     const { chats, markAsRead, markAsReadOnServer } =
         useChats()
 
@@ -154,7 +158,6 @@ export default function ChatRoom({
             currentUserId,
             markAsRead,
             markAsReadOnServer,
-            markMessagesRead,
         },
     )
 
@@ -329,6 +332,13 @@ export default function ChatRoom({
                             onSearchNavigate={
                                 setCurrentMatchIndex
                             }
+                            scrollContainerRef={
+                                scrollContainerRef
+                            }
+                            markMessagesRead={
+                                markMessagesRead
+                            }
+                            wsStatus={wsStatus}
                         />
                     )}
                 </div>
