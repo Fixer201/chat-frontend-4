@@ -170,7 +170,9 @@ export default function ChatHeader({
         >
             <div className="flex items-center justify-between gap-2">
                 <div
-                    className="flex flex-row items-center gap-4"
+                    className={`
+                      flex flex-1 cursor-pointer flex-row items-center gap-4
+                    `}
                     onKeyDown={(e) => {
                         if (
                             (e.key === 'Enter' ||
