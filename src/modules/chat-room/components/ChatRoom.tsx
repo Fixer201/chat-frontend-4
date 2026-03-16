@@ -34,21 +34,6 @@ import { useInChatSearch } from '../hooks/useInChatSearch'
 import { useMarkAsRead } from '../hooks/useMarkAsRead'
 import { useChatSidebar } from '../hooks/useChatSidebar'
 
-/**
- * Корневой компонент комнаты чата — оркестратор взаимодействия.
- *
- * Делегирует бизнес-логику специализированным хукам:
- * - useMessageActions — редактирование, ответ, выбор, пересылка, удаление, копирование
- * - useInChatSearch — поиск по сообщениям с навигацией по результатам
- * - useMarkAsRead — пометка сообщений прочитанными + вычисление firstUnreadUid
- * - useChatSidebar — открытие/закрытие правой панели контакта
- *
- * Сам компонент отвечает только за:
- * - Определение currentUserId и параметров чата
- * - Загрузку сообщений (useMessages)
- * - Скролл и floating date pill
- * - Композицию JSX-layout из дочерних компонентов
- */
 export default function ChatRoom({
     chat,
     onBack,
@@ -70,13 +55,11 @@ export default function ChatRoom({
     const isLocalChat = chat.isTemporary === true
     const chatName = chat.name
 
-    // --- Подключение контекстов и хуков данных ---
     const { sendMessage, deleteMessage, markMessagesRead } =
         useWebSocket()
     const { chats, markAsRead, markAsReadOnServer } =
         useChats()
 
-    // --- Делегирование бизнес-логики хукам ---
     const {
         editingMessage,
         replyingMessage,
@@ -122,11 +105,12 @@ export default function ChatRoom({
     const {
         isSidebarOpen,
         sidebarContact,
+        notificationsEnabled,
         handleOpenSidebar,
         handleCloseSidebar,
         handleClearChat,
         handleNotificationsChange,
-    } = useChatSidebar()
+    } = useChatSidebar(chat)
 
     // --- ВРЕМЕННО: состояние звонков для тестов UI ---
     const [isCallModalOpen, setIsCallModalOpen] =
@@ -169,8 +153,6 @@ export default function ChatRoom({
         }
     }, [chat.chatKey, isLocalChat, reloadMessages])
 
-    // read_at приходит только от сервера через change_status_read_message —
-    // не подставляем его оптимистично, чтобы галочки отражали реальный статус
     const optimisticApiMessages = apiMessages
 
     // --- Mark-as-read + firstUnreadUid ---
@@ -199,47 +181,37 @@ export default function ChatRoom({
         messagesReady,
     )
 
+    /** Общие стили для колонок, как на странице чатов */
+    const columnStyles = 'rounded-md border-app-divider'
+
     return (
-        <div className="relative flex h-full flex-col rounded-md bg-gray-light">
-            <ChatHeader
-                chat={chat || null}
-                onBack={onBack}
-                onSearchOpen={handleSearchOpen}
-                onCall={handleCallOpen}
-                isSearchOpen={isSearchOpen}
-                searchQuery={searchQuery}
-                onSearchQueryChange={
-                    handleSearchQueryChange
-                }
-                onSearchNavigate={handleSearchNavigate}
-                onSearchClose={handleSearchClose}
-                currentMatchIndex={currentMatchIndex}
-                totalSearchResults={totalSearchResults}
-                onSidebarOpen={handleOpenSidebar}
-            />
-
-            <CallModal
-                open={isCallModalOpen}
-                onClose={handleCallClose}
-                chat={chat}
-                variant={callVariant}
-            />
-
-            <CallTypeSelectorModal
-                open={isCallTypeSelectorOpen}
-                onSelect={handleCallTypeSelect}
-            />
-
-            {/* Основной контент с адаптивной шириной */}
+        <div className="flex h-full w-full gap-6">
+            {/* Левая колонка: шапка + сообщения + поле ввода */}
             <div
                 className={cn(
                     `
-                      relative flex min-h-0 flex-1 flex-col transition-all
-                      duration-300 ease-in-out
+                      flex min-w-0 flex-1 flex-col rounded-md border
+                      border-app-divider bg-gray-main
                     `,
-                    isSidebarOpen ? 'mr-80' : 'mr-0',
                 )}
             >
+                <ChatHeader
+                    chat={chat || null}
+                    onBack={onBack}
+                    onSearchOpen={handleSearchOpen}
+                    onCall={handleCallOpen}
+                    isSearchOpen={isSearchOpen}
+                    searchQuery={searchQuery}
+                    onSearchQueryChange={
+                        handleSearchQueryChange
+                    }
+                    onSearchNavigate={handleSearchNavigate}
+                    onSearchClose={handleSearchClose}
+                    currentMatchIndex={currentMatchIndex}
+                    totalSearchResults={totalSearchResults}
+                    onSidebarOpen={handleOpenSidebar}
+                />
+
                 {/* Оверлей для мобильных устройств */}
                 {isSidebarOpen && (
                     <div
@@ -247,6 +219,7 @@ export default function ChatRoom({
                           absolute inset-0 z-40 bg-black/20
                           md:hidden
                         `}
+                        onClick={handleCloseSidebar}
                         onKeyDown={(e) => {
                             if (
                                 e.key === 'Enter' ||
@@ -255,18 +228,17 @@ export default function ChatRoom({
                                 handleCloseSidebar()
                             }
                         }}
-                        onClick={handleCloseSidebar}
                         role="button"
                         tabIndex={0}
                         aria-label="Закрыть sidebar"
                     />
                 )}
 
-                {/* Контейнер для MessagesList с floating date pill */}
+                {/* Контейнер для сообщений */}
                 <div
                     ref={scrollContainerRef}
                     role="presentation"
-                    className="flex-1 overflow-y-auto"
+                    className={`flex-1 overflow-y-auto`}
                     onClick={() => {
                         if (isSearchOpen) {
                             handleSearchClose()
@@ -299,7 +271,7 @@ export default function ChatRoom({
                                     'leading-[120%]',
                                     'font-medium',
                                     'text-white',
-                                    'backdrop-blur-[4px]',
+                                    'backdrop-blur-xs',
                                 )}
                             >
                                 {activeTimestamp
@@ -371,8 +343,7 @@ export default function ChatRoom({
                     )}
                 </div>
 
-                {/* Нижняя панель: в режиме выбора — тулбар с действиями,
-                иначе — поле ввода сообщения (MessageComposer) */}
+                {/* Нижняя панель */}
                 {isSelectionMode ? (
                     <SelectionToolbar
                         selectedMessages={selectedMessages}
@@ -398,6 +369,72 @@ export default function ChatRoom({
                 )}
             </div>
 
+            {/* Правая колонка: сайдбар (только на десктопе) */}
+            {isSidebarOpen && sidebarContact && (
+                <div
+                    className={cn(
+                        columnStyles,
+                        `
+                          hidden w-80 shrink-0
+                          md:block
+                        `,
+                    )}
+                >
+                    <PersonalChatSidebar
+                        contact={sidebarContact}
+                        chatKey={chat.chatKey}
+                        chatUid={chat.chat.uid}
+                        notificationsEnabled={
+                            notificationsEnabled
+                        }
+                        onNotificationsChange={
+                            handleNotificationsChange
+                        }
+                        onClose={handleCloseSidebar}
+                        onClearChat={handleClearChat}
+                    />
+                </div>
+            )}
+
+            {/* Сайдбар для мобильных (поверх) */}
+            {isSidebarOpen && sidebarContact && (
+                <div
+                    className={`
+                      absolute top-0 right-0 z-50 h-full w-80 rounded-l-md
+                      bg-gray-main shadow-xl
+                      md:hidden
+                    `}
+                >
+                    <PersonalChatSidebar
+                        key={chat.chatKey}
+                        contact={sidebarContact}
+                        chatKey={chat.chatKey}
+                        chatUid={chat.chat.uid}
+                        notificationsEnabled={
+                            notificationsEnabled
+                        }
+                        onNotificationsChange={
+                            handleNotificationsChange
+                        }
+                        onClose={handleCloseSidebar}
+                        onClearChat={handleClearChat}
+                    />
+                </div>
+            )}
+
+            {/* Модальные окна и тосты */}
+            <CallModal
+                open={isCallModalOpen}
+                onClose={handleCallClose}
+                chat={chat}
+                variant={callVariant}
+            />
+
+            <CallTypeSelectorModal
+                open={isCallTypeSelectorOpen}
+                onSelect={handleCallTypeSelect}
+            />
+
             <ForwardMessageModal
                 open={forwardModalOpen}
                 onClose={handleForwardModalClose}
@@ -418,31 +455,6 @@ export default function ChatRoom({
                 visible={copyToastVisible}
                 onHide={handleHideCopyToast}
             />
-
-            {/* Сайдбар информации о контакте */}
-            {isSidebarOpen && sidebarContact && (
-                <div
-                    className={cn(
-                        'absolute top-0 right-0 h-full w-80',
-                        'z-50 shadow-xl',
-                        'rounded-l-md bg-gray-main',
-                        'border-l border-gray-border',
-                        'transition-all duration-300 ease-in-out',
-                    )}
-                >
-                    <PersonalChatSidebar
-                        contact={sidebarContact}
-                        chatKey={chat.chatKey}
-                        chatUid={chat.chat.uid}
-                        notificationsEnabled={false}
-                        onNotificationsChange={
-                            handleNotificationsChange
-                        }
-                        onClose={handleCloseSidebar}
-                        onClearChat={handleClearChat}
-                    />
-                </div>
-            )}
         </div>
     )
 }
