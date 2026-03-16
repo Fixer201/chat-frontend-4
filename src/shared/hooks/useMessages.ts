@@ -1,51 +1,9 @@
-// @shared/hooks/useMessages.ts
-// import { useState, useEffect, useCallback } from 'react'
-// import { Message , ApiMessage} from '@shared/types/message'
-// import { useApiFetcher } from '@shared/hooks/useApiFetcher'
-
-// export const useMessages = (userUid: string) => {
-//     const [messages, setMessages] = useState<Message[]>([])
-//     const [loading, setLoading] = useState(false)
-//     const [error, setError] = useState<string | null>(null)
-//     const fetchData = useApiFetcher()
-
-//     const loadMessages = useCallback(async () => {
-//         if (!userUid) return
-
-//         setLoading(true)
-//         setError(null)
-//         try {
-//             const data = await fetchData(
-//                 `https://api.test.chat.ktsf.ru/api/v1/chat/message/text/${userUid}/`,
-//                 { method: 'GET' }
-//             )
-//             // Маппинг API-ответа в Message[] (адаптируйте под вашу структуру Message)
-//             const mappedMessages: Message[] = data.results.map((item: ApiMessage) => ({
-//                 uid: item.uid,
-//                 content: item.content,
-//                 from_user: item.from_user.uid, // Или item.from_user, в зависимости от API
-//                 chatKey: item.chat_key,
-//                 created_at: item.created_at,
-//                 updated_at: item.updated_at,
-//                 read_at: item.new ? null : item.created_at, // Пример для статуса
-//                 delivered_at: item.created_at,
-//                 // Добавьте другие поля из вашего типа Message
-//             }))
-//             setMessages(mappedMessages)
-//         } catch (err) {
-//             setError(err instanceof Error ? err.message : 'Ошибка загрузки сообщений')
-//         } finally {
-//             setLoading(false)
-//         }
-//     }, [userUid, fetchData])
-
-//     useEffect(() => {
-//         loadMessages()
-//     }, [loadMessages])
-
-//     return { messages, loading, error, reloadMessages: loadMessages }
-
-import { useState, useEffect, useCallback } from 'react'
+import {
+    useState,
+    useEffect,
+    useCallback,
+    useRef,
+} from 'react'
 import {
     Message,
     ApiMessage,
@@ -60,30 +18,37 @@ export const useMessages = (
     isLocalChat: boolean = false,
     pageSize: number = 50,
 ) => {
-    // Добавьте isLocalChat
     const [messages, setMessages] = useState<Message[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const fetchData = useApiFetcher()
 
+    // Предыдущее значение isLocalChat — при переходе local→API
+    // пропускаем спиннер, т.к. WS-сообщения уже видны.
+    const prevIsLocalRef = useRef(isLocalChat)
+
     const loadMessages = useCallback(async () => {
         if (!userUid || isLocalChat) {
-            // Если локальный чат, не загружать сообщения
             setMessages([])
             setLoading(false)
+            prevIsLocalRef.current = isLocalChat
             return
         }
 
-        setLoading(true)
+        const isTransitionFromLocal =
+            prevIsLocalRef.current === true
+        prevIsLocalRef.current = isLocalChat
+
+        if (!isTransitionFromLocal) {
+            setLoading(true)
+        }
         setError(null)
         try {
-            // Относительный URL — проксируется на бэкенд через catch-all route handler.
             // page_size увеличен, чтобы не получать только 5 сообщений по умолчанию (лимит Django).
             const url = `/api/v1/chat/message/text/${userUid}/?page_size=${pageSize}`
             const data = await fetchData(url, {
                 method: 'GET',
             })
-            // Маппинг API-ответа в Message[] с использованием ApiMessage и ваших типов
             const mappedMessages: Message[] =
                 data.results.map(
                     (item: ApiMessage): Message => ({
@@ -96,9 +61,7 @@ export const useMessages = (
                         delivered_at: item.created_at,
                         read_at: item.new
                             ? undefined
-                            : item.created_at, // Исправьте на undefined
-                        // Сервер возвращает файлы в формате ApiFileItem
-                        // (file_url, file_type), маппим в MessageFile (filename, file_url)
+                            : item.created_at,
                         files: item.files_list?.map(
                             normalizeFileItem,
                         ),
@@ -136,12 +99,8 @@ export const useMessages = (
                                         ),
                                 }),
                             ),
-                        // UID получателя — нужен для фильтрации сообщений
-                        // во временных чатах, где chatKey ещё не назначен сервером.
-                        // MessagesList использует toUserId для сопоставления
-                        // исходящих сообщений с контактом (msg.toUserId === contactUid).
                         toUserId: item.to_user?.uid,
-                        status: 'publish', // Или другое значение по умолчанию
+                        status: 'publish',
                     }),
                 )
             setMessages(mappedMessages)
@@ -154,16 +113,11 @@ export const useMessages = (
         } finally {
             setLoading(false)
         }
-    }, [userUid, isLocalChat, pageSize, fetchData]) // Добавьте isLocalChat в зависимости
+    }, [userUid, isLocalChat, pageSize, fetchData])
 
     useEffect(() => {
         loadMessages()
     }, [loadMessages])
 
-    return {
-        messages,
-        loading,
-        error,
-        reloadMessages: loadMessages,
-    }
+    return { messages, loading, error }
 }

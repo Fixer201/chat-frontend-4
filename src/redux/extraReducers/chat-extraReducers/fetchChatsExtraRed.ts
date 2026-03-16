@@ -298,6 +298,33 @@ export const handleFetchChats = (
                     }
                 }
 
+                // Страховка: если selectedChatId указывает на чат,
+                // который был удалён из items (например, локальный чат
+                // заменён серверным после перехода temp→permanent),
+                // пытаемся найти замену по chat.uid.
+                if (
+                    state.selectedChatId != null &&
+                    !state.items.some(
+                        (c) =>
+                            c.id === state.selectedChatId,
+                    )
+                ) {
+                    const selectedUid =
+                        selectedChat?.chat?.uid
+                    if (selectedUid) {
+                        const replacement =
+                            fetchedItems.find(
+                                (c) =>
+                                    c.chat.uid ===
+                                    selectedUid,
+                            )
+                        if (replacement) {
+                            state.selectedChatId =
+                                replacement.id
+                        }
+                    }
+                }
+
                 // Сохранение настроек для каждого чата
                 action.payload.forEach((chat) => {
                     if (

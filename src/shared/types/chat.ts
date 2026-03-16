@@ -115,6 +115,9 @@ export interface ChatsState {
     error: string | null
     selectedChatId: number | null
     chatSettings: Record<string, ChatSettings>
+    /** WS read-status events для сообщений, которых нет в wsMessages.
+     *  Ключ — uid сообщения, значение — timestamp прочтения. */
+    messageReadStatuses: Record<string, number>
 }
 
 // Полный API тип (snake_case)

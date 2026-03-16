@@ -47,7 +47,6 @@ export function useWebSocketChat() {
     const ackSeenRef = useRef(new Set<string>())
     const normalizeSeenRef = useRef(new Set<string>())
     const storedSeenRef = useRef(new Set<string>())
-    const lastChatsRefreshRef = useRef(0)
 
     useEffect(() => {
         chatsRef.current = chats
@@ -73,8 +72,8 @@ export function useWebSocketChat() {
         ackSeenRef,
         normalizeSeenRef,
         storedSeenRef,
-        lastChatsRefreshRef,
         chatSettings,
+        currentUserId,
     })
     useEffect(() => {
         handlerDepsRef.current = {
@@ -86,14 +85,15 @@ export function useWebSocketChat() {
             ackSeenRef,
             normalizeSeenRef,
             storedSeenRef,
-            lastChatsRefreshRef,
             chatSettings,
+            currentUserId,
         }
     }, [
         sendOps.setMessages,
         dispatch,
         chatSettings,
         sendOps.pendingMessageMapRef,
+        currentUserId,
     ])
 
     const onMessage = useCallback((event: MessageEvent) => {
